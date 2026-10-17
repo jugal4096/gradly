@@ -561,3 +561,25 @@
     }
   
   }
+
+/* Account activity cards: long timestamps must remain readable on mobile. */
+.student-summary-date {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px !important;
+  line-height: 1.45;
+}
+.student-summary-card small {
+  display: block;
+  margin-top: 6px;
+  color: #9298aa;
+  font-size: 10px;
+  line-height: 1.4;
+}
+@media (max-width: 900px) {
+  .student-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .student-summary-grid { grid-template-columns: minmax(0, 1fr); }
+  .student-summary-date { font-size: 12px !important; }
+}
