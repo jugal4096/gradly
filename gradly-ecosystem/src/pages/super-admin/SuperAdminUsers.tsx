@@ -373,12 +373,12 @@ export default function SuperAdminUsers() {
                   : visibleGuests.length === 0 ? <tr><td colSpan={7}><div className="super-users-state"><Activity size={25} /><strong>No guest sessions found</strong><span>Guest sessions will appear here when the guest-session API has recorded them.</span></div></td></tr>
                   : visibleGuests.map((guest) => <tr key={guest.id}>
                     <td><div className="super-users-person"><span className="super-users-avatar guest-avatar"><Activity size={16} /></span><span className="super-users-person-copy"><strong>Guest visitor</strong><small title={guest.id}>{guest.id}</small></span></div></td>
+                    <td><span className="super-users-branch">{String(guest.metadata?.branch_name || "Not selected")}</span><small className="super-users-subtext">{String(guest.metadata?.program_name || "")}</small></td>
                     <td><span className="super-users-date">{formatDate(guest.first_seen_at)}</span></td>
                     <td><span className="super-users-date">{formatDate(guest.last_seen_at)}</span></td>
                     <td><span className="super-users-date">{guest.expires_at ? formatDate(guest.expires_at) : "No expiry set"}</span></td>
                     <td><span className={`super-users-status ${guest.active ? "is-active" : "is-inactive"}`}><span />{guest.active ? "Active" : "Expired"}</span></td>
-                    <td>{String(guest.metadata?.source || "Web")}</td>
-                    <td><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button></div></td>
                   </tr>)}
               </tbody>
             </table>
