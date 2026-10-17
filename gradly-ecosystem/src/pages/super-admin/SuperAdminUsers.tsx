@@ -34,6 +34,17 @@ interface Student {
   program_name?: string | null;
 }
 
+interface ActivityEvent {
+  id: string | number;
+  actor_type?: string;
+  actor_role?: string;
+  action: string;
+  entity_table?: string;
+  entity_id?: string;
+  created_at: string;
+  metadata?: Record<string, unknown> | null;
+}
+
 interface GuestSession {
   id: string;
   first_seen_at: string;
@@ -102,6 +113,12 @@ export default function SuperAdminUsers() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [selectedGuest, setSelectedGuest] = useState<GuestSession | null>(null);
+  const [branchFilter, setBranchFilter] = useState("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [activityStudent, setActivityStudent] = useState<Student | null>(null);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -159,7 +176,7 @@ export default function SuperAdminUsers() {
   useEffect(() => {
     setPage(1);
     setSelectedGuest(null);
-  }, [directoryType, statusFilter]);
+    setBranchFilter("all");\n    setCourseFilter("all");\n  }, [directoryType, statusFilter]);
 
   const filteredStudents = useMemo(() => {
     if (statusFilter === "active") return students.filter((student) => student.active);
@@ -181,7 +198,7 @@ export default function SuperAdminUsers() {
   const activeStudents = students.filter((student) => student.active).length;
   const activeGuests = guests.filter((guest) => guest.active).length;
 
-  function exportCurrentDirectory() {
+  async function openStudentActivity(student: Student) {\n    setActivityStudent(student);\n    setActivityEvents([]);\n    setActivityError("");\n    setActivityLoading(true);\n    try {\n      const token = localStorage.getItem("gradly_super_admin_token");\n      if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");\n      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/${encodeURIComponent(student.id)}/activity`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });\n      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "Access denied. Please sign in again." : "Could not load activity timeline.");\n      const data = await response.json() as { events?: ActivityEvent[] };\n      setActivityEvents(Array.isArray(data.events) ? data.events : []);\n    } catch (err) { setActivityError(err instanceof Error ? err.message : "Could not load activity timeline."); }\n    finally { setActivityLoading(false); }\n  }\n\n  function exportCurrentDirectory() {
     if (directoryType === "registered") {
       downloadCsv("gradly-registered-users.csv", filteredStudents.map((student) => ({
         id: student.id,
@@ -287,7 +304,7 @@ export default function SuperAdminUsers() {
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
                     <td><span className={`super-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Inactive"}</span></td>
                     <td><span className="super-users-date">{formatDate(student.last_login_at)}</span></td>
-                    <td><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} details`} title="View academic record"><Eye size={16} /></button></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button></div></td>
                   </tr>)}
               </tbody>
             </table>
@@ -324,7 +341,7 @@ export default function SuperAdminUsers() {
 
       <p className="super-users-privacy-note"><ShieldCheck size={13} /> Admin tools: search, filter, refresh, inspect guest-session metadata, view registered academic records, and export the current filtered list. Guest sessions are anonymous and their session tokens are never displayed or exported.</p>
 
-      {selectedGuest && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setSelectedGuest(null)}>
+      {activityStudent && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setActivityStudent(null)}>\n        <section className="super-users-modal activity-modal" role="dialog" aria-modal="true" aria-labelledby="student-activity-title" onClick={(event) => event.stopPropagation()}>\n          <div className="super-users-modal-heading"><div><span className="super-users-kicker">STUDENT ACTIVITY</span><h2 id="student-activity-title">{activityStudent.display_name || activityStudent.email || "Student"} timeline</h2><p>{activityStudent.email || "No email"} · {activityStudent.branch_name || "Branch not provided"}</p></div><button type="button" onClick={() => setActivityStudent(null)} aria-label="Close activity timeline"><X size={18} /></button></div>\n          {activityLoading ? <div className="super-users-state"><span className="super-users-loader" />Loading recorded activity…</div> : activityError ? <div className="super-users-error" role="alert">{activityError}</div> : activityEvents.length ? <ol className="super-users-activity-list">{activityEvents.map((event) => <li key={String(event.id)}><span className="activity-dot" /><div><strong>{event.action.replace(/_/g, " ").toLowerCase()}</strong><time>{formatDate(event.created_at)}</time><small>{event.entity_table ? `Area: ${event.entity_table}` : "Recorded application event"}</small></div></li>)}</ol> : <div className="super-users-state"><Activity size={24} /><strong>No recorded activity yet</strong><span>Only events already written to the audit log can be shown here. This is not a full clickstream.</span></div>}\n          <p className="super-users-activity-disclaimer">For privacy and accuracy, this timeline shows recorded audit events only. Actions not instrumented by the app will not appear.</p>\n          <button type="button" className="super-users-modal-close" onClick={() => setActivityStudent(null)}>Close timeline</button>\n        </section>\n      </div>}\n\n      {selectedGuest && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setSelectedGuest(null)}>
         <section className="super-users-modal" role="dialog" aria-modal="true" aria-labelledby="guest-modal-title" onClick={(event) => event.stopPropagation()}>
           <div className="super-users-modal-heading"><div><span className="super-users-kicker">SESSION INSPECTOR</span><h2 id="guest-modal-title">Guest session details</h2></div><button type="button" onClick={() => setSelectedGuest(null)} aria-label="Close session details"><X size={18} /></button></div>
           <dl>
