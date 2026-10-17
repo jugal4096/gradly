@@ -1,6 +1,6 @@
-
 import express from "express";
 import cors from "cors";
+import { env } from "./config/env";
 
 // Existing modules
 import adminRoutes from "./modules/admin/admin.routes";
@@ -26,11 +26,13 @@ const app = express();
 
 /* =========================================================
    CORS
+   Set CORS_ORIGINS to a comma-separated list of trusted frontend
+   origins. Example: http://localhost:5173,https://your-app.example
    ========================================================= */
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: env.corsOrigins,
     credentials: true,
   })
 );
@@ -39,7 +41,7 @@ app.use(
    BODY PARSER
    ========================================================= */
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 /* =========================================================
    HEALTH CHECK
@@ -86,13 +88,8 @@ app.use("/api/guest/academic", guestAcademicRoutes);
    ADMIN APPLICATIONS
    ========================================================= */
 
-// Submit an application and view the applicant's applications.
 app.use("/api/admin-applications", adminApplicationRoutes);
-
-// Existing account-setup workflow. Preserve its existing endpoints.
 app.use("/api/admin-applications/setup", adminAccountSetupRoutes);
-
-// Complete Admin ID and password registration.
 app.use("/api/admin-registration", adminRegistrationRoutes);
 
 /* =========================================================
@@ -106,21 +103,13 @@ app.use("/api/admin", adminRoutes);
    ========================================================= */
 
 app.use("/api/super-admin", superAdminRoutes);
-
-// Review admin applications.
-app.use(
-  "/api/super-admin/applications",
-  superAdminApplicationRoutes
-);
+app.use("/api/super-admin/applications", superAdminApplicationRoutes);
 
 /* =========================================================
    SUPER ADMIN → ADMINISTRATOR MANAGEMENT
    ========================================================= */
 
-app.use(
-  "/api/super-admin/administrators",
-  administratorRoutes
-);
+app.use("/api/super-admin/administrators", administratorRoutes);
 
 /* =========================================================
    404 HANDLER
