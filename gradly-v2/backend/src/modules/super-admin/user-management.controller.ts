@@ -1,4 +1,4 @@
-import { findAllBranches, findGuestSessions, findStudentActivity } from "./user-management.repository";
+import { findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity } from "./user-management.repository";
 import { Response } from "express";
   
   import {
@@ -175,5 +175,22 @@ export async function listStudentActivity(
   } catch (error) {
     console.error("Failed to load student activity:", error);
     return res.status(500).json({ message: "Failed to load student activity." });
+  }
+}
+
+
+export async function listGuestActivity(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) return res.status(401).json({ message: "Super Admin authentication required." });
+    const { guestId } = req.params;
+    if (!guestId) return res.status(400).json({ message: "Guest session ID is required." });
+    const events = await findGuestActivity(guestId);
+    return res.status(200).json({ events, count: events.length, capped: events.length === 200 });
+  } catch (error) {
+    console.error("Failed to load guest activity:", error);
+    return res.status(500).json({ message: "Failed to load guest activity." });
   }
 }
