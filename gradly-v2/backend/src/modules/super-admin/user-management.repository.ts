@@ -10,6 +10,15 @@ import { pool } from "../../config/database";
  * This module is read-only administrative inspection.
  */
 
+export async function findAllBranches() {
+  const result = await pool.query(`
+    SELECT id, name
+    FROM branches
+    ORDER BY name ASC;
+  `);
+  return result.rows as Array<{ id: string; name: string }>;
+}
+
 export async function findAllStudents(search?: string) {
   const query = `
     SELECT
