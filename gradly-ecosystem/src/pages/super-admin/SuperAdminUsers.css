@@ -612,3 +612,28 @@
   .super-users-modal { padding: 16px; }
   .super-users-modal dl > div { grid-template-columns: 1fr; gap: 5px; }
 }
+
+
+/* Expanded directory controls and activity timeline */
+.super-users-toolbar { flex-wrap: wrap; }
+.super-users-filter { max-width: 100%; }
+.super-users-filter select { max-width: 220px; min-width: 0; }
+.super-users-row-actions { display: flex; align-items: center; gap: 6px; }
+.super-users-view.activity-view { color: #167b91; }
+.super-users-view.activity-view:hover { border-color: #b9e7ef; background: #effbfe; }
+.activity-modal { max-height: min(82dvh, 760px); }
+.activity-modal .super-users-modal-heading p { margin: 7px 0 0; color: #8b93a8; font-size: 11px; }
+.super-users-activity-list { display: grid; gap: 0; margin: 0 0 15px; padding: 0; list-style: none; }
+.super-users-activity-list li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 11px; padding: 13px 0; border-bottom: 1px solid #eff0f6; }
+.super-users-activity-list li:last-child { border-bottom: 0; }
+.activity-dot { width: 9px; height: 9px; margin-top: 4px; border: 2px solid #c6bbff; border-radius: 50%; background: #7258df; box-shadow: 0 0 0 4px #f3f0ff; }
+.super-users-activity-list li > div { display: grid; gap: 5px; min-width: 0; }
+.super-users-activity-list strong { color: #333d58; font-size: 12px; text-transform: capitalize; }
+.super-users-activity-list time { color: #6e7893; font-size: 11px; }
+.super-users-activity-list small, .super-users-activity-disclaimer { color: #969caf; font-size: 10px; line-height: 1.6; }
+.super-users-activity-disclaimer { margin: 12px 0; }
+@media (max-width: 850px) {
+  .super-users-toolbar { align-items: stretch; }
+  .super-users-filter { flex: 1 1 180px; }
+  .super-users-filter select { width: 100%; max-width: none; }
+}
