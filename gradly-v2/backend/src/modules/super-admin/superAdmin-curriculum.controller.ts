@@ -27,8 +27,8 @@ export async function listCurriculum(
     const values: unknown[] = [];
     const where: string[] = [];
     if (search) {
-      values.push(`%${search.replace(/[\\%_]/g, "\\$&")}%`);
-      where.push(`to_jsonb(cs)::text ILIKE $1 ESCAPE '\\\\'`);
+      values.push(`%${search}%`);
+      where.push(`to_jsonb(cs)::text ILIKE $1`);
     }
     if (semester && semester !== "ALL") {
       values.push(semester);
