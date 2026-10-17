@@ -11,12 +11,30 @@ import { pool } from "../../config/database";
  */
 
 export async function findAllBranches() {
+  // Match Gradly's academic master-data relationship:
+  // Institution -> Program -> Branch. Do not hardcode branch names.
   const result = await pool.query(`
-    SELECT id, name
-    FROM branches
-    ORDER BY name ASC;
+    SELECT DISTINCT
+      b.id,
+      b.name,
+      p.name AS program_name,
+      i.name AS institution_name
+    FROM institutions i
+    INNER JOIN programs p
+      ON p.institution_id = i.id
+    INNER JOIN branches b
+      ON b.program_id = p.id
+    ORDER BY
+      i.name ASC,
+      p.name ASC,
+      b.name ASC;
   `);
-  return result.rows as Array<{ id: string; name: string }>;
+  return result.rows as Array<{
+    id: string;
+    name: string;
+    program_name: string;
+    institution_name: string;
+  }>;
 }
 
 export async function findAllStudents(search?: string) {
