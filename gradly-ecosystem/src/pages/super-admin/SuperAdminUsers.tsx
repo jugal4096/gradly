@@ -225,10 +225,8 @@ export default function SuperAdminUsers() {
       downloadCsv("gradly-registered-users.csv", filteredStudents.map((student) => ({
         id: student.id,
         name: student.display_name,
-        email: student.email,
         role: student.role,
         active: student.active,
-        enrollment_number: student.student_identifier,
         branch: student.branch_name,
         program: student.program_name,
         semester: student.current_semester_number,
@@ -267,6 +265,18 @@ export default function SuperAdminUsers() {
         </div>
       </header>
 
+      {directoryType === "registered" && <section className="super-users-branch-overview" aria-label="Branch-wise student overview">
+        <div className="super-users-branch-heading"><h2>Browse by branch</h2><span>{branches.length} branches</span></div>
+        <div className="super-users-branch-cards">
+          <button type="button" className={`super-users-branch-card ${branchFilter === "all" ? "is-selected" : ""}`} onClick={() => { setBranchFilter("all"); setPage(1); }}>
+            <span>All branches</span><strong>{students.length}</strong><small>Students</small>
+          </button>
+          {branches.map((branch) => <button type="button" key={branch} className={`super-users-branch-card ${branchFilter === branch ? "is-selected" : ""}`} onClick={() => { setBranchFilter(branch); setPage(1); }}>
+            <span>{branch}</span><strong>{students.filter((student) => student.branch_name === branch).length}</strong><small>Students</small>
+          </button>)}
+        </div>
+      </section>}
+
       <section className="super-users-stats" aria-label="Directory overview">
         <button type="button" className={`super-users-stat-card ${directoryType === "registered" ? "is-selected" : ""}`} onClick={() => setDirectoryType("registered")}>
           <span className="super-users-stat-icon"><UserRoundCheck size={19} /></span>
@@ -295,7 +305,7 @@ export default function SuperAdminUsers() {
         <div className="super-users-toolbar">
           <label className="super-users-search">
             <Search size={18} aria-hidden="true" />
-            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search name, email, enrollment no. or branch…" : "Search guest session ID…"} aria-label="Search directory" />
+            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search student name, email, enrollment no. or branch…" : "Search guest session ID…"} aria-label="Search directory" />
             {searchInput && <button type="button" className="super-users-clear" onClick={() => setSearchInput("")} aria-label="Clear search"><X size={15} /></button>}
           </label>
           {directoryType === "registered" && <label className="super-users-filter">
@@ -327,14 +337,13 @@ export default function SuperAdminUsers() {
         <div className="super-users-table-wrap" key={directoryType}>
           {directoryType === "registered" ? (
             <table className="super-users-table">
-              <thead><tr><th>STUDENT</th><th>ENROLLMENT NO.</th><th>BRANCH / PROGRAM</th><th>SEMESTER</th><th>CGPA</th><th>STATUS</th><th>LAST LOGIN</th><th><span className="sr-only">Actions</span></th></tr></thead>
+              <thead><tr><th>STUDENT</th><th>BRANCH / PROGRAM</th><th>SEMESTER</th><th>CGPA</th><th>STATUS</th><th>LAST LOGIN</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
-                {loading ? <tr><td colSpan={8}><div className="super-users-state"><span className="super-users-loader" />Loading registered users…</div></td></tr>
+                {loading ? <tr><td colSpan={7}><div className="super-users-state"><span className="super-users-loader" />Loading registered users…</div></td></tr>
                   : error ? <tr><td colSpan={8}><div className="super-users-state">Directory could not be loaded.</div></td></tr>
                   : visibleStudents.length === 0 ? <tr><td colSpan={8}><div className="super-users-state"><Users size={25} /><strong>No registered users found</strong><span>Try changing your search or status filter.</span></div></td></tr>
                   : visibleStudents.map((student) => <tr key={student.id}>
-                    <td><div className="super-users-person"><span className="super-users-avatar">{initials(student.display_name, student.email)}</span><span className="super-users-person-copy"><strong>{student.display_name || "Unnamed student"}</strong><small>{student.email || "No email provided"}</small></span></div></td>
-                    <td>{student.student_identifier || "—"}</td>
+                    <td><div className="super-users-person"><span className="super-users-avatar">{initials(student.display_name, null)}</span><span className="super-users-person-copy"><strong>{student.display_name || "Unnamed student"}</strong><small>Student account</small></span></div></td>
                     <td><span className="super-users-branch">{student.branch_name || "Not provided"}</span><small className="super-users-subtext">{student.program_name || ""}</small></td>
                     <td>{student.current_semester_number ? `Semester ${student.current_semester_number}` : "—"}</td>
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
