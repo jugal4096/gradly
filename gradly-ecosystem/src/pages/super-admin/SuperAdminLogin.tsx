@@ -4,8 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   API_BASE_URL,
+  clearToken,
   setToken,
-  verifySession,
 } from "../../lib/superAdminSession";
 
 import "./SuperAdminLogin.css";
@@ -24,22 +24,11 @@ export default function SuperAdminLogin() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-
-    verifySession()
-      .then((status) => {
-        if (cancelled) return;
-        if (status === "valid") navigate(from, { replace: true });
-        else setChecking(false);
-      })
-      .catch(() => {
-        if (!cancelled) setChecking(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate, from]);
+    // Always require fresh credentials when entering the Super Admin login page.
+    // Protected routes must continue verifying the newly issued token server-side.
+    clearToken();
+    setChecking(false);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
