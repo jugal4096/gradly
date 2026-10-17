@@ -491,3 +491,52 @@
 .super-admin-content { min-height: calc(100vh - 121px); height: auto; overflow: visible; }
 .super-admin-page { flex: 1 0 auto; min-height: 0; overflow: visible; }
 .super-admin-sidebar { align-self: stretch; }
+
+
+/* SCROLL FIX — let the browser viewport scroll the complete Super Admin page.
+   Keep the layout from trapping content inside a fixed-height flex child. */
+html,
+body,
+#root {
+  min-height: 100%;
+  height: auto !important;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+.super-admin-shell {
+  display: flex;
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+
+.super-admin-body {
+  flex: 0 0 auto !important;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+  align-items: stretch;
+}
+
+.super-admin-content {
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.super-admin-page {
+  flex: 0 0 auto !important;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.super-users-page {
+  height: auto !important;
+  min-height: 100%;
+  overflow: visible !important;
+}
