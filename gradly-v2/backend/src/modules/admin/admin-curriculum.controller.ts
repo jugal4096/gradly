@@ -34,8 +34,8 @@ export async function listAdminCurriculum(req: AdminAuthenticatedRequest, res: R
          p.name AS program,
          p.level AS "programLevel",
          i.name AS institution,
-         ay.name AS "academicYear",
-         gs.name AS "gradingSystem"
+         COALESCE(to_jsonb(ay)->>'name', to_jsonb(ay)->>'label', to_jsonb(ay)->>'year', to_jsonb(ay)->>'academic_year', to_jsonb(ay)->>'code') AS "academicYear",
+         COALESCE(to_jsonb(gs)->>'name', to_jsonb(gs)->>'label', to_jsonb(gs)->>'code', to_jsonb(gs)->>'system_name') AS "gradingSystem"
        FROM public.curriculum_subjects cs
        JOIN public.curricula c ON c.id = cs.curriculum_id
        JOIN public.semesters sem ON sem.id = cs.semester_id
