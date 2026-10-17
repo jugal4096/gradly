@@ -310,3 +310,21 @@ export async function createAuditLog(params: {
     ]
   );
 }
+
+/**
+ * Read-only timeline of audit events associated with a student account.
+ * This only returns events actually recorded by the application; it does not
+ * infer page views or activity that was never instrumented.
+ */
+export async function findStudentActivity(userId: string) {
+  const result = await pool.query(
+    `SELECT id, actor_type, actor_role, action, entity_table, entity_id, created_at, metadata
+     FROM audit_logs
+     WHERE actor_id = $1
+        OR (entity_table = 'users' AND entity_id = $1)
+     ORDER BY created_at DESC
+     LIMIT 200;`,
+    [userId]
+  );
+  return result.rows;
+}
