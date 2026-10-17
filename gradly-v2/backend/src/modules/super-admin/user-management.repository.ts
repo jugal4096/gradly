@@ -350,3 +350,15 @@ export async function findStudentActivity(userId: string) {
   );
   return result.rows;
 }
+
+
+export async function findGuestActivity(guestSessionId: string) {
+  const result = await pool.query(`
+    SELECT id, actor_type, actor_role, action, entity_table, entity_id, created_at, metadata
+    FROM audit_logs
+    WHERE actor_id::text = $1::text AND actor_type = 'GUEST'
+    ORDER BY created_at DESC
+    LIMIT 200;
+  `, [guestSessionId]);
+  return result.rows;
+}
