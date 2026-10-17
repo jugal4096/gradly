@@ -17,6 +17,7 @@ export default function SuperAdminAudit() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [actions, setActions] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [adminId, setAdminId] = useState(() => new URLSearchParams(window.location.search).get("adminId") || "");
   const [action, setAction] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -34,6 +35,7 @@ export default function SuperAdminAudit() {
       if (!token) throw new Error("Super Admin session missing. Sign in again.");
       const params = new URLSearchParams({ limit: String(pageSize), offset: String(page * pageSize) });
       if (search.trim()) params.set("search", search.trim());
+      if (adminId.trim()) params.set("adminId", adminId.trim());
       if (action) params.set("action", action);
       if (from) params.set("from", from);
       if (to) params.set("to", to);
@@ -43,7 +45,7 @@ export default function SuperAdminAudit() {
       setEvents(Array.isArray(data.events) ? data.events : []); setTotal(Number(data.total) || 0);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not load audit events."); }
     finally { setLoading(false); }
-  }, [search, action, from, to, page]);
+  }, [search, action, from, to, page, adminId]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function SuperAdminAudit() {
   return <section className="admin-audit-page">
     <header className="admin-audit-header"><div><span className="admin-audit-kicker">SECURITY / OVERSIGHT</span><h1>Admin Activity &amp; Audit Logs</h1><p>Review recorded administrator actions, decisions, and changes across Gradly.</p></div><button type="button" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button></header>
     <div className="admin-audit-stats"><article><span>Matching events</span><strong>{total.toLocaleString()}</strong></article><article><span>Events on this page</span><strong>{events.length}</strong></article><article><span>Page</span><strong>{page + 1}</strong></article></div>
-    <div className="admin-audit-filters"><label className="admin-audit-search"><Search size={16}/><input value={search} onChange={(e) => {setSearch(e.target.value);setPage(0);}} placeholder="Search action, request ID, record or metadata"/></label><label>Action<select value={action} onChange={(e) => {setAction(e.target.value);setPage(0);}}><option value="">All actions</option>{actions.map((a) => <option key={a} value={a}>{pretty(a)}</option>)}</select></label><label>From<input type="date" value={from} onChange={(e) => {setFrom(e.target.value);setPage(0);}}/></label><label>To<input type="date" value={to} onChange={(e) => {setTo(e.target.value);setPage(0);}}/></label></div>
+    <div className="admin-audit-filters">{adminId && <div className="admin-audit-admin-filter">Filtered to administrator ID: <strong>{adminId}</strong><button type="button" onClick={() => { setAdminId(""); window.history.replaceState({}, "", window.location.pathname); setPage(0); }}>Clear filter</button></div>}<label className="admin-audit-search"><Search size={16}/><input value={search} onChange={(e) => {setSearch(e.target.value);setPage(0);}} placeholder="Search action, request ID, record or metadata"/></label><label>Action<select value={action} onChange={(e) => {setAction(e.target.value);setPage(0);}}><option value="">All actions</option>{actions.map((a) => <option key={a} value={a}>{pretty(a)}</option>)}</select></label><label>From<input type="date" value={from} onChange={(e) => {setFrom(e.target.value);setPage(0);}}/></label><label>To<input type="date" value={to} onChange={(e) => {setTo(e.target.value);setPage(0);}}/></label></div>
     {error && <div className="admin-audit-error">{error}</div>}
     <div className="admin-audit-table-wrap"><table className="admin-audit-table"><thead><tr><th>Time</th><th>Administrator</th><th>Action</th><th>Target</th><th>Department</th><th>Details</th></tr></thead><tbody>
       {!loading && !error && events.length === 0 && <tr><td colSpan={6} className="admin-audit-empty">No recorded administrator events match these filters.</td></tr>}
