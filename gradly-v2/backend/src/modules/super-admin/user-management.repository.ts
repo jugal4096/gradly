@@ -317,7 +317,6 @@ export async function findStudentActivity(userId: string) {
     `SELECT id, actor_type, actor_role, action, entity_table, entity_id, created_at, metadata
      FROM audit_logs
      WHERE actor_id::text = $1::text
-        OR (entity_table = 'users' AND entity_id::text = $1::text)
      ORDER BY created_at DESC
      LIMIT 200;`,
     [userId]
