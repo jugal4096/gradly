@@ -298,6 +298,20 @@ export default function SuperAdminUsers() {
             <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search name, email, enrollment no. or branch…" : "Search guest session ID…"} aria-label="Search directory" />
             {searchInput && <button type="button" className="super-users-clear" onClick={() => setSearchInput("")} aria-label="Clear search"><X size={15} /></button>}
           </label>
+          {directoryType === "registered" && <label className="super-users-filter">
+            <Filter size={15} />
+            <select value={branchFilter} onChange={(event) => { setBranchFilter(event.target.value); setPage(1); }} aria-label="Filter by branch">
+              <option value="all">All branches</option>
+              {branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+            </select>
+          </label>}
+          {directoryType === "registered" && <label className="super-users-filter">
+            <Filter size={15} />
+            <select value={courseFilter} onChange={(event) => { setCourseFilter(event.target.value); setPage(1); }} aria-label="Filter by course or program">
+              <option value="all">All courses / programs</option>
+              {courses.map((course) => <option key={course} value={course}>{course}</option>)}
+            </select>
+          </label>}
           <label className="super-users-filter">
             <Filter size={15} />
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} aria-label="Filter by status">
