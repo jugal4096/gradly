@@ -44,6 +44,7 @@ export async function createGuestSemester(
       semesterId: semesterId ?? null,
       attemptNumber: attemptNumber ?? 1,
     });
+    await recordGuestActivity(session.id, "GUEST_SEMESTER_CREATED", { semesterId: semesterId ?? null, attemptNumber: attemptNumber ?? 1 });
 
     return res.status(201).json({
       message: "Guest semester created successfully.",
@@ -128,6 +129,7 @@ export async function addGuestSemesterCourse(
       resultStatus,
       resultSource,
     });
+    await recordGuestActivity(session.id, "GUEST_COURSE_ADDED", { guestSemesterId, courseName: courseNameSnapshot, courseCode: courseCodeSnapshot });
 
     return res.status(201).json({
       message: "Guest course saved successfully.",
@@ -166,6 +168,7 @@ export async function getGuestSemesterCoursesController(
     const { guestSemesterId } = req.params;
 
     const courses = await getGuestCourses(guestSemesterId);
+    await recordGuestActivity(session.id, "GUEST_COURSES_VIEWED", { guestSemesterId, count: courses.length });
 
     return res.status(200).json({
       courses,
