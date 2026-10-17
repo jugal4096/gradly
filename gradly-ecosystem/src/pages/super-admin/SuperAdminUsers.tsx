@@ -115,7 +115,8 @@ export default function SuperAdminUsers() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedGuest, setSelectedGuest] = useState<GuestSession | null>(null);\n  const [guestActivityTarget, setGuestActivityTarget] = useState<GuestSession | null>(null);
+  const [selectedGuest, setSelectedGuest] = useState<GuestSession | null>(null);
+  const [guestActivityTarget, setGuestActivityTarget] = useState<GuestSession | null>(null);
   const [branchFilter, setBranchFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
   const [activityStudent, setActivityStudent] = useState<Student | null>(null);
@@ -215,7 +216,23 @@ export default function SuperAdminUsers() {
   const activeStudents = students.filter((student) => student.active).length;
   const activeGuests = guests.filter((guest) => guest.active).length;
 
-  async function openGuestActivity(guest: GuestSession) {\n    setGuestActivityTarget(guest);\n    setActivityEvents([]);\n    setActivityError("");\n    setActivityLoading(true);\n    try {\n      const token = localStorage.getItem("gradly_super_admin_token");\n      if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");\n      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/guests/${encodeURIComponent(guest.id)}/activity`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });\n      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "Access denied. Please sign in again." : "Could not load guest activity timeline.");\n      const data = await response.json() as { events?: ActivityEvent[] };\n      setActivityEvents(Array.isArray(data.events) ? data.events : []);\n    } catch (err) { setActivityError(err instanceof Error ? err.message : "Could not load guest activity timeline."); }\n    finally { setActivityLoading(false); }\n  }\n\n  async function openStudentActivity(student: Student) {
+  async function openGuestActivity(guest: GuestSession) {
+    setGuestActivityTarget(guest);
+    setActivityEvents([]);
+    setActivityError("");
+    setActivityLoading(true);
+    try {
+      const token = localStorage.getItem("gradly_super_admin_token");
+      if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/guests/${encodeURIComponent(guest.id)}/activity`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "Access denied. Please sign in again." : "Could not load guest activity timeline.");
+      const data = await response.json() as { events?: ActivityEvent[] };
+      setActivityEvents(Array.isArray(data.events) ? data.events : []);
+    } catch (err) { setActivityError(err instanceof Error ? err.message : "Could not load guest activity timeline."); }
+    finally { setActivityLoading(false); }
+  }
+
+  async function openStudentActivity(student: Student) {
     setActivityStudent(student);
     setActivityEvents([]);
     setActivityError("");
@@ -252,7 +269,8 @@ export default function SuperAdminUsers() {
         first_seen_at: guest.first_seen_at,
         last_seen_at: guest.last_seen_at,
         expires_at: guest.expires_at,
-        source: guest.metadata?.source ?? "",\n        branch: guest.metadata?.branch_name ?? "",
+        source: guest.metadata?.source ?? "",
+        branch: guest.metadata?.branch_name ?? "",
       })));
     }
   }
@@ -415,7 +433,8 @@ export default function SuperAdminUsers() {
           <button type="button" className="super-users-modal-close" onClick={() => setGuestActivityTarget(null)}>Close timeline</button>
         </section>
       </div>}
-\n      {selectedGuest && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setSelectedGuest(null)}>
+
+      {selectedGuest && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setSelectedGuest(null)}>
         <section className="super-users-modal" role="dialog" aria-modal="true" aria-labelledby="guest-modal-title" onClick={(event) => event.stopPropagation()}>
           <div className="super-users-modal-heading"><div><span className="super-users-kicker">SESSION INSPECTOR</span><h2 id="guest-modal-title">Guest session details</h2></div><button type="button" onClick={() => setSelectedGuest(null)} aria-label="Close session details"><X size={18} /></button></div>
           <dl>
@@ -424,7 +443,10 @@ export default function SuperAdminUsers() {
             <div><dt>First seen</dt><dd>{formatDate(selectedGuest.first_seen_at)}</dd></div>
             <div><dt>Last activity</dt><dd>{formatDate(selectedGuest.last_seen_at)}</dd></div>
             <div><dt>Expires</dt><dd>{selectedGuest.expires_at ? formatDate(selectedGuest.expires_at) : "No expiry set"}</dd></div>
-            <div><dt>Branch</dt><dd>{String(selectedGuest.metadata?.branch_name || "Not selected")}</dd></div>\n            <div><dt>Program</dt><dd>{String(selectedGuest.metadata?.program_name || "Not selected")}</dd></div>\n            <div><dt>Institution</dt><dd>{String(selectedGuest.metadata?.institution_name || "Not selected")}</dd></div>\n            <div><dt>Metadata</dt><dd><code>{JSON.stringify(selectedGuest.metadata || {}, null, 2)}</code></dd></div>
+            <div><dt>Branch</dt><dd>{String(selectedGuest.metadata?.branch_name || "Not selected")}</dd></div>
+            <div><dt>Program</dt><dd>{String(selectedGuest.metadata?.program_name || "Not selected")}</dd></div>
+            <div><dt>Institution</dt><dd>{String(selectedGuest.metadata?.institution_name || "Not selected")}</dd></div>
+            <div><dt>Metadata</dt><dd><code>{JSON.stringify(selectedGuest.metadata || {}, null, 2)}</code></dd></div>
           </dl>
           <p>Session credentials are intentionally hidden. This view is read-only.</p>
           <button type="button" className="super-users-modal-close" onClick={() => setSelectedGuest(null)}>Close details</button>
