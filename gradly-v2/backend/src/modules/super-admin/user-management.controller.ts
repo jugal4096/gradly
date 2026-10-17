@@ -52,6 +52,38 @@ import {
   }
   
   
+
+  
+  export async function listGuests(
+    req: SuperAdminAuthenticatedRequest,
+    res: Response
+  ) {
+    try {
+      if (!req.superAdmin) {
+        return res.status(401).json({
+          message: "Super Admin authentication required.",
+        });
+      }
+
+      const search =
+        typeof req.query.search === "string"
+          ? req.query.search
+          : undefined;
+      const guests = await findGuestSessions(search);
+
+      return res.status(200).json({
+        guests,
+        count: guests.length,
+        capped: guests.length === 500,
+      });
+    } catch (error) {
+      console.error("Failed to load guest sessions:", error);
+      return res.status(500).json({
+        message: "Failed to load guest sessions.",
+      });
+    }
+  }
+
   export async function getStudent(
     req: SuperAdminAuthenticatedRequest,
     res: Response
