@@ -5,6 +5,7 @@ import {
   listGuests,
   listStudents,
   getStudent,
+  listStudentActivity,
 } from "./user-management.controller";
 
 const router = Router();
@@ -14,6 +15,7 @@ router.use(authenticateSuperAdminToken);
 
 // Keep the named route before /:userId so "guests" is not treated as a user ID.
 router.get("/guests", listGuests);
+router.get("/:userId/activity", listStudentActivity);
 router.get("/", listStudents);
 router.get("/:userId", getStudent);
 
