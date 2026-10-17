@@ -18,9 +18,11 @@ import {
   import "./SuperAdminUserDetails.css";
   
   
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:5000/api";
+  const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api")
+    .trim()
+    .replace(/\\/+$/, "")
+    .replace(/\\/api$/i, "");
+  const API_ROOT = `${API_BASE_URL}/api`;
   
   
   interface Student {
@@ -145,7 +147,7 @@ import {
   
           const response =
             await fetch(
-              `${API_BASE_URL}/super-admin/users/${userId}`,
+              `${API_ROOT}/super-admin/users/${encodeURIComponent(userId)}`,
               {
                 headers: {
                   Authorization:
@@ -166,9 +168,12 @@ import {
             return;
           }
   
+          if (!data.student) {
+            setError("The server returned no student record for this account. Confirm the user exists and the backend is running the latest code.");
+            return;
+          }
           setStudent(data.student);
-
-          setSemesters(data.semesters || []);
+          setSemesters(Array.isArray(data.semesters) ? data.semesters : []);
 
           // Show only audit events the application has actually recorded.
           try {
@@ -456,6 +461,13 @@ import {
         </section>
   
   
+        {!student.branch_name && !student.institution_name && !student.program_name && (
+          <section className="student-data-notice" role="status">
+            <strong>Academic profile not linked</strong>
+            <p>This account exists, but Gradly has not linked it to an institution, program, and branch yet. Academic results will appear here once the student profile and semester records exist.</p>
+          </section>
+        )}
+
         {/* SEMESTERS */}
   
         <section className="student-academic">
