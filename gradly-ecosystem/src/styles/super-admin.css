@@ -484,3 +484,10 @@
       display: none;
     }
   }
+
+/* Natural document scrolling: long admin pages should grow with their content. */
+.super-admin-shell { min-height: 100vh; height: auto; }
+.super-admin-body { flex: 1 0 auto; min-height: 0; align-items: stretch; }
+.super-admin-content { min-height: calc(100vh - 121px); height: auto; overflow: visible; }
+.super-admin-page { flex: 1 0 auto; min-height: 0; overflow: visible; }
+.super-admin-sidebar { align-self: stretch; }
