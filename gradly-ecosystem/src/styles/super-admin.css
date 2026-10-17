@@ -593,3 +593,11 @@ body:has(.super-admin-shell) .super-admin-shell {
   .super-admin-body { grid-template-columns: minmax(0, 1fr) !important; }
   .super-admin-sidebar { width: auto !important; }
 }
+
+
+/* Super Admin compact-table preference, controlled from Settings. */
+html.sa-compact-tables .super-admin-page table th,
+html.sa-compact-tables .super-admin-page table td {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
