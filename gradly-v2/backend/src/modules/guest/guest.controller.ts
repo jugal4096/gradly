@@ -2,11 +2,11 @@ import { Request, Response } from "express";
 import {
   getGuestSession,
   startGuestSession,
-} from "./guest.service";
+} from "./guest.service";\nimport { listGuestBranchOptions, recordGuestActivity, setGuestBranch } from "./guest.repository";
 
 export async function createGuest(_req: Request, res: Response) {
   try {
-    const session = await startGuestSession();
+    const session = await startGuestSession();\n    await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", { source: "web" });
 
     return res.status(201).json({
       message: "Guest session created successfully.",
