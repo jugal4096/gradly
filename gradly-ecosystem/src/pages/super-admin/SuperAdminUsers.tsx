@@ -88,8 +88,7 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
     const text = value == null ? "" : String(value);
     return `"${text.replace(/"/g, '""')}"`;
   };
-  const csv = [columns.map(escape).join(","), ...rows.map((row) => columns.map((key) => escape(row[key])).join(","))].join("\r
-");
+  const csv = [columns.map(escape).join(","), ...rows.map((row) => columns.map((key) => escape(row[key])).join(","))].join("\r\n");
   const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
