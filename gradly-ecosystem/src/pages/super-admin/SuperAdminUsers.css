@@ -637,3 +637,32 @@
   .super-users-filter { flex: 1 1 180px; }
   .super-users-filter select { width: 100%; max-width: none; }
 }
+
+
+/* Branch-wise directory navigation */
+.super-users-branch-overview {
+  margin: 0 0 18px;
+  padding: 18px;
+  border: 1px solid #e6e9f2;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 28px #26304a07;
+}
+.super-users-branch-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.super-users-branch-heading h2 { margin: 0; color: #202944; font-size: 14px; }
+.super-users-branch-heading > span { color: #9298aa; font-size: 10px; }
+.super-users-branch-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; }
+.super-users-branch-card {
+  display: grid; gap: 5px; min-width: 0; padding: 13px; text-align: left;
+  border: 1px solid #e7e9f2; border-radius: 12px; background: #fbfcff; cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.super-users-branch-card:hover { border-color: #cfc5ff; background: #f8f6ff; transform: translateY(-1px); }
+.super-users-branch-card.is-selected { border-color: #bdb0ff; background: #f4f1ff; box-shadow: 0 0 0 2px #7558e811; }
+.super-users-branch-card span { overflow-wrap: anywhere; color: #606a84; font-size: 11px; font-weight: 700; }
+.super-users-branch-card strong { color: #2a3452; font-size: 23px; line-height: 1.1; }
+.super-users-branch-card small { color: #9298aa; font-size: 10px; }
+@media (max-width: 600px) {
+  .super-users-branch-overview { padding: 13px; }
+  .super-users-branch-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
