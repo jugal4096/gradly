@@ -1944,3 +1944,69 @@
     gap: 0;
   }
 }
+
+/* Scrolling and layout refinements */
+.super-dashboard {
+  min-height: 100vh;
+  overflow-x: clip;
+  overflow-y: visible;
+  isolation: isolate;
+}
+
+.sd-shell {
+  align-items: stretch;
+}
+
+.sd-main-column {
+  min-height: 0;
+  overflow: visible;
+}
+
+.sd-sidebar {
+  position: sticky;
+  top: 20px;
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
+  overflow: hidden;
+}
+
+.sd-sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #d8d1fa transparent;
+}
+
+.sd-sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sd-sidebar-nav::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: #d8d1fa;
+}
+
+.sd-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 1050px) {
+  .super-dashboard {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  .sd-shell {
+    align-items: start;
+  }
+}
+
+@media (max-width: 650px) {
+  .super-dashboard {
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
