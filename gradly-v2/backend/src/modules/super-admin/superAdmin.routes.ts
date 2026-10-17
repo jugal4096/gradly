@@ -11,6 +11,7 @@ import {
 } from "../../middleware/super-admin-auth.middleware";
 
 import userManagementRoutes from "./user-management.routes";
+import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
 
 const router = Router();
 
@@ -50,6 +51,12 @@ router.post(
   authenticateSuperAdminToken,
   createAdmin
 );
+
+/*
+ * ADMIN AUDIT HISTORY
+ */
+router.get("/audit/admin-activity", authenticateSuperAdminToken, getAdminAuditEvents);
+router.get("/audit/admin-actions", authenticateSuperAdminToken, getAdminAuditActions);
 
 /*
  * USER MANAGEMENT
