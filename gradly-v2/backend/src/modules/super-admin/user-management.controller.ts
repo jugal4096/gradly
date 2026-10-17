@@ -1,4 +1,4 @@
-import {
+import { findGuestSessions } from "./user-management.repository";\nimport {
     Request,
     Response,
   } from "express";
