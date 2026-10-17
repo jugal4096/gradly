@@ -77,6 +77,32 @@ export async function findAllStudents(search?: string) {
 }
 
 
+
+/**
+ * Read-only guest-session directory for Super Admins.
+ * Never return the stored token hash or any raw session token.
+ */
+export async function findGuestSessions(search?: string) {
+  const query = `
+    SELECT
+      id,
+      first_seen_at,
+      last_seen_at,
+      expires_at,
+      metadata,
+      (expires_at IS NULL OR expires_at > NOW()) AS active
+    FROM guest_sessions
+    WHERE
+      $1::text IS NULL
+      OR id::text ILIKE '%' || $1 || '%'
+    ORDER BY last_seen_at DESC NULLS LAST
+    LIMIT 500;
+  `;
+
+  const result = await pool.query(query, [search?.trim() || null]);
+  return result.rows;
+}
+
 export async function findStudentById(
   userId: string
 ) {
