@@ -53,6 +53,13 @@ export async function getGuest(req: Request, res: Response) {
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
         expiresAt: session.expires_at,
+        metadata: session.metadata ?? {},
+        branch: {
+          id: session.metadata?.branch_id ?? null,
+          name: session.metadata?.branch_name ?? null,
+          programName: session.metadata?.program_name ?? null,
+          institutionName: session.metadata?.institution_name ?? null,
+        },
       },
     });
   } catch (error) {
