@@ -107,7 +107,6 @@ export async function findStudentById(
   const query = `
     SELECT
       u.id,
-      u.email,
       u.display_name,
       u.role,
       u.active,
@@ -116,7 +115,6 @@ export async function findStudentById(
       u.updated_at,
 
       sp.id AS student_profile_id,
-      sp.student_identifier,
       sp.admission_year,
       sp.current_semester_number,
       sp.graduation_year,
