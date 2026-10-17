@@ -1,8 +1,5 @@
 import { findGuestSessions } from "./user-management.repository";
-import {
-    Request,
-    Response,
-  } from "express";
+import { Response } from "express";
   
   import {
     getStudentDetails,
