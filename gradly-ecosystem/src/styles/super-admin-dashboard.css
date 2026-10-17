@@ -2010,3 +2010,14 @@
     overflow-y: visible;
   }
 }
+
+
+/* Shared SuperAdminLayout already renders the main sidebar; hide the legacy
+   dashboard's second navigation column and let the page grow naturally. */
+.sd-shell { display: block; width: 100%; max-width: 100%; min-width: 0; }
+.sd-sidebar, .sd-navigation-bar, .sd-navigation-drawer, .sd-menu-backdrop { display: none !important; }
+.sd-main-column { width: 100%; min-width: 0; max-width: 100%; overflow: visible !important; }
+.super-admin-shell, .super-admin-body, .super-admin-content, .super-admin-page { min-height: 0; height: auto; overflow: visible !important; }
+.super-admin-content, .super-admin-page { min-width: 0; }
+.super-dashboard { width: 100%; max-width: 100%; min-height: 100vh; overflow-x: clip; overflow-y: visible; padding-bottom: max(38px, env(safe-area-inset-bottom)); }
+@media (max-width: 760px) { .super-dashboard { padding: 18px 14px 30px; } }
