@@ -5,6 +5,7 @@ import {
   AdminAuthenticatedRequest,
 } from "../../middleware/admin-auth.middleware";
 import { requireAdminPermission } from "../../middleware/permission.middleware";
+import { listAdminCurriculum } from "./admin-curriculum.controller";
 
 const router = Router();
 
@@ -19,6 +20,12 @@ router.get(
       admin: req.admin,
     });
   }
+);
+
+router.get(
+  "/curriculum",
+  authenticateAdminToken,
+  listAdminCurriculum
 );
 
 router.get(
