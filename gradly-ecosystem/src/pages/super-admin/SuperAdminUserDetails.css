@@ -583,3 +583,97 @@
   .student-summary-grid { grid-template-columns: minmax(0, 1fr); }
   .student-summary-date { font-size: 12px !important; }
 }
+
+
+/* Modern, readable student record layout */
+.super-user-details-page {
+  padding: clamp(16px, 2.4vw, 32px);
+  color: #202944;
+  background: #f6f7fb;
+}
+.super-user-details-top { margin-bottom: 18px; }
+.super-user-back {
+  min-height: 38px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  transition: background .15s ease, border-color .15s ease;
+}
+.super-user-back:hover { background: #f5f2ff; }
+.super-user-details-code { font-size: 10px; letter-spacing: .1em; }
+.student-profile-card {
+  border: 1px solid #e5e8f1;
+  border-radius: 18px;
+  padding: clamp(18px, 2.4vw, 28px);
+  box-shadow: 0 8px 26px #20294408;
+  gap: 18px;
+}
+.student-profile-icon {
+  width: 64px; height: 64px; border: 0; border-radius: 18px;
+  background: linear-gradient(135deg, #ece8ff, #e7edff);
+}
+.student-profile-main h1 { color: #202944; font-size: clamp(22px, 2.5vw, 30px); letter-spacing: -.035em; }
+.student-profile-meta { gap: 8px; }
+.student-profile-meta span {
+  padding: 7px 10px; border: 1px solid #eceef6; border-radius: 9px;
+  background: #fafbff; font-size: 11px;
+}
+.student-account { padding: 7px 10px; border-radius: 999px; font-size: 10px; }
+.student-account.active { background: #e9f8f0; }
+.student-account.inactive { background: #fff0ef; }
+.student-summary-grid { grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-top: 14px; }
+.student-summary-card {
+  min-width: 0; border: 1px solid #e7eaf2; border-radius: 14px;
+  box-shadow: 0 5px 18px #20294405; padding: 16px;
+}
+.student-summary-card span { font-family: inherit; font-size: 10px; letter-spacing: .055em; }
+.student-summary-card strong { color: #292f49; font-size: clamp(17px, 1.7vw, 22px); overflow-wrap: anywhere; }
+.student-summary-card .student-summary-date { font-size: 12px !important; }
+.student-information, .student-academic {
+  border: 1px solid #e5e8f1; border-radius: 16px; padding: clamp(15px, 2vw, 22px);
+  box-shadow: 0 7px 24px #20294405;
+}
+.student-section-kicker { font-family: inherit; font-size: 10px; letter-spacing: .08em; }
+.student-section-heading h2 { color: #202944; font-size: 19px; letter-spacing: -.02em; }
+.student-information-grid { border-color: #e8eaf2; border-radius: 10px; overflow: hidden; }
+.student-info-item { border-color: #e8eaf2; }
+.student-info-item span { font-family: inherit; font-size: 10px; }
+.student-info-item strong { font-size: 12px; overflow-wrap: anywhere; }
+.semester-card { overflow: hidden; border: 1px solid #e5e8f1; border-radius: 13px; }
+.semester-header { background: #fafbff; border-color: #e9ebf3; padding: 14px 16px; }
+.semester-title { color: #252d49; font-size: 14px; }
+.semester-metrics span { font-family: inherit; font-size: 10px; }
+.semester-metrics strong { color: #5d49c2; font-size: 17px; }
+.course-table-head { font-family: inherit; font-size: 9px; letter-spacing: .04em; }
+.course-row { font-size: 11px; }
+.course-row > div:first-child strong { font-size: 11px; }
+.student-no-results {
+  padding: 26px 18px; border: 1px dashed #dfe3ee; border-radius: 12px;
+  background: #fafbff; color: #747d95; font-size: 12px; line-height: 1.6;
+}
+.student-data-notice {
+  margin-top: 14px; padding: 16px 18px; border: 1px solid #f0dfb8; border-radius: 13px;
+  background: #fffbef; color: #77591b;
+}
+.student-data-notice strong { font-size: 13px; }
+.student-data-notice p { margin: 6px 0 0; font-size: 12px; line-height: 1.6; }
+.super-user-details-loading {
+  padding: 50px 24px; color: #747d95; font-size: 13px;
+}
+.super-user-details-error {
+  margin: 24px; padding: 20px; border: 1px solid #f0d0cd; border-radius: 14px;
+  background: #fff7f6; box-shadow: 0 8px 24px #20294408;
+}
+.super-user-details-error strong { font-size: 11px; letter-spacing: .08em; }
+.super-user-details-error span { font-size: 13px; line-height: 1.6; }
+.super-user-details-error button {
+  min-height: 38px; border-radius: 9px; font-family: inherit; font-size: 12px;
+}
+@media (max-width: 600px) {
+  .super-user-details-top { align-items: flex-start; gap: 10px; }
+  .student-profile-card { flex-wrap: wrap; }
+  .student-account { margin-left: 82px; }
+  .student-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .student-information-grid { grid-template-columns: minmax(0, 1fr); }
+  .semester-header { flex-wrap: wrap; }
+}
