@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response } from "express";\nimport { recordGuestActivity } from "./guest.repository";
 
 import {
   getGuestSession,
