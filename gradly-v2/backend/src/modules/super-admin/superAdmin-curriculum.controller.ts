@@ -3,40 +3,62 @@ import { pool } from "../../config/database";
 import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 
 type RawRecord = Record<string, unknown>;
-const aliases: Record<string, string[]> = {
-  id: ["id", "subject_id", "course_id", "curriculum_subject_id"],
-  code: ["subject_code", "course_code", "code", "course_id_code"],
-  name: ["subject_name", "course_name", "name", "title", "subject", "course_title"],
-  branch: ["branch", "branch_name", "department", "department_name", "specialization"],
-  semester: ["semester", "semester_no", "semester_number", "sem", "term"],
-  credits: ["credits", "credit", "total_credits", "course_credits"],
-  scheme: ["scheme", "scheme_name", "curriculum_scheme", "regulation", "regulation_scheme"],
-  academicYear: ["academic_year", "academicYear", "year", "curriculum_year"],
-  program: ["program", "program_name", "degree", "degree_name", "course_program"],
-  admissionMode: ["admission_mode", "admissionMode", "entry_mode"],
-  courseType: ["course_type", "subject_type", "type", "category", "course_category"],
-  gradingRule: ["grading_rule", "gradingRule", "evaluation_type", "assessment_type"],
-  status: ["status", "publication_status", "is_active", "active"],
-  institution: ["institution_name", "institution", "college_name"],
-};
 
-function pick(record: RawRecord, keys: string[]): unknown {
-  const normalized = new Map(Object.entries(record).map(([key, value]) => [key.toLowerCase(), value]));
-  for (const key of keys) {
-    const value = normalized.get(key.toLowerCase());
-    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+function pick(records: RawRecord[], keys: string[]): unknown {
+  for (const record of records) {
+    const normalized = new Map(Object.entries(record || {}).map(([key, value]) => [key.toLowerCase(), value]));
+    for (const key of keys) {
+      const value = normalized.get(key.toLowerCase());
+      if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+    }
   }
   return null;
 }
 
-function normalizeRecord(record: RawRecord) {
-  const output: Record<string, unknown> = {};
-  for (const [field, keys] of Object.entries(aliases)) output[field] = pick(record, keys);
-  // Keep only harmless, known academic metadata. Never expose arbitrary row fields.
-  output.rawFieldsAvailable = Object.keys(record).filter((key) =>
-    Object.values(aliases).some((keys) => keys.some((candidate) => candidate.toLowerCase() === key.toLowerCase()))
-  ).length;
-  return output;
+function normalizeRecord(row: Record<string, RawRecord>) {
+  const records = [
+    row.courseSubject || {},
+    row.subject || {},
+    row.semester || {},
+    row.curriculum || {},
+    row.branch || {},
+    row.scheme || {},
+    row.program || {},
+    row.institution || {},
+    row.academicYear || {},
+    row.gradingSystem || {},
+  ];
+  const active = pick([row.courseSubject || {}], ["active"]);
+  const mandatory = pick([row.courseSubject || {}], ["mandatory"]);
+  const status = pick([row.curriculum || {}], ["status"]);
+  return {
+    id: pick([row.courseSubject || {}], ["id"]),
+    code: pick([row.courseSubject || {}], ["course_code", "code", "subject_code"]),
+    name: pick([row.courseSubject || {}], ["course_name", "name", "subject_name"]) ?? pick([row.subject || {}], ["name", "subject_name", "title"]),
+    branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
+    branchCode: pick([row.branch || {}], ["code"]),
+    semester: pick([row.semester || {}], ["semester_number", "name", "semester_no"]),
+    semesterName: pick([row.semester || {}], ["name"]),
+    credits: pick([row.courseSubject || {}], ["credits", "credit"]),
+    scheme: pick([row.scheme || {}], ["name", "code", "regulations"]),
+    academicYear: pick([row.academicYear || {}], ["name", "label", "year", "academic_year", "code", "title"]),
+    program: pick([row.program || {}], ["name", "short_name", "level"]),
+    admissionMode: null,
+    courseType: pick([row.courseSubject || {}], ["course_type"]),
+    mandatory,
+    electiveGroup: pick([row.courseSubject || {}], ["elective_group"]),
+    gradingRule: pick([row.gradingSystem || {}], ["name", "code", "label", "grading_system", "system_name"]),
+    status,
+    active,
+    institution: pick([row.institution || {}], ["name", "short_name"]),
+    curriculumVersion: pick([row.curriculum || {}], ["version"]),
+    curriculumId: pick([row.curriculum || {}], ["id"]),
+    totalSemesters: pick([row.curriculum || {}], ["total_semesters"]),
+    curriculumCredits: pick([row.curriculum || {}], ["total_credits"]),
+    expectedSemesterCredits: pick([row.semester || {}], ["expected_credits"]),
+    // Keep no raw database records in the API response.
+    rawFieldsAvailable: records.reduce((count, record) => count + Object.keys(record).length, 0),
+  };
 }
 
 export async function listCurriculum(
@@ -44,26 +66,32 @@ export async function listCurriculum(
   res: Response
 ) {
   try {
-    // Read the source row as JSON so schema variations don't break the query.
-    // The response is normalized to an explicit academic-field allowlist.
     const result = await pool.query(
-      `SELECT to_jsonb(cs) AS record
+      `SELECT
+         to_jsonb(cs) AS "courseSubject",
+         to_jsonb(sub) AS subject,
+         to_jsonb(sem) AS semester,
+         to_jsonb(c) AS curriculum,
+         to_jsonb(b) AS branch,
+         to_jsonb(sc) AS scheme,
+         to_jsonb(p) AS program,
+         to_jsonb(i) AS institution,
+         to_jsonb(ay) AS "academicYear",
+         to_jsonb(gs) AS "gradingSystem"
        FROM public.curriculum_subjects cs
-       ORDER BY COALESCE(
-         to_jsonb(cs)->>'branch',
-         to_jsonb(cs)->>'branch_name',
-         to_jsonb(cs)->>'department',
-         ''
-       ) ASC,
-       COALESCE(
-         to_jsonb(cs)->>'semester',
-         to_jsonb(cs)->>'semester_no',
-         to_jsonb(cs)->>'sem',
-         ''
-       ) ASC
+       JOIN public.curricula c ON c.id = cs.curriculum_id
+       JOIN public.semesters sem ON sem.id = cs.semester_id
+       LEFT JOIN public.subjects sub ON sub.id = cs.subject_id
+       LEFT JOIN public.branches b ON b.id = c.branch_id
+       LEFT JOIN public.schemes sc ON sc.id = c.scheme_id
+       LEFT JOIN public.programs p ON p.id = c.program_id
+       LEFT JOIN public.institutions i ON i.id = c.institution_id
+       LEFT JOIN public.academic_years ay ON ay.id = c.academic_year_id
+       LEFT JOIN public.grading_systems gs ON gs.id = c.grading_system_id
+       ORDER BY i.name, p.name, b.name, sc.name, sem.semester_number, cs.course_code
        LIMIT 5000`
     );
-    const curriculum = result.rows.map((row: { record: RawRecord }) => normalizeRecord(row.record || {}));
+    const curriculum = result.rows.map((row: Record<string, RawRecord>) => normalizeRecord(row));
     return res.status(200).json({
       success: true,
       curriculum,
