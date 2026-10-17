@@ -51,8 +51,8 @@ const PAGE_SIZE = 10;
 function getApiBaseUrl() {
   return (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api")
     .trim()
-    .replace(/\\/+$/, "")
-    .replace(/\\/api$/i, "");
+    .replace(/\/+$/, "")
+    .replace(/\/api$/i, "");
 }
 
 function formatDate(value: string | null | undefined) {
@@ -67,7 +67,7 @@ function formatDate(value: string | null | undefined) {
 
 function initials(name: string | null, email: string | null) {
   const source = name?.trim() || email?.trim() || "U";
-  return source.split(/[\\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("");
+  return source.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("");
 }
 
 function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
@@ -77,8 +77,8 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
     const text = value == null ? "" : String(value);
     return `"${text.replace(/"/g, '""')}"`;
   };
-  const csv = [columns.map(escape).join(","), ...rows.map((row) => columns.map((key) => escape(row[key])).join(","))].join("\\r\\n");
-  const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+  const csv = [columns.map(escape).join(","), ...rows.map((row) => columns.map((key) => escape(row[key])).join(","))].join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
