@@ -12,6 +12,7 @@ import {
 
 import userManagementRoutes from "./user-management.routes";
 import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
+import { listFeedbackRequests } from "./superAdmin-feedback.controller";
 
 const router = Router();
 
@@ -51,6 +52,11 @@ router.post(
   authenticateSuperAdminToken,
   createAdmin
 );
+
+/*
+ * FEEDBACK INBOX
+ */
+router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
 
 /*
  * ADMIN AUDIT HISTORY
