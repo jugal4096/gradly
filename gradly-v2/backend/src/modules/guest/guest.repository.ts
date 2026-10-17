@@ -45,7 +45,8 @@ export async function findGuestSessionByToken(sessionToken: string) {
       id,
       first_seen_at,
       last_seen_at,
-      expires_at
+      expires_at,
+      metadata
     FROM guest_sessions
     WHERE session_token_hash = $1
       AND (
