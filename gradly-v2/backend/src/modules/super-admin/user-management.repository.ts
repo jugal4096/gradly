@@ -14,7 +14,6 @@ export async function findAllStudents(search?: string) {
   const query = `
     SELECT
       u.id,
-      u.email,
       u.display_name,
       u.role,
       u.active,
@@ -22,7 +21,6 @@ export async function findAllStudents(search?: string) {
       u.created_at,
 
       sp.id AS student_profile_id,
-      sp.student_identifier,
       sp.admission_year,
       sp.current_semester_number,
       sp.graduation_year,
