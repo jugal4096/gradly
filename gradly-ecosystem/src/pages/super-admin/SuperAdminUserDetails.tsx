@@ -172,7 +172,7 @@ import {
 
           // Show only audit events the application has actually recorded.
           try {
-            const apiRoot = API_BASE_URL.replace(/\\/+$/, "").replace(/\\/api$/i, "");
+            const apiRoot = API_BASE_URL.replace(/\/+$/, "").replace(/\/api$/i, "");
             const activityResponse = await fetch(apiRoot + "/api/super-admin/users/" + encodeURIComponent(userId) + "/activity", {
               headers: { Authorization: "Bearer " + token, Accept: "application/json" }
             });
