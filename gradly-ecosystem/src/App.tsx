@@ -36,6 +36,8 @@ import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
 import SuperAdminAdmins from "./pages/super-admin/SuperAdminAdmins";
 import SuperAdminFeedback from "./pages/super-admin/SuperAdminFeedback";
+import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
+import SuperAdminSettings from "./pages/super-admin/SuperAdminSettings";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -150,6 +152,16 @@ function App() {
           <Route
             path="feedback"
             element={<SuperAdminFeedback />}
+          />
+
+          <Route
+            path="curriculum"
+            element={<SuperAdminCurriculum />}
+          />
+
+          <Route
+            path="settings"
+            element={<SuperAdminSettings />}
           />
         </Route>
 
