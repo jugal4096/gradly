@@ -20,8 +20,8 @@ import {
   
   const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api")
     .trim()
-    .replace(/\\/+$/, "")
-    .replace(/\\/api$/i, "");
+    .replace(/\/+$/, "")
+    .replace(/\/api$/i, "");
   const API_ROOT = `${API_BASE_URL}/api`;
   
   
