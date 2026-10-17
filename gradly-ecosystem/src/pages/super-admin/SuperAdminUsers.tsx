@@ -34,6 +34,8 @@ interface Student {
   program_name?: string | null;
 }
 
+interface BranchOption { id: string; name: string; }
+
 interface ActivityEvent {
   id: string | number;
   actor_type?: string;
@@ -104,6 +106,7 @@ export default function SuperAdminUsers() {
   const navigate = useNavigate();
   const [directoryType, setDirectoryType] = useState<DirectoryType>("registered");
   const [students, setStudents] = useState<Student[]>([]);
+  const [branchOptions, setBranchOptions] = useState<BranchOption[]>([]);
   const [guests, setGuests] = useState<GuestSession[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -157,8 +160,17 @@ export default function SuperAdminUsers() {
       if (!response.ok) throw new Error("Could not load directory records. Please retry.");
 
       const data = await response.json() as { students?: Student[]; guests?: GuestSession[] };
-      if (directoryType === "registered") setStudents(Array.isArray(data.students) ? data.students : []);
-      else setGuests(Array.isArray(data.guests) ? data.guests : []);
+      if (directoryType === "registered") {
+        setStudents(Array.isArray(data.students) ? data.students : []);
+        // Load the branch catalogue independently of whether any students are assigned to a branch.
+        const branchResponse = await fetch(`${getApiBaseUrl()}/api/super-admin/users/branches`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (branchResponse.ok) {
+          const branchData = await branchResponse.json() as { branches?: BranchOption[] };
+          setBranchOptions(Array.isArray(branchData.branches) ? branchData.branches : []);
+        }
+      } else setGuests(Array.isArray(data.guests) ? data.guests : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load directory records.");
       if (directoryType === "registered") setStudents([]);
@@ -178,7 +190,7 @@ export default function SuperAdminUsers() {
     setSelectedGuest(null);
   }, [directoryType, statusFilter]);
 
-  const branches = useMemo(() => [...new Set(students.map((student) => student.branch_name).filter((value): value is string => Boolean(value)))].sort(), [students]);
+  const branches = useMemo(() => [...new Set([...branchOptions.map((branch) => branch.name), ...students.map((student) => student.branch_name).filter((value): value is string => Boolean(value))])].sort(), [branchOptions, students]);
   const courses = useMemo(() => [...new Set(students.map((student) => student.program_name).filter((value): value is string => Boolean(value)))].sort(), [students]);
 
   const filteredStudents = useMemo(() => students.filter((student) => {
