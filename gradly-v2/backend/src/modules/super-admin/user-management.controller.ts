@@ -1,4 +1,4 @@
-import { findGuestSessions } from "./user-management.repository";
+import { findGuestSessions, findStudentActivity } from "./user-management.repository";
 import { Response } from "express";
   
   import {
@@ -143,3 +143,21 @@ import { Response } from "express";
       });
     }
   }
+
+export async function listStudentActivity(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) {
+      return res.status(401).json({ message: "Super Admin authentication required." });
+    }
+    const { userId } = req.params;
+    if (!userId) return res.status(400).json({ message: "Student user ID is required." });
+    const events = await findStudentActivity(userId);
+    return res.status(200).json({ events, count: events.length, capped: events.length === 200 });
+  } catch (error) {
+    console.error("Failed to load student activity:", error);
+    return res.status(500).json({ message: "Failed to load student activity." });
+  }
+}
