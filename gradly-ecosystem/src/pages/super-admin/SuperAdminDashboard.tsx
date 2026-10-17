@@ -614,7 +614,7 @@ export default function SuperAdminDashboard() {
             </span>
           </div>
 
-          <div className="sd-sidebar-caption">WORKSPACE</div>
+          <div className="sd-sidebar-caption">OVERVIEW</div>
 
           <nav className="sd-sidebar-nav" aria-label="Main administration">
             <button
@@ -975,7 +975,7 @@ export default function SuperAdminDashboard() {
                 <div className="sd-drawer-footer">
                   <div className="sd-drawer-secure-note">
                     <ShieldCheck size={16} />
-                    <span>Protected administrative workspace</span>
+                    <span>Privileged access · verified session</span>
                   </div>
 
                   <button
@@ -1502,7 +1502,7 @@ export default function SuperAdminDashboard() {
 
           <footer className="sd-footer">
             <span>GRADLY ECOSYSTEM</span>
-            <span>Central administration · Protected workspace</span>
+            <span>Central administration · Restricted access</span>
           </footer>
         </div>
       </div>
