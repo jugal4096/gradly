@@ -180,7 +180,6 @@ export default function SuperAdminUsers() {
   const visibleGuests = filteredGuests.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const activeStudents = students.filter((student) => student.active).length;
   const activeGuests = guests.filter((guest) => guest.active).length;
-  const currentCount = directoryType === "registered" ? students.length : guests.length;
 
   function exportCurrentDirectory() {
     if (directoryType === "registered") {
