@@ -1,0 +1,366 @@
+.admin-portal {
+    min-height: 100vh;
+    background: #f4f4f4;
+    color: #202020;
+    font-family:
+      "Segoe UI",
+      Tahoma,
+      Arial,
+      sans-serif;
+  }
+  
+  .admin-portal-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* =========================================================
+     HEADER
+     ========================================================= */
+  
+  .admin-portal-header {
+    min-height: 72px;
+    padding: 0 34px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    background: #ffffff;
+    border-bottom: 1px solid #c8c8c8;
+  
+    box-shadow:
+      0 1px 0 #ffffff inset,
+      0 2px 5px rgba(0, 0, 0, 0.08);
+  }
+  
+  .admin-portal-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .admin-portal-logo {
+    width: 42px;
+    height: 42px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #ffffff;
+    border: 1px solid #888888;
+  
+    font-size: 24px;
+    font-weight: 800;
+  
+    box-shadow: 2px 2px 0 #999999;
+  }
+  
+  .admin-portal-brand-name {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+  }
+  
+  .admin-portal-brand-subtitle {
+    margin-top: 2px;
+    color: #666666;
+    font-size: 11px;
+  }
+  
+  .admin-portal-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  
+    padding: 7px 11px;
+  
+    border: 1px solid #aaa;
+    background: #f7f7f7;
+  
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+  }
+  
+  .admin-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #16833b;
+  }
+  
+  /* =========================================================
+     MAIN
+     ========================================================= */
+  
+  .admin-portal-main {
+    width: min(1050px, calc(100% - 40px));
+    margin: 0 auto;
+  
+    padding: 48px 0 60px;
+  
+    flex: 1;
+  }
+  
+  .admin-portal-intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  
+    max-width: 760px;
+    margin-bottom: 36px;
+  }
+  
+  .admin-portal-icon {
+    width: 62px;
+    height: 62px;
+    flex-shrink: 0;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #ffffff;
+    border: 1px solid #8d8d8d;
+  
+    box-shadow: 3px 3px 0 #aaa;
+  }
+  
+  .admin-system-label {
+    margin: 0 0 5px;
+  
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+  
+    color: #666666;
+  }
+  
+  .admin-portal-intro h1 {
+    margin: 0;
+  
+    font-size: 32px;
+    font-weight: 700;
+  }
+  
+  .admin-portal-intro p:last-child {
+    margin: 10px 0 0;
+  
+    max-width: 700px;
+  
+    color: #555555;
+    line-height: 1.6;
+  }
+  
+  /* =========================================================
+     OPTIONS
+     ========================================================= */
+  
+  .admin-portal-options {
+    display: grid;
+  
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  
+    gap: 20px;
+  
+    max-width: 900px;
+  }
+  
+  .admin-option-card {
+    position: relative;
+  
+    min-height: 235px;
+  
+    padding: 24px;
+  
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  
+    text-align: left;
+  
+    background: #ffffff;
+  
+    border: 1px solid #9a9a9a;
+  
+    border-radius: 0;
+  
+    cursor: pointer;
+  
+    box-shadow: 3px 3px 0 #b5b5b5;
+  
+    font-family: inherit;
+  
+    transition:
+      transform 100ms ease,
+      box-shadow 100ms ease,
+      background 100ms ease;
+  }
+  
+  .admin-option-card:hover {
+    background: #fafafa;
+  }
+  
+  .admin-option-card:focus-visible {
+    outline: 2px solid #333333;
+    outline-offset: 3px;
+  }
+  
+  .admin-option-card:active {
+    transform: translate(2px, 2px);
+  
+    box-shadow: 1px 1px 0 #b5b5b5;
+  }
+  
+  .admin-option-icon {
+    width: 48px;
+    height: 48px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #f1f1f1;
+  
+    border: 1px solid #aaa;
+  
+    margin-bottom: 20px;
+  }
+  
+  .admin-option-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+  
+    color: #666666;
+  }
+  
+  .admin-option-content {
+    padding-right: 30px;
+  }
+  
+  .admin-option-content h2 {
+    margin: 6px 0 8px;
+  
+    font-size: 19px;
+    font-weight: 700;
+  }
+  
+  .admin-option-content p {
+    margin: 0;
+  
+    color: #666666;
+  
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  
+  .admin-option-arrow {
+    position: absolute;
+  
+    right: 20px;
+    bottom: 20px;
+  
+    color: #555555;
+  }
+  
+  /* =========================================================
+     NOTICE
+     ========================================================= */
+  
+  .admin-portal-notice {
+    margin-top: 28px;
+  
+    max-width: 900px;
+  
+    padding: 14px 16px;
+  
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  
+    background: #eeeeee;
+  
+    border: 1px solid #c0c0c0;
+  
+    font-size: 12px;
+  }
+  
+  .admin-portal-notice strong {
+    font-weight: 700;
+  }
+  
+  .admin-portal-notice span {
+    color: #666666;
+  }
+  
+  /* =========================================================
+     FOOTER
+     ========================================================= */
+  
+  .admin-portal-footer {
+    min-height: 42px;
+  
+    padding: 0 30px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    background: #e8e8e8;
+  
+    border-top: 1px solid #c0c0c0;
+  
+    color: #666666;
+  
+    font-size: 11px;
+  }
+  
+  /* =========================================================
+     RESPONSIVE
+     ========================================================= */
+  
+  @media (max-width: 850px) {
+    .admin-portal-options {
+      grid-template-columns: 1fr;
+    }
+  
+    .admin-option-card {
+      min-height: auto;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .admin-portal-header {
+      padding: 0 16px;
+    }
+  
+    .admin-portal-status {
+      display: none;
+    }
+  
+    .admin-portal-main {
+      width: calc(100% - 28px);
+      padding-top: 30px;
+    }
+  
+    .admin-portal-intro {
+      flex-direction: column;
+    }
+  
+    .admin-portal-intro h1 {
+      font-size: 27px;
+    }
+  
+    .admin-portal-footer {
+      padding: 10px 15px;
+  
+      flex-direction: column;
+      align-items: flex-start;
+  
+      gap: 4px;
+    }
+  }

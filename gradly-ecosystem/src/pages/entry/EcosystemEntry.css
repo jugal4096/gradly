@@ -1,0 +1,870 @@
+/* =========================================================
+   GRADLY ECOSYSTEM
+   ========================================================= */
+
+   html,
+   body,
+   #root {
+     width: 100%;
+     height: 100%;
+     margin: 0;
+     overflow: hidden;
+   }
+   
+   * {
+     box-sizing: border-box;
+   }
+   
+   .system-page {
+     width: 100%;
+     height: 100vh;
+   
+     display: flex;
+     flex-direction: column;
+   
+     overflow: hidden;
+   
+     background:
+       linear-gradient(
+         135deg,
+         #ffffff 0%,
+         #f7f8fb 50%,
+         #eef1f7 100%
+       );
+   
+     color: #171923;
+   
+     font-family:
+       "Segoe UI",
+       Tahoma,
+       Geneva,
+       Verdana,
+       sans-serif;
+   }
+   
+   
+   /* =========================================================
+      TOP BAR
+      ========================================================= */
+   
+   .system-bar {
+     height: 56px;
+     flex-shrink: 0;
+   
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+   
+     padding: 0 32px;
+   
+     background: #eef0f4;
+   
+     border-bottom: 2px solid #b4bac5;
+   
+     box-shadow:
+       inset 0 -1px #ffffff,
+       0 2px 8px rgba(0, 0, 0, 0.06);
+   
+     font-size: 14px;
+     font-weight: 700;
+   
+     letter-spacing: 1.4px;
+   }
+   
+   .system-brand {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+   }
+   
+   .system-led {
+     width: 9px;
+     height: 9px;
+   
+     border-radius: 50%;
+   
+     background: #00b894;
+   
+     box-shadow:
+       0 0 10px rgba(0, 184, 148, 0.55);
+   
+     animation: ledPulse 2s ease-in-out infinite;
+   }
+   
+   .system-bar-right {
+     display: flex;
+     align-items: center;
+     gap: 13px;
+   
+     color: #6d7481;
+   }
+   
+   .bar-divider {
+     width: 1px;
+     height: 17px;
+   
+     background: #b8bdc6;
+   }
+   
+   .ready-text {
+     color: #00a884;
+   }
+   
+   
+   /* =========================================================
+      MAIN WORKSPACE
+      ========================================================= */
+   
+   .system-workspace {
+     width: min(1380px, calc(100% - 70px));
+   
+     flex: 1;
+     min-height: 0;
+   
+     margin: auto;
+   
+     padding: 12px 0;
+   
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+   }
+   
+   
+   /* =========================================================
+      LOGO
+      ========================================================= */
+   
+   .system-identity {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+   
+     text-align: center;
+   
+     margin-bottom: 20px;
+   }
+   
+   
+   /*
+      IMPORTANT:
+      NO BOX AROUND THE LOGO.
+   */
+   
+   .identity-logo {
+     position: relative;
+   
+     width: 270px;
+     height: 210px;
+   
+     display: flex;
+     align-items: center;
+     justify-content: center;
+   
+     margin-bottom: 4px;
+   
+     background: transparent;
+   
+     border: none;
+   
+     box-shadow: none;
+   
+     transition:
+       transform 0.45s ease;
+   }
+   
+   
+   /*
+      Smooth floating transition.
+   */
+   
+   .identity-logo img {
+     width: 245px;
+     height: 245px;
+   
+     object-fit: contain;
+   
+     filter:
+       drop-shadow(
+         0 14px 18px
+         rgba(55, 55, 100, 0.18)
+       );
+   
+     transition:
+       transform 0.5s ease,
+       filter 0.5s ease;
+   }
+   
+   
+   /*
+      Logo gently moves upward/downward.
+   */
+   
+   .identity-logo {
+     animation:
+       logoFloat 4s ease-in-out infinite;
+   }
+   
+   
+   /*
+      Hover gives a smooth transition,
+      NOT a sudden effect.
+   */
+   
+   .identity-logo:hover img {
+     transform:
+       scale(1.06)
+       rotate(-2deg);
+   
+     filter:
+       drop-shadow(
+         0 20px 25px
+         rgba(80, 70, 180, 0.25)
+       );
+   }
+   
+   
+   /* =========================================================
+      TITLE
+      ========================================================= */
+   
+   .system-code {
+     margin-bottom: 5px;
+   
+     color: #777e8b;
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 12px;
+   
+     font-weight: 700;
+   
+     letter-spacing: 2px;
+   }
+   
+   .identity-text h1 {
+     margin: 0;
+   
+     font-size: clamp(42px, 4vw, 58px);
+   
+     line-height: 1;
+   
+     font-weight: 800;
+   
+     letter-spacing: -1.5px;
+   
+     background:
+       linear-gradient(
+         90deg,
+         #5542d2,
+         #1674dc,
+         #00a99a
+       );
+   
+     -webkit-background-clip: text;
+     background-clip: text;
+   
+     color: transparent;
+   
+     transition:
+       transform 0.3s ease,
+       letter-spacing 0.3s ease;
+   }
+   
+   .identity-text h1:hover {
+     transform: translateY(-2px);
+   
+     letter-spacing: -0.5px;
+   }
+   
+   .identity-text h2 {
+     margin: 8px 0 0;
+   
+     color: #464c59;
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 19px;
+   
+     font-weight: 700;
+   
+     letter-spacing: 1.2px;
+   }
+   
+   
+   /* =========================================================
+      DIVIDER
+      ========================================================= */
+   
+   .system-divider {
+     display: flex;
+     align-items: center;
+   
+     gap: 16px;
+   
+     margin-bottom: 13px;
+   }
+   
+   .system-divider span {
+     white-space: nowrap;
+   
+     color: #69717e;
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 12px;
+   
+     font-weight: 700;
+   
+     letter-spacing: 1.5px;
+   }
+   
+   .system-divider div {
+     flex: 1;
+   
+     height: 2px;
+   
+     background:
+       linear-gradient(
+         90deg,
+         #bcc1ca,
+         transparent
+       );
+   }
+   
+   
+   /* =========================================================
+      BUTTON GRID
+      ========================================================= */
+   
+   .interface-grid {
+     display: grid;
+   
+     grid-template-columns:
+       repeat(3, 1fr);
+   
+     gap: 18px;
+   }
+   
+   
+   /* =========================================================
+      INTERFACE BUTTON
+      ========================================================= */
+   
+   .interface-module {
+     --accent: #6c5ce7;
+   
+     min-height: 220px;
+   
+     position: relative;
+   
+     display: flex;
+     flex-direction: column;
+   
+     padding: 20px;
+   
+     text-decoration: none;
+   
+     color: #171923;
+   
+     background:
+       linear-gradient(
+         145deg,
+         #ffffff,
+         #eef0f4
+       );
+   
+     border: 2px solid #b9bec7;
+   
+     box-shadow:
+       inset 2px 2px #ffffff,
+       inset -3px -3px #d1d4da,
+       0 6px 14px
+       rgba(35, 40, 52, 0.09);
+   
+     overflow: hidden;
+   
+     cursor: pointer;
+   
+     transition:
+       transform 0.3s ease,
+       border-color 0.3s ease,
+       box-shadow 0.3s ease,
+       background 0.3s ease;
+   }
+   
+   .interface-module::before {
+     content: "";
+   
+     position: absolute;
+   
+     top: 0;
+     left: 0;
+     right: 0;
+   
+     height: 5px;
+   
+     background: var(--accent);
+   
+     transition:
+       height 0.3s ease;
+   }
+   
+   .interface-module:hover {
+     transform: translateY(-7px);
+   
+     border-color: var(--accent);
+   
+     box-shadow:
+       inset 2px 2px #ffffff,
+       inset -3px -3px #d1d4da,
+       0 17px 30px
+       rgba(35, 40, 52, 0.15);
+   }
+   
+   .interface-module:hover::before {
+     height: 8px;
+   }
+   
+   .interface-module:active {
+     transform:
+       translateY(-1px)
+       scale(0.985);
+   
+     transition-duration: 0.08s;
+   }
+   
+   
+   /* =========================================================
+      COLOURS
+      ========================================================= */
+   
+   .user-module {
+     --accent: #0984e3;
+   }
+   
+   .admin-module {
+     --accent: #00a878;
+   }
+   
+   .super-module {
+     --accent: #8e44d8;
+   }
+   
+   
+   /* =========================================================
+      ICON
+      ========================================================= */
+   
+   .module-icon {
+     width: 58px;
+     height: 58px;
+   
+     display: flex;
+     align-items: center;
+     justify-content: center;
+   
+     margin-bottom: 12px;
+   
+     color: var(--accent);
+   
+     border: 2px solid var(--accent);
+   
+     background:
+       color-mix(
+         in srgb,
+         var(--accent) 7%,
+         white
+       );
+   
+     transition:
+       transform 0.3s ease,
+       background 0.3s ease,
+       box-shadow 0.3s ease;
+   }
+   
+   .interface-module:hover .module-icon {
+     transform:
+       scale(1.08)
+       rotate(-2deg);
+   
+     background:
+       color-mix(
+         in srgb,
+         var(--accent) 12%,
+         white
+       );
+   
+     box-shadow:
+       0 5px 12px
+       color-mix(
+         in srgb,
+         var(--accent) 18%,
+         transparent
+       );
+   }
+   
+   
+   /* =========================================================
+      TEXT
+      ========================================================= */
+   
+   .module-number {
+     display: block;
+   
+     margin-bottom: 6px;
+   
+     color: var(--accent);
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 12px;
+   
+     font-weight: 800;
+   
+     letter-spacing: 1px;
+   }
+   
+   .module-content h3 {
+     margin: 0 0 7px;
+   
+     font-size: 22px;
+   
+     line-height: 1.15;
+   
+     font-weight: 800;
+   
+     color: #20232c;
+   
+     transition:
+       color 0.25s ease,
+       transform 0.25s ease;
+   }
+   
+   .interface-module:hover h3 {
+     color: var(--accent);
+   
+     transform: translateX(2px);
+   }
+   
+   .module-content p {
+     margin: 0;
+   
+     color: #646b79;
+   
+     font-size: 14px;
+   
+     line-height: 1.45;
+   
+     font-weight: 500;
+   }
+   
+   
+   /* =========================================================
+      CONTINUE BUTTON
+      ========================================================= */
+   
+   .continue-button {
+     margin-top: auto;
+   
+     height: 43px;
+   
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+   
+     padding: 0 13px;
+   
+     color: var(--accent);
+   
+     border: 2px solid var(--accent);
+   
+     background:
+       color-mix(
+         in srgb,
+         var(--accent) 5%,
+         white
+       );
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 11px;
+   
+     font-weight: 800;
+   
+     letter-spacing: 0.7px;
+   
+     transition:
+       color 0.25s ease,
+       background 0.25s ease,
+       transform 0.25s ease,
+       padding 0.25s ease;
+   }
+   
+   .interface-module:hover .continue-button {
+     color: white;
+   
+     background: var(--accent);
+   
+     padding-left: 16px;
+     padding-right: 10px;
+   }
+   
+   .continue-button svg {
+     transition:
+       transform 0.25s ease;
+   }
+   
+   .interface-module:hover .continue-button svg {
+     transform: translateX(4px);
+   }
+   
+   
+   /* =========================================================
+      STATUS BAR
+      ========================================================= */
+   
+   .diagnostic-bar {
+     min-height: 43px;
+   
+     display: flex;
+     align-items: center;
+   
+     margin-top: 14px;
+   
+     padding: 0 18px;
+   
+     background: #e9ebef;
+   
+     border: 2px solid #b7bbc4;
+   
+     box-shadow:
+       inset 2px 2px 5px rgba(255,255,255,0.9),
+       inset -2px -2px 5px rgba(0,0,0,0.06);
+   }
+   
+   .diagnostic-bar > div:not(.diagnostic-separator) {
+     display: flex;
+     align-items: center;
+   
+     gap: 8px;
+   }
+   
+   .diagnostic-label {
+     color: #777d89;
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 9px;
+   
+     font-weight: 700;
+   
+     letter-spacing: 1px;
+   }
+   
+   .diagnostic-bar strong {
+     color: #343946;
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 10px;
+   }
+   
+   .connection {
+     color: #00a878 !important;
+   
+     animation:
+       connectionPulse 2s ease-in-out infinite;
+   }
+   
+   .diagnostic-separator {
+     width: 1px;
+     height: 20px;
+   
+     margin: 0 23px;
+   
+     background: #b9bdc5;
+   }
+   
+   
+   /* =========================================================
+      FOOTER
+      ========================================================= */
+   
+   .system-footer {
+     height: 38px;
+     flex-shrink: 0;
+   
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+   
+     padding: 0 32px;
+   
+     border-top: 2px solid #b9bdc4;
+   
+     background: #eef0f3;
+   
+     color: #777d89;
+   
+     font-family:
+       "Consolas",
+       "Courier New",
+       monospace;
+   
+     font-size: 9px;
+   
+     font-weight: 700;
+   
+     letter-spacing: 1px;
+   }
+   
+   
+   /* =========================================================
+      TRANSITIONS / ANIMATION
+      ========================================================= */
+   
+   @keyframes logoFloat {
+     0% {
+       transform: translateY(0);
+     }
+   
+     50% {
+       transform: translateY(-10px);
+     }
+   
+     100% {
+       transform: translateY(0);
+     }
+   }
+   
+   @keyframes ledPulse {
+     0%,
+     100% {
+       opacity: 1;
+     }
+   
+     50% {
+       opacity: 0.45;
+     }
+   }
+   
+   @keyframes connectionPulse {
+     0%,
+     100% {
+       opacity: 1;
+     }
+   
+     50% {
+       opacity: 0.55;
+     }
+   }
+   
+   
+   /* =========================================================
+      RESPONSIVE
+      ========================================================= */
+   
+   @media (max-width: 950px) {
+     html,
+     body,
+     #root {
+       overflow-y: auto;
+     }
+   
+     .system-page {
+       height: auto;
+       min-height: 100vh;
+   
+       overflow: visible;
+     }
+   
+     .system-workspace {
+       width: calc(100% - 40px);
+   
+       padding: 30px 0;
+     }
+   
+     .interface-grid {
+       grid-template-columns: 1fr;
+     }
+   }
+   
+   
+   @media (max-width: 650px) {
+     .system-bar {
+       height: 52px;
+   
+       padding: 0 17px;
+   
+       font-size: 11px;
+     }
+   
+     .system-bar-right {
+       display: none;
+     }
+   
+     .system-workspace {
+       width: calc(100% - 28px);
+     }
+   
+     .identity-logo {
+       width: 190px;
+       height: 150px;
+     }
+   
+     .identity-logo img {
+       width: 175px;
+       height: 175px;
+     }
+   
+     .identity-text h1 {
+       font-size: 38px;
+     }
+   
+     .identity-text h2 {
+       font-size: 14px;
+     }
+   
+     .interface-grid {
+       gap: 14px;
+     }
+   
+     .interface-module {
+       min-height: 210px;
+     }
+   
+     .system-footer {
+       height: 42px;
+   
+       padding: 5px 15px;
+   
+       flex-direction: column;
+       justify-content: center;
+   
+       gap: 2px;
+   
+       font-size: 8px;
+     }
+   }

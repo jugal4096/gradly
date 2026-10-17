@@ -1,0 +1,563 @@
+.super-user-details-page {
+    padding: 28px;
+  
+    min-height: 100%;
+  
+    background: #f4f5f7;
+  
+    color: #292e34;
+  }
+  
+  
+  /* TOP */
+  
+  .super-user-details-top {
+    display: flex;
+  
+    align-items: center;
+    justify-content: space-between;
+  
+    margin-bottom: 15px;
+  }
+  
+  .super-user-back {
+    display: flex;
+    align-items: center;
+  
+    gap: 7px;
+  
+    padding: 7px 10px;
+  
+    border: 1px solid #c7cbd0;
+  
+    background: #ffffff;
+  
+    color: #5e666e;
+  
+    font-size: 10px;
+  
+    cursor: pointer;
+  }
+  
+  .super-user-back:hover {
+    color: #6546d7;
+  
+    border-color: #a9a2c5;
+  }
+  
+  .super-user-details-code {
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+  
+    font-weight: 700;
+  
+    letter-spacing: 0.7px;
+  
+    color: #858b92;
+  }
+  
+  
+  /* PROFILE */
+  
+  .student-profile-card {
+    display: flex;
+  
+    align-items: center;
+  
+    gap: 15px;
+  
+    padding: 18px;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c4c9cf;
+  }
+  
+  .student-profile-icon {
+    width: 58px;
+    height: 58px;
+  
+    flex-shrink: 0;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #eeeafb;
+  
+    border: 1px solid #d6cfee;
+  
+    color: #6546d7;
+  }
+  
+  .student-profile-main {
+    flex: 1;
+  }
+  
+  .student-profile-main h1 {
+    margin: 0;
+  
+    font-size: 21px;
+  
+    font-weight: 650;
+  }
+  
+  .student-profile-meta {
+    display: flex;
+  
+    flex-wrap: wrap;
+  
+    gap: 14px;
+  
+    margin-top: 7px;
+  }
+  
+  .student-profile-meta span {
+    display: flex;
+    align-items: center;
+  
+    gap: 5px;
+  
+    font-size: 10px;
+  
+    color: #777e87;
+  }
+  
+  .student-account {
+    align-self: flex-start;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    font-weight: 700;
+  }
+  
+  .student-account.active {
+    color: #3f7a50;
+  }
+  
+  .student-account.inactive {
+    color: #9a4141;
+  }
+  
+  
+  /* SUMMARY */
+  
+  .student-summary-grid {
+    display: grid;
+  
+    grid-template-columns:
+      repeat(4, 1fr);
+  
+    gap: 10px;
+  
+    margin-top: 12px;
+  }
+  
+  .student-summary-card {
+    padding: 15px;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c8ccd1;
+  }
+  
+  .student-summary-card span {
+    display: block;
+  
+    margin-bottom: 7px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    font-weight: 700;
+  
+    color: #777e87;
+  }
+  
+  .student-summary-card strong {
+    font-size: 20px;
+  
+    font-weight: 650;
+  
+    color: #353a40;
+  }
+  
+  
+  /* SECTIONS */
+  
+  .student-information,
+  .student-academic {
+    margin-top: 18px;
+  
+    padding: 18px;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c4c9cf;
+  }
+  
+  .student-section-heading {
+    margin-bottom: 15px;
+  }
+  
+  .student-section-kicker {
+    margin-bottom: 4px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    font-weight: 700;
+  
+    letter-spacing: 0.7px;
+  
+    color: #858b92;
+  }
+  
+  .student-section-heading h2 {
+    margin: 0;
+  
+    font-size: 16px;
+  
+    font-weight: 650;
+  }
+  
+  
+  /* INFORMATION */
+  
+  .student-information-grid {
+    display: grid;
+  
+    grid-template-columns:
+      repeat(4, 1fr);
+  
+    border-top: 1px solid #e1e3e6;
+    border-left: 1px solid #e1e3e6;
+  }
+  
+  .student-info-item {
+    min-height: 58px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    justify-content: center;
+  
+    gap: 5px;
+  
+    padding: 10px;
+  
+    border-right: 1px solid #e1e3e6;
+    border-bottom: 1px solid #e1e3e6;
+  }
+  
+  .student-info-item span {
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #858b92;
+  }
+  
+  .student-info-item strong {
+    font-size: 11px;
+  
+    font-weight: 600;
+  
+    color: #3f454b;
+  }
+  
+  
+  /* SEMESTER */
+  
+  .semester-card {
+    margin-top: 12px;
+  
+    border: 1px solid #c8ccd1;
+  
+    background: #ffffff;
+  }
+  
+  .semester-header {
+    min-height: 62px;
+  
+    display: flex;
+  
+    align-items: center;
+    justify-content: space-between;
+  
+    padding: 10px 13px;
+  
+    background: #f0f1f3;
+  
+    border-bottom: 1px solid #cbd0d5;
+  }
+  
+  .semester-title {
+    display: flex;
+    align-items: center;
+  
+    gap: 7px;
+  
+    font-size: 13px;
+  
+    font-weight: 650;
+  }
+  
+  .semester-header > div:first-child > span {
+    display: block;
+  
+    margin-top: 4px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #858b92;
+  }
+  
+  .semester-metrics {
+    display: flex;
+  
+    gap: 20px;
+  }
+  
+  .semester-metrics div {
+    text-align: right;
+  }
+  
+  .semester-metrics span {
+    display: block;
+  
+    margin-bottom: 3px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #858b92;
+  }
+  
+  .semester-metrics strong {
+    font-size: 14px;
+  }
+  
+  
+  /* COURSE TABLE */
+  
+  .course-table {
+    overflow-x: auto;
+  }
+  
+  .course-table-head,
+  .course-row {
+    display: grid;
+  
+    grid-template-columns:
+      2.6fr
+      0.7fr
+      1fr
+      0.8fr
+      1fr
+      1fr;
+  
+    min-width: 700px;
+  
+    gap: 10px;
+  
+    align-items: center;
+  
+    padding: 0 13px;
+  }
+  
+  .course-table-head {
+    min-height: 34px;
+  
+    background: #fafafa;
+  
+    border-bottom: 1px solid #e0e2e5;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    font-weight: 700;
+  
+    color: #7b828a;
+  }
+  
+  .course-row {
+    min-height: 52px;
+  
+    border-bottom: 1px solid #eceef0;
+  
+    font-size: 10px;
+  
+    color: #555c64;
+  }
+  
+  .course-row:last-child {
+    border-bottom: 0;
+  }
+  
+  .course-row > div:first-child {
+    display: flex;
+    flex-direction: column;
+  
+    gap: 3px;
+  }
+  
+  .course-row > div:first-child strong {
+    font-size: 10px;
+  
+    color: #3c4248;
+  }
+  
+  .course-row > div:first-child span {
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #8a9097;
+  }
+  
+  .course-empty {
+    padding: 25px;
+  
+    text-align: center;
+  
+    font-size: 10px;
+  
+    color: #858b92;
+  }
+  
+  
+  /* STATES */
+  
+  .super-user-details-loading {
+    padding: 50px;
+  
+    font-size: 12px;
+  
+    color: #777e87;
+  }
+  
+  .super-user-details-error {
+    margin: 28px;
+  
+    padding: 16px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    gap: 8px;
+  
+    background: #fff3f3;
+  
+    border: 1px solid #dfbaba;
+  
+    color: #8c3838;
+  }
+  
+  .super-user-details-error strong {
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+  }
+  
+  .super-user-details-error span {
+    font-size: 11px;
+  }
+  
+  .super-user-details-error button {
+    width: fit-content;
+  
+    padding: 7px 10px;
+  
+    border: 1px solid #c7cbd0;
+  
+    background: #ffffff;
+  
+    cursor: pointer;
+  }
+  
+  
+  /* RESPONSIVE */
+  
+  @media (max-width: 900px) {
+  
+    .student-summary-grid {
+      grid-template-columns:
+        repeat(2, 1fr);
+    }
+  
+    .student-information-grid {
+      grid-template-columns:
+        repeat(2, 1fr);
+    }
+  
+  }
+  
+  @media (max-width: 600px) {
+  
+    .super-user-details-page {
+      padding: 18px;
+    }
+  
+    .student-profile-card {
+      align-items: flex-start;
+    }
+  
+    .student-summary-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .student-information-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .semester-header {
+      align-items: flex-start;
+  
+      gap: 12px;
+    }
+  
+    .semester-metrics {
+      gap: 10px;
+    }
+  
+  }

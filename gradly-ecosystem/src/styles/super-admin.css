@@ -1,0 +1,486 @@
+.super-admin-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f4f5f7;
+    color: #20242a;
+    font-family:
+      "Segoe UI",
+      Arial,
+      Helvetica,
+      sans-serif;
+  }
+  
+  /* =========================================================
+     TOP BAR
+     ========================================================= */
+  
+  .super-admin-topbar {
+    height: 58px;
+    flex-shrink: 0;
+  
+    display: flex;
+    align-items: center;
+  
+    padding: 0 20px;
+  
+    background: #ffffff;
+  
+    border-bottom: 1px solid #c9cdd3;
+  
+    box-shadow:
+      0 1px 0 #ffffff inset,
+      0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  
+  .topbar-brand {
+    width: 245px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 10px;
+  }
+  
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #6546d7;
+  
+    color: #ffffff;
+  
+    border: 1px solid #4e35af;
+  
+    box-shadow:
+      1px 1px 0 #ffffff inset,
+      -1px -1px 0 #4e35af inset;
+  
+    font-size: 16px;
+    font-weight: 800;
+  }
+  
+  .brand-text {
+    line-height: 1;
+  }
+  
+  .brand-name {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+  }
+  
+  .brand-product {
+    margin-top: 4px;
+  
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+  
+    color: #707780;
+  }
+  
+  .topbar-center {
+    flex: 1;
+  
+    display: flex;
+    justify-content: center;
+  }
+  
+  .system-path {
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 11px;
+    letter-spacing: 0.8px;
+  
+    color: #69717b;
+  }
+  
+  .topbar-status {
+    width: 245px;
+  
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  
+    gap: 7px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+  
+    color: #3f7c4e;
+  }
+  
+  .status-light {
+    width: 7px;
+    height: 7px;
+  
+    border-radius: 50%;
+  
+    background: #48a868;
+  
+    box-shadow:
+      0 0 0 2px #dcefe1;
+  }
+  
+  /* =========================================================
+     BODY
+     ========================================================= */
+  
+  .super-admin-body {
+    flex: 1;
+  
+    display: flex;
+  
+    min-height: 0;
+  }
+  
+  /* =========================================================
+     SIDEBAR
+     ========================================================= */
+  
+  .super-admin-sidebar {
+    width: 245px;
+    flex-shrink: 0;
+  
+    display: flex;
+    flex-direction: column;
+  
+    padding: 18px 12px 12px;
+  
+    background: #eceef1;
+  
+    border-right: 1px solid #c5c9cf;
+  
+    box-shadow:
+      1px 0 0 #ffffff inset;
+  }
+  
+  .sidebar-heading {
+    padding: 0 10px 8px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+  
+    color: #7a8189;
+  }
+  
+  .sidebar-system-heading {
+    margin-top: 20px;
+  }
+  
+  .sidebar-navigation {
+    display: flex;
+    flex-direction: column;
+  
+    gap: 3px;
+  }
+  
+  .sidebar-link {
+    position: relative;
+  
+    min-height: 38px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 10px;
+  
+    padding: 0 10px;
+  
+    color: #454b53;
+  
+    border: 1px solid transparent;
+  
+    text-decoration: none;
+  
+    font-size: 13px;
+    font-weight: 500;
+  
+    cursor: pointer;
+  
+    transition:
+      background 120ms ease,
+      border-color 120ms ease;
+  }
+  
+  .sidebar-link:hover {
+    background: #ffffff;
+  
+    border-color: #c7cbd1;
+  }
+  
+  .sidebar-link-active {
+    background: #ffffff;
+  
+    border-color: #b9bdc4;
+  
+    color: #5037b7;
+  
+    box-shadow:
+      1px 1px 0 #ffffff inset,
+      -1px -1px 0 #d5d8dd inset;
+  }
+  
+  .sidebar-link-active::before {
+    content: "";
+  
+    position: absolute;
+  
+    left: -1px;
+    top: 5px;
+    bottom: 5px;
+  
+    width: 3px;
+  
+    background: #6546d7;
+  }
+  
+  .sidebar-arrow {
+    margin-left: auto;
+  
+    opacity: 0.35;
+  }
+  
+  .sidebar-link-active .sidebar-arrow {
+    opacity: 0.8;
+  }
+  
+  .sidebar-spacer {
+    flex: 1;
+  }
+  
+  .sidebar-logout {
+    height: 37px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 10px;
+  
+    padding: 0 10px;
+  
+    background: #f7f7f8;
+  
+    border: 1px solid #c7cbd0;
+  
+    color: #5a6068;
+  
+    font-size: 12px;
+    font-weight: 600;
+  
+    cursor: pointer;
+  
+    box-shadow:
+      1px 1px 0 #ffffff inset,
+      -1px -1px 0 #d4d7dc inset;
+  }
+  
+  .sidebar-logout:hover {
+    background: #ffffff;
+    color: #a33b3b;
+  }
+  
+  .sidebar-logout:active {
+    box-shadow:
+      -1px -1px 0 #ffffff inset,
+      1px 1px 0 #d0d3d8 inset;
+  }
+  
+  .sidebar-version {
+    margin-top: 12px;
+  
+    padding: 9px 10px;
+  
+    border-top: 1px solid #d0d3d8;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+    line-height: 1.6;
+  
+    letter-spacing: 0.8px;
+  
+    color: #858b93;
+  }
+  
+  /* =========================================================
+     CONTENT
+     ========================================================= */
+  
+  .super-admin-content {
+    flex: 1;
+  
+    min-width: 0;
+  
+    display: flex;
+    flex-direction: column;
+  
+    background: #f8f9fa;
+  }
+  
+  .content-system-strip {
+    height: 36px;
+    flex-shrink: 0;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    padding: 0 20px;
+  
+    background: #ffffff;
+  
+    border-bottom: 1px solid #d4d7dc;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+    letter-spacing: 0.7px;
+  }
+  
+  .content-system-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  
+    color: #7a8189;
+  }
+  
+  .system-status-value {
+    color: #428053;
+  
+    font-weight: 700;
+  }
+  
+  .content-system-right {
+    color: #6c737b;
+    font-weight: 700;
+  }
+  
+  .super-admin-page {
+    flex: 1;
+  
+    padding: 24px;
+  
+    overflow-y: auto;
+  }
+  
+  /* =========================================================
+     FOOTER
+     ========================================================= */
+  
+  .super-admin-footer {
+    height: 27px;
+    flex-shrink: 0;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    padding: 0 14px;
+  
+    background: #e9ebee;
+  
+    border-top: 1px solid #c7cbd0;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+    letter-spacing: 0.7px;
+  
+    color: #777e87;
+  }
+  
+  /* =========================================================
+     RESPONSIVE
+     ========================================================= */
+  
+  @media (max-width: 850px) {
+    .topbar-brand {
+      width: auto;
+    }
+  
+    .topbar-center {
+      display: none;
+    }
+  
+    .topbar-status {
+      width: auto;
+      margin-left: auto;
+    }
+  
+    .super-admin-sidebar {
+      width: 210px;
+    }
+  }
+  
+  @media (max-width: 650px) {
+    .super-admin-sidebar {
+      width: 58px;
+  
+      padding-left: 7px;
+      padding-right: 7px;
+    }
+  
+    .sidebar-heading,
+    .sidebar-link span,
+    .sidebar-arrow,
+    .sidebar-version {
+      display: none;
+    }
+  
+    .sidebar-link {
+      justify-content: center;
+      padding: 0;
+    }
+  
+    .sidebar-logout {
+      justify-content: center;
+      padding: 0;
+    }
+  
+    .sidebar-logout span {
+      display: none;
+    }
+  
+    .super-admin-page {
+      padding: 15px;
+    }
+  
+    .content-system-strip {
+      padding: 0 12px;
+    }
+  
+    .super-admin-footer {
+      display: none;
+    }
+  }

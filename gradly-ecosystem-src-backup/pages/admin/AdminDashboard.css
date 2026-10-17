@@ -1,0 +1,137 @@
+.admin-dashboard {
+    min-height: 100vh;
+    background: #f3f3f3;
+    color: #222;
+    font-family:
+      "Segoe UI",
+      Tahoma,
+      Arial,
+      sans-serif;
+  }
+  
+  .admin-dashboard-header {
+    height: 68px;
+    padding: 0 30px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    background: #fff;
+    border-bottom: 1px solid #c5c5c5;
+  
+    box-shadow:
+      0 1px 0 #fff inset,
+      0 2px 5px rgba(0, 0, 0, 0.08);
+  }
+  
+  .admin-dashboard-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  
+  .admin-dashboard-logo {
+    width: 40px;
+    height: 40px;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    border: 1px solid #888;
+    background: #fff;
+  
+    font-size: 23px;
+    font-weight: 800;
+  
+    box-shadow: 2px 2px 0 #aaa;
+  }
+  
+  .admin-dashboard-brand strong {
+    display: block;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+  }
+  
+  .admin-dashboard-brand span {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: #666;
+  }
+  
+  .admin-dashboard-logout {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  
+    padding: 8px 12px;
+  
+    background: #fff;
+    border: 1px solid #999;
+  
+    cursor: pointer;
+  }
+  
+  .admin-dashboard-logout:hover {
+    background: #eee;
+  }
+  
+  .admin-dashboard-main {
+    width: min(1100px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 45px 0;
+  }
+  
+  .admin-dashboard-welcome {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  
+    padding: 25px;
+  
+    background: #fff;
+    border: 1px solid #aaa;
+  
+    box-shadow: 3px 3px 0 #bbb;
+  }
+  
+  .admin-dashboard-welcome svg {
+    flex-shrink: 0;
+  }
+  
+  .admin-dashboard-welcome span {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #666;
+  }
+  
+  .admin-dashboard-welcome h1 {
+    margin: 5px 0 8px;
+    font-size: 28px;
+  }
+  
+  .admin-dashboard-welcome p {
+    margin: 0;
+    color: #666;
+  }
+  
+  .admin-dashboard-panel {
+    margin-top: 22px;
+    padding: 25px;
+  
+    background: #fff;
+    border: 1px solid #aaa;
+  }
+  
+  .admin-dashboard-panel h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+  }
+  
+  .admin-dashboard-panel p {
+    margin: 0;
+    color: #666;
+  }

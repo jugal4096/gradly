@@ -1,0 +1,1085 @@
+/* =========================================================
+   GRADLY ECOSYSTEM
+   INTERNAL DEVELOPMENT ENVIRONMENT
+   ========================================================= */
+
+   .dev-environment {
+    min-height: 100vh;
+  
+    background: #f7f8fa;
+  
+    color: #20232d;
+  
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+  
+  
+  /* =========================================================
+     TOP BAR
+     ========================================================= */
+  
+  .dev-topbar {
+    height: 58px;
+  
+    display: flex;
+    align-items: center;
+  
+    border-bottom: 1px solid #e5e7eb;
+  
+    background: #ffffff;
+  
+    padding: 0 22px;
+  }
+  
+  
+  .dev-brand {
+    width: 240px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 9px;
+  }
+  
+  
+  .dev-brand-icon {
+    width: 28px;
+    height: 28px;
+  
+    display: grid;
+    place-items: center;
+  
+    overflow: hidden;
+  
+    border: 1px solid #e5e7eb;
+  
+    border-radius: 6px;
+  
+    background: #ffffff;
+  }
+  
+  
+  .dev-brand-icon img {
+    width: 25px;
+    height: 25px;
+  
+    object-fit: contain;
+  }
+  
+  
+  .dev-brand-name {
+    font-size: 13px;
+    font-weight: 650;
+  
+    color: #171923;
+  }
+  
+  
+  .dev-brand-subtitle {
+    margin-top: 1px;
+  
+    font-size: 9px;
+  
+    color: #8a909d;
+  
+    letter-spacing: 0.04em;
+  }
+  
+  
+  .dev-breadcrumb {
+    display: flex;
+    align-items: center;
+  
+    gap: 8px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 11px;
+  
+    color: #9aa0aa;
+  }
+  
+  
+  .dev-breadcrumb strong {
+    color: #525865;
+  
+    font-weight: 500;
+  }
+  
+  
+  .dev-environment-status {
+    margin-left: auto;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 7px;
+  
+    padding: 5px 9px;
+  
+    border: 1px solid #e5e7eb;
+  
+    border-radius: 6px;
+  
+    background: #fafafa;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 10px;
+  
+    color: #6c7280;
+  }
+  
+  
+  .status-indicator {
+    width: 6px;
+    height: 6px;
+  
+    border-radius: 50%;
+  
+    background: #22a06b;
+  }
+  
+  
+  /* =========================================================
+     BODY
+     ========================================================= */
+  
+  .dev-body {
+    display: flex;
+  
+    min-height:
+      calc(100vh - 102px);
+  }
+  
+  
+  /* =========================================================
+     SIDEBAR
+     ========================================================= */
+  
+  .dev-sidebar {
+    position: relative;
+  
+    width: 240px;
+  
+    flex-shrink: 0;
+  
+    border-right: 1px solid #e5e7eb;
+  
+    background: #fbfbfc;
+  
+    padding: 22px 12px;
+  }
+  
+  
+  .sidebar-section {
+    margin-bottom: 28px;
+  }
+  
+  
+  .sidebar-title {
+    padding: 0 10px;
+  
+    margin-bottom: 7px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 9px;
+  
+    font-weight: 600;
+  
+    letter-spacing: 0.08em;
+  
+    color: #9aa0aa;
+  }
+  
+  
+  .sidebar-item {
+    min-height: 33px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 9px;
+  
+    padding: 7px 10px;
+  
+    border-radius: 5px;
+  
+    color: #6c7280;
+  
+    font-size: 12px;
+  
+    text-decoration: none;
+  
+    cursor: default;
+  
+    transition:
+      background 120ms ease,
+      color 120ms ease;
+  }
+  
+  
+  a.sidebar-item {
+    cursor: pointer;
+  }
+  
+  
+  .sidebar-item:hover {
+    background: #f0f1f4;
+  
+    color: #353a45;
+  }
+  
+  
+  .sidebar-item.active {
+    background: #ece9ff;
+  
+    color: #5c4ed1;
+  
+    font-weight: 550;
+  }
+  
+  
+  .sidebar-item svg {
+    flex-shrink: 0;
+  }
+  
+  
+  .sidebar-value {
+    margin-left: auto;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 9px;
+  
+    color: #9ba1ad;
+  }
+  
+  
+  .sidebar-bottom {
+    position: absolute;
+  
+    left: 12px;
+    right: 12px;
+    bottom: 18px;
+  
+    padding:
+      12px 10px;
+  
+    border-top:
+      1px solid
+      #e6e8ec;
+  }
+  
+  
+  .sidebar-bottom-label {
+    font-size: 10px;
+  
+    color: #626875;
+  }
+  
+  
+  .sidebar-bottom-version {
+    margin-top: 3px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #a0a5ae;
+  }
+  
+  
+  /* =========================================================
+     MAIN CONTENT
+     ========================================================= */
+  
+  .dev-content {
+    width: 100%;
+  
+    max-width: 1100px;
+  
+    margin: 0 auto;
+  
+    padding: 38px 48px 70px;
+  }
+  
+  
+  /* =========================================================
+     PAGE HEADER
+     ========================================================= */
+  
+  .dev-page-header {
+    display: flex;
+  
+    align-items: flex-start;
+  
+    justify-content: space-between;
+  
+    margin-bottom: 30px;
+  }
+  
+  
+  .dev-page-kicker {
+    margin-bottom: 7px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 9px;
+  
+    color: #9ca2ad;
+  
+    letter-spacing: 0.07em;
+  }
+  
+  
+  .dev-page-header h1 {
+    margin: 0;
+  
+    font-size: 22px;
+  
+    line-height: 1.25;
+  
+    font-weight: 650;
+  
+    letter-spacing: -0.02em;
+  
+    color: #1d2028;
+  }
+  
+  
+  .dev-page-header p {
+    margin: 7px 0 0;
+  
+    font-size: 12px;
+  
+    color: #7a808c;
+  }
+  
+  
+  .dev-page-meta {
+    display: flex;
+    flex-direction: column;
+  
+    align-items: flex-end;
+  
+    gap: 4px;
+  
+    padding-top: 3px;
+  }
+  
+  
+  .meta-label {
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #a2a7b0;
+  }
+  
+  
+  .meta-value {
+    padding: 4px 7px;
+  
+    border-radius: 4px;
+  
+    background: #eef8f2;
+  
+    color: #258355;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 9px;
+  }
+  
+  
+  /* =========================================================
+     PANELS
+     ========================================================= */
+  
+  .project-panel,
+  .access-card,
+  .services-table,
+  .development-note {
+    border:
+      1px solid
+      #e2e5e9;
+  
+    background: #ffffff;
+  
+    border-radius: 7px;
+  }
+  
+  
+  .panel-header {
+    min-height: 58px;
+  
+    display: flex;
+  
+    align-items: center;
+    justify-content: space-between;
+  
+    padding: 0 18px;
+  
+    border-bottom:
+      1px solid
+      #e8eaed;
+  }
+  
+  
+  .panel-title {
+    font-size: 12px;
+  
+    font-weight: 600;
+  
+    color: #343943;
+  }
+  
+  
+  .panel-subtitle {
+    margin-top: 3px;
+  
+    font-size: 10px;
+  
+    color: #9298a3;
+  }
+  
+  
+  .panel-status {
+    padding: 4px 7px;
+  
+    border: 1px solid #dfe3e8;
+  
+    border-radius: 4px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #777e8a;
+  
+    background: #fafbfc;
+  }
+  
+  
+  /* =========================================================
+     PROJECT IDENTITY
+     ========================================================= */
+  
+  .project-identity {
+    min-height: 190px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 25px;
+  
+    padding: 30px;
+  }
+  
+  
+  .project-logo {
+    width: 120px;
+    height: 120px;
+  
+    flex-shrink: 0;
+  
+    display: grid;
+    place-items: center;
+  
+    border:
+      1px solid
+      #e4e6ea;
+  
+    border-radius: 10px;
+  
+    background:
+      linear-gradient(
+        145deg,
+        #ffffff,
+        #f7f7fa
+      );
+  
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  
+  
+  .project-logo:hover {
+    border-color: #cfc9f6;
+  
+    box-shadow:
+      0 4px 18px
+      rgba(91, 77, 190, 0.08);
+  }
+  
+  
+  .project-logo img {
+    width: 95px;
+    height: 95px;
+  
+    object-fit: contain;
+  }
+  
+  
+  .project-identity-text {
+    max-width: 580px;
+  }
+  
+  
+  .project-identity-text h2 {
+    margin: 0;
+  
+    font-size: 17px;
+  
+    font-weight: 620;
+  
+    color: #252934;
+  }
+  
+  
+  .project-identity-text p {
+    max-width: 560px;
+  
+    margin: 8px 0 16px;
+  
+    font-size: 12px;
+  
+    line-height: 1.6;
+  
+    color: #777e8a;
+  }
+  
+  
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+  
+    gap: 6px;
+  }
+  
+  
+  .project-tags span {
+    padding: 4px 7px;
+  
+    border: 1px solid #e5e7eb;
+  
+    border-radius: 4px;
+  
+    background: #fafafa;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #7b818d;
+  }
+  
+  
+  /* =========================================================
+     SECTIONS
+     ========================================================= */
+  
+  .section-block {
+    margin-top: 32px;
+  }
+  
+  
+  .section-heading {
+    margin-bottom: 12px;
+  }
+  
+  
+  .section-heading h2 {
+    margin: 0;
+  
+    font-size: 14px;
+  
+    font-weight: 620;
+  
+    color: #343943;
+  }
+  
+  
+  .section-heading p {
+    margin: 4px 0 0;
+  
+    font-size: 10px;
+  
+    color: #9298a3;
+  }
+  
+  
+  /* =========================================================
+     ACCESS CARDS
+     ========================================================= */
+  
+  .access-grid {
+    display: grid;
+  
+    grid-template-columns:
+      repeat(3, 1fr);
+  
+    gap: 10px;
+  }
+  
+  
+  .access-card {
+    min-height: 145px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    padding: 16px;
+  
+    text-decoration: none;
+  
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+  }
+  
+  
+  .access-card:hover {
+    transform: translateY(-2px);
+  
+    border-color: #d1d4da;
+  
+    box-shadow:
+      0 7px 20px
+      rgba(30, 35, 45, 0.06);
+  }
+  
+  
+  .access-card-top {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  
+  .access-card-icon {
+    width: 32px;
+    height: 32px;
+  
+    display: grid;
+    place-items: center;
+  
+    border-radius: 6px;
+  }
+  
+  
+  .developer .access-card-icon {
+    background: #edf5ff;
+    color: #377bc8;
+  }
+  
+  
+  .administrator .access-card-icon {
+    background: #f0edff;
+    color: #6653c7;
+  }
+  
+  
+  .super-admin .access-card-icon {
+    background: #fff0f7;
+    color: #bf4f8e;
+  }
+  
+  
+  .access-arrow {
+    color: #a0a5ae;
+  
+    transition:
+      transform 150ms ease,
+      color 150ms ease;
+  }
+  
+  
+  .access-card:hover .access-arrow {
+    color: #626875;
+  
+    transform:
+      translate(2px, -2px);
+  }
+  
+  
+  .access-card-title {
+    margin-top: 17px;
+  
+    font-size: 12px;
+  
+    font-weight: 620;
+  
+    color: #30343d;
+  }
+  
+  
+  .access-card-description {
+    margin-top: 5px;
+  
+    font-size: 10px;
+  
+    line-height: 1.5;
+  
+    color: #858b96;
+  }
+  
+  
+  .access-card-footer {
+    margin-top: auto;
+  
+    padding-top: 13px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #9ba0a9;
+  }
+  
+  
+  /* =========================================================
+     SERVICES
+     ========================================================= */
+  
+  .services-table {
+    overflow: hidden;
+  }
+  
+  
+  .service-row {
+    min-height: 54px;
+  
+    display: grid;
+  
+    grid-template-columns:
+      1.5fr
+      1fr
+      150px;
+  
+    align-items: center;
+  
+    padding: 0 16px;
+  
+    border-bottom:
+      1px solid
+      #edf0f2;
+  }
+  
+  
+  .service-row:last-child {
+    border-bottom: none;
+  }
+  
+  
+  .service-name {
+    display: flex;
+    align-items: center;
+  
+    gap: 9px;
+  
+    font-size: 11px;
+  
+    font-weight: 550;
+  
+    color: #444953;
+  }
+  
+  
+  .service-icon {
+    width: 27px;
+    height: 27px;
+  
+    display: grid;
+    place-items: center;
+  
+    border-radius: 5px;
+  }
+  
+  
+  .service-icon.purple {
+    color: #6857cf;
+    background: #f0edff;
+  }
+  
+  
+  .service-icon.blue {
+    color: #3c7ec4;
+    background: #edf5ff;
+  }
+  
+  
+  .service-icon.green {
+    color: #27845d;
+    background: #edf8f2;
+  }
+  
+  
+  .service-type {
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #9a9fa8;
+  }
+  
+  
+  .service-status {
+    display: flex;
+    align-items: center;
+  
+    gap: 6px;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #5d6673;
+  }
+  
+  
+  .service-status span {
+    width: 6px;
+    height: 6px;
+  
+    border-radius: 50%;
+  
+    background: #28a36a;
+  }
+  
+  
+  /* =========================================================
+     DEVELOPMENT NOTE
+     ========================================================= */
+  
+  .development-note {
+    display: flex;
+    align-items: flex-start;
+  
+    gap: 11px;
+  
+    margin-top: 18px;
+  
+    padding: 14px 16px;
+  
+    background: #fcfcfd;
+  }
+  
+  
+  .development-note-icon {
+    width: 27px;
+    height: 27px;
+  
+    display: grid;
+    place-items: center;
+  
+    flex-shrink: 0;
+  
+    border-radius: 5px;
+  
+    color: #7063c8;
+  
+    background: #f1efff;
+  }
+  
+  
+  .development-note strong {
+    display: block;
+  
+    font-size: 10px;
+  
+    font-weight: 600;
+  
+    color: #5a606c;
+  }
+  
+  
+  .development-note p {
+    margin: 3px 0 0;
+  
+    font-size: 9px;
+  
+    line-height: 1.5;
+  
+    color: #9398a2;
+  }
+  
+  
+  /* =========================================================
+     FOOTER
+     ========================================================= */
+  
+  .dev-footer {
+    height: 44px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 18px;
+  
+    padding: 0 22px;
+  
+    border-top:
+      1px solid
+      #e5e7eb;
+  
+    background: #ffffff;
+  
+    font-family:
+      "SFMono-Regular",
+      Consolas,
+      monospace;
+  
+    font-size: 8px;
+  
+    color: #9ba0a9;
+  }
+  
+  
+  /* =========================================================
+     RESPONSIVE
+     ========================================================= */
+  
+  @media (max-width: 900px) {
+  
+    .dev-sidebar {
+      width: 200px;
+    }
+  
+    .dev-content {
+      padding:
+        30px 28px 60px;
+    }
+  
+    .access-grid {
+      grid-template-columns: 1fr;
+    }
+  
+  }
+  
+  
+  @media (max-width: 700px) {
+  
+    .dev-topbar {
+      padding: 0 14px;
+    }
+  
+    .dev-brand {
+      width: auto;
+    }
+  
+    .dev-breadcrumb {
+      display: none;
+    }
+  
+    .dev-sidebar {
+      display: none;
+    }
+  
+    .dev-content {
+      padding:
+        25px 15px 50px;
+    }
+  
+    .dev-page-header {
+      display: block;
+    }
+  
+    .dev-page-meta {
+      align-items: flex-start;
+  
+      margin-top: 15px;
+    }
+  
+    .project-identity {
+      flex-direction: column;
+  
+      align-items: flex-start;
+  
+      padding: 22px;
+    }
+  
+    .project-logo {
+      width: 95px;
+      height: 95px;
+    }
+  
+    .project-logo img {
+      width: 75px;
+      height: 75px;
+    }
+  
+    .service-row {
+      grid-template-columns: 1fr;
+  
+      gap: 4px;
+  
+      padding: 12px 14px;
+    }
+  
+    .service-type {
+      margin-left: 36px;
+    }
+  
+    .service-status {
+      margin-left: 36px;
+    }
+  
+    .dev-footer {
+      gap: 10px;
+  
+      overflow: hidden;
+  
+      white-space: nowrap;
+    }
+  
+  }

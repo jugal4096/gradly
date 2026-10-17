@@ -1,0 +1,414 @@
+.super-users-page {
+    padding: 28px;
+  
+    min-height: 100%;
+  
+    background: #f4f5f7;
+  
+    color: #292e34;
+  }
+  
+  
+  /* HEADER */
+  
+  .super-users-header {
+    display: flex;
+  
+    align-items: flex-start;
+    justify-content: space-between;
+  
+    margin-bottom: 22px;
+  }
+  
+  .super-users-kicker {
+    margin-bottom: 5px;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+  
+    font-weight: 700;
+  
+    letter-spacing: 0.8px;
+  
+    color: #777e87;
+  }
+  
+  .super-users-header h1 {
+    margin: 0;
+  
+    font-size: 25px;
+  
+    font-weight: 650;
+  }
+  
+  .super-users-header p {
+    margin: 6px 0 0;
+  
+    font-size: 12px;
+  
+    color: #777e87;
+  }
+  
+  
+  /* REFRESH */
+  
+  .super-users-refresh {
+    display: flex;
+    align-items: center;
+  
+    gap: 7px;
+  
+    padding: 8px 12px;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c6cbd0;
+  
+    color: #50575f;
+  
+    font-size: 11px;
+  
+    cursor: pointer;
+  }
+  
+  .super-users-refresh:hover {
+    border-color: #6546d7;
+  
+    color: #6546d7;
+  }
+  
+  
+  /* TOOLBAR */
+  
+  .super-users-toolbar {
+    display: flex;
+  
+    align-items: center;
+  
+    gap: 12px;
+  
+    margin-bottom: 14px;
+  }
+  
+  .super-users-search {
+    flex: 1;
+  
+    height: 40px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 8px;
+  
+    padding-left: 11px;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c5c9ce;
+  }
+  
+  .super-users-search svg {
+    color: #7a8189;
+  }
+  
+  .super-users-search input {
+    flex: 1;
+  
+    height: 100%;
+  
+    border: 0;
+    outline: 0;
+  
+    font-size: 12px;
+  
+    background: transparent;
+  }
+  
+  .super-users-search button {
+    height: 100%;
+  
+    padding: 0 15px;
+  
+    border: 0;
+    border-left: 1px solid #c5c9ce;
+  
+    background: #6546d7;
+  
+    color: #ffffff;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+  
+    font-weight: 700;
+  
+    cursor: pointer;
+  }
+  
+  .super-users-count {
+    padding: 11px 13px;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c5c9ce;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 9px;
+  
+    color: #6c737b;
+  }
+  
+  
+  /* ERROR */
+  
+  .super-users-error {
+    margin-bottom: 12px;
+  
+    padding: 10px 12px;
+  
+    background: #fff2f2;
+  
+    border: 1px solid #dfb8b8;
+  
+    color: #8d3737;
+  
+    font-size: 11px;
+  }
+  
+  
+  /* TABLE */
+  
+  .super-users-table {
+    overflow: hidden;
+  
+    background: #ffffff;
+  
+    border: 1px solid #c3c8ce;
+  }
+  
+  .super-users-table-head,
+  .super-user-row {
+    display: grid;
+  
+    grid-template-columns:
+      2fr
+      1.15fr
+      1.1fr
+      1.1fr
+      0.65fr
+      0.8fr
+      30px;
+  
+    align-items: center;
+  
+    column-gap: 12px;
+  
+    padding: 0 15px;
+  }
+  
+  .super-users-table-head {
+    min-height: 38px;
+  
+    background: #eceef1;
+  
+    border-bottom: 1px solid #c5c9ce;
+  
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    font-weight: 700;
+  
+    letter-spacing: 0.5px;
+  
+    color: #697079;
+  }
+  
+  
+  /* ROW */
+  
+  .super-user-row {
+    width: 100%;
+  
+    min-height: 62px;
+  
+    border: 0;
+  
+    border-bottom: 1px solid #e1e3e6;
+  
+    background: #ffffff;
+  
+    text-align: left;
+  
+    color: #42484f;
+  
+    font-size: 11px;
+  
+    cursor: pointer;
+  }
+  
+  .super-user-row:last-child {
+    border-bottom: 0;
+  }
+  
+  .super-user-row:hover {
+    background: #f8f7fc;
+  }
+  
+  .super-user-main {
+    display: flex;
+  
+    align-items: center;
+  
+    gap: 9px;
+  
+    min-width: 0;
+  }
+  
+  .super-user-avatar {
+    width: 31px;
+    height: 31px;
+  
+    flex-shrink: 0;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background: #eeeafb;
+  
+    border: 1px solid #d7d0ef;
+  
+    color: #6546d7;
+  }
+  
+  .super-user-main div:last-child {
+    min-width: 0;
+  
+    display: flex;
+    flex-direction: column;
+  
+    gap: 3px;
+  }
+  
+  .super-user-main strong {
+    overflow: hidden;
+  
+    text-overflow: ellipsis;
+  
+    white-space: nowrap;
+  
+    font-size: 11px;
+  
+    color: #30353a;
+  }
+  
+  .super-user-main span {
+    overflow: hidden;
+  
+    text-overflow: ellipsis;
+  
+    white-space: nowrap;
+  
+    font-size: 9px;
+  
+    color: #858b92;
+  }
+  
+  
+  /* STATUS */
+  
+  .user-status {
+    font-family:
+      Consolas,
+      "Courier New",
+      monospace;
+  
+    font-size: 8px;
+  
+    font-weight: 700;
+  }
+  
+  .user-status.active {
+    color: #3f7a50;
+  }
+  
+  .user-status.inactive {
+    color: #9b4141;
+  }
+  
+  
+  /* EMPTY */
+  
+  .super-users-empty {
+    min-height: 220px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    align-items: center;
+    justify-content: center;
+  
+    gap: 8px;
+  
+    color: #7c838b;
+  
+    font-size: 11px;
+  }
+  
+  .super-users-empty svg {
+    color: #a0a5ab;
+  }
+  
+  
+  /* RESPONSIVE */
+  
+  @media (max-width: 900px) {
+  
+    .super-users-table {
+      overflow-x: auto;
+    }
+  
+    .super-users-table-head,
+    .super-user-row {
+      min-width: 850px;
+    }
+  
+  }
+  
+  @media (max-width: 650px) {
+  
+    .super-users-page {
+      padding: 18px;
+    }
+  
+    .super-users-header {
+      flex-direction: column;
+  
+      gap: 12px;
+    }
+  
+    .super-users-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .super-users-count {
+      text-align: center;
+    }
+  
+  }
