@@ -12,9 +12,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./SuperAdminApplications.css";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
-).replace(/\/+$/, "");
+const configuredApiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
+)
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
+
+const API_BASE_URL = `${configuredApiBaseUrl}/api`;
 
 const ADMIN_PERMISSION_OPTIONS = [
   {
@@ -105,7 +110,11 @@ interface ApiResponse<T> {
 }
 
 function getToken(): string | null {
-  return localStorage.getItem("gradly_super_admin_token");
+  try {
+    return localStorage.getItem("gradly_super_admin_token");
+  } catch {
+    return null;
+  }
 }
 
 function getErrorMessage(
@@ -218,45 +227,27 @@ function StatusIcon({
 
 export default function SuperAdminApplications() {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [status, setStatus] =
-    useState<ApplicationFilter>("PENDING");
-
+  const [status, setStatus] = useState<ApplicationFilter>("PENDING");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
   const [selected, setSelected] = useState<Application | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [reason, setReason] = useState("");
-
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [departmentId, setDepartmentId] = useState("");
-  const [approvedPermissions, setApprovedPermissions] =
-    useState<string[]>([]);
-
-  const [configurationLoading, setConfigurationLoading] =
-    useState(false);
-
-  const [configurationSaving, setConfigurationSaving] =
-    useState(false);
-
-  const [configurationSaved, setConfigurationSaved] =
-    useState(false);
+  const [approvedPermissions, setApprovedPermissions] = useState<string[]>([]);
+  const [configurationLoading, setConfigurationLoading] = useState(false);
+  const [configurationSaving, setConfigurationSaving] = useState(false);
+  const [configurationSaved, setConfigurationSaved] = useState(false);
 
   const selectedInstitution = useMemo(
-    () =>
-      institutions.find(
-        (institution) =>
-          institution.id === selected?.institution_id
-      ),
+    () => institutions.find((institution) => institution.id === selected?.institution_id),
     [institutions, selected?.institution_id]
   );
 
   const availableBranches = useMemo(
-    () =>
-      selectedInstitution?.branches.filter(
-        (branch) => branch.active !== false
-      ) ?? [],
+    () => selectedInstitution?.branches.filter((branch) => branch.active !== false) ?? [],
     [selectedInstitution]
   );
 
@@ -269,23 +260,16 @@ export default function SuperAdminApplications() {
         setApplications([]);
         setSelected(null);
         setLoading(false);
-        setError(
-          "Your Super Admin session is missing. Please sign in again."
-        );
+        setError("Your Super Admin session is missing. Please sign in again.");
         return;
       }
 
       try {
-        if (showLoading) {
-          setLoading(true);
-        }
-
+        if (showLoading) setLoading(true);
         setError("");
 
         const query =
-          status === "ALL"
-            ? ""
-            : `?status=${encodeURIComponent(status)}`;
+          status === "ALL" ? "" : `?status=${encodeURIComponent(status)}`;
 
         const response = await fetch(
           `${API_BASE_URL}/super-admin/applications${query}`,
@@ -301,10 +285,7 @@ export default function SuperAdminApplications() {
 
         if (!response.ok) {
           throw new Error(
-            getErrorMessage(
-              data,
-              `Unable to load applications. HTTP ${response.status}.`
-            )
+            getErrorMessage(data, `Unable to load applications. HTTP ${response.status}.`)
           );
         }
 
@@ -315,29 +296,16 @@ export default function SuperAdminApplications() {
             : null;
 
         if (!records) {
-          throw new Error(
-            "The server returned an unexpected application list."
-          );
+          throw new Error("The server returned an unexpected application list.");
         }
 
         setApplications(records);
-
-        setSelected((previous) => {
-          if (!previous) return null;
-
-          return (
-            records.find((item) => item.id === previous.id) ??
-            null
-          );
-        });
+        setSelected((previous) =>
+          previous ? records.find((item) => item.id === previous.id) ?? null : null
+        );
       } catch (err) {
         console.error("Unable to load applications:", err);
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load applications."
-        );
+        setError(err instanceof Error ? err.message : "Unable to load applications.");
       } finally {
         setLoading(false);
       }
@@ -348,30 +316,23 @@ export default function SuperAdminApplications() {
   // Load institutions and their departments.
   const loadInstitutions = useCallback(async () => {
     const token = getToken();
-
     if (!token) return;
 
     setConfigurationLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/academic/institutions`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/academic/institutions`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
 
       const data = await readResponse<Institution[]>(response);
 
       if (!response.ok) {
         throw new Error(
-          getErrorMessage(
-            data,
-            `Unable to load institutions. HTTP ${response.status}.`
-          )
+          getErrorMessage(data, `Unable to load institutions. HTTP ${response.status}.`)
         );
       }
 
@@ -381,21 +342,11 @@ export default function SuperAdminApplications() {
           ? data.institutions
           : null;
 
-      if (!records) {
-        throw new Error(
-          "Institution API did not return an array."
-        );
-      }
-
+      if (!records) throw new Error("Institution API did not return an array.");
       setInstitutions(records);
     } catch (err) {
       console.error("Unable to load institutions:", err);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to load institutions."
-      );
+      setError(err instanceof Error ? err.message : "Unable to load institutions.");
     } finally {
       setConfigurationLoading(false);
     }
@@ -416,50 +367,36 @@ export default function SuperAdminApplications() {
     setError("");
     setNotice("");
     setDepartmentId(application.branch_id || "");
-
     setApprovedPermissions(
       Array.isArray(application.approved_permissions)
         ? application.approved_permissions
         : []
     );
-
     setConfigurationSaved(false);
   }
 
   // Save the selected department and permissions.
   async function saveConfiguration(): Promise<boolean> {
     if (!selected) return false;
-
     const token = getToken();
 
     if (!token) {
-      setError(
-        "Your Super Admin session is missing. Please sign in again."
-      );
+      setError("Your Super Admin session is missing. Please sign in again.");
       return false;
     }
-
     if (!departmentId) {
       setError("Select a department before saving.");
       return false;
     }
-
     if (approvedPermissions.length === 0) {
-      setError(
-        "Select at least one permission before saving."
-      );
+      setError("Select at least one permission before saving.");
       return false;
     }
-
     if (
       !selectedInstitution ||
-      !availableBranches.some(
-        (branch) => branch.id === departmentId
-      )
+      !availableBranches.some((branch) => branch.id === departmentId)
     ) {
-      setError(
-        "The selected department does not belong to this applicant's institution."
-      );
+      setError("The selected department does not belong to this applicant's institution.");
       return false;
     }
 
@@ -469,9 +406,7 @@ export default function SuperAdminApplications() {
       setNotice("");
 
       const response = await fetch(
-        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
-          selected.id
-        )}/configuration`,
+        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(selected.id)}/configuration`,
         {
           method: "PATCH",
           headers: {
@@ -487,34 +422,19 @@ export default function SuperAdminApplications() {
       );
 
       const data = await readResponse<unknown>(response);
-
       if (!response.ok) {
         throw new Error(
-          getErrorMessage(
-            data,
-            `Unable to save configuration. HTTP ${response.status}.`
-          )
+          getErrorMessage(data, `Unable to save configuration. HTTP ${response.status}.`)
         );
       }
 
       setConfigurationSaved(true);
       setNotice("Department and permissions saved.");
-
       await loadApplications(false);
-
       return true;
     } catch (err) {
-      console.error(
-        "Unable to save application configuration:",
-        err
-      );
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to save configuration."
-      );
-
+      console.error("Unable to save application configuration:", err);
+      setError(err instanceof Error ? err.message : "Unable to save configuration.");
       return false;
     } finally {
       setConfigurationSaving(false);
@@ -522,24 +442,16 @@ export default function SuperAdminApplications() {
   }
 
   // Accept, reject, or block an application.
-  async function performAction(
-    action: "accept" | "reject" | "block"
-  ) {
+  async function performAction(action: "accept" | "reject" | "block") {
     if (!selected) return;
-
     const token = getToken();
 
     if (!token) {
-      setError(
-        "Your Super Admin session is missing. Please sign in again."
-      );
+      setError("Your Super Admin session is missing. Please sign in again.");
       return;
     }
 
-    if (
-      (action === "reject" || action === "block") &&
-      !reason.trim()
-    ) {
+    if ((action === "reject" || action === "block") && !reason.trim()) {
       setError(
         action === "reject"
           ? "Enter a rejection reason."
@@ -548,51 +460,33 @@ export default function SuperAdminApplications() {
       return;
     }
 
-    // The current backend review API supports only ACCEPTED and REJECTED.
+    // Blocking requires its own dedicated backend workflow.
     if (action === "block") {
-      setError(
-        "Blocking is not supported by the current review API. Use a dedicated blocking endpoint once it is implemented."
-      );
+      setError("Blocking is not supported by the current review API.");
       return;
     }
 
     if (action === "accept") {
       if (!departmentId || approvedPermissions.length === 0) {
-        setError(
-          "Choose a department and at least one permission before accepting."
-        );
+        setError("Choose a department and at least one permission before accepting.");
         return;
       }
-
       if (
         !selectedInstitution ||
-        !availableBranches.some(
-          (branch) => branch.id === departmentId
-        )
+        !availableBranches.some((branch) => branch.id === departmentId)
       ) {
-        setError(
-          "Select a valid department belonging to this institution."
-        );
+        setError("Select a valid department belonging to this institution.");
         return;
       }
-
-      // Persist the department and permissions before accepting.
-      if (!configurationSaved) {
-        const saved = await saveConfiguration();
-
-        if (!saved) return;
-      }
+      if (!configurationSaved && !(await saveConfiguration())) return;
     }
 
-    const decision: ReviewDecision =
-      action === "accept" ? "ACCEPTED" : "REJECTED";
-
+    const decision: ReviewDecision = action === "accept" ? "ACCEPTED" : "REJECTED";
     const confirmed = window.confirm(
       action === "accept"
         ? "Accept this administrator application with the selected department and permissions?"
         : "Reject this administrator application?"
     );
-
     if (!confirmed) return;
 
     try {
@@ -600,24 +494,13 @@ export default function SuperAdminApplications() {
       setError("");
       setNotice("");
 
-      // IMPORTANT: The backend requires department and permissions
-      // when accepting an application.
       const payload =
         decision === "ACCEPTED"
-          ? {
-              decision,
-              branchId: departmentId,
-              permissions: approvedPermissions,
-            }
-          : {
-              decision,
-              rejection_reason: reason.trim(),
-            };
+          ? { decision, branchId: departmentId, permissions: approvedPermissions }
+          : { decision, rejection_reason: reason.trim() };
 
       const response = await fetch(
-        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
-          selected.id
-        )}/review`,
+        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(selected.id)}/review`,
         {
           method: "PATCH",
           headers: {
@@ -630,13 +513,9 @@ export default function SuperAdminApplications() {
       );
 
       const data = await readResponse<unknown>(response);
-
       if (!response.ok) {
         throw new Error(
-          getErrorMessage(
-            data,
-            `Unable to ${action} the application. HTTP ${response.status}.`
-          )
+          getErrorMessage(data, `Unable to ${action} the application. HTTP ${response.status}.`)
         );
       }
 
@@ -645,643 +524,201 @@ export default function SuperAdminApplications() {
       setDepartmentId("");
       setApprovedPermissions([]);
       setConfigurationSaved(false);
-
       setNotice(
         action === "accept"
-          ? "Application accepted."
-          : "Application rejected."
+          ? "Application accepted successfully."
+          : "Application rejected successfully."
       );
-
       await loadApplications(false);
     } catch (err) {
-      console.error("Application review failed:", err);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "The application review failed."
-      );
+      console.error(`Unable to ${action} application:`, err);
+      setError(err instanceof Error ? err.message : `Unable to ${action} application.`);
     } finally {
       setActionLoading(false);
     }
   }
 
+  // Render the application review interface.
   return (
-    <div className="super-applications">
-      <div className="super-applications-header">
+    <section className="super-admin-applications">
+      <header className="applications-header">
         <div>
-          <div className="system-kicker">
-            ADMINISTRATION SYSTEM
-          </div>
-
-          <h1>Administrator Applications</h1>
-
-          <p>
-            Review requests, assign a department, and grant
-            approved permissions.
-          </p>
+          <h1>Administrator applications</h1>
+          <p>Review applications and configure access before approval.</p>
         </div>
-
-        <button
-          type="button"
-          className="hardware-button"
-          onClick={() => {
-            void loadApplications();
-            void loadInstitutions();
-          }}
-          disabled={loading || actionLoading}
-        >
-          <RefreshCw
-            size={16}
-            className={loading ? "refresh-spinning" : ""}
-          />
-
-          {loading ? "Loading..." : "Refresh"}
+        <button type="button" onClick={() => void loadApplications()} disabled={loading}>
+          <RefreshCw size={16} /> Refresh
         </button>
-      </div>
+      </header>
 
-      <div className="application-tabs">
-        {(
-          [
-            "PENDING",
-            "ACCEPTED",
-            "REJECTED",
-            "ALL",
-          ] as ApplicationFilter[]
-        ).map((item) => (
-          <button
-            type="button"
-            key={item}
-            className={
-              status === item
-                ? "application-tab active"
-                : "application-tab"
-            }
-            onClick={() => {
-              setSelected(null);
-              setReason("");
-              setError("");
-              setNotice("");
-              setStatus(item);
-            }}
-            disabled={loading || actionLoading}
+      {error && <div className="applications-alert applications-alert-error" role="alert"><AlertTriangle size={16} />{error}</div>}
+      {notice && <div className="applications-alert applications-alert-success" role="status"><CheckCircle2 size={16} />{notice}</div>}
+
+      <div className="applications-toolbar">
+        <label>
+          Filter
+          <select
+            value={status}
+            onChange={(event) => setStatus(event.target.value as ApplicationFilter)}
           >
-            {item === "ALL"
-              ? "All applications"
-              : item.replaceAll("_", " ")}
-          </button>
-        ))}
+            <option value="PENDING">Pending</option>
+            <option value="ACCEPTED">Accepted</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="ALL">All</option>
+          </select>
+        </label>
       </div>
 
-      {error && (
-        <div className="application-error" role="alert">
-          <AlertTriangle size={17} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {notice && (
-        <div className="application-notice" role="status">
-          <CheckCircle2 size={17} />
-          <span>{notice}</span>
-        </div>
-      )}
-
-      <div className="applications-workspace">
-        <section className="application-list-panel">
-          <div className="panel-title">
-            <span>Applications</span>
-
-            <span className="record-count">
-              {applications.length}
-            </span>
+      {loading ? (
+        <p>Loading applications…</p>
+      ) : applications.length === 0 ? (
+        <p>No applications found for this filter.</p>
+      ) : (
+        <div className="applications-content">
+          <div className="applications-list">
+            {applications.map((application) => (
+              <button
+                type="button"
+                key={application.id}
+                className={`application-list-item ${selected?.id === application.id ? "selected" : ""}`}
+                onClick={() => selectApplication(application)}
+              >
+                <span className="application-list-item-main">
+                  <strong>{application.full_name}</strong>
+                  <span>{application.email}</span>
+                  <small>{application.institution_name ?? "Institution not specified"}</small>
+                </span>
+                <span className={`application-status application-status-${statusClass(application.status)}`}>
+                  <StatusIcon status={application.status} />
+                  {statusLabel(application.status)}
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
           </div>
 
-          {loading ? (
-            <div className="empty-state">
-              Loading applications...
-            </div>
-          ) : applications.length === 0 ? (
-            <div className="empty-state">
-              No applications found.
-            </div>
-          ) : (
-            <div className="application-list">
-              {applications.map((application) => (
-                <button
-                  type="button"
-                  key={application.id}
-                  className={
-                    selected?.id === application.id
-                      ? "application-row selected"
-                      : "application-row"
-                  }
-                  onClick={() => selectApplication(application)}
-                >
-                  <div className="application-avatar">
-                    <UserRound size={19} />
-                  </div>
-
-                  <div className="application-summary">
-                    <strong>
-                      {application.full_name ||
-                        "Unnamed applicant"}
-                    </strong>
-
-                    <span>
-                      {application.enrollment_number ||
-                        "No enrollment number"}
-                    </span>
-
-                    <small>
-                      {application.branch_name ||
-                        "Department not assigned"}
-                    </small>
-                  </div>
-
-                  <div
-                    className={`application-status ${statusClass(
-                      application.status
-                    )}`}
-                  >
-                    <StatusIcon status={application.status} />
-                    {statusLabel(application.status)}
-                  </div>
-
-                  <ChevronRight size={17} />
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="application-details-panel">
-          {!selected ? (
-            <div className="details-empty">
-              <UserRound size={42} />
-
-              <h2>Select an application</h2>
-
-              <p>
-                Select an application from the list to inspect
-                and configure the request.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="details-header">
+          {selected && (
+            <article className="application-review-panel">
+              <header>
                 <div>
-                  <div className="system-kicker">
-                    APPLICATION RECORD
-                  </div>
-
-                  <h2>
-                    {selected.full_name || "Unnamed applicant"}
-                  </h2>
-
-                  <p>
-                    {selected.enrollment_number ||
-                      "No enrollment number"}
-                  </p>
+                  <h2>{selected.full_name}</h2>
+                  <p>{selected.email}</p>
                 </div>
-
-                <div
-                  className={`large-status ${statusClass(
-                    selected.status
-                  )}`}
-                >
+                <span className={`application-status application-status-${statusClass(selected.status)}`}>
                   <StatusIcon status={selected.status} />
                   {statusLabel(selected.status)}
-                </div>
-              </div>
+                </span>
+              </header>
 
-              <div className="details-grid">
-                <div>
-                  <label>Institution</label>
-                  <strong>
-                    {selected.institution_name ||
-                      "Institution information unavailable"}
-                  </strong>
-                </div>
-
-                <div>
-                  <label>Current department</label>
-                  <strong>
-                    {selected.branch_name || "Not assigned"}
-                  </strong>
-                </div>
-
-                <div>
-                  <label>Enrollment number</label>
-                  <strong>
-                    {selected.enrollment_number ||
-                      "Not available"}
-                  </strong>
-                </div>
-
-                <div>
-                  <label>Mobile number</label>
-                  <strong>
-                    {selected.mobile_number || "Not available"}
-                  </strong>
-                </div>
-
-                <div>
-                  <label>Email</label>
-                  <strong>
-                    {selected.email || "Not available"}
-                  </strong>
-                </div>
-
-                <div>
-                  <label>Graduation date</label>
-                  <strong>
-                    {formatDate(selected.graduation_date)}
-                  </strong>
-                </div>
-
-                <div>
-                  <label>Application submitted</label>
-                  <strong>
-                    {formatDateTime(selected.created_at)}
-                  </strong>
-                </div>
-              </div>
+              <dl>
+                <div><dt>Enrollment number</dt><dd>{selected.enrollment_number || "Not provided"}</dd></div>
+                <div><dt>Mobile</dt><dd>{selected.mobile_number || "Not provided"}</dd></div>
+                <div><dt>Institution</dt><dd>{selected.institution_name || "Not provided"}</dd></div>
+                <div><dt>Branch</dt><dd>{selected.branch_name || "Not provided"}</dd></div>
+                <div><dt>Graduation date</dt><dd>{formatDate(selected.graduation_date)}</dd></div>
+                <div><dt>Submitted</dt><dd>{formatDateTime(selected.created_at)}</dd></div>
+              </dl>
 
               {isReviewable(selected.status) && (
                 <>
-                  <div className="application-configuration">
-                    <div className="configuration-heading">
-                      <div>
-                        <div className="system-kicker">
-                          ACCESS CONFIGURATION
-                        </div>
-
-                        <h3>
-                          Department &amp; permissions
-                        </h3>
-
-                        <p>
-                          Choose the department and the exact
-                          access this admin should receive.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="configuration-field">
-                      <label htmlFor="application-department">
-                        Department / Branch
-                      </label>
-
+                  <section className="application-configuration">
+                    <h3>Access configuration</h3>
+                    <label>
+                      Department / branch
                       <select
-                        id="application-department"
                         value={departmentId}
                         onChange={(event) => {
                           setDepartmentId(event.target.value);
                           setConfigurationSaved(false);
-                          setError("");
                         }}
-                        disabled={
-                          configurationLoading ||
-                          configurationSaving ||
-                          actionLoading
-                        }
+                        disabled={configurationLoading || configurationSaving || actionLoading}
                       >
-                        <option value="">
-                          Select a department
-                        </option>
-
-                        {availableBranches.map((branch) => (
-                          <option
-                            key={branch.id}
-                            value={branch.id}
-                          >
-                            {branch.name}
-                            {branch.code
-                              ? ` (${branch.code})`
-                              : ""}
+                        <option value="">Select department</option>
+                        {(selectedInstitution?.branches ?? []).map((branch) => (
+                          <option key={branch.id} value={branch.id} disabled={branch.active === false}>
+                            {branch.name}{branch.code ? ` (${branch.code})` : ""}
                           </option>
                         ))}
                       </select>
+                    </label>
 
-                      {configurationLoading && (
-                        <small>
-                          Loading institution departments…
-                        </small>
-                      )}
+                    <fieldset disabled={configurationSaving || actionLoading}>
+                      <legend>Permissions</legend>
+                      {ADMIN_PERMISSION_OPTIONS.map((permission) => (
+                        <label key={permission.code} className="permission-option">
+                          <input
+                            type="checkbox"
+                            checked={approvedPermissions.includes(permission.code)}
+                            onChange={(event) => {
+                              setApprovedPermissions((previous) =>
+                                event.target.checked
+                                  ? [...previous, permission.code]
+                                  : previous.filter((item) => item !== permission.code)
+                              );
+                              setConfigurationSaved(false);
+                            }}
+                          />
+                          <span>
+                            <strong>{permission.label}</strong>
+                            <small>{permission.description}</small>
+                          </span>
+                        </label>
+                      ))}
+                    </fieldset>
 
-                      {!configurationLoading &&
-                        selected.institution_id &&
-                        !selectedInstitution && (
-                          <small className="field-warning">
-                            Institution departments could not be
-                            matched. Confirm the institution API
-                            returns id, name, and branches.
-                          </small>
-                        )}
+                    <button
+                      type="button"
+                      onClick={() => void saveConfiguration()}
+                      disabled={configurationSaving || actionLoading || configurationLoading}
+                    >
+                      <Save size={16} />
+                      {configurationSaving ? "Saving…" : "Save configuration"}
+                    </button>
+                  </section>
 
-                      {!configurationLoading &&
-                        selectedInstitution &&
-                        availableBranches.length === 0 && (
-                          <small className="field-warning">
-                            No active departments were returned
-                            for this institution.
-                          </small>
-                        )}
-                    </div>
+                  <label className="application-rejection-reason">
+                    Rejection reason
+                    <textarea
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      rows={3}
+                      placeholder="Required when rejecting this application"
+                      disabled={actionLoading}
+                    />
+                  </label>
 
-                    <div className="permissions-heading">
-                      <div>
-                        <h4>Approved permissions</h4>
-
-                        <p>
-                          Select only the capabilities this
-                          administrator needs.
-                        </p>
-                      </div>
-
-                      <span className="permission-count">
-                        {approvedPermissions.length} selected
-                      </span>
-                    </div>
-
-                    <div className="permission-options">
-                      {ADMIN_PERMISSION_OPTIONS.map(
-                        (permission) => (
-                          <label
-                            className="permission-option"
-                            key={permission.code}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={approvedPermissions.includes(
-                                permission.code
-                              )}
-                              disabled={
-                                configurationSaving ||
-                                actionLoading
-                              }
-                              onChange={(event) => {
-                                setApprovedPermissions(
-                                  (previous) =>
-                                    event.target.checked
-                                      ? [
-                                          ...new Set([
-                                            ...previous,
-                                            permission.code,
-                                          ]),
-                                        ]
-                                      : previous.filter(
-                                          (code) =>
-                                            code !==
-                                            permission.code
-                                        )
-                                );
-
-                                setConfigurationSaved(false);
-                                setError("");
-                              }}
-                            />
-
-                            <span className="permission-copy">
-                              <strong>
-                                {permission.label}
-                              </strong>
-
-                              <small>
-                                {permission.description}
-                              </small>
-
-                              <code>{permission.code}</code>
-                            </span>
-                          </label>
-                        )
-                      )}
-                    </div>
-
-                    <div className="configuration-footer">
-                      <span
-                        className={
-                          configurationSaved
-                            ? "save-state saved"
-                            : "save-state"
-                        }
-                      >
-                        {configurationSaved
-                          ? "Configuration saved"
-                          : "Save configuration before accepting"}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="action-button save-configuration"
-                        onClick={() =>
-                          void saveConfiguration()
-                        }
-                        disabled={
-                          configurationLoading ||
-                          configurationSaving ||
-                          actionLoading
-                        }
-                      >
-                        <Save size={16} />
-
-                        {configurationSaving
-                          ? "Saving…"
-                          : "Save configuration"}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="application-action-area">
-                    <div className="action-warning">
-                      <AlertTriangle size={17} />
-
-                      <span>
-                        Acceptance requires a saved department
-                        and permission configuration.
-                      </span>
-                    </div>
-
-                    <div className="reason-box">
-                      <label htmlFor="application-review-note">
-                        Reason / administrative note
-                      </label>
-
-                      <textarea
-                        id="application-review-note"
-                        value={reason}
-                        onChange={(event) => {
-                          setReason(event.target.value);
-                          setError("");
-                        }}
-                        placeholder="Required for rejection or blocking…"
-                        disabled={actionLoading}
-                      />
-                    </div>
-
-                    <div className="application-actions">
-                      <button
-                        type="button"
-                        className="action-button accept"
-                        disabled={
-                          actionLoading ||
-                          configurationSaving ||
-                          configurationLoading
-                        }
-                        onClick={() =>
-                          void performAction("accept")
-                        }
-                      >
-                        <CheckCircle2 size={17} />
-
-                        {actionLoading
-                          ? "Processing…"
-                          : "Accept"}
-                      </button>
-
-                      <button
-                        type="button"
-                        className="action-button reject"
-                        disabled={
-                          actionLoading || configurationSaving
-                        }
-                        onClick={() =>
-                          void performAction("reject")
-                        }
-                      >
-                        <XCircle size={17} />
-                        Reject
-                      </button>
-
-                      <button
-                        type="button"
-                        className="action-button block"
-                        disabled={
-                          actionLoading || configurationSaving
-                        }
-                        onClick={() =>
-                          void performAction("block")
-                        }
-                      >
-                        <ShieldBan size={17} />
-                        Permanently block
-                      </button>
-                    </div>
-                  </div>
+                  <footer className="application-review-actions">
+                    <button
+                      type="button"
+                      onClick={() => void performAction("accept")}
+                      disabled={actionLoading || configurationSaving || configurationLoading}
+                    >
+                      <CheckCircle2 size={16} />
+                      {actionLoading ? "Processing…" : "Accept application"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void performAction("reject")}
+                      disabled={actionLoading || configurationSaving}
+                    >
+                      <XCircle size={16} />
+                      Reject application
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void performAction("block")}
+                      disabled={actionLoading || configurationSaving}
+                    >
+                      <ShieldBan size={16} />
+                      Block applicant
+                    </button>
+                  </footer>
                 </>
               )}
-
-              {selected.status === "ACCEPTED" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Application accepted</strong>
-
-                    <span>
-                      The applicant can continue through the
-                      administrator registration workflow.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "APPROVED" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Application approved</strong>
-
-                    <span>
-                      Registration must still be completed if
-                      required by the backend workflow.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status ===
-                "REGISTRATION_IN_PROGRESS" && (
-                <div className="completed-notice accepted">
-                  <Clock3 size={20} />
-
-                  <div>
-                    <strong>Registration in progress</strong>
-
-                    <span>
-                      The applicant is completing administrator
-                      registration.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status ===
-                "REGISTRATION_SUCCESSFUL" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Registration successful</strong>
-
-                    <span>
-                      The administrator registration workflow
-                      has completed successfully.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "ACTIVE" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Administrator active</strong>
-
-                    <span>
-                      This application is associated with an
-                      active administrator.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "REJECTED" && (
-                <div className="completed-notice rejected">
-                  <XCircle size={20} />
-
-                  <div>
-                    <strong>Application rejected</strong>
-
-                    <span>
-                      {selected.rejection_reason ||
-                        selected.review_comment ||
-                        "This application is no longer actionable."}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "BLOCKED" && (
-                <div className="completed-notice rejected">
-                  <ShieldBan size={20} />
-
-                  <div>
-                    <strong>Applicant blocked</strong>
-
-                    <span>
-                      This application is marked as blocked.
-                    </span>
-                  </div>
-                </div>
-              )}
-            </>
+            </article>
           )}
-        </section>
-      </div>
-    </div>
+        </div>
+      )}
+    </section>
   );
 }
