@@ -1,4 +1,4 @@
-import { findGuestSessions, findStudentActivity } from "./user-management.repository";
+import { findAllBranches, findGuestSessions, findStudentActivity } from "./user-management.repository";
 import { Response } from "express";
   
   import {
@@ -11,7 +11,23 @@ import { Response } from "express";
   } from "../../middleware/super-admin-auth.middleware";
   
   
-  export async function listStudents(
+  export async function listBranches(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) {
+      return res.status(401).json({ message: "Super Admin authentication required." });
+    }
+    const branches = await findAllBranches();
+    return res.status(200).json({ branches, count: branches.length });
+  } catch (error) {
+    console.error("Failed to load branches:", error);
+    return res.status(500).json({ message: "Failed to load branches." });
+  }
+}
+
+export async function listStudents(
     req: SuperAdminAuthenticatedRequest,
     res: Response
   ) {
