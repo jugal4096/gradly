@@ -155,6 +155,7 @@ export async function executeSecureLogin<T>(
   try {
     result = await verifyCredentials();
   } catch (error) {
+    if ((error as { skipFailedAttempt?: boolean })?.skipFailedAttempt) throw error;
     await handleFailedLogin(context, state);
     throw error;
   }
