@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3 } from "lucide-react";
+import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, UserRound, Settings } from "lucide-react";
 import "./AdminDashboard.css";
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
@@ -57,6 +57,8 @@ export default function AdminDashboard() {
     {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
     {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},
     {to:"/admin/department",label:"My assignment",icon:Building2},
+    {to:"/admin/profile",label:"My profile",icon:UserRound},
+    {to:"/admin/settings",label:"Settings",icon:Settings},
   ];
 
   return <main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"}>
