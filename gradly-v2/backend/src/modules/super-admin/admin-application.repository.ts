@@ -15,6 +15,7 @@ export interface ReviewApplicationInput {
 export interface SaveApplicationConfigurationInput {
   applicationId: string;
   superAdminId: string;
+  programId: string;
   branchId: string;
   approvedPermissions: string[];
 }
@@ -183,10 +184,11 @@ export async function saveApplicationConfiguration(
          ON p.id = b.program_id
        WHERE b.id = $1
          AND p.institution_id = $2
+         AND p.id = $3
          AND b.active = TRUE
          AND p.active = TRUE
        LIMIT 1`,
-      [input.branchId, application.institution_id]
+      [input.branchId, application.institution_id, input.programId]
     );
 
     if (branchResult.rowCount !== 1) {
