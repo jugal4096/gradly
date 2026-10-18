@@ -62,6 +62,11 @@ const controlNavigation = [
     icon: Send,
   },
   {
+    label: "Admin Subject Requests",
+    path: "/super-admin/admin-requests",
+    icon: ClipboardList,
+  },
+  {
     label: "Feedback",
     path: "/super-admin/feedback",
     icon: MessageSquare,
