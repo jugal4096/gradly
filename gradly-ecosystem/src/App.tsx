@@ -38,6 +38,7 @@ import SuperAdminAdmins from "./pages/super-admin/SuperAdminAdmins";
 import SuperAdminFeedback from "./pages/super-admin/SuperAdminFeedback";
 import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
 import SuperAdminSettings from "./pages/super-admin/SuperAdminSettings";
+import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRequests";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -162,6 +163,11 @@ function App() {
           <Route
             path="settings"
             element={<SuperAdminSettings />}
+          />
+
+          <Route
+            path="password-requests"
+            element={<SuperAdminPasswordRequests />}
           />
         </Route>
 
