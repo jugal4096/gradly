@@ -7,6 +7,7 @@ import {
 import { requireAdminPermission } from "../../middleware/permission.middleware";
 import { listAdminCurriculum } from "./admin-curriculum.controller";
 import { getAdminWorkspaceProfile } from "./admin.repository";
+import { createSubjectChangeRequest, listSubjectChangeRequests, listWorkspaceNotifications, markWorkspaceNotificationRead } from "./admin-workspace.controller";
 
 const router = Router();
 
@@ -35,6 +36,11 @@ router.get(
   authenticateAdminToken,
   listAdminCurriculum
 );
+
+router.get("/workspace-notifications", authenticateAdminToken, listWorkspaceNotifications);
+router.patch("/workspace-notifications/:notificationId/read", authenticateAdminToken, markWorkspaceNotificationRead);
+router.get("/subject-change-requests", authenticateAdminToken, listSubjectChangeRequests);
+router.post("/subject-change-requests", authenticateAdminToken, createSubjectChangeRequest);
 
 router.get(
   "/permission-test",
