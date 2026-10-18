@@ -12,6 +12,12 @@ import {
   executeSecureLogin,
 } from "../auth-security/login-security.service";
 
+export class AdminPasswordExpiredError extends Error {
+  public readonly code = "PASSWORD_EXPIRED";
+  public readonly skipFailedAttempt = true;
+  constructor() { super("Your password has expired. Submit a password-change request for Super Admin approval."); this.name = "AdminPasswordExpiredError"; }
+}
+
 interface AdminLoginContext {
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -83,6 +89,11 @@ export async function authenticateAdmin(
         });
 
         throw new Error("Invalid admin credentials.");
+      }
+
+      // Expired credentials are not counted as a wrong-password attempt.
+      if (admin.password_expires_at && new Date(admin.password_expires_at).getTime() <= Date.now()) {
+        throw new AdminPasswordExpiredError();
       }
 
       // Only active administrators may authenticate.
@@ -171,6 +182,9 @@ export async function authenticateAdmin(
       failedAttempts: loginResult.failedAttempts,
       attemptLimit: loginResult.attemptLimit,
       lockoutLevel: loginResult.lockoutLevel,
+      passwordExpiresAt: authenticatedAdmin.password_expires_at ?? null,
+      passwordChangeDue: Boolean(authenticatedAdmin.password_expires_at) &&
+        new Date(authenticatedAdmin.password_expires_at).getTime() - Date.now() <= 3 * 24 * 60 * 60 * 1000,
     },
   };
 }
