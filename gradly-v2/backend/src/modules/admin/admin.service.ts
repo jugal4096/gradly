@@ -152,6 +152,7 @@ export async function authenticateAdmin(
     adminCode: authenticatedAdmin.admin_code,
     role: authenticatedAdmin.role,
     institutionId: authenticatedAdmin.institution_id,
+    programId: authenticatedAdmin.program_id ?? null,
     branchId: authenticatedAdmin.branch_id,
   });
 
