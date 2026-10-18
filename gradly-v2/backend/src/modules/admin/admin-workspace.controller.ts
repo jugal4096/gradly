@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { pool } from "../../config/database";
 import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.middleware";
 
-const allowedRequestTypes = new Set(["ADD_SUBJECT", "REMOVE_SUBJECT", "MODIFY_SUBJECT"]);
+const allowedRequestTypes = new Set(["ADD_SUBJECT", "REMOVE_SUBJECT", "MODIFY_SUBJECT", "RENAME_CURRICULUM", "DELETE_CURRICULUM"]);
 
 export async function listWorkspaceNotifications(req: AdminAuthenticatedRequest, res: Response) {
   const adminId = req.admin?.adminId;
@@ -55,9 +55,9 @@ export async function createSubjectChangeRequest(req: AdminAuthenticatedRequest,
   if (!admin?.adminId || !admin.institutionId || !admin.programId || !admin.branchId) {
     return res.status(403).json({ success: false, message: "A complete institution, program and department assignment is required to submit curriculum requests." });
   }
-  const { requestType, reason, proposedChanges, curriculumSubjectId } = req.body ?? {};
+  const { requestType, reason, proposedChanges, curriculumSubjectId, curriculumId } = req.body ?? {};
   if (typeof requestType !== "string" || !allowedRequestTypes.has(requestType)) {
-    return res.status(400).json({ success: false, message: "Choose ADD_SUBJECT, REMOVE_SUBJECT or MODIFY_SUBJECT." });
+    return res.status(400).json({ success: false, message: "Choose a supported subject or curriculum change request." });
   }
   if (typeof reason !== "string" || reason.trim().length < 10 || reason.trim().length > 2000) {
     return res.status(400).json({ success: false, message: "Provide a reason between 10 and 2,000 characters." });
@@ -70,9 +70,25 @@ export async function createSubjectChangeRequest(req: AdminAuthenticatedRequest,
     let scopedSemesterId: string | null = null;
     let scopedSubjectId: string | null = null;
 
-    // Never trust subject or curriculum IDs supplied by the browser. For change/removal
-    // requests, resolve the selected subject again inside the authenticated Admin scope.
-    if (requestType !== "ADD_SUBJECT") {
+    // Resolve every submitted ID on the server and enforce the Admin's assigned scope.
+    if (requestType === "RENAME_CURRICULUM" || requestType === "DELETE_CURRICULUM") {
+      if (typeof curriculumId !== "string" || !curriculumId) {
+        return res.status(400).json({ success: false, message: "Select a curriculum to change." });
+      }
+      const curriculum = await pool.query(
+        `SELECT id FROM public.curricula
+         WHERE id = $1 AND institution_id = $2 AND program_id = $3 AND branch_id = $4
+         LIMIT 1`,
+        [curriculumId, admin.institutionId, admin.programId, admin.branchId]
+      );
+      if (!curriculum.rowCount) {
+        return res.status(403).json({ success: false, message: "That curriculum is outside your assigned department." });
+      }
+      scopedCurriculumId = curriculum.rows[0].id;
+      if (requestType === "RENAME_CURRICULUM" && typeof proposedChanges.curriculumName !== "string") {
+        return res.status(400).json({ success: false, message: "Provide the proposed curriculum name." });
+      }
+    } else if (requestType !== "ADD_SUBJECT") {
       if (typeof curriculumSubjectId !== "string" || !curriculumSubjectId) {
         return res.status(400).json({ success: false, message: "Select a subject from your assigned curriculum." });
       }
