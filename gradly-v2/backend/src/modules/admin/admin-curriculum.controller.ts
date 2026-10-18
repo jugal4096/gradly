@@ -4,8 +4,8 @@ import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.midd
 
 export async function listAdminCurriculum(req: AdminAuthenticatedRequest, res: Response) {
   const admin = req.admin;
-  if (!admin?.adminId || !admin.institutionId) {
-    return res.status(401).json({ success: false, message: "Admin identity or institution assignment is missing." });
+  if (!admin?.adminId || !admin.institutionId || !admin.programId || !admin.branchId) {
+    return res.status(401).json({ success: false, message: "Admin identity, program, or department assignment is missing. Ask Super Admin to complete your assignment." });
   }
 
   try {
@@ -46,8 +46,8 @@ export async function listAdminCurriculum(req: AdminAuthenticatedRequest, res: R
        LEFT JOIN public.academic_years ay ON ay.id = c.academic_year_id
        LEFT JOIN public.grading_systems gs ON gs.id = c.grading_system_id
        WHERE c.institution_id = $1
-         AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
-         AND ($3::uuid IS NULL OR c.program_id = $3::uuid)
+         AND c.branch_id = $2::uuid
+         AND c.program_id = $3::uuid
        ORDER BY p.name, b.name, sc.name, sem.semester_number, cs.course_code
        LIMIT 5000`,
       [admin.institutionId, admin.branchId || null, admin.programId || null]
