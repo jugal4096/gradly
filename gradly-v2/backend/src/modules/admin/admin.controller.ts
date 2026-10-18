@@ -101,7 +101,7 @@ export async function loginAdmin(
     if (error instanceof LoginLockedError) {
       return res.status(423).json({
         message:
-          "Too many unsuccessful login attempts. Your admin account is temporarily locked.",
+          "Too many unsuccessful login attempts. Your Admin account is blocked for 12 hours.",
         lockedUntil:
           error.lockedUntil.toISOString(),
       });
