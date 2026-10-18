@@ -601,3 +601,25 @@ html.sa-compact-tables .super-admin-page table td {
   padding-top: 8px !important;
   padding-bottom: 8px !important;
 }
+
+
+/* Cohesive purple Super Admin application shell */
+.super-admin-shell { background: #faf8ff; color: #24183f; }
+.super-admin-topbar { background: #fff; border-bottom-color: #e6def7; box-shadow: 0 5px 24px #39216b08; }
+.brand-mark { background: linear-gradient(145deg,#9b7afa,#6840d4); border-color: #6840d4; box-shadow: 0 5px 14px #7047df30; border-radius: 9px; }
+.brand-product { color: #8877ad; }
+.system-path { color: #796c98; }
+.topbar-status { color: #6842c7; }
+.status-light { background: #8b5cf6; box-shadow: 0 0 0 3px #eee7ff; }
+.super-admin-sidebar { background: linear-gradient(180deg,#f7f3ff,#f1ebff); border-right-color: #e3d8fa; box-shadow: none; }
+.sidebar-heading { color: #8a78b4; }
+.sidebar-link { border-radius: 10px; }
+.sidebar-link:hover, .sidebar-link-active { color: #6842c7; background: #e9e0ff; }
+.sidebar-link-active { box-shadow: inset 3px 0 #8058e8; }
+.sidebar-arrow { color: #a28bcf; }
+.sidebar-logout { border-color: #e2d7fb; color: #6842c7; background: #fff; border-radius: 10px; }
+.sidebar-logout:hover { border-color: #bba7f5; background: #f6f1ff; }
+.content-system-strip { border-color: #e5dcf8; background: #fff; }
+.system-status-value { color: #6842c7; background: #f0eaff; }
+.super-admin-page { background: transparent; }
+.super-admin-footer { border-top-color: #e5dcf8; color: #8a7ba8; background: #faf8ff; }
