@@ -51,7 +51,7 @@ export default function AdminWorkspacePage(){
   const semesters=useMemo(()=>Array.from(new Set(courses.map(c=>clean(c.semesterName||c.semester)).filter(Boolean))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),[courses]);
   const filteredCourses=useMemo(()=>courses.filter(c=>(scheme==="ALL"||clean(c.scheme)===scheme)&&(semester==="ALL"||clean(c.semesterName||c.semester)===semester)&&(!search.trim()||[c.name,c.code,c.scheme,c.semester,c.branch].map(clean).join(" ").toLowerCase().includes(search.trim().toLowerCase()))),[courses,scheme,semester,search]);
   const unread=notifications.filter(n=>!n.readAt).length;
-  const nav=[{to:"/admin/dashboard",label:"Overview",icon:Layers3},{to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},{to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:requests.filter(r=>r.status==="PENDING").length},{to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},{to:"/admin/department",label:"My assignment",icon:Building2}];
+  const nav: {to:string;label:string;icon:typeof Layers3;badge?:number}[]=[{to:"/admin/dashboard",label:"Overview",icon:Layers3},{to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},{to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:requests.filter(r=>r.status==="PENDING").length},{to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},{to:"/admin/department",label:"My assignment",icon:Building2}];
 
   async function submitRequest(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setError("");setNotice("");
