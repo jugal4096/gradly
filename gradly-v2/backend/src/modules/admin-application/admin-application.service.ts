@@ -130,7 +130,7 @@ export async function submitAdminApplication(
 
   if (duplicate) {
     throw new ApplicationError(
-      `You already have a ${duplicate.status.toLowerCase()} application for this branch.`,
+      `This Firebase account has already submitted its one allowed admin application (current status: ${duplicate.status.toLowerCase()}).`,
       409
     );
   }
