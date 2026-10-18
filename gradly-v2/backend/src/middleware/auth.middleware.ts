@@ -6,6 +6,7 @@ export interface AuthenticatedRequest extends Request {
     uid: string;
     email?: string;
     name?: string;
+    emailVerified?: boolean;
   };
 }
 
@@ -31,6 +32,7 @@ export async function authenticateFirebaseToken(
       uid: decodedToken.uid,
       email: decodedToken.email,
       name: decodedToken.name,
+      emailVerified: decodedToken.email_verified === true,
     };
 
     next();
