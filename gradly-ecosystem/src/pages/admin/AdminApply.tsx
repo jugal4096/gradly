@@ -448,70 +448,85 @@ export default function AdminApply() {
                 </button>
               </section>
 
-              <section className="success-card">
-                <div className="success-kicker"><ShieldCheck size={16} /> REQUEST ADMINISTRATOR ACCESS</div>
-                <h2>Application details</h2>
-                <p className="success-description">Fields marked with * are required. Use accurate academic and contact details so your request can be verified.</p>
+              {loadingApplications ? (
+                <section className="success-card"><p className="success-description">Checking whether this account has already submitted an application…</p></section>
+              ) : applications.length > 0 ? (
+                <section className="success-card existing-application-notice">
+                  <div className="success-kicker"><ShieldCheck size={16} /> APPLICATION ALREADY SUBMITTED</div>
+                  <h2>You’ve already applied</h2>
+                  <p className="success-description">One Firebase account can submit only one administrator application. You cannot submit another application from this account, even if the existing application is rejected. Track its status below.</p>
+                  <div className="existing-application-summary">
+                    <span className={`application-status-pill status-${applications[0].status.toLowerCase()}`}>{humanizeStatus(applications[0].status)}</span>
+                    <p><strong>Application ID:</strong> {applications[0].id}</p>
+                    <p><strong>Submitted:</strong> {formatDate(applications[0].created_at)}</p>
+                  </div>
+                  <button className="admin-apply-text-button" type="button" onClick={() => void loadApplications(user)} disabled={loadingApplications}><RefreshCw size={15} /> Refresh application status</button>
+                </section>
+              ) : (
+                <section className="success-card">
+                  <div className="success-kicker"><ShieldCheck size={16} /> REQUEST ADMINISTRATOR ACCESS</div>
+                  <h2>Application details</h2>
+                  <p className="success-description">Fields marked with * are required. Use accurate academic and contact details so your request can be verified.</p>
 
-                <form onSubmit={handleSubmit}>
-                  <div className="form-grid">
-                    <div className="form-field">
-                      <label htmlFor="app-full-name">Full name *</label>
-                      <input id="app-full-name" value={form.full_name} onChange={(event) => updateField("full_name", event.target.value)} autoComplete="name" maxLength={120} required />
+                  <form onSubmit={handleSubmit}>
+                    <div className="form-grid">
+                      <div className="form-field">
+                        <label htmlFor="app-full-name">Full name *</label>
+                        <input id="app-full-name" value={form.full_name} onChange={(event) => updateField("full_name", event.target.value)} autoComplete="name" maxLength={120} required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-email">Google account email</label>
+                        <input id="app-email" value={user.email ?? ""} readOnly aria-readonly="true" />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-institution">Institution *</label>
+                        <select id="app-institution" value={form.institution_id} onChange={(event) => updateField("institution_id", event.target.value)} required disabled={loadingInstitutions}>
+                          <option value="">{loadingInstitutions ? "Loading institutions…" : "Select institution"}</option>
+                          {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-branch">Branch / department *</label>
+                        <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.institution_id || availableBranches.length === 0}>
+                          <option value="">Select branch</option>
+                          {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-enrollment">Enrollment / roll number *</label>
+                        <input id="app-enrollment" value={form.enrollment_number} onChange={(event) => updateField("enrollment_number", event.target.value)} autoComplete="off" maxLength={80} required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-mobile">Mobile number *</label>
+                        <input id="app-mobile" type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number" value={form.mobile_number} onChange={(event) => updateField("mobile_number", event.target.value.replace(/\D/g, "").slice(0, 10))} autoComplete="tel" maxLength={10} required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-qualification">Qualification</label>
+                        <input id="app-qualification" value={form.qualification} onChange={(event) => updateField("qualification", event.target.value)} maxLength={100} placeholder="e.g. B.Tech, M.Tech" />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-graduation-date">Expected / actual graduation date *</label>
+                        <input id="app-graduation-date" type="date" value={form.graduation_date} onChange={(event) => updateField("graduation_date", event.target.value)} min={new Date().toISOString().slice(0, 10)} required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-reason">Why are you applying?</label>
+                        <textarea id="app-reason" value={form.reason} onChange={(event) => updateField("reason", event.target.value)} rows={3} maxLength={1500} placeholder="Briefly describe your responsibilities or reason for requesting access." />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-note">Additional note</label>
+                        <textarea id="app-note" value={form.additional_note} onChange={(event) => updateField("additional_note", event.target.value)} rows={3} maxLength={1500} placeholder="Anything else the review team should know (optional)." />
+                      </div>
                     </div>
-                    <div className="form-field">
-                      <label htmlFor="app-email">Google account email</label>
-                      <input id="app-email" value={user.email ?? ""} readOnly aria-readonly="true" />
+                    <div className="form-footer">
+                      <p>Your request remains pending until reviewed. Submitting does not create an Admin account.</p>
+                      <button className="system-button" type="submit" disabled={submitting || loadingInstitutions || institutions.length === 0}>
+                        {submitting ? "Submitting application…" : "Submit application"}
+                      </button>
                     </div>
-                    <div className="form-field">
-                      <label htmlFor="app-institution">Institution *</label>
-                      <select id="app-institution" value={form.institution_id} onChange={(event) => updateField("institution_id", event.target.value)} required disabled={loadingInstitutions}>
-                        <option value="">{loadingInstitutions ? "Loading institutions…" : "Select institution"}</option>
-                        {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-branch">Branch / department *</label>
-                      <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.institution_id || availableBranches.length === 0}>
-                        <option value="">Select branch</option>
-                        {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-enrollment">Enrollment / roll number *</label>
-                      <input id="app-enrollment" value={form.enrollment_number} onChange={(event) => updateField("enrollment_number", event.target.value)} autoComplete="off" maxLength={80} required />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-mobile">Mobile number *</label>
-                      <input id="app-mobile" type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number" value={form.mobile_number} onChange={(event) => updateField("mobile_number", event.target.value.replace(/\D/g, "").slice(0, 10))} autoComplete="tel" maxLength={10} required />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-qualification">Qualification</label>
-                      <input id="app-qualification" value={form.qualification} onChange={(event) => updateField("qualification", event.target.value)} maxLength={100} placeholder="e.g. B.Tech, M.Tech" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-graduation-date">Expected / actual graduation date *</label>
-                      <input id="app-graduation-date" type="date" value={form.graduation_date} onChange={(event) => updateField("graduation_date", event.target.value)} min={new Date().toISOString().slice(0, 10)} required />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-reason">Why are you applying?</label>
-                      <textarea id="app-reason" value={form.reason} onChange={(event) => updateField("reason", event.target.value)} rows={3} maxLength={1500} placeholder="Briefly describe your responsibilities or reason for requesting access." />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="app-note">Additional note</label>
-                      <textarea id="app-note" value={form.additional_note} onChange={(event) => updateField("additional_note", event.target.value)} rows={3} maxLength={1500} placeholder="Anything else the review team should know (optional)." />
-                    </div>
-                  </div>
-                  <div className="form-footer">
-                    <p>{applications.length > 0 ? "This Google account has already submitted an admin application. One account can submit only one request; track its status below." : "Your request remains pending until reviewed. Submitting does not create an Admin account."}</p>
-                    <button className="system-button" type="submit" disabled={submitting || loadingInstitutions || institutions.length === 0 || applications.length > 0}>
-                      {applications.length > 0 ? "Application already submitted" : submitting ? "Submitting application…" : "Submit application"}
-                    </button>
-                  </div>
-                </form>
-              </section>
+                  </form>
+                </section>
+              )}
             </>
-          )}
 
           {user && (
             <section id="password-change-panel" className="success-card password-request-panel">
