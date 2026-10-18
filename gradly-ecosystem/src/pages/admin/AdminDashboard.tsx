@@ -56,6 +56,8 @@ export default function AdminDashboard() {
     {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
     {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
     {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},
+    {to:"/admin/activity",label:"User activity",icon:Users},
+    {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
     {to:"/admin/department",label:"My assignment",icon:Building2},
     {to:"/admin/profile",label:"My profile",icon:UserRound},
     {to:"/admin/settings",label:"Settings",icon:Settings},
@@ -85,6 +87,8 @@ export default function AdminDashboard() {
           <Link to="/admin/curriculum" className="ad-quick-card"><span><BookOpen size={20}/></span><strong>Review curriculum</strong><p>Find subjects, semester allocation, credits and schemes in your assigned department.</p><b>Open curriculum <ArrowRight size={14}/></b></Link>
           <Link to="/admin/requests" className="ad-quick-card"><span><ClipboardList size={20}/></span><strong>Request a subject change</strong><p>Submit add, remove or modify proposals for Super Admin review.</p><b>Manage requests <ArrowRight size={14}/></b></Link>
           <Link to="/admin/notifications" className="ad-quick-card"><span><Bell size={20}/></span><strong>Super Admin inbox</strong><p>Read official announcements and action notes sent to your account.</p><b>View messages <ArrowRight size={14}/></b></Link>
+          <Link to="/admin/activity" className="ad-quick-card"><span><Users size={20}/></span><strong>Anonymous user activity</strong><p>View aggregate logged-in and guest counts for your assigned department, without personal data.</p><b>View counts <ArrowRight size={14}/></b></Link>
+          <Link to="/admin/feedback" className="ad-quick-card"><span><MessageSquareText size={20}/></span><strong>Student syllabus feedback</strong><p>Review student requests and forward proposed changes to Super Admin.</p><b>Review feedback <ArrowRight size={14}/></b></Link>
         </div></section>
         <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><span>Academic changes require Super Admin approval.</span></footer>
       </div>
