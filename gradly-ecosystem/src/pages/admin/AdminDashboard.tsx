@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Activity, ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3 } from "lucide-react";
+import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3 } from "lucide-react";
 import "./AdminDashboard.css";
 
-const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\\/+$/, "").replace(/\\/api$/i, "")) + "/api";
+const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
 type Profile = { admin_code?: string; adminCode?: string; full_name?: string; fullName?: string; role?: string; status?: string; institution_id?: string; institutionId?: string; institution_name?: string; institutionName?: string; program_id?: string | null; program_name?: string | null; branch_id?: string | null; branchId?: string | null; branch_name?: string | null; branchName?: string | null; };
 type Course = { id: string; code?: string; name?: string; credits?: number | string; semester?: number | string; scheme?: string | null; branch?: string | null; program?: string | null; };
 type RequestItem = { id: string; status: string; };
