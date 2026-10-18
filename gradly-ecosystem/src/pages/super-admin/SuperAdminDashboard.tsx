@@ -17,6 +17,8 @@ import {
   ScrollText,
   UserCog,
   MessageSquare,
+  MessageSquareText,
+  Send,
   Menu,
   LogOut,
   RefreshCw,
@@ -56,6 +58,11 @@ type Stats = {
   pendingCurriculumRequests: number;
   pendingAdminRequests: number;
   openFeedback: number;
+};
+
+type GovernanceCounts = {
+  pendingAdminSubjectRequests: number | null;
+  forwardedStudentFeedback: number | null;
 };
 
 type ActivityItem = {
@@ -339,6 +346,7 @@ export default function SuperAdminDashboard() {
 
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [governanceCounts, setGovernanceCounts] = useState<GovernanceCounts>({ pendingAdminSubjectRequests: null, forwardedStudentFeedback: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -427,6 +435,29 @@ export default function SuperAdminDashboard() {
             )
           : []
       );
+
+      // Governance queues are loaded independently so an optional queue outage
+      // does not prevent the core Super Admin dashboard from rendering.
+      const governanceHeaders = {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      const [requestsResponse, feedbackResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/super-admin/admin-subject-change-requests`, { headers: governanceHeaders }),
+        fetch(`${API_BASE_URL}/api/super-admin/student-syllabus-feedback`, { headers: governanceHeaders }),
+      ]);
+      const [requestsData, feedbackData] = await Promise.all([
+        requestsResponse.json().catch(() => ({})),
+        feedbackResponse.json().catch(() => ({})),
+      ]);
+      setGovernanceCounts({
+        pendingAdminSubjectRequests: requestsResponse.ok && Array.isArray(requestsData.requests)
+          ? requestsData.requests.filter((item: { status?: string }) => String(item.status).toUpperCase() === "PENDING").length
+          : null,
+        forwardedStudentFeedback: feedbackResponse.ok && Array.isArray(feedbackData.feedback)
+          ? feedbackData.feedback.length
+          : null,
+      });
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -1137,6 +1168,44 @@ export default function SuperAdminDashboard() {
                   </button>
                 );
               })}
+            </div>
+          </section>
+
+          <section id="sd-academic-governance" className="sd-section sd-anchor-section">
+            <div className="sd-section-heading">
+              <div>
+                <span className="sd-section-kicker">ADMIN WORKSPACE UPDATES</span>
+                <h2>Academic governance</h2>
+              </div>
+              <span className="sd-muted-note">Review Admin activity and student requests</span>
+            </div>
+            <div className="sd-governance-grid">
+              <button type="button" className="sd-governance-card" onClick={() => navigate("/super-admin/admin-requests")}>
+                <span className="sd-governance-icon governance-violet"><ClipboardList size={20} /></span>
+                <span className="sd-governance-copy">
+                  <strong>Admin subject requests</strong>
+                  <small>Approve or reject department-scoped curriculum proposals.</small>
+                </span>
+                <span className="sd-governance-count">{loading ? "—" : governanceCounts.pendingAdminSubjectRequests === null ? "—" : formatNumber(governanceCounts.pendingAdminSubjectRequests)}<small>pending</small></span>
+                <ArrowRight size={16} />
+              </button>
+              <button type="button" className="sd-governance-card" onClick={() => navigate("/super-admin/feedback")}>
+                <span className="sd-governance-icon governance-green"><MessageSquareText size={20} /></span>
+                <span className="sd-governance-copy">
+                  <strong>Forwarded student feedback</strong>
+                  <small>Review syllabus feedback forwarded by department Admins.</small>
+                </span>
+                <span className="sd-governance-count">{loading ? "—" : governanceCounts.forwardedStudentFeedback === null ? "—" : formatNumber(governanceCounts.forwardedStudentFeedback)}<small>in queue</small></span>
+                <ArrowRight size={16} />
+              </button>
+              <button type="button" className="sd-governance-card" onClick={() => navigate("/super-admin/admin-announcements")}>
+                <span className="sd-governance-icon governance-blue"><Send size={20} /></span>
+                <span className="sd-governance-copy">
+                  <strong>Message Admins</strong>
+                  <small>Broadcast announcements, policy updates and action reminders.</small>
+                </span>
+                <span className="sd-governance-action">Compose <ArrowRight size={14} /></span>
+              </button>
             </div>
           </section>
 
