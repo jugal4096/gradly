@@ -4,7 +4,7 @@ import { pool } from "../../config/database";
 
 import { authenticateAdmin } from "./admin.service";
 
-import { LoginLockedError } from "../auth-security/login-security.service";
+import { InvalidLoginAttemptError, LoginLockedError } from "../auth-security/login-security.service";
 import { AdminPasswordExpiredError } from "./admin.service";
 import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.middleware";
 
@@ -92,6 +92,10 @@ export async function loginAdmin(
 
     if (error instanceof AdminPasswordExpiredError) {
       return res.status(403).json({ code: "PASSWORD_EXPIRED", message: error.message });
+    }
+
+    if (error instanceof InvalidLoginAttemptError) {
+      return res.status(401).json({ code: "INVALID_CREDENTIALS", message: error.message, attemptsRemaining: error.attemptsRemaining });
     }
 
     if (error instanceof LoginLockedError) {
