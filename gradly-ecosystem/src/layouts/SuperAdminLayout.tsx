@@ -4,6 +4,7 @@ import {
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
+  KeyRound,
   LogOut,
   MessageSquare,
   ScrollText,
@@ -42,6 +43,11 @@ const controlNavigation = [
     label: "Applications",
     path: "/super-admin/applications",
     icon: ClipboardList,
+  },
+  {
+    label: "Password Requests",
+    path: "/super-admin/password-requests",
+    icon: KeyRound,
   },
   {
     label: "Feedback",
