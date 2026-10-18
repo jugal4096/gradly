@@ -30,7 +30,8 @@ export async function findUserByFirebaseUid(firebaseUid: string) {
 
 export async function findBranchInInstitution(
   branchId: string,
-  institutionId: string
+  institutionId: string,
+  programId: string
 ) {
   const result = await pool.query(
     `SELECT b.id
@@ -38,8 +39,9 @@ export async function findBranchInInstitution(
      JOIN public.programs p ON p.id = b.program_id
      WHERE b.id = $1
        AND p.institution_id = $2
+       AND p.id = $3
      LIMIT 1`,
-    [branchId, institutionId]
+    [branchId, institutionId, programId]
   );
 
   return result.rows[0] ?? null;
@@ -97,42 +99,19 @@ export async function findDuplicateApplication(
 export async function createApplication(input: CreateApplicationInput) {
   const result = await pool.query(
     `INSERT INTO public.admin_applications (
-       user_id,
-       institution_id,
-       branch_id,
-       full_name,
-       enrollment_number,
-       mobile_number,
-       email,
-       graduation_date,
-       qualification,
-       requested_role,
-       reason,
-       additional_note,
-       status,
-       created_at,
-       updated_at
-     )
-     VALUES (
-       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-       'DEPARTMENT_ADMIN', $11, $12, 'PENDING', NOW(), NOW()
-     )
-     RETURNING *`,
+       user_id, institution_id, program_id, branch_id, full_name, enrollment_number,
+       mobile_number, email, graduation_date, qualification, requested_role,
+       reason, additional_note, status, created_at, updated_at
+     ) VALUES (
+       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+       'PENDING', NOW(), NOW()
+     ) RETURNING *`,
     [
-      input.userId,
-      input.institutionId,
-      input.programId,
-      input.branchId,
-      input.fullName,
-      input.enrollmentNumber,
-      input.mobileNumber,
-      input.email,
-      input.graduationDate,
-      input.qualification ?? null,
-      input.reason ?? null,
+      input.userId, input.institutionId, input.programId, input.branchId,
+      input.fullName, input.enrollmentNumber, input.mobileNumber, input.email,
+      input.graduationDate, input.qualification ?? null, input.reason ?? null,
       input.additionalNote ?? null
     ]
   );
-
   return result.rows[0];
 }
