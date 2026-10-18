@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminChangePassword from "./pages/admin/AdminChangePassword";
+import StudentSyllabusFeedbackPage from "./pages/student/StudentSyllabusFeedbackPage";
 
 // =====================================================
 // SUPER ADMIN
@@ -112,6 +113,9 @@ function App() {
         <Route path="/admin/curriculum" element={<AdminWorkspacePage />} />
         <Route path="/admin/requests" element={<AdminWorkspacePage />} />
         <Route path="/admin/notifications" element={<AdminWorkspacePage />} />
+        <Route path="/admin/activity" element={<AdminWorkspacePage />} />
+        <Route path="/admin/feedback" element={<AdminWorkspacePage />} />
+        <Route path="/student/syllabus-feedback" element={<StudentSyllabusFeedbackPage />} />
         <Route path="/admin/department" element={<AdminWorkspacePage />} />
         <Route path="/admin/profile" element={<AdminWorkspacePage />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
