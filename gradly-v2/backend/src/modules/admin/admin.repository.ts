@@ -81,6 +81,6 @@ export async function getAdminPermissions(adminId: string) {
   return result.rows;
 }
 export async function getAdminWorkspaceProfile(adminId: string) {
-  const result = await pool.query(`SELECT a.id, a.admin_code, a.full_name, a.email, a.role, a.status, a.institution_id, i.name AS institution_name, COALESCE(a.program_id, b.program_id) AS program_id, p.name AS program_name, a.branch_id, b.name AS branch_name, a.password_expires_at FROM public.admins a JOIN public.institutions i ON i.id = a.institution_id LEFT JOIN public.branches b ON b.id = a.branch_id LEFT JOIN public.programs p ON p.id = COALESCE(a.program_id, b.program_id) WHERE a.id = $1 LIMIT 1`, [adminId]);
+  const result = await pool.query(`SELECT a.id, a.admin_code, a.full_name, a.email, a.role, a.status, a.institution_id, i.name AS institution_name, COALESCE(a.program_id, b.program_id) AS program_id, p.name AS program_name, a.branch_id, b.name AS branch_name, a.password_expires_at, a.graduation_completion_date, a.admin_expires_at FROM public.admins a JOIN public.institutions i ON i.id = a.institution_id LEFT JOIN public.branches b ON b.id = a.branch_id LEFT JOIN public.programs p ON p.id = COALESCE(a.program_id, b.program_id) WHERE a.id = $1 LIMIT 1`, [adminId]);
   return result.rows[0] ?? null;
 }
