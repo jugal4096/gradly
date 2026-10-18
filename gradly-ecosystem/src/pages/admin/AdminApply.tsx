@@ -9,6 +9,7 @@ import {
   GraduationCap,
   LogOut,
   RefreshCw,
+  KeyRound,
   ShieldCheck,
 } from "lucide-react";
 import { auth, signInWithGoogle, signOutUser } from "../../config/firebase";
@@ -42,6 +43,8 @@ type Application = {
   created_at?: string;
   updated_at?: string;
 };
+
+type PasswordRequest = { id: string; admin_code: string; admin_email: string; status: string; created_at?: string; reviewed_at?: string | null; review_note?: string | null; completed_at?: string | null };
 
 type ApplicationForm = {
   institution_id: string;
@@ -96,6 +99,13 @@ export default function AdminApply() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [adminCode, setAdminCode] = useState("");
+  const [passwordRequests, setPasswordRequests] = useState<PasswordRequest[]>([]);
+  const [passwordRequestLoading, setPasswordRequestLoading] = useState(false);
+  const [passwordRequestSubmitting, setPasswordRequestSubmitting] = useState(false);
+  const [resettingRequestId, setResettingRequestId] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   const selectedInstitution = useMemo(
     () => institutions.find((institution) => institution.id === form.institution_id),
@@ -179,6 +189,82 @@ export default function AdminApply() {
       setApplications([]);
     }
   }, [user, loadApplications]);
+
+  const loadPasswordRequests = useCallback(async (currentUser: User) => {
+    setPasswordRequestLoading(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`${API_ROOT}/admin-password-requests/mine`, {
+        headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) throw new Error(result.message || "Could not load password requests.");
+      setPasswordRequests(Array.isArray(result.requests) ? result.requests : []);
+    } catch (caught) {
+      setError(messageFrom(caught, "Could not load password requests."));
+    } finally {
+      setPasswordRequestLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) void loadPasswordRequests(user);
+    else setPasswordRequests([]);
+  }, [user, loadPasswordRequests]);
+
+  async function requestPasswordChange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (!user) { setError("Sign in with the Google account linked to your Admin account."); return; }
+    if (!/^[A-Za-z0-9_-]{4,32}$/.test(adminCode.trim())) { setError("Enter your valid Admin ID."); return; }
+    setPasswordRequestSubmitting(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`${API_ROOT}/admin-password-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ admin_code: adminCode.trim() }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) throw new Error(result.message || "Could not submit password-change request.");
+      setNotice(result.message || "Request sent to Super Admin.");
+      setAdminCode("");
+      await loadPasswordRequests(user);
+    } catch (caught) {
+      setError(messageFrom(caught, "Could not submit password-change request."));
+      if (user) await loadPasswordRequests(user);
+    } finally {
+      setPasswordRequestSubmitting(false);
+    }
+  }
+
+  async function completePasswordChange(request: PasswordRequest) {
+    setError("");
+    setNotice("");
+    if (!user) return;
+    if (newPassword.length < 12 || newPassword.length > 128) { setError("New password must contain 12–128 characters."); return; }
+    if (newPassword !== confirmNewPassword) { setError("The new passwords do not match."); return; }
+    setResettingRequestId(request.id);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`${API_ROOT}/admin-password-requests/${encodeURIComponent(request.id)}/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) throw new Error(result.message || "Could not update password.");
+      setNotice(result.message || "Password updated successfully.");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      await loadPasswordRequests(user);
+    } catch (caught) {
+      setError(messageFrom(caught, "Could not update password."));
+    } finally {
+      setResettingRequestId("");
+    }
+  }
 
   async function handleGoogleSignIn() {
     setError("");
@@ -291,7 +377,7 @@ export default function AdminApply() {
     <main className="admin-apply-page">
       <header className="admin-header">
         <div className="brand">
-          <span className="brand-mark">G</span>
+          <img className="brand-logo" src="/logo.svg" alt="Gradly" onError={(event) => { const image = event.currentTarget; if (image.dataset.fallback === "1") { image.style.display = "none"; return; } image.dataset.fallback = "1"; image.src = "/gradly-logo.png"; }} />
           <div>
             <div className="brand-name">GRADLY</div>
             <div className="brand-subtitle">Institution administration</div>
@@ -409,14 +495,40 @@ export default function AdminApply() {
                     </div>
                   </div>
                   <div className="form-footer">
-                    <p>Your request will remain pending until reviewed. Submitting this form does not create an Admin account.</p>
-                    <button className="system-button" type="submit" disabled={submitting || loadingInstitutions || institutions.length === 0}>
-                      {submitting ? "Submitting application…" : "Submit application"}
+                    <p>{applications.length > 0 ? "This Google account has already submitted an admin application. One account can submit only one request; track its status below." : "Your request remains pending until reviewed. Submitting does not create an Admin account."}</p>
+                    <button className="system-button" type="submit" disabled={submitting || loadingInstitutions || institutions.length === 0 || applications.length > 0}>
+                      {applications.length > 0 ? "Application already submitted" : submitting ? "Submitting application…" : "Submit application"}
                     </button>
                   </div>
                 </form>
               </section>
             </>
+          )}
+
+          {user && (
+            <section className="success-card password-request-panel">
+              <div className="success-kicker"><KeyRound size={16} /> ACCOUNT SECURITY</div>
+              <h2>Request a password change</h2>
+              <p className="success-description">If you are an active Gradly administrator, submit your Admin ID. Super Admin will review the request before you can set a new password. Your Google account email must match the email registered to your Admin account.</p>
+              <form onSubmit={requestPasswordChange}>
+                <div className="form-grid password-request-grid">
+                  <div className="form-field"><label htmlFor="password-request-admin-id">Admin ID *</label><input id="password-request-admin-id" value={adminCode} onChange={(event) => setAdminCode(event.target.value)} minLength={4} maxLength={32} autoComplete="username" required placeholder="Enter your issued Admin ID" /></div>
+                  <div className="form-field"><label>Verified Google account</label><input value={user.email ?? ""} readOnly aria-readonly="true" /></div>
+                </div>
+                <div className="form-footer"><p>Submitting creates a separate password-change request. It does not change your password until Super Admin approves it.</p><button className="system-button primary" type="submit" disabled={passwordRequestSubmitting}>{passwordRequestSubmitting ? "Sending request…" : "Request approval"}</button></div>
+              </form>
+              <div className="password-request-history">
+                <div className="application-status-heading"><div><p className="micro-label">PASSWORD REQUESTS</p><h3>Request status</h3></div><button className="admin-apply-text-button" type="button" onClick={() => void loadPasswordRequests(user)} disabled={passwordRequestLoading}><RefreshCw size={15} /> {passwordRequestLoading ? "Refreshing…" : "Refresh"}</button></div>
+                {passwordRequestLoading ? <p className="success-description">Loading requests…</p> : passwordRequests.length === 0 ? <p className="success-description">No password-change requests yet.</p> : passwordRequests.map((request) => (
+                  <article className="application-status-card" key={request.id}>
+                    <div className="application-status-heading"><span className={`application-status-pill status-${request.status.toLowerCase()}`}>{humanizeStatus(request.status)}</span><span className="application-date">Submitted {formatDate(request.created_at)}</span></div>
+                    <p><strong>Admin ID:</strong> {request.admin_code}</p>
+                    {request.review_note && <p className="status-description"><strong>Review note:</strong> {request.review_note}</p>}
+                    {request.status === "APPROVED" && <div className="password-reset-form"><p>Approved. Set a new password below to finish the change.</p><div className="form-grid password-request-grid"><div className="form-field"><label htmlFor={`new-password-${request.id}`}>New password</label><input id={`new-password-${request.id}`} type="password" minLength={12} maxLength={128} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></div><div className="form-field"><label htmlFor={`confirm-password-${request.id}`}>Confirm new password</label><input id={`confirm-password-${request.id}`} type="password" minLength={12} maxLength={128} autoComplete="new-password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required /></div></div><button className="system-button primary" type="button" disabled={resettingRequestId === request.id} onClick={() => void completePasswordChange(request)}>{resettingRequestId === request.id ? "Updating password…" : "Set new password"}</button></div>}
+                  </article>
+                ))}
+              </div>
+            </section>
           )}
 
           <section className="tracking-card application-history">
