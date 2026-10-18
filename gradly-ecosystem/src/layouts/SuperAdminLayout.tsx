@@ -1,6 +1,7 @@
 import {
   Activity,
   BellRing,
+  Send,
   BookOpen,
   ChevronRight,
   ClipboardList,
@@ -54,6 +55,11 @@ const controlNavigation = [
     label: "Security Alerts",
     path: "/super-admin/security-alerts",
     icon: BellRing,
+  },
+  {
+    label: "Admin Announcements",
+    path: "/super-admin/admin-announcements",
+    icon: Send,
   },
   {
     label: "Feedback",
