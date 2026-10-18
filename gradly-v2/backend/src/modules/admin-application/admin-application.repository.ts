@@ -67,8 +67,12 @@ export async function findApplicationsForUser(userId: string) {
        reviewed_at,
        rejection_reason,
        created_at,
-       updated_at
-     FROM public.admin_applications
+       updated_at,
+       p.name AS program_name,
+       b.name AS branch_name
+     FROM public.admin_applications aa
+     LEFT JOIN public.programs p ON p.id = aa.program_id
+     LEFT JOIN public.branches b ON b.id = aa.branch_id
      WHERE user_id = $1
      ORDER BY created_at DESC`,
     [userId]
