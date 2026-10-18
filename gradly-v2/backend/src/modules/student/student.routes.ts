@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { submitStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
 
 import {
   authenticateFirebaseToken,
@@ -14,6 +15,7 @@ const router = Router();
 router.use(authenticateFirebaseToken);
 
 router.get("/profile", getProfile);
+router.post("/syllabus-feedback", submitStudentSyllabusFeedback);
 
 router.post(
   "/profile",
