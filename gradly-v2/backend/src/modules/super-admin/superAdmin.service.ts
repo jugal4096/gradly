@@ -23,7 +23,7 @@ export async function authenticateSuperAdmin(
     throw new Error("Super Admin account is not active.");
   }
 
-  const login = await executeSecureLogin(
+  await executeSecureLogin(
     { principalType: "SUPER_ADMIN", principalId: superAdmin.id, ipAddress: context?.ipAddress, userAgent: context?.userAgent },
     async () => {
       const passwordValid = await bcrypt.compare(password, superAdmin.password_hash);
