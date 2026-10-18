@@ -133,3 +133,26 @@ export async function recordAuthenticatedActivity(firebaseUid: string) {
       branch_id = EXCLUDED.branch_id, last_seen_at = NOW()
   `, [firebaseUid]);
 }
+
+export async function listForwardedStudentSyllabusFeedback(req: import("express").Request, res: Response) {
+  const superAdminId = (req as any).superAdmin?.superAdminId;
+  if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  try {
+    const result = await pool.query(`
+      SELECT f.id, f.scheme_name AS "schemeName", f.semester_number AS "semesterNumber",
+        f.subject_name AS "subjectName", f.request_type AS "requestType", f.message,
+        f.status, f.admin_review_note AS "adminReviewNote", f.created_at AS "createdAt",
+        i.name AS "institutionName", p.name AS "programName", b.name AS "branchName"
+      FROM public.student_syllabus_feedback f
+      JOIN public.institutions i ON i.id = f.institution_id
+      LEFT JOIN public.programs p ON p.id = f.program_id
+      LEFT JOIN public.branches b ON b.id = f.branch_id
+      WHERE f.status = 'FORWARDED'
+      ORDER BY f.created_at DESC LIMIT 300
+    `);
+    return res.json({ success: true, feedback: result.rows });
+  } catch (error) {
+    console.error("Super Admin forwarded syllabus feedback load failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to load forwarded student syllabus feedback." });
+  }
+}
