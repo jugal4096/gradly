@@ -1,9 +1,9 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Bell, BookOpen, Building2, Check, CheckCheck, ClipboardList, GraduationCap, Layers3, LogOut, RefreshCw, Search, ShieldCheck, Send, CircleAlert, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bell, BookOpen, Building2, Check, CheckCheck, ClipboardList, Layers3, LogOut, RefreshCw, Search, ShieldCheck, Send, CircleAlert, X } from "lucide-react";
 import "./AdminDashboard.css";
 
-const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/,"").replace(/\\/api$/i,""))+"/api";
+const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 type Profile={admin_code?:string;adminCode?:string;full_name?:string;fullName?:string;role?:string;status?:string;institution_name?:string;institutionName?:string;institution_id?:string;program_id?:string|null;program_name?:string|null;branch_id?:string|null;branchId?:string|null;branch_name?:string|null;branchName?:string|null;graduation_completion_date?:string|null;admin_expires_at?:string|null;};
 type Course={id:string;code?:string;name?:string;credits?:number|string;courseType?:string;mandatory?:boolean;electiveGroup?:string|null;courseActive?:boolean;semester?:number|string;semesterName?:string|null;branch?:string|null;scheme?:string|null;program?:string|null;academicYear?:string|null;curriculumVersion?:number|string;};
 type RequestItem={id:string;requestType:string;reason:string;proposedChanges:Record<string,unknown>;status:string;reviewNote?:string|null;createdAt:string;reviewedAt?:string|null;};
