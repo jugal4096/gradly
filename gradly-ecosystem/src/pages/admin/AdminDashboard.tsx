@@ -61,7 +61,7 @@ export default function AdminDashboard() {
     {to:"/admin/settings",label:"Settings",icon:Settings},
   ];
 
-  return <main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"}>
+  return <main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
     <aside className="ad-sidebar">
       <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
       <p className="ad-sidebar-label">WORKSPACE</p>
