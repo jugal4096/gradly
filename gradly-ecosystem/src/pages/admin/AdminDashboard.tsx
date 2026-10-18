@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, BookOpen, Building2, CheckCircle2, CircleAlert, GraduationCap, LogOut, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { Activity, BookOpen, Building2, CheckCircle2, CircleAlert, GraduationCap, LogOut, RefreshCw, Search, ShieldCheck, Layers3 } from "lucide-react";
 import "./AdminDashboard.css";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "");
@@ -17,6 +17,8 @@ type AdminProfile = {
   institutionId?: string;
   institution_name?: string;
   institutionName?: string;
+  program_id?: string | null;
+  program_name?: string | null;
   branch_id?: string | null;
   branchId?: string | null;
   branch_name?: string | null;
@@ -47,6 +49,8 @@ export default function AdminDashboard() {
   const [scheme,setScheme]=useState("ALL");
   const [semester,setSemester]=useState("ALL");
   const [courseType,setCourseType]=useState("ALL");
+  const [workspaceView,setWorkspaceView]=useState<"overview"|"courses"|"structure">("overview");
+  const [program,setProgram]=useState("ALL");
 
   const logout=useCallback(()=>{
     localStorage.removeItem("gradly_admin_token");
@@ -80,26 +84,29 @@ export default function AdminDashboard() {
     const q=search.trim().toLowerCase();
     return courses.filter(row=>{
       if(branch!=="ALL"&&clean(row.branch)!==branch)return false;
+      if(program!=="ALL"&&clean(row.program)!==program)return false;
       if(scheme!=="ALL"&&clean(row.scheme)!==scheme)return false;
       if(semester!=="ALL"&&clean(row.semester)!==semester)return false;
       if(courseType!=="ALL"&&clean(row.courseType)!==courseType)return false;
       const searchable=[row.code,row.name,row.branch,row.scheme,row.program,row.semester,row.courseType,row.academicYear].map(clean).join(" ").toLowerCase();
       return !q||searchable.includes(q);
     });
-  },[courses,search,branch,scheme,semester,courseType]);
+  },[courses,search,branch,program,scheme,semester,courseType]);
 
   const branches=unique(courses,"branch");
+  const programs=unique(courses,"program");
   const schemes=unique(courses,"scheme");
   const semesters=unique(courses,"semester");
   const types=unique(courses,"courseType");
   const adminName=display(profile?.full_name||profile?.fullName||profile?.admin_code||profile?.adminCode);
   const institution=display(profile?.institution_name||profile?.institutionName||courses[0]?.institution);
   const assignedBranch=profile?.branch_name||profile?.branchName||"";
-  const reset=()=>{setSearch("");setBranch("ALL");setScheme("ALL");setSemester("ALL");setCourseType("ALL");};
+  const assignedProgram=profile?.program_name||"";
+  const reset=()=>{setSearch("");setBranch("ALL");setProgram("ALL");setScheme("ALL");setSemester("ALL");setCourseType("ALL");};
 
   return <main className="admin-dashboard">
     <header className="admin-dashboard-header">
-      <div className="admin-dashboard-brand"><div className="admin-dashboard-logo">G</div><div><strong>GRADLY</strong><span>Institution administration</span></div></div>
+      <div className="admin-dashboard-brand"><img className="admin-dashboard-logo-image" src="/gradly-ecosystem-logo.png" alt="Gradly" /><div><strong>GRADLY</strong><span>Institution administration</span></div></div>
       <div className="admin-dashboard-header-actions"><button type="button" className="admin-dashboard-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/>{loading?"Refreshing":"Refresh"}</button><button type="button" onClick={logout} className="admin-dashboard-logout"><LogOut size={16}/>Logout</button></div>
     </header>
     <div className="admin-dashboard-main">
