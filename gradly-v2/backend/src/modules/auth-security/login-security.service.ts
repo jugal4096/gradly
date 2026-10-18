@@ -29,6 +29,14 @@ export class LoginLockedError extends Error {
   }
 }
 
+export class InvalidLoginAttemptError extends Error {
+  public readonly attemptsRemaining: number;
+  constructor(attemptsRemaining: number) {
+    super(`Invalid credentials. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? "" : "s"} remaining before temporary lockout.`);
+    this.name = "InvalidLoginAttemptError";
+    this.attemptsRemaining = attemptsRemaining;
+  }
+}
 export interface LoginTransactionResult<T> {
   success: boolean;
   lockedUntil: Date | null;
@@ -158,7 +166,8 @@ export async function executeSecureLogin<T>(
   } catch (error) {
     if ((error as { skipFailedAttempt?: boolean })?.skipFailedAttempt) throw error;
     await handleFailedLogin(context, state);
-    throw error;
+    const attemptsRemaining = Math.max(0, 3 - state.failed_attempts - 1);
+    throw new InvalidLoginAttemptError(attemptsRemaining);
   }
 
   await handleSuccessfulLogin(context);
