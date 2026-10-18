@@ -39,12 +39,20 @@ export default function AdminWorkspacePage(){
       if(base.status===401){logout();return;}
       const me=await base.json().catch(()=>({}));if(!base.ok)throw new Error(me.message||"Could not verify Admin session.");
       setProfile(me.admin||me.data?.admin||null);
-      const [c,r,n]=await Promise.all([
+      const [c,r,n,a,fb]=await Promise.all([
         fetch(API_ROOT+"/admin/curriculum",{headers}),
         fetch(API_ROOT+"/admin/subject-change-requests",{headers}),
-        fetch(API_ROOT+"/admin/workspace-notifications",{headers})
+        fetch(API_ROOT+"/admin/workspace-notifications",{headers}),
+        fetch(API_ROOT+"/admin/privacy-activity",{headers}),
+        fetch(API_ROOT+"/admin/student-syllabus-feedback",{headers})
       ]);
-      const [cd,rd,nd]=await Promise.all([c.json().catch(()=>({})),r.json().catch(()=>({})),n.json().catch(()=>({}))]);
+      const [cd,rd,nd,ad,fbd]=await Promise.all([
+        c.json().catch(()=>({})),
+        r.json().catch(()=>({})),
+        n.json().catch(()=>({})),
+        a.json().catch(()=>({})),
+        fb.json().catch(()=>({}))
+      ]);
       if(c.ok)setCourses(Array.isArray(cd.curriculum)?cd.curriculum:[]);else if(page==="curriculum")throw new Error(cd.message||"Unable to load assigned curriculum.");
       if(r.ok)setRequests(Array.isArray(rd.requests)?rd.requests:[]);else if(page==="requests")throw new Error(rd.message||"Unable to load requests.");
       if(n.ok)setNotifications(Array.isArray(nd.notifications)?nd.notifications:[]);else if(page==="notifications")throw new Error(nd.message||"Unable to load notifications.");
