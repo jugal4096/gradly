@@ -16,6 +16,8 @@ export async function findAdminByCode(adminCode: string) {
       a.last_login_at,
       a.created_at,
       a.updated_at,
+      a.password_changed_at,
+      a.password_expires_at,
 
       i.name AS institution_name,
       b.name AS branch_name
