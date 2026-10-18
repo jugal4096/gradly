@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     {to:"/admin/department",label:"My assignment",icon:Building2},
   ];
 
-  return <main className="admin-dashboard">
+  return <main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"}>
     <aside className="ad-sidebar">
       <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
       <p className="ad-sidebar-label">WORKSPACE</p>
