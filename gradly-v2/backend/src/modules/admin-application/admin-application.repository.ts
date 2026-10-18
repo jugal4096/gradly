@@ -4,6 +4,7 @@ import { pool } from "../../config/database";
 export interface CreateApplicationInput {
   userId: string;
   institutionId: string;
+  programId: string;
   branchId: string;
   fullName: string;
   enrollmentNumber: string;
@@ -49,6 +50,7 @@ export async function findApplicationsForUser(userId: string) {
     `SELECT
        id,
        institution_id,
+       program_id,
        branch_id,
        full_name,
        enrollment_number,
@@ -112,13 +114,14 @@ export async function createApplication(input: CreateApplicationInput) {
        updated_at
      )
      VALUES (
-       $1, $2, $3, $4, $5, $6, $7, $8, $9,
-       'DEPARTMENT_ADMIN', $10, $11, 'PENDING', NOW(), NOW()
+       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+       'DEPARTMENT_ADMIN', $11, $12, 'PENDING', NOW(), NOW()
      )
      RETURNING *`,
     [
       input.userId,
       input.institutionId,
+      input.programId,
       input.branchId,
       input.fullName,
       input.enrollmentNumber,
