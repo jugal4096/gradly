@@ -442,22 +442,26 @@ export default function SuperAdminDashboard() {
         Accept: "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
-      const [requestsResponse, feedbackResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/super-admin/admin-subject-change-requests`, { headers: governanceHeaders }),
-        fetch(`${API_BASE_URL}/api/super-admin/student-syllabus-feedback`, { headers: governanceHeaders }),
-      ]);
-      const [requestsData, feedbackData] = await Promise.all([
-        requestsResponse.json().catch(() => ({})),
-        feedbackResponse.json().catch(() => ({})),
-      ]);
-      setGovernanceCounts({
-        pendingAdminSubjectRequests: requestsResponse.ok && Array.isArray(requestsData.requests)
-          ? requestsData.requests.filter((item: { status?: string }) => String(item.status).toUpperCase() === "PENDING").length
-          : null,
-        forwardedStudentFeedback: feedbackResponse.ok && Array.isArray(feedbackData.feedback)
-          ? feedbackData.feedback.length
-          : null,
-      });
+      try {
+        const [requestsResponse, feedbackResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/super-admin/admin-subject-change-requests`, { headers: governanceHeaders }),
+          fetch(`${API_BASE_URL}/api/super-admin/student-syllabus-feedback`, { headers: governanceHeaders }),
+        ]);
+        const [requestsData, feedbackData] = await Promise.all([
+          requestsResponse.json().catch(() => ({})),
+          feedbackResponse.json().catch(() => ({})),
+        ]);
+        setGovernanceCounts({
+          pendingAdminSubjectRequests: requestsResponse.ok && Array.isArray(requestsData.requests)
+            ? requestsData.requests.filter((item: { status?: string }) => String(item.status).toUpperCase() === "PENDING").length
+            : null,
+          forwardedStudentFeedback: feedbackResponse.ok && Array.isArray(feedbackData.feedback)
+            ? feedbackData.feedback.length
+            : null,
+        });
+      } catch {
+        setGovernanceCounts({ pendingAdminSubjectRequests: null, forwardedStudentFeedback: null });
+      }
     } catch (caught) {
       setError(getErrorMessage(caught));
     } finally {
@@ -742,6 +746,27 @@ export default function SuperAdminDashboard() {
             <button
               type="button"
               className="sd-side-link"
+              onClick={() => navigate("/super-admin/admin-requests")}
+            >
+              <ClipboardList size={18} />
+              <span>Admin subject requests</span>
+              {governanceCounts.pendingAdminSubjectRequests !== null && governanceCounts.pendingAdminSubjectRequests > 0 && (
+                <span className="sd-side-count">{governanceCounts.pendingAdminSubjectRequests}</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/admin-announcements")}
+            >
+              <Send size={18} />
+              <span>Message Admins</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
               onClick={() => navigate("/super-admin/audit-logs")}
             >
               <ScrollText size={18} />
@@ -927,6 +952,26 @@ export default function SuperAdminDashboard() {
                   >
                     <MessageSquare size={18} />
                     <span>Feedback</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/admin-requests")}
+                  >
+                    <ClipboardList size={18} />
+                    <span>Admin subject requests</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/admin-announcements")}
+                  >
+                    <Send size={18} />
+                    <span>Message Admins</span>
                     <ArrowRight size={15} />
                   </button>
 
