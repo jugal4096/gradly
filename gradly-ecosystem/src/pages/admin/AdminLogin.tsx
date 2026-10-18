@@ -18,11 +18,12 @@ export default function AdminLogin(){
   try{
    const response=await fetch(API_ROOT+"/admin/login",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({adminCode:adminCode.trim(),password})});
    const data=await response.json().catch(()=>({}));
-   if(!response.ok)throw new Error(data.message||"Unable to sign in. Check your Admin ID and password.");
+   if(!response.ok){if(data.code==="PASSWORD_EXPIRED"){navigate("/admin/apply?tab=password",{replace:true});return;}throw new Error(data.message||"Unable to sign in. Check your Admin ID and password.");}
    const token=data.token||data.data?.token;
    if(typeof token!=="string"||!token)throw new Error("The server did not return an admin session token.");
    localStorage.setItem("gradly_admin_token",token);
    setPassword("");
+   if(data.security?.passwordChangeDue){navigate("/admin/change-password",{replace:true});return;}
    navigate("/admin/dashboard",{replace:true});
   }catch(e){setError(e instanceof Error?e.message:"Unable to sign in. Please try again.");}
   finally{setLoading(false);}
