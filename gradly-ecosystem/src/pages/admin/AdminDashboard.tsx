@@ -1,140 +1,91 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Activity, BookOpen, Building2, CheckCircle2, CircleAlert, GraduationCap, LogOut, RefreshCw, Search, ShieldCheck, Layers3 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Activity, ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3 } from "lucide-react";
 import "./AdminDashboard.css";
 
-const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "");
-const API_ROOT = configuredApiBaseUrl.replace(/\/api$/i, "") + "/api";
+const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\\/+$/, "").replace(/\\/api$/i, "")) + "/api";
+type Profile = { admin_code?: string; adminCode?: string; full_name?: string; fullName?: string; role?: string; status?: string; institution_id?: string; institutionId?: string; institution_name?: string; institutionName?: string; program_id?: string | null; program_name?: string | null; branch_id?: string | null; branchId?: string | null; branch_name?: string | null; branchName?: string | null; };
+type Course = { id: string; code?: string; name?: string; credits?: number | string; semester?: number | string; scheme?: string | null; branch?: string | null; program?: string | null; };
+type RequestItem = { id: string; status: string; };
+type NotificationItem = { id: string; readAt?: string | null; };
 
-type AdminProfile = {
-  admin_code?: string;
-  adminCode?: string;
-  full_name?: string;
-  fullName?: string;
-  role?: string;
-  status?: string;
-  institution_id?: string;
-  institutionId?: string;
-  institution_name?: string;
-  institutionName?: string;
-  program_id?: string | null;
-  program_name?: string | null;
-  branch_id?: string | null;
-  branchId?: string | null;
-  branch_name?: string | null;
-  branchName?: string | null;
-};
-type Course = {
-  id: string; code?: string; name?: string; credits?: number | string; courseType?: string;
-  mandatory?: boolean; electiveGroup?: string | null; courseActive?: boolean;
-  semester?: number | string; semesterName?: string | null; branch?: string | null;
-  branchCode?: string | null; scheme?: string | null; schemeCode?: string | null;
-  program?: string | null; programLevel?: string | null; institution?: string | null;
-  academicYear?: string | null; gradingSystem?: string | null; curriculumVersion?: number | string;
-  curriculumStatus?: string; expectedSemesterCredits?: number | string | null;
-};
 const clean=(value:unknown)=>String(value??"").trim();
-const display=(value:unknown)=>clean(value)||"—";
-const creditTotal=(rows:Course[])=>rows.reduce((total,row)=>total+(Number(row.credits)||0),0);
-const unique=(rows:Course[],key:keyof Course)=>Array.from(new Set(rows.map(row=>clean(row[key])).filter(Boolean))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"}));
+const display=(value:unknown)=>clean(value)||"Not assigned";
+const unique=(rows:Course[],key:keyof Course)=>new Set(rows.map(row=>clean(row[key])).filter(Boolean)).size;
 
 export default function AdminDashboard() {
   const navigate=useNavigate();
-  const [profile,setProfile]=useState<AdminProfile|null>(null);
+  const [profile,setProfile]=useState<Profile|null>(null);
   const [courses,setCourses]=useState<Course[]>([]);
+  const [requests,setRequests]=useState<RequestItem[]>([]);
+  const [notifications,setNotifications]=useState<NotificationItem[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
-  const [search,setSearch]=useState("");
-  const [scheme,setScheme]=useState("ALL");
-  const [semester,setSemester]=useState("ALL");
-  const [courseType,setCourseType]=useState("ALL");
-  const [workspaceView,setWorkspaceView]=useState<"overview"|"courses"|"structure">("overview");
 
-  const logout=useCallback(()=>{
-    localStorage.removeItem("gradly_admin_token");
-    navigate("/admin/login",{replace:true});
-  },[navigate]);
-
+  const logout=useCallback(()=>{localStorage.removeItem("gradly_admin_token");navigate("/admin/login",{replace:true});},[navigate]);
   const load=useCallback(async()=>{
     const token=localStorage.getItem("gradly_admin_token");
     if(!token){navigate("/admin/login",{replace:true});return;}
     setLoading(true);setError("");
     try {
-      const headers={Authorization:`Bearer ${token}`,Accept:"application/json"};
-      const [meResponse,curriculumResponse]=await Promise.all([
-        fetch(API_ROOT+"/admin/me",{headers}),
-        fetch(API_ROOT+"/admin/curriculum",{headers})
-      ]);
-      if(meResponse.status===401||curriculumResponse.status===401){logout();return;}
-      const me=await meResponse.json().catch(()=>({}));
-      const curriculum=await curriculumResponse.json().catch(()=>({}));
-      if(!meResponse.ok)throw new Error(me.message||"Could not verify administrator session.");
-      if(!curriculumResponse.ok)throw new Error(curriculum.message||"Could not load curriculum.");
-      setProfile(me.admin||me.data?.admin||null);
-      setCourses(Array.isArray(curriculum.curriculum)?curriculum.curriculum:[]);
-    } catch(e) {setError(e instanceof Error?e.message:"Unable to load admin workspace.");}
-    finally {setLoading(false);}
+      const headers={Authorization:"Bearer "+token,Accept:"application/json"};
+      const endpoints=["/admin/me","/admin/curriculum","/admin/subject-change-requests","/admin/workspace-notifications"];
+      const responses=await Promise.all(endpoints.map(path=>fetch(API_ROOT+path,{headers})));
+      if(responses.some(r=>r.status===401)){logout();return;}
+      const data=await Promise.all(responses.map(r=>r.json().catch(()=>({}))));
+      if(!responses[0].ok)throw new Error(data[0].message||"Unable to verify your Admin session.");
+      setProfile(data[0].admin||data[0].data?.admin||null);
+      if(responses[1].ok)setCourses(Array.isArray(data[1].curriculum)?data[1].curriculum:[]);
+      if(responses[2].ok)setRequests(Array.isArray(data[2].requests)?data[2].requests:[]);
+      if(responses[3].ok)setNotifications(Array.isArray(data[3].notifications)?data[3].notifications:[]);
+      if(!responses[1].ok)throw new Error(data[1].message||"Unable to load your assigned curriculum.");
+    } catch(e){setError(e instanceof Error?e.message:"Unable to load the Admin workspace.");}
+    finally{setLoading(false);}
   },[logout,navigate]);
-
   useEffect(()=>{void load();},[load]);
 
-  const filtered=useMemo(()=>{
-    const q=search.trim().toLowerCase();
-    return courses.filter(row=>{
-      if(scheme!=="ALL"&&clean(row.scheme)!==scheme)return false;
-      if(semester!=="ALL"&&clean(row.semester)!==semester)return false;
-      if(courseType!=="ALL"&&clean(row.courseType)!==courseType)return false;
-      const searchable=[row.code,row.name,row.branch,row.scheme,row.program,row.semester,row.courseType,row.academicYear].map(clean).join(" ").toLowerCase();
-      return !q||searchable.includes(q);
-    });
-  },[courses,search,scheme,semester,courseType]);
-
-  const schemes=unique(courses,"scheme");
-  const semesters=unique(courses,"semester");
-  const types=unique(courses,"courseType");
   const adminName=display(profile?.full_name||profile?.fullName||profile?.admin_code||profile?.adminCode);
-  const institution=display(profile?.institution_name||profile?.institutionName||courses[0]?.institution);
-  const assignedBranch=profile?.branch_name||profile?.branchName||"";
-  const assignedProgram=profile?.program_name||"";
-  const reset=()=>{setSearch("");setScheme("ALL");setSemester("ALL");setCourseType("ALL");};
+  const institution=display(profile?.institution_name||profile?.institutionName||courses[0]?.branch);
+  const program=display(profile?.program_name||courses[0]?.program);
+  const department=display(profile?.branch_name||profile?.branchName||courses[0]?.branch);
+  const unread=notifications.filter(n=>!n.readAt).length;
+  const pending=requests.filter(r=>String(r.status).toUpperCase()==="PENDING").length;
+
+  const navItems=[
+    {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard,active:true},
+    {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
+    {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
+    {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},
+    {to:"/admin/department",label:"My assignment",icon:Building2},
+  ];
 
   return <main className="admin-dashboard">
-    <header className="admin-dashboard-header">
-      <div className="admin-dashboard-brand"><img className="admin-dashboard-logo-image" src="/gradly-ecosystem-logo.png" alt="Gradly" /><div><strong>GRADLY</strong><span>Institution administration</span></div></div>
-      <div className="admin-dashboard-header-actions"><button type="button" className="admin-dashboard-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/>{loading?"Refreshing":"Refresh"}</button><button type="button" onClick={logout} className="admin-dashboard-logout"><LogOut size={16}/>Logout</button></div>
-    </header>
-    <div className="admin-dashboard-main">
-      <section className="admin-dashboard-hero">
-        <div className="admin-dashboard-hero-icon"><ShieldCheck size={25}/></div>
-        <div className="admin-dashboard-hero-copy"><span className="admin-eyebrow">AUTHORIZED ADMIN WORKSPACE</span><h1>Welcome, {adminName}</h1><p>Your academic workspace is scoped to the program and department assigned by Gradly Super Admin.</p><div className="admin-assignment"><Building2 size={15}/><strong>{institution}</strong>{(assignedProgram||profile?.program_id)&&<><span>·</span><span>{display(assignedProgram||"Assigned program")}</span></>}{(assignedBranch||profile?.branch_id||profile?.branchId)&&<><span>·</span><span>{display(assignedBranch||"Assigned department")}</span></>}</div></div>
-        <span className="admin-session-pill"><CheckCircle2 size={14}/> Authenticated</span>
-      </section>
-      <nav className="admin-workspace-nav" aria-label="Admin workspace"><button type="button" className={workspaceView==="overview"?"active":""} onClick={()=>setWorkspaceView("overview")}><Activity size={16}/> Overview</button><button type="button" className={workspaceView==="courses"?"active":""} onClick={()=>setWorkspaceView("courses")}><BookOpen size={16}/> Course management</button><button type="button" className={workspaceView==="structure"?"active":""} onClick={()=>setWorkspaceView("structure")}><Layers3 size={16}/> Program &amp; department</button></nav>
-      {error&&<div className="admin-dashboard-alert" role="alert"><CircleAlert size={18}/><div><strong>Workspace data unavailable</strong><p>{error}</p><button type="button" onClick={()=>void load()}>Try again</button></div></div>}
-      {workspaceView!=="structure"&&<section className="admin-dashboard-stats">
-        <article><span>Courses in scope</span><strong>{loading?"—":courses.length}</strong><small>Returned for your assignment</small></article>
-        <article><span>Semesters</span><strong>{loading?"—":semesters.length}</strong><small>Within your assigned curriculum</small></article>
-        <article><span>Schemes</span><strong>{loading?"—":schemes.length}</strong><small>Available in loaded curriculum</small></article>
-        <article><span>Total listed credits</span><strong>{loading?"—":creditTotal(filtered).toLocaleString(undefined,{maximumFractionDigits:2})}</strong><small>Current filtered view</small></article>
-      </section>}
-      {workspaceView==="structure"&&<section className="admin-dashboard-panel admin-assignment-panel"><div className="admin-panel-heading"><div><span className="admin-eyebrow">ASSIGNED ACADEMIC SCOPE</span><h2><Layers3 size={20}/> Program &amp; department</h2><p>These assignments are controlled by Super Admin and define which curriculum records this workspace can access.</p></div><span className="admin-readonly-pill">Super Admin managed</span></div><div className="admin-structure-grid"><article><span>Institution</span><strong>{institution}</strong><small>Institution-wide boundary</small></article><article><span>Program</span><strong>{display(assignedProgram||"Assigned program")}</strong><small>{profile?.program_id?"Explicitly assigned program":"Derived from assigned curriculum"}</small></article><article><span>Department / branch</span><strong>{display(assignedBranch||"Assigned department")}</strong><small>{profile?.branch_id||profile?.branchId?"Department-scoped access":"Institution-level access"}</small></article><article><span>Role</span><strong>{display(profile?.role)}</strong><small>Capabilities are controlled by Super Admin-approved permissions.</small></article></div><p className="admin-dashboard-footnote"><ShieldCheck size={15}/> Contact Super Admin to change your program or department. Admins cannot expand their own access scope.</p></section>}
-      {workspaceView!=="structure"&&<section className="admin-dashboard-panel">
-        <div className="admin-panel-heading"><div><span className="admin-eyebrow">ACADEMIC CATALOGUE</span><h2><BookOpen size={20}/> {workspaceView==="courses"?"Course management":"Curriculum overview"}</h2><p>Review courses, credit values, semester allocation and curriculum status within your approved program and department.</p></div><span className="admin-readonly-pill">Scoped access</span></div>
-        <div className="admin-curriculum-toolbar"><label className="admin-curriculum-search"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search course, code, branch or scheme"/></label>
-          <label><span>Scheme</span><select value={scheme} onChange={e=>setScheme(e.target.value)}><option value="ALL">All schemes</option>{schemes.map(v=><option key={v}>{v}</option>)}</select></label>
-          <label><span>Semester</span><select value={semester} onChange={e=>setSemester(e.target.value)}><option value="ALL">All semesters</option>{semesters.map(v=><option key={v}>{v}</option>)}</select></label>
-          <label><span>Course type</span><select value={courseType} onChange={e=>setCourseType(e.target.value)}><option value="ALL">All types</option>{types.map(v=><option key={v}>{v}</option>)}</select></label>
-          <button type="button" className="admin-filter-reset" onClick={reset}>Reset</button>
-        </div>
-        <div className="admin-curriculum-summary"><span>{filtered.length} courses match</span><span>{filtered.filter(r=>r.mandatory===true).length} mandatory</span><span>{filtered.filter(r=>r.mandatory===false).length} non-mandatory</span><span>{filtered.filter(r=>r.courseActive===true).length} active</span></div>
-        <div className="admin-curriculum-table-wrap"><table className="admin-curriculum-table"><thead><tr><th>Course</th><th>Code</th><th>Branch</th><th>Scheme</th><th>Semester</th><th>Credits</th><th>Type</th><th>Requirement</th><th>Curriculum</th><th>Status</th></tr></thead><tbody>
-          {!loading&&!error&&filtered.length===0&&<tr><td colSpan={10} className="admin-curriculum-empty">No courses match the current filters.</td></tr>}
-          {filtered.map((row,index)=><tr key={row.id||row.code||index}><td><strong>{display(row.name)}</strong><small>{display(row.program)}</small></td><td><code>{display(row.code)}</code></td><td>{display(row.branch)}</td><td>{display(row.scheme)}</td><td>{display(row.semesterName||row.semester)}</td><td><strong>{display(row.credits)}</strong></td><td>{display(row.courseType)}</td><td>{row.mandatory===true?"Mandatory":row.mandatory===false?"Optional":display(row.electiveGroup)}</td><td><span>v{display(row.curriculumVersion)}</span><small>{display(row.academicYear)}</small></td><td><span className={row.courseActive?"admin-course-active":"admin-course-inactive"}>{row.courseActive?"Active":"Inactive"}</span><small>{display(row.curriculumStatus)}</small></td></tr>)}
-        </tbody></table>{loading&&<div className="admin-curriculum-empty">Loading institution curriculum…</div>}</div>
-        <p className="admin-dashboard-footnote"><GraduationCap size={15}/> Curriculum records are restricted by the program and department assigned by Super Admin. Editing and publishing require dedicated write permissions and backend workflows.</p>
-      </section>}
-      {workspaceView==="overview"&&<section className="admin-dashboard-secondary"><div><Activity size={18}/><div><strong>Academic review</strong><p>Use the filters to check semester coverage, credit values and course classifications.</p></div></div><div><ShieldCheck size={18}/><div><strong>Access boundary</strong><p>Your curriculum endpoint scopes results to your assigned institution and, when assigned, branch.</p></div></div></section>}
-      <footer className="admin-dashboard-footer">GRADLY · Institution administration · Protected workspace</footer>
-    </div>
+    <aside className="ad-sidebar">
+      <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
+      <p className="ad-sidebar-label">WORKSPACE</p>
+      <nav className="ad-sidebar-nav" aria-label="Admin navigation">{navItems.map(item=><Link key={item.to} to={item.to} className={"ad-nav-link"+(item.active?" active":"")}><item.icon size={17}/><span>{item.label}</span>{Boolean(item.badge)&&<em>{item.badge}</em>}</Link>)}</nav>
+      <div className="ad-sidebar-bottom"><div className="ad-secure-card"><ShieldCheck size={19}/><span><strong>Scoped access</strong><small>Assigned department only</small></span></div><Link to="/admin/change-password" className="ad-nav-link"><ShieldCheck size={17}/><span>Account security</span></Link><button type="button" className="ad-logout" onClick={logout}><LogOut size={16}/> Sign out</button></div>
+    </aside>
+    <section className="ad-main-column">
+      <header className="ad-topbar"><div className="ad-breadcrumb"><span>Admin workspace</span><span>/</span><strong>Overview</strong></div><div className="ad-topbar-right"><span className="ad-live-dot"/><span>Signed in as {adminName}</span><button type="button" className="ad-icon-button" onClick={()=>void load()} disabled={loading} aria-label="Refresh workspace"><RefreshCw size={16}/></button><span className="ad-avatar">{adminName.slice(0,1).toUpperCase()}</span></div></header>
+      <div className="ad-content">
+        <section className="ad-hero"><div className="ad-hero-content"><span className="ad-eyebrow"><CheckCircle2 size={14}/> DEPARTMENT ADMINISTRATION</span><h1>Good to see you, <span>{adminName.split(" ")[0]}</span>.</h1><p>Your Gradly workspace, focused on the academic program and department assigned to you. Review curriculum, submit change requests and stay in touch with Super Admin.</p><div className="ad-assignment-line"><Building2 size={15}/><span>{institution}</span><i>·</i><span>{program}</span><i>·</i><span>{department}</span></div><Link to="/admin/curriculum" className="ad-primary-action">Review my curriculum <ArrowRight size={16}/></Link></div><div className="ad-hero-art" aria-hidden="true"><div className="ad-art-ring"/><div className="ad-art-card"><div className="ad-art-icon"><GraduationCap size={27}/></div><span className="ad-art-line wide"/><span className="ad-art-line"/><div className="ad-art-bars"><i/><i/><i/><i/><i/><i/></div><small>Academic workspace</small></div></div></section>
+        {error&&<div className="ad-alert" role="alert"><ShieldCheck size={18}/><div><strong>Workspace data could not be fully loaded</strong><p>{error}</p><button type="button" onClick={()=>void load()}>Try again</button></div></div>}
+        <section className="ad-section"><div className="ad-section-heading"><div><span className="ad-section-kicker">YOUR WORKSPACE</span><h2>Academic overview</h2><p>Live figures are based only on records returned for your assigned academic scope.</p></div><button type="button" className="ad-text-button" onClick={()=>void load()} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
+          <div className="ad-metric-grid">
+            <article className="ad-metric-card"><span className="ad-metric-icon"><BookOpen size={20}/></span><span className="ad-metric-label">Assigned curriculum</span><strong>{loading?"—":courses.length.toLocaleString("en-IN")}</strong><small>Courses visible to your assignment</small><Link to="/admin/curriculum">View curriculum <ArrowRight size={13}/></Link></article>
+            <article className="ad-metric-card"><span className="ad-metric-icon sage"><Layers3 size={20}/></span><span className="ad-metric-label">Semesters covered</span><strong>{loading?"—":unique(courses,"semester")}</strong><small>Across your assigned curriculum</small><Link to="/admin/curriculum">Browse semesters <ArrowRight size={13}/></Link></article>
+            <article className="ad-metric-card"><span className="ad-metric-icon amber"><ClipboardList size={20}/></span><span className="ad-metric-label">Pending requests</span><strong>{loading?"—":pending}</strong><small>Your requests awaiting review</small><Link to="/admin/requests">Track requests <ArrowRight size={13}/></Link></article>
+            <article className="ad-metric-card"><span className="ad-metric-icon blue"><Bell size={20}/></span><span className="ad-metric-label">Unread messages</span><strong>{loading?"—":unread}</strong><small>Updates from Super Admin</small><Link to="/admin/notifications">Open inbox <ArrowRight size={13}/></Link></article>
+          </div>
+        </section>
+        <section className="ad-section"><div className="ad-section-heading"><div><span className="ad-section-kicker">QUICK ACCESS</span><h2>What would you like to do?</h2><p>Common tasks for department administrators.</p></div></div><div className="ad-quick-grid">
+          <Link to="/admin/curriculum" className="ad-quick-card"><span><BookOpen size={20}/></span><strong>Review curriculum</strong><p>Find subjects, semester allocation, credits and schemes in your assigned department.</p><b>Open curriculum <ArrowRight size={14}/></b></Link>
+          <Link to="/admin/requests" className="ad-quick-card"><span><ClipboardList size={20}/></span><strong>Request a subject change</strong><p>Submit add, remove or modify proposals for Super Admin review.</p><b>Manage requests <ArrowRight size={14}/></b></Link>
+          <Link to="/admin/notifications" className="ad-quick-card"><span><Bell size={20}/></span><strong>Super Admin inbox</strong><p>Read official announcements and action notes sent to your account.</p><b>View messages <ArrowRight size={14}/></b></Link>
+        </div></section>
+        <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><span>Academic changes require Super Admin approval.</span></footer>
+      </div>
+    </section>
   </main>;
 }
