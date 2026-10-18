@@ -22,6 +22,7 @@ import academicRoutes from "./modules/academic/academic.routes";
 
 // Super Admin → Administrator Management
 import administratorRoutes from "./modules/administrator/administrator.routes";
+import adminPasswordRequestRoutes from "./modules/admin-password-requests/admin-password-request.routes";
 
 const app = express();
 
@@ -95,6 +96,9 @@ app.use("/api/admin-applications/setup", adminAccountSetupRoutes);
 
 // Complete Admin ID and password registration.
 app.use("/api/admin-registration", adminRegistrationRoutes);
+
+// Admin password-change requests, reviewed by Super Admin.
+app.use("/api/admin-password-requests", adminPasswordRequestRoutes);
 
 /* =========================================================
    ADMIN
