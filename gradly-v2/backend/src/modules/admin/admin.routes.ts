@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin } from "./admin.controller";
+import { changeAdminPassword, loginAdmin } from "./admin.controller";
 import {
   authenticateAdminToken,
   AdminAuthenticatedRequest,
@@ -10,6 +10,7 @@ import { listAdminCurriculum } from "./admin-curriculum.controller";
 const router = Router();
 
 router.post("/login", loginAdmin);
+router.post("/change-password", authenticateAdminToken, changeAdminPassword);
 
 router.get(
   "/me",
