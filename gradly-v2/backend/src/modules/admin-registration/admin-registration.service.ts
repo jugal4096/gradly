@@ -189,6 +189,8 @@ export async function registerApprovedAdmin(
          application_id,
          enrollment_number,
          normalized_enrollment_number,
+         password_changed_at,
+         password_expires_at,
          created_at,
          updated_at
        )
@@ -203,6 +205,8 @@ export async function registerApprovedAdmin(
          $9,
          $10,
          $11,
+         NOW(),
+         NOW() + INTERVAL '1 month',
          NOW(),
          NOW()
        )
