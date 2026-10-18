@@ -45,12 +45,10 @@ export default function AdminDashboard() {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
   const [search,setSearch]=useState("");
-  const [branch,setBranch]=useState("ALL");
   const [scheme,setScheme]=useState("ALL");
   const [semester,setSemester]=useState("ALL");
   const [courseType,setCourseType]=useState("ALL");
   const [workspaceView,setWorkspaceView]=useState<"overview"|"courses"|"structure">("overview");
-  const [program,setProgram]=useState("ALL");
 
   const logout=useCallback(()=>{
     localStorage.removeItem("gradly_admin_token");
@@ -83,18 +81,14 @@ export default function AdminDashboard() {
   const filtered=useMemo(()=>{
     const q=search.trim().toLowerCase();
     return courses.filter(row=>{
-      if(branch!=="ALL"&&clean(row.branch)!==branch)return false;
-      if(program!=="ALL"&&clean(row.program)!==program)return false;
       if(scheme!=="ALL"&&clean(row.scheme)!==scheme)return false;
       if(semester!=="ALL"&&clean(row.semester)!==semester)return false;
       if(courseType!=="ALL"&&clean(row.courseType)!==courseType)return false;
       const searchable=[row.code,row.name,row.branch,row.scheme,row.program,row.semester,row.courseType,row.academicYear].map(clean).join(" ").toLowerCase();
       return !q||searchable.includes(q);
     });
-  },[courses,search,branch,program,scheme,semester,courseType]);
+  },[courses,search,scheme,semester,courseType]);
 
-  const branches=unique(courses,"branch");
-  const programs=unique(courses,"program");
   const schemes=unique(courses,"scheme");
   const semesters=unique(courses,"semester");
   const types=unique(courses,"courseType");
@@ -102,7 +96,7 @@ export default function AdminDashboard() {
   const institution=display(profile?.institution_name||profile?.institutionName||courses[0]?.institution);
   const assignedBranch=profile?.branch_name||profile?.branchName||"";
   const assignedProgram=profile?.program_name||"";
-  const reset=()=>{setSearch("");setBranch("ALL");setProgram("ALL");setScheme("ALL");setSemester("ALL");setCourseType("ALL");};
+  const reset=()=>{setSearch("");setScheme("ALL");setSemester("ALL");setCourseType("ALL");};
 
   return <main className="admin-dashboard">
     <header className="admin-dashboard-header">
@@ -119,16 +113,14 @@ export default function AdminDashboard() {
       {error&&<div className="admin-dashboard-alert" role="alert"><CircleAlert size={18}/><div><strong>Workspace data unavailable</strong><p>{error}</p><button type="button" onClick={()=>void load()}>Try again</button></div></div>}
       {workspaceView!=="structure"&&<section className="admin-dashboard-stats">
         <article><span>Courses in scope</span><strong>{loading?"—":courses.length}</strong><small>Returned for your assignment</small></article>
-        <article><span>Branches</span><strong>{loading?"—":branches.length}</strong><small>Available in loaded curriculum</small></article>
+        <article><span>Semesters</span><strong>{loading?"—":semesters.length}</strong><small>Within your assigned curriculum</small></article>
         <article><span>Schemes</span><strong>{loading?"—":schemes.length}</strong><small>Available in loaded curriculum</small></article>
         <article><span>Total listed credits</span><strong>{loading?"—":creditTotal(filtered).toLocaleString(undefined,{maximumFractionDigits:2})}</strong><small>Current filtered view</small></article>
       </section>}
-      {workspaceView==="structure"&&<section className="admin-dashboard-panel admin-assignment-panel"><div className="admin-panel-heading"><div><span className="admin-eyebrow">ASSIGNED ACADEMIC SCOPE</span><h2><Layers3 size={20}/> Program &amp; department</h2><p>These assignments are controlled by Super Admin and define which curriculum records this workspace can access.</p></div><span className="admin-readonly-pill">Super Admin managed</span></div><div className="admin-structure-grid"><article><span>Institution</span><strong>{institution}</strong><small>Institution-wide boundary</small></article><article><span>Program</span><strong>{display(assignedProgram||programs.join(", "))}</strong><small>{profile?.program_id?"Explicitly assigned program":"Derived from assigned curriculum"}</small></article><article><span>Department / branch</span><strong>{display(assignedBranch||"Assigned department")}</strong><small>{profile?.branch_id||profile?.branchId?"Department-scoped access":"Institution-level access"}</small></article><article><span>Role</span><strong>{display(profile?.role)}</strong><small>Capabilities are controlled by Super Admin-approved permissions.</small></article></div><p className="admin-dashboard-footnote"><ShieldCheck size={15}/> Contact Super Admin to change your program or department. Admins cannot expand their own access scope.</p></section>}
+      {workspaceView==="structure"&&<section className="admin-dashboard-panel admin-assignment-panel"><div className="admin-panel-heading"><div><span className="admin-eyebrow">ASSIGNED ACADEMIC SCOPE</span><h2><Layers3 size={20}/> Program &amp; department</h2><p>These assignments are controlled by Super Admin and define which curriculum records this workspace can access.</p></div><span className="admin-readonly-pill">Super Admin managed</span></div><div className="admin-structure-grid"><article><span>Institution</span><strong>{institution}</strong><small>Institution-wide boundary</small></article><article><span>Program</span><strong>{display(assignedProgram||"Assigned program")}</strong><small>{profile?.program_id?"Explicitly assigned program":"Derived from assigned curriculum"}</small></article><article><span>Department / branch</span><strong>{display(assignedBranch||"Assigned department")}</strong><small>{profile?.branch_id||profile?.branchId?"Department-scoped access":"Institution-level access"}</small></article><article><span>Role</span><strong>{display(profile?.role)}</strong><small>Capabilities are controlled by Super Admin-approved permissions.</small></article></div><p className="admin-dashboard-footnote"><ShieldCheck size={15}/> Contact Super Admin to change your program or department. Admins cannot expand their own access scope.</p></section>}
       {workspaceView!=="structure"&&<section className="admin-dashboard-panel">
         <div className="admin-panel-heading"><div><span className="admin-eyebrow">ACADEMIC CATALOGUE</span><h2><BookOpen size={20}/> {workspaceView==="courses"?"Course management":"Curriculum overview"}</h2><p>Review courses, credit values, semester allocation and curriculum status within your approved program and department.</p></div><span className="admin-readonly-pill">Scoped access</span></div>
         <div className="admin-curriculum-toolbar"><label className="admin-curriculum-search"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search course, code, branch or scheme"/></label>
-          <label><span>Program</span><select value={program} onChange={e=>setProgram(e.target.value)}><option value="ALL">All assigned programs</option>{programs.map(v=><option key={v}>{v}</option>)}</select></label>
-          <label><span>Branch</span><select value={branch} onChange={e=>setBranch(e.target.value)}><option value="ALL">All branches</option>{branches.map(v=><option key={v}>{v}</option>)}</select></label>
           <label><span>Scheme</span><select value={scheme} onChange={e=>setScheme(e.target.value)}><option value="ALL">All schemes</option>{schemes.map(v=><option key={v}>{v}</option>)}</select></label>
           <label><span>Semester</span><select value={semester} onChange={e=>setSemester(e.target.value)}><option value="ALL">All semesters</option>{semesters.map(v=><option key={v}>{v}</option>)}</select></label>
           <label><span>Course type</span><select value={courseType} onChange={e=>setCourseType(e.target.value)}><option value="ALL">All types</option>{types.map(v=><option key={v}>{v}</option>)}</select></label>
