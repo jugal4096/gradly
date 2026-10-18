@@ -527,6 +527,7 @@ export default function AdminApply() {
                 </section>
               )}
             </>
+          )}
 
           {user && (
             <section id="password-change-panel" className="success-card password-request-panel">
