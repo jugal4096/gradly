@@ -20,6 +20,7 @@ import AdminPortal from "./pages/admin/AdminPortal";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminApply from "./pages/admin/AdminApply";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminChangePassword from "./pages/admin/AdminChangePassword";
 
 // =====================================================
 // SUPER ADMIN
@@ -101,6 +102,11 @@ function App() {
         <Route
           path="/admin/dashboard"
           element={<AdminDashboard />}
+        />
+
+        <Route
+          path="/admin/change-password"
+          element={<AdminChangePassword />}
         />
 
         {/* =============================================
