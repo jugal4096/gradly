@@ -8,6 +8,7 @@ import { requireAdminPermission } from "../../middleware/permission.middleware";
 import { listAdminCurriculum } from "./admin-curriculum.controller";
 import { getAdminWorkspaceProfile } from "./admin.repository";
 import { createSubjectChangeRequest, listSubjectChangeRequests, listWorkspaceNotifications, markWorkspaceNotificationRead } from "./admin-workspace.controller";
+import { getAdminPrivacyActivity, listDepartmentSyllabusFeedback, reviewDepartmentSyllabusFeedback } from "./admin-privacy.controller";
 
 const router = Router();
 
@@ -41,6 +42,9 @@ router.get("/workspace-notifications", authenticateAdminToken, listWorkspaceNoti
 router.patch("/workspace-notifications/:notificationId/read", authenticateAdminToken, markWorkspaceNotificationRead);
 router.get("/subject-change-requests", authenticateAdminToken, listSubjectChangeRequests);
 router.post("/subject-change-requests", authenticateAdminToken, createSubjectChangeRequest);
+router.get("/privacy-activity", authenticateAdminToken, getAdminPrivacyActivity);
+router.get("/student-syllabus-feedback", authenticateAdminToken, listDepartmentSyllabusFeedback);
+router.patch("/student-syllabus-feedback/:feedbackId/review", authenticateAdminToken, reviewDepartmentSyllabusFeedback);
 
 router.get(
   "/permission-test",
