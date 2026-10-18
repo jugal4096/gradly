@@ -121,6 +121,7 @@ async function handleFailedLogin(
 
   if (lockedUntil) {
     await notifySecurityLockout(context.principalType, context.principalId, lockedUntil);
+    throw new LoginLockedError(lockedUntil);
   }
 }
 
