@@ -88,9 +88,11 @@ export async function createAdmin(
       phone_number,
       password_hash,
       role,
-      status
+      status,
+      password_changed_at,
+      password_expires_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE')
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE', NOW(), NOW() + INTERVAL '1 month')
     RETURNING
       id,
       admin_code,
