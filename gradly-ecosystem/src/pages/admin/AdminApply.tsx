@@ -377,7 +377,7 @@ export default function AdminApply() {
     <main className="admin-apply-page">
       <header className="admin-header">
         <div className="brand">
-          <img className="brand-logo" src="/logo.svg" alt="Gradly" onError={(event) => { const image = event.currentTarget; if (image.dataset.fallback === "1") { image.style.display = "none"; return; } image.dataset.fallback = "1"; image.src = "/gradly-logo.png"; }} />
+          <img className="brand-logo" src="/gradly-ecosystem-logo.png" alt="Gradly" onError={(event) => { const image = event.currentTarget; if (image.dataset.fallback === "1") { image.style.display = "none"; return; } image.dataset.fallback = "1"; image.src = "/gradly-ecosystem-logo.png"; }} />
           <div>
             <div className="brand-name">GRADLY</div>
             <div className="brand-subtitle">Institution administration</div>
