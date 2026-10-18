@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { AlertCircle, ArrowLeft, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowLeft, Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./AdminLogin.css";
 
@@ -29,7 +29,7 @@ export default function AdminLogin(){
  }
  return <main className="admin-login-page"><section className="admin-login-card">
   <button className="admin-login-back" type="button" onClick={()=>navigate("/admin")}><ArrowLeft size={15}/> Admin Portal</button>
-  <div className="admin-login-brand"><span>G</span><div><strong>GRADLY</strong><small>Institution administration</small></div></div>
+  <div className="admin-login-brand"><img src="/logo.svg" alt="Gradly" onError={(event) => { const image = event.currentTarget; if (image.dataset.fallback === "1") { image.style.display = "none"; return; } image.dataset.fallback = "1"; image.src = "/gradly-logo.png"; }} /><div><strong>GRADLY</strong><small>Institution administration</small></div></div>
   <div className="admin-login-icon"><ShieldCheck size={24}/></div>
   <p className="admin-login-eyebrow">AUTHORIZED ACCESS</p><h1>Admin sign in</h1><p className="admin-login-subtitle">Sign in with the Admin ID issued to your approved account.</p>
   {error&&<div className="admin-login-error" role="alert"><AlertCircle size={17}/><span>{error}</span></div>}
@@ -39,6 +39,6 @@ export default function AdminLogin(){
    <button className="admin-login-submit" type="submit" disabled={loading}>{loading?<><span className="admin-login-spinner"/> Signing in…</>:<><LockKeyhole size={16}/> Sign in securely</>}</button>
   </form>
   <div className="admin-login-security"><ShieldCheck size={16}/><span>Access is available only to active, approved administrators. Your institution and permissions are checked by Gradly.</span></div>
-  <button className="admin-login-apply" type="button" onClick={()=>navigate("/admin/apply")}>Not an administrator yet? Apply for access</button>
+  <button className="admin-login-forgot" type="button" onClick={()=>navigate("/admin/apply?tab=password")}><KeyRound size={15}/> Forgot password? Request Super Admin approval</button><button className="admin-login-apply" type="button" onClick={()=>navigate("/admin/apply")}>Not an administrator yet? Apply for access</button>
  </section></main>;
 }
