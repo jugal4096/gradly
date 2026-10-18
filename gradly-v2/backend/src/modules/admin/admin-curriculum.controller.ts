@@ -47,9 +47,10 @@ export async function listAdminCurriculum(req: AdminAuthenticatedRequest, res: R
        LEFT JOIN public.grading_systems gs ON gs.id = c.grading_system_id
        WHERE c.institution_id = $1
          AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
+         AND ($3::uuid IS NULL OR c.program_id = $3::uuid)
        ORDER BY p.name, b.name, sc.name, sem.semester_number, cs.course_code
        LIMIT 5000`,
-      [admin.institutionId, admin.branchId || null]
+      [admin.institutionId, admin.branchId || null, admin.programId || null]
     );
 
     return res.status(200).json({ success: true, curriculum: result.rows, count: result.rows.length, limit: 5000 });
