@@ -49,15 +49,15 @@ export async function getSuperAdminDashboardStats(
         )::int AS "pendingApplications",
 
         (
-          SELECT COUNT(*)
-          FROM curriculum_change_requests
-          WHERE LOWER(TRIM(COALESCE(status, '')))
-            IN (
-              'pending',
-              'submitted',
-              'under_review',
-              'under review'
-            )
+          (SELECT COUNT(*)
+           FROM curriculum_change_requests
+           WHERE LOWER(TRIM(COALESCE(status, '')))
+             IN ('pending', 'submitted', 'under_review', 'under review'))
+          +
+          (SELECT COUNT(*)
+           FROM public.admin_subject_change_requests
+           WHERE LOWER(TRIM(COALESCE(status, '')))
+             IN ('pending', 'submitted', 'under_review', 'under review'))
         )::int AS "pendingCurriculumRequests",
 
         (
