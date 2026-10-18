@@ -22,3 +22,40 @@
 .admin-dashboard[data-theme="dark"] .ad-table td{border-color:#30463a}
 .admin-dashboard[data-theme="dark"] .ad-table input,.admin-dashboard[data-theme="dark"] input,.admin-dashboard[data-theme="dark"] select,.admin-dashboard[data-theme="dark"] textarea{background:#101a16;color:#e2eee6;border-color:#30463a}
 @media(max-width:700px){.ad-theme-options{grid-template-columns:1fr}.ad-settings-actions{display:grid}.ad-settings-actions a{justify-content:center}}
+
+
+/* Settings page polish: typography, density, readable controls, and consistent dark mode */
+.ad-settings-content{max-width:1120px}
+.ad-settings-content .ad-panel{margin-top:18px;padding:clamp(18px,2.2vw,26px)}
+.ad-settings-content .ad-page-heading{align-items:center}
+.ad-settings-content .ad-page-heading .ad-secondary-button{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.ad-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ad-setting-control{display:grid;gap:8px;align-content:start}
+.ad-setting-control>span{font-size:12px;font-weight:750;color:#52675a}
+.ad-setting-control select{width:100%;min-height:43px;padding:10px 12px;border:1px solid #dfe9e1;border-radius:10px;background:#fff;color:#263b2e}
+.ad-setting-control small{font-size:10px;color:#829087;line-height:1.6}
+.ad-setting-toggle{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:16px;padding:15px 0;border-top:1px solid #edf2ed;cursor:pointer}
+.ad-setting-toggle>span{display:flex;align-items:center;gap:12px;color:#28764d}
+.ad-setting-toggle>span>span{display:grid;gap:4px}
+.ad-setting-toggle strong{font-size:12px;color:#2a4433}
+.ad-setting-toggle small{font-size:10px;color:#7c8a80;line-height:1.5}
+.ad-setting-toggle input{width:18px;height:18px;accent-color:#19744f;flex-shrink:0}
+.ad-settings-saved{display:flex;align-items:center;gap:7px;margin:13px 0 0;color:#26754c;font-size:11px;font-weight:700}
+.ad-settings-note{margin:16px 0 0;color:#7a8980;font-size:10px;line-height:1.7}
+.ad-danger-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid #f0d2ce;border-radius:9px;color:#a13e35;background:#fff7f6;cursor:pointer;font-size:10px;font-weight:800}
+.ad-danger-button:hover{background:#ffefed}
+html[data-admin-font="system"] .admin-dashboard{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+html[data-admin-font="modern"] .admin-dashboard{font-family:"DM Sans","Segoe UI",sans-serif}
+html[data-admin-font="serif"] .admin-dashboard{font-family:Georgia,"Times New Roman",serif}
+html[data-admin-font-size="small"] .admin-dashboard .ad-content{font-size:92%}
+html[data-admin-font-size="large"] .admin-dashboard .ad-content{font-size:110%}
+html[data-admin-compact="true"] .admin-dashboard .ad-content{padding-top:16px}
+html[data-admin-compact="true"] .admin-dashboard .ad-panel{padding:16px;margin-top:12px}
+html[data-admin-compact="true"] .admin-dashboard .ad-table td,html[data-admin-compact="true"] .admin-dashboard .ad-table th{padding:8px}
+html[data-admin-reduced-motion="true"] .admin-dashboard *,html[data-admin-reduced-motion="true"] .admin-dashboard *::before,html[data-admin-reduced-motion="true"] .admin-dashboard *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+.admin-dashboard[data-theme="dark"] .ad-setting-control>span,.admin-dashboard[data-theme="dark"] .ad-setting-toggle strong{color:#d5e7db}
+.admin-dashboard[data-theme="dark"] .ad-setting-control select{background:#101a16;color:#e2eee6;border-color:#30463a}
+.admin-dashboard[data-theme="dark"] .ad-setting-toggle{border-color:#30463a}
+.admin-dashboard[data-theme="dark"] .ad-setting-toggle small,.admin-dashboard[data-theme="dark"] .ad-settings-note,.admin-dashboard[data-theme="dark"] .ad-setting-control small{color:#a8bdb0}
+.admin-dashboard[data-theme="dark"] .ad-danger-button{background:#2a1c1b;border-color:#69403c;color:#ffc4bb}
+@media(max-width:760px){.ad-settings-grid{grid-template-columns:1fr}.ad-settings-content .ad-page-heading{align-items:flex-start;flex-direction:column}.ad-settings-content .ad-panel{padding:16px}.ad-settings-actions{display:grid;grid-template-columns:1fr}.ad-settings-actions>*{width:100%}}
