@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { BellRing, CheckCircle2, CircleAlert, Send, ShieldCheck } from "lucide-react";
 import "./SuperAdminAdminMessages.css";
 
-const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/,"").replace(/\\/api$/i,""))+"/api";
+const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 
 export default function SuperAdminAdminMessages(){
   const [title,setTitle]=useState("");
