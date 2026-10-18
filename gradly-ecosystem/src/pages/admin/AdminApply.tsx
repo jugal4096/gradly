@@ -212,6 +212,14 @@ export default function AdminApply() {
     else setPasswordRequests([]);
   }, [user, loadPasswordRequests]);
 
+  useEffect(() => {
+    if (!user || new URLSearchParams(window.location.search).get("tab") !== "password") return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("password-change-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [user]);
+
   async function requestPasswordChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -506,7 +514,7 @@ export default function AdminApply() {
           )}
 
           {user && (
-            <section className="success-card password-request-panel">
+            <section id="password-change-panel" className="success-card password-request-panel">
               <div className="success-kicker"><KeyRound size={16} /> ACCOUNT SECURITY</div>
               <h2>Request a password change</h2>
               <p className="success-description">If you are an active Gradly administrator, submit your Admin ID. Super Admin will review the request before you can set a new password. Your Google account email must match the email registered to your Admin account.</p>
