@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { AlertCircle, ArrowLeft, CheckCircle2, KeyRound, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import "./AdminChangePassword.css";
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
 
