@@ -2283,3 +2283,65 @@
   .sd-governance-count { font-size: 17px; }
   .sd-governance-action { font-size: 10px; }
 }
+
+
+/* Premium purple dashboard refresh */
+.super-dashboard {
+  --sd-ink: #21183f;
+  --sd-muted: #77708f;
+  --sd-border: #e9e2fb;
+  --sd-purple: #7651e8;
+  background:
+    radial-gradient(ellipse at 92% 0%, #e5dcff 0, transparent 32%),
+    radial-gradient(ellipse at 0% 78%, #f0eaff 0, transparent 27%),
+    #faf8ff;
+}
+.sd-orb-one { background: #c7b5ff; opacity: .32; }
+.sd-orb-two { background: #e0cfff; opacity: .3; }
+.sd-header h1 { color: #241642; letter-spacing: -.06em; }
+.sd-eyebrow-dot { background: #8b5cf6; box-shadow: 0 0 0 4px #eee7ff; }
+.sd-refresh-button { border-color: #e4dafd; color: #5e42b8; box-shadow: 0 6px 18px #6d48d80d; }
+.sd-refresh-button:hover:not(:disabled) { border-color: #b9a4fb; background: #f8f4ff; }
+.sd-hero { border-color: #d9cbff; background: radial-gradient(circle at 88% 0%, #ffffffa8, transparent 36%), linear-gradient(115deg, #e9e0ff, #f7f3ff 58%, #fff); box-shadow: 0 14px 34px #5631a10d; }
+.sd-hero-symbol { color: #7047df; border-color: #ded2ff; background: #fff; }
+.sd-hero-label { color: #7951d6; }
+.sd-hero-copy h2 { color: #2b1c50; }
+.sd-summary-label { color: #7657c7; }
+.sd-metric-card, .sd-queue-card, .sd-panel, .sd-detail-panel { border-color: #e8e0f8; box-shadow: 0 10px 28px #39216b08; }
+.sd-metric-card { background: linear-gradient(155deg, #fff 0%, #fdfbff 100%); }
+.sd-metric-card:hover, .sd-queue-card:hover { border-color: #c7b5fa; box-shadow: 0 14px 30px #5b35b513; }
+.sd-metric-card.is-selected, .sd-queue-card.is-selected { border-color: #9d83f3; box-shadow: 0 0 0 3px #eee8ff; }
+.sd-metric-icon { color: #7148dc; background: #f0eaff; }
+.sd-tone-blue .sd-metric-icon, .sd-queue-blue .sd-queue-icon { color: #6842c7; background: #f0eaff; }
+.sd-tone-green .sd-metric-icon, .sd-queue-green .sd-queue-icon { color: #7850d5; background: #f3eaff; }
+.sd-tone-amber .sd-metric-icon, .sd-queue-amber .sd-queue-icon { color: #8a56ce; background: #f7eaff; }
+.sd-queue-icon { color: #7047df; background: #f0eaff; }
+.sd-queue-count.has-pending { color: #7047df; background: #f0eaff; }
+.sd-queue-status.is-pending { background: #8b5cf6; }
+.sd-panel-badge, .sd-panel-note { color: #7250c8; background: #f2edff; }
+.sd-action-icon { color: #7148dc; background: #f0eaff; }
+.sd-action-item:hover, .sd-action-item.is-selected { background: #faf7ff; }
+.sd-action-item:hover .sd-action-arrow { color: #7047df; }
+.sd-section-kicker { color: #866fc0; }
+.sd-data-status { color: #6f55bc; }
+.sd-status-dot { background: #8b5cf6; }
+.sd-filter-tabs button.is-active { color: #fff; border-color: #7651e8; background: #7651e8; box-shadow: 0 4px 12px #7651e82b; }
+.sd-search:focus-within { border-color: #ad98f4; box-shadow: 0 0 0 3px #f0eaff; }
+.sd-governance-grid { gap: 16px; }
+.sd-governance-card { position: relative; overflow: hidden; border-color: #e6ddfb; background: linear-gradient(145deg, #fff 0%, #fcfaff 100%); box-shadow: 0 10px 26px #3f247b0b; }
+.sd-governance-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: linear-gradient(180deg, #a78bfa, #7047df); opacity: .85; }
+.sd-governance-card:hover { border-color: #bba7f5; box-shadow: 0 15px 32px #5b35b51a; }
+.sd-governance-icon.governance-violet, .sd-governance-icon.governance-green, .sd-governance-icon.governance-blue { color: #7047df; background: #f0eaff; }
+.sd-governance-count { color: #4a2e96; }
+.sd-governance-action { color: #7047df; }
+.sd-governance-copy strong { color: #2b1d4d; }
+.sd-governance-copy small { color: #79718f; }
+.sd-side-link.is-active, .sd-side-link:hover { color: #6842cf; background: #f0eaff; }
+.sd-side-count { color: #6842cf; background: #eee7ff; }
+.sd-brand-mark { background: linear-gradient(145deg, #9b7afa, #6840d4); box-shadow: 0 7px 16px #7047df30; }
+.sd-access-chip { color: #6946c6; border-color: #e3d8ff; background: #f5f0ff; }
+.sd-drawer-link:hover, .sd-drawer-link.is-current { color: #6842cf; background: #f0eaff; }
+.sd-drawer-secure-note { color: #7047df; background: #f2edff; }
+@media (prefers-reduced-motion: no-preference) {
+ .sd-metric-card, .sd-queue-card, .sd-governance-card, .sd-action-item { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
+}
