@@ -9,8 +9,8 @@ const superAdminAuth = authenticateSuperAdminToken as RequestHandler;
 
 function firebaseIdentity(req: any) {
   const user = req.firebaseUser;
-  if (!user?.uid || !user?.email) {
-    const error: any = new Error("Sign in with the Google account linked to your administrator account.");
+  if (!user?.uid || !user?.email || user.emailVerified !== true) {
+    const error: any = new Error("Sign in with the verified Google account linked to your administrator account.");
     error.statusCode = 401;
     throw error;
   }
