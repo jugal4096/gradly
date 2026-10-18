@@ -1,9 +1,11 @@
 import {
   Activity,
+  BellRing,
   BookOpen,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
+  KeyRound,
   LogOut,
   MessageSquare,
   ScrollText,
@@ -42,6 +44,16 @@ const controlNavigation = [
     label: "Applications",
     path: "/super-admin/applications",
     icon: ClipboardList,
+  },
+  {
+    label: "Password Requests",
+    path: "/super-admin/password-requests",
+    icon: KeyRound,
+  },
+  {
+    label: "Security Alerts",
+    path: "/super-admin/security-alerts",
+    icon: BellRing,
   },
   {
     label: "Feedback",

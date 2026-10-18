@@ -5,6 +5,7 @@ import {
   recordLoginAttempt,
   registerFailedLogin,
   resetExpiredLockout,
+  notifySecurityLockout,
   type LoginAttemptContext,
   type LoginSecurityState,
   type LoginSecurityUpdate,
@@ -28,6 +29,14 @@ export class LoginLockedError extends Error {
   }
 }
 
+export class InvalidLoginAttemptError extends Error {
+  public readonly attemptsRemaining: number;
+  constructor(attemptsRemaining: number) {
+    super(`Invalid credentials. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? "" : "s"} remaining before temporary lockout.`);
+    this.name = "InvalidLoginAttemptError";
+    this.attemptsRemaining = attemptsRemaining;
+  }
+}
 export interface LoginTransactionResult<T> {
   success: boolean;
   lockedUntil: Date | null;
@@ -38,9 +47,7 @@ export interface LoginTransactionResult<T> {
 }
 
 const NORMAL_ATTEMPT_LIMIT = 3;
-const FIRST_LOCKOUT_ATTEMPT_LIMIT = 2;
-const FIRST_LOCKOUT_DURATION_MS = 12 * 60 * 60 * 1000;
-const SECOND_LOCKOUT_DURATION_MS = 24 * 60 * 60 * 1000;
+const LOCKOUT_DURATION_MS = 12 * 60 * 60 * 1000;
 
 async function ensureLoginAllowed(
   context: LoginAttemptContext
@@ -102,21 +109,12 @@ async function handleFailedLogin(
   let lockoutLevel = state.lockout_level;
   let lockedUntil: Date | null = null;
 
-  if (failedAttempts >= attemptLimit) {
-    if (lockoutLevel === 0) {
-      lockoutLevel = 1;
-      attemptLimit = FIRST_LOCKOUT_ATTEMPT_LIMIT;
-
-      lockedUntil = new Date(
-        Date.now() + FIRST_LOCKOUT_DURATION_MS
-      );
-    } else {
-      lockoutLevel = 2;
-
-      lockedUntil = new Date(
-        Date.now() + SECOND_LOCKOUT_DURATION_MS
-      );
-    }
+  if (failedAttempts >= 3) {
+    lockoutLevel = lockoutLevel + 1;
+    attemptLimit = 3;
+    lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+  } else {
+    attemptLimit = 3;
   }
 
   const update: LoginSecurityUpdate = {
@@ -126,17 +124,13 @@ async function handleFailedLogin(
     lockedUntil,
   };
 
-  await registerFailedLogin(
-    context.principalType,
-    context.principalId,
-    update
-  );
+  await registerFailedLogin(context.principalType, context.principalId, update);
+  await recordLoginAttempt(context, false, "INVALID_CREDENTIALS");
 
-  await recordLoginAttempt(
-    context,
-    false,
-    "INVALID_CREDENTIALS"
-  );
+  if (lockedUntil) {
+    await notifySecurityLockout(context.principalType, context.principalId, lockedUntil);
+    throw new LoginLockedError(lockedUntil);
+  }
 }
 
 async function handleSuccessfulLogin(
@@ -170,8 +164,10 @@ export async function executeSecureLogin<T>(
   try {
     result = await verifyCredentials();
   } catch (error) {
+    if ((error as { skipFailedAttempt?: boolean })?.skipFailedAttempt) throw error;
     await handleFailedLogin(context, state);
-    throw error;
+    const attemptsRemaining = Math.max(0, 3 - state.failed_attempts - 1);
+    throw new InvalidLoginAttemptError(attemptsRemaining);
   }
 
   await handleSuccessfulLogin(context);

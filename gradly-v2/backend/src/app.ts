@@ -1,6 +1,7 @@
 
 import express from "express";
 import cors from "cors";
+import { env } from "./config/env";
 
 // Existing modules
 import adminRoutes from "./modules/admin/admin.routes";
@@ -21,6 +22,7 @@ import academicRoutes from "./modules/academic/academic.routes";
 
 // Super Admin → Administrator Management
 import administratorRoutes from "./modules/administrator/administrator.routes";
+import adminPasswordRequestRoutes from "./modules/admin-password-requests/admin-password-request.routes";
 
 const app = express();
 
@@ -30,7 +32,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: env.corsOrigins,
     credentials: true,
   })
 );
@@ -94,6 +96,9 @@ app.use("/api/admin-applications/setup", adminAccountSetupRoutes);
 
 // Complete Admin ID and password registration.
 app.use("/api/admin-registration", adminRegistrationRoutes);
+
+// Admin password-change requests, reviewed by Super Admin.
+app.use("/api/admin-password-requests", adminPasswordRequestRoutes);
 
 /* =========================================================
    ADMIN

@@ -1944,3 +1944,246 @@
     gap: 0;
   }
 }
+
+/* Scrolling and layout refinements */
+.super-dashboard {
+  min-height: 100vh;
+  overflow-x: clip;
+  overflow-y: visible;
+  isolation: isolate;
+}
+
+.sd-shell {
+  align-items: stretch;
+}
+
+.sd-main-column {
+  min-height: 0;
+  overflow: visible;
+}
+
+.sd-sidebar {
+  position: sticky;
+  top: 20px;
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
+  overflow: hidden;
+}
+
+.sd-sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #d8d1fa transparent;
+}
+
+.sd-sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sd-sidebar-nav::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: #d8d1fa;
+}
+
+.sd-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 1050px) {
+  .super-dashboard {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  .sd-shell {
+    align-items: start;
+  }
+}
+
+@media (max-width: 650px) {
+  .super-dashboard {
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
+
+/* Shared SuperAdminLayout already renders the main sidebar; hide the legacy
+   dashboard's second navigation column and let the page grow naturally. */
+.sd-shell { display: block; width: 100%; max-width: 100%; min-width: 0; }
+.sd-sidebar, .sd-navigation-bar, .sd-navigation-drawer, .sd-menu-backdrop { display: none !important; }
+.sd-main-column { width: 100%; min-width: 0; max-width: 100%; overflow: visible !important; }
+.super-admin-shell, .super-admin-body, .super-admin-content, .super-admin-page { min-height: 0; height: auto; overflow: visible !important; }
+.super-admin-content, .super-admin-page { min-width: 0; }
+.super-dashboard { width: 100%; max-width: 100%; min-height: 100vh; overflow-x: clip; overflow-y: visible; padding-bottom: max(38px, env(safe-area-inset-bottom)); }
+@media (max-width: 760px) { .super-dashboard { padding: 18px 14px 30px; } }
+
+
+/* Gradly Control Center — unified layout, responsive cards and reliable scrolling */
+.super-admin-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto !important;
+  overflow: visible !important;
+  background: #f6f7fb;
+}
+.super-admin-body {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: stretch;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+}
+.super-admin-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+  background: #f6f7fb;
+}
+.super-admin-page {
+  flex: 1 0 auto;
+  min-width: 0;
+  min-height: 0;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+.super-admin-footer {
+  flex-shrink: 0;
+}
+.super-dashboard {
+  --sd-ink: #192239;
+  --sd-muted: #778198;
+  --sd-border: #e8eaf3;
+  --sd-purple: #7558e8;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(22px, 3vw, 40px);
+  padding-bottom: max(42px, env(safe-area-inset-bottom));
+  overflow: visible !important;
+  color: var(--sd-ink);
+  background: radial-gradient(ellipse at 95% 0%, #ece7ff 0, transparent 31%), #f7f8fc;
+}
+.sd-shell {
+  display: block !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.sd-sidebar,
+.sd-navigation-bar,
+.sd-navigation-drawer,
+.sd-menu-backdrop {
+  display: none !important;
+}
+.sd-main-column {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible !important;
+}
+.sd-header,
+.sd-hero,
+.sd-section,
+.sd-error,
+.sd-detail-panel,
+.sd-content-grid,
+.sd-system-strip {
+  max-width: 1500px;
+}
+.sd-header {
+  margin-bottom: 24px;
+}
+.sd-header h1 {
+  color: #1c2540;
+}
+.sd-hero {
+  border-radius: 22px;
+  box-shadow: 0 12px 34px #4934a10c;
+}
+.sd-metric-card,
+.sd-queue-card,
+.sd-panel,
+.sd-system-strip {
+  box-shadow: 0 5px 20px #202b4808;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.sd-metric-card:hover,
+.sd-queue-card:hover {
+  box-shadow: 0 14px 30px #202b4810;
+}
+.sd-panel {
+  overflow: hidden;
+}
+.sd-search input:focus-visible,
+.sd-filter-tabs button:focus-visible,
+.sd-clear-filters:focus-visible,
+.sd-error-retry:focus-visible,
+.sd-icon-button:focus-visible {
+  outline: 3px solid #bdb1ff;
+  outline-offset: 2px;
+}
+@media (max-width: 1100px) {
+  .sd-metrics-grid,
+  .sd-queues-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sd-content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 650px) {
+  .super-dashboard {
+    padding: 18px 14px 32px;
+  }
+  .sd-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .sd-header-copy,
+  .sd-header p {
+    max-width: 100%;
+  }
+  .sd-hero {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 18px;
+  }
+  .sd-hero-summary {
+    width: 100%;
+    min-width: 0;
+    padding: 14px 0 0;
+    border-top: 1px solid #e1dcf5;
+    border-left: 0;
+  }
+  .sd-metrics-grid,
+  .sd-queues-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sd-section-heading,
+  .sd-detail-bottom,
+  .sd-system-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .sd-system-title {
+    min-width: 0;
+  }
+}

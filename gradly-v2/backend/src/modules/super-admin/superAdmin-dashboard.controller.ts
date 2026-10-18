@@ -24,6 +24,9 @@ export async function getSuperAdminDashboardStats(
     // Fetch actual counts from PostgreSQL.
     const statsResult = await pool.query(`
       SELECT
+        (SELECT COUNT(*) FROM public.users)::int
+          AS "totalUsers",
+
         (SELECT COUNT(*) FROM admins)::int
           AS "totalAdmins",
 
@@ -122,8 +125,6 @@ export async function getSuperAdminDashboardStats(
       success: true,
       data: {
         ...stats,
-        // Do not invent a user count before identifying its table.
-        totalUsers: null,
         recentActivity,
       },
     });

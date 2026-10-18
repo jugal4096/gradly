@@ -24,7 +24,11 @@ router.get(
           i.id AS institution_id,
           i.name AS institution_name,
           b.id AS branch_id,
-          b.name AS branch_name
+          b.name AS branch_name,
+          b.code AS branch_code,
+          p.id AS program_id,
+          p.name AS program_name,
+          p.level AS program_level
         FROM institutions i
         INNER JOIN programs p
           ON p.institution_id = i.id
@@ -43,6 +47,10 @@ router.get(
           branches: {
             id: string;
             name: string;
+            code?: string | null;
+            program_id: string;
+            program_name: string;
+            program_level?: string | null;
           }[];
         }
       >();
@@ -61,6 +69,10 @@ router.get(
           .branches.push({
             id: row.branch_id,
             name: row.branch_name,
+            code: row.branch_code,
+            program_id: row.program_id,
+            program_name: row.program_name,
+            program_level: row.program_level,
           });
       }
 

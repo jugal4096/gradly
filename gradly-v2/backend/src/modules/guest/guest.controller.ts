@@ -3,10 +3,12 @@ import {
   getGuestSession,
   startGuestSession,
 } from "./guest.service";
+import { listGuestBranchOptions, recordGuestActivity, setGuestBranch } from "./guest.repository";
 
 export async function createGuest(_req: Request, res: Response) {
   try {
     const session = await startGuestSession();
+    await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", { source: "web" });
 
     return res.status(201).json({
       message: "Guest session created successfully.",
@@ -51,6 +53,13 @@ export async function getGuest(req: Request, res: Response) {
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
         expiresAt: session.expires_at,
+        metadata: session.metadata ?? {},
+        branch: {
+          id: session.metadata?.branch_id ?? null,
+          name: session.metadata?.branch_name ?? null,
+          programName: session.metadata?.program_name ?? null,
+          institutionName: session.metadata?.institution_name ?? null,
+        },
       },
     });
   } catch (error) {
@@ -59,5 +68,37 @@ export async function getGuest(req: Request, res: Response) {
     return res.status(500).json({
       message: "Failed to retrieve guest session.",
     });
+  }
+}
+
+export async function listGuestBranches(_req: Request, res: Response) {
+  try {
+    const branches = await listGuestBranchOptions();
+    return res.status(200).json({ branches });
+  } catch (error) {
+    console.error("Failed to list guest branch options:", error);
+    return res.status(500).json({ message: "Failed to load branch options." });
+  }
+}
+
+export async function updateGuestBranch(req: Request, res: Response) {
+  try {
+    const sessionToken = req.headers["x-guest-session"];
+    if (typeof sessionToken !== "string" || !sessionToken) {
+      return res.status(401).json({ message: "Guest session token is required." });
+    }
+    const session = await getGuestSession(sessionToken);
+    if (!session) return res.status(401).json({ message: "Guest session is invalid or expired." });
+    const branchId = typeof req.body?.branchId === "string" ? req.body.branchId : "";
+    if (!branchId) return res.status(400).json({ message: "branchId is required." });
+    const updated = await setGuestBranch(session.id, branchId);
+    if (!updated) return res.status(404).json({ message: "Branch not found." });
+    return res.status(200).json({
+      message: "Guest branch saved.",
+      guest: { id: updated.id, lastSeenAt: updated.last_seen_at, metadata: updated.metadata, branch: updated.branch }
+    });
+  } catch (error) {
+    console.error("Failed to save guest branch:", error);
+    return res.status(500).json({ message: "Failed to save guest branch." });
   }
 }

@@ -2,7 +2,6 @@ import {
     ArrowLeft,
     BookOpen,
     GraduationCap,
-    Mail,
     UserRound,
   } from "lucide-react";
   
@@ -19,18 +18,20 @@ import {
   import "./SuperAdminUserDetails.css";
   
   
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:5000/api";
+  const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api")
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\/api$/i, "");
+  const API_ROOT = `${API_BASE_URL}/api`;
   
   
   interface Student {
     id: string;
-    email: string | null;
     display_name: string | null;
     active: boolean;
+    created_at: string;
+    last_login_at: string | null;
   
-    student_identifier: string | null;
     admission_year: number | null;
     current_semester_number: number | null;
     graduation_year: number | null;
@@ -79,6 +80,19 @@ import {
   }
   
   
+  interface ActivityEvent {
+    id: string | number;
+    action: string;
+    created_at: string;
+    entity_table?: string | null;
+  }
+
+  function formatTimestamp(value: string | null | undefined) {
+    if (!value) return "Not recorded";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Not recorded" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+  }
+
   export default function SuperAdminUserDetails() {
   
     const navigate = useNavigate();
@@ -97,6 +111,9 @@ import {
   
     const [error, setError] =
       useState("");
+
+    const [lastActivityAt, setLastActivityAt] = useState<string | null>(null);
+    const [activityCount, setActivityCount] = useState(0);
   
   
     useEffect(() => {
@@ -130,7 +147,7 @@ import {
   
           const response =
             await fetch(
-              `${API_BASE_URL}/super-admin/users/${userId}`,
+              `${API_ROOT}/super-admin/users/${encodeURIComponent(userId)}`,
               {
                 headers: {
                   Authorization:
@@ -151,11 +168,28 @@ import {
             return;
           }
   
+          if (!data.student) {
+            setError("The server returned no student record for this account. Confirm the user exists and the backend is running the latest code.");
+            return;
+          }
           setStudent(data.student);
-  
-          setSemesters(
-            data.semesters || []
-          );
+          setSemesters(Array.isArray(data.semesters) ? data.semesters : []);
+
+          // Show only audit events the application has actually recorded.
+          try {
+            const apiRoot = API_BASE_URL.replace(/\/+$/, "").replace(/\/api$/i, "");
+            const activityResponse = await fetch(apiRoot + "/api/super-admin/users/" + encodeURIComponent(userId) + "/activity", {
+              headers: { Authorization: "Bearer " + token, Accept: "application/json" }
+            });
+            if (activityResponse.ok) {
+              const activityData = await activityResponse.json() as { events?: ActivityEvent[] };
+              const events = Array.isArray(activityData.events) ? activityData.events : [];
+              setActivityCount(events.length);
+              setLastActivityAt(events[0]?.created_at || null);
+            }
+          } catch {
+            // Academic data remains usable if the optional activity request fails.
+          }
   
         } catch (error) {
   
@@ -262,21 +296,8 @@ import {
             </h1>
   
             <div className="student-profile-meta">
-  
-              <span>
-                <Mail size={13} />
-  
-                {student.email ||
-                  "No email"}
-              </span>
-  
-              <span>
-                <GraduationCap size={13} />
-  
-                {student.branch_name ||
-                  "Branch not available"}
-              </span>
-  
+              <span><GraduationCap size={13} />{student.branch_name || "Branch not available"}</span>
+              <span>{student.program_name || "Program not available"}</span>
             </div>
   
           </div>
@@ -347,19 +368,24 @@ import {
   
   
           <div className="student-summary-card">
-  
-            <span>
-              TARGET CGPA
-            </span>
-  
-            <strong>
-              {student.target_cgpa !== null
-                ? Number(
-                    student.target_cgpa
-                  ).toFixed(2)
-                : "—"}
-            </strong>
-  
+            <span>TARGET CGPA</span>
+            <strong>{student.target_cgpa !== null ? Number(student.target_cgpa).toFixed(2) : "—"}</strong>
+          </div>
+
+          <div className="student-summary-card">
+            <span>LAST LOGIN</span>
+            <strong className="student-summary-date">{formatTimestamp(student.last_login_at)}</strong>
+          </div>
+
+          <div className="student-summary-card">
+            <span>LAST RECORDED ACTIVITY</span>
+            <strong className="student-summary-date">{formatTimestamp(lastActivityAt)}</strong>
+            <small>{activityCount} audit event{activityCount === 1 ? "" : "s"} returned</small>
+          </div>
+
+          <div className="student-summary-card">
+            <span>ACCOUNT CREATED</span>
+            <strong className="student-summary-date">{formatTimestamp(student.created_at)}</strong>
           </div>
   
         </section>
@@ -385,13 +411,6 @@ import {
   
   
           <div className="student-information-grid">
-  
-            <InfoItem
-              label="Enrollment Number"
-              value={
-                student.student_identifier
-              }
-            />
   
             <InfoItem
               label="Institution"
@@ -442,6 +461,13 @@ import {
         </section>
   
   
+        {!student.branch_name && !student.institution_name && !student.program_name && (
+          <section className="student-data-notice" role="status">
+            <strong>Academic profile not linked</strong>
+            <p>This account exists, but Gradly has not linked it to an institution, program, and branch yet. Academic results will appear here once the student profile and semester records exist.</p>
+          </section>
+        )}
+
         {/* SEMESTERS */}
   
         <section className="student-academic">

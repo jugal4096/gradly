@@ -20,6 +20,7 @@ import AdminPortal from "./pages/admin/AdminPortal";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminApply from "./pages/admin/AdminApply";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminChangePassword from "./pages/admin/AdminChangePassword";
 
 // =====================================================
 // SUPER ADMIN
@@ -33,6 +34,13 @@ import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
+import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
+import SuperAdminAdmins from "./pages/super-admin/SuperAdminAdmins";
+import SuperAdminFeedback from "./pages/super-admin/SuperAdminFeedback";
+import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
+import SuperAdminSettings from "./pages/super-admin/SuperAdminSettings";
+import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRequests";
+import SuperAdminSecurityAlerts from "./pages/super-admin/SuperAdminSecurityAlerts";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -97,6 +105,11 @@ function App() {
           element={<AdminDashboard />}
         />
 
+        <Route
+          path="/admin/change-password"
+          element={<AdminChangePassword />}
+        />
+
         {/* =============================================
             SUPER ADMIN LOGIN
             ============================================= */}
@@ -125,6 +138,11 @@ function App() {
           />
 
           <Route
+            path="admins"
+            element={<SuperAdminAdmins />}
+          />
+
+          <Route
             path="users/:userId"
             element={<SuperAdminUserDetails />}
           />
@@ -132,6 +150,36 @@ function App() {
           <Route
             path="applications"
             element={<SuperAdminApplications />}
+          />
+
+          <Route
+            path="audit"
+            element={<SuperAdminAudit />}
+          />
+
+          <Route
+            path="feedback"
+            element={<SuperAdminFeedback />}
+          />
+
+          <Route
+            path="curriculum"
+            element={<SuperAdminCurriculum />}
+          />
+
+          <Route
+            path="settings"
+            element={<SuperAdminSettings />}
+          />
+
+          <Route
+            path="password-requests"
+            element={<SuperAdminPasswordRequests />}
+          />
+
+          <Route
+            path="security-alerts"
+            element={<SuperAdminSecurityAlerts />}
           />
         </Route>
 

@@ -47,6 +47,7 @@ export async function submitAdminApplication(
     body.institution_id,
     "Institution"
   );
+  const programId = requiredString(body.program_id, "Program");
   const branchId = requiredString(body.branch_id, "Branch");
   const fullName = requiredString(body.full_name, "Full name");
   const enrollmentNumber = requiredString(
@@ -113,7 +114,8 @@ export async function submitAdminApplication(
 
   const branch = await findBranchInInstitution(
     branchId,
-    institutionId
+    institutionId,
+    programId
   );
 
   if (!branch) {
@@ -130,7 +132,7 @@ export async function submitAdminApplication(
 
   if (duplicate) {
     throw new ApplicationError(
-      `You already have a ${duplicate.status.toLowerCase()} application for this branch.`,
+      `This Firebase account has already submitted its one allowed admin application (current status: ${duplicate.status.toLowerCase()}).`,
       409
     );
   }
@@ -150,6 +152,7 @@ export async function submitAdminApplication(
   const input: CreateApplicationInput = {
     userId: user.id,
     institutionId,
+    programId,
     branchId,
     fullName,
     enrollmentNumber,

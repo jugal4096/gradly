@@ -10,11 +10,37 @@ import { pool } from "../../config/database";
  * This module is read-only administrative inspection.
  */
 
+export async function findAllBranches() {
+  // Match Gradly's academic master-data relationship:
+  // Institution -> Program -> Branch. Do not hardcode branch names.
+  const result = await pool.query(`
+    SELECT DISTINCT
+      b.id,
+      b.name,
+      p.name AS program_name,
+      i.name AS institution_name
+    FROM institutions i
+    INNER JOIN programs p
+      ON p.institution_id = i.id
+    INNER JOIN branches b
+      ON b.program_id = p.id
+    ORDER BY
+      i.name ASC,
+      p.name ASC,
+      b.name ASC;
+  `);
+  return result.rows as Array<{
+    id: string;
+    name: string;
+    program_name: string;
+    institution_name: string;
+  }>;
+}
+
 export async function findAllStudents(search?: string) {
   const query = `
     SELECT
       u.id,
-      u.email,
       u.display_name,
       u.role,
       u.active,
@@ -22,7 +48,6 @@ export async function findAllStudents(search?: string) {
       u.created_at,
 
       sp.id AS student_profile_id,
-      sp.student_identifier,
       sp.admission_year,
       sp.current_semester_number,
       sp.graduation_year,
@@ -77,13 +102,38 @@ export async function findAllStudents(search?: string) {
 }
 
 
+
+/**
+ * Read-only guest-session directory for Super Admins.
+ * Never return the stored token hash or any raw session token.
+ */
+export async function findGuestSessions(search?: string) {
+  const query = `
+    SELECT
+      id,
+      first_seen_at,
+      last_seen_at,
+      expires_at,
+      metadata,
+      (expires_at IS NULL OR expires_at > NOW()) AS active
+    FROM guest_sessions
+    WHERE
+      $1::text IS NULL
+      OR id::text ILIKE '%' || $1 || '%'
+    ORDER BY last_seen_at DESC NULLS LAST
+    LIMIT 500;
+  `;
+
+  const result = await pool.query(query, [search?.trim() || null]);
+  return result.rows;
+}
+
 export async function findStudentById(
   userId: string
 ) {
   const query = `
     SELECT
       u.id,
-      u.email,
       u.display_name,
       u.role,
       u.active,
@@ -92,7 +142,6 @@ export async function findStudentById(
       u.updated_at,
 
       sp.id AS student_profile_id,
-      sp.student_identifier,
       sp.admission_year,
       sp.current_semester_number,
       sp.graduation_year,
@@ -283,4 +332,33 @@ export async function createAuditLog(params: {
       params.metadata ?? {},
     ]
   );
+}
+
+/**
+ * Read-only timeline of audit events associated with a student account.
+ * This only returns events actually recorded by the application; it does not
+ * infer page views or activity that was never instrumented.
+ */
+export async function findStudentActivity(userId: string) {
+  const result = await pool.query(
+    `SELECT id, actor_type, actor_role, action, entity_table, entity_id, created_at, metadata
+     FROM audit_logs
+     WHERE actor_id::text = $1::text
+     ORDER BY created_at DESC
+     LIMIT 200;`,
+    [userId]
+  );
+  return result.rows;
+}
+
+
+export async function findGuestActivity(guestSessionId: string) {
+  const result = await pool.query(`
+    SELECT id, actor_type, actor_role, action, entity_table, entity_id, created_at, metadata
+    FROM audit_logs
+    WHERE actor_id::text = $1::text AND actor_type = 'GUEST'
+    ORDER BY created_at DESC
+    LIMIT 200;
+  `, [guestSessionId]);
+  return result.rows;
 }

@@ -484,3 +484,120 @@
       display: none;
     }
   }
+
+/* Natural document scrolling: long admin pages should grow with their content. */
+.super-admin-shell { min-height: 100vh; height: auto; }
+.super-admin-body { flex: 1 0 auto; min-height: 0; align-items: stretch; }
+.super-admin-content { min-height: calc(100vh - 121px); height: auto; overflow: visible; }
+.super-admin-page { flex: 1 0 auto; min-height: 0; overflow: visible; }
+.super-admin-sidebar { align-self: stretch; }
+
+
+/* SCROLL FIX — let the browser viewport scroll the complete Super Admin page.
+   Keep the layout from trapping content inside a fixed-height flex child. */
+html,
+body,
+#root {
+  min-height: 100%;
+  height: auto !important;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+.super-admin-shell {
+  display: flex;
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+
+.super-admin-body {
+  flex: 0 0 auto !important;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+  align-items: stretch;
+}
+
+.super-admin-content {
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.super-admin-page {
+  flex: 0 0 auto !important;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.super-users-page {
+  height: auto !important;
+  min-height: 100%;
+  overflow: visible !important;
+}
+
+
+/* Document-scroll layout: avoid nested flex children trapping the viewport.
+   The shell and content expand naturally; only the browser document scrolls. */
+html:has(.super-admin-shell),
+body:has(.super-admin-shell),
+body:has(.super-admin-shell) #root {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: clip !important;
+}
+body:has(.super-admin-shell) .super-admin-shell {
+  display: block !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+}
+.super-admin-body {
+  display: grid !important;
+  grid-template-columns: 245px minmax(0, 1fr) !important;
+  flex: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  align-items: start !important;
+}
+.super-admin-sidebar {
+  position: relative !important;
+  top: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  align-self: stretch;
+}
+.super-admin-content {
+  display: block !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+.super-admin-page {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+.super-admin-footer { flex-shrink: 0; }
+@media (max-width: 850px) {
+  .super-admin-body { grid-template-columns: minmax(0, 1fr) !important; }
+  .super-admin-sidebar { width: auto !important; }
+}
+
+
+/* Super Admin compact-table preference, controlled from Settings. */
+html.sa-compact-tables .super-admin-page table th,
+html.sa-compact-tables .super-admin-page table td {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
