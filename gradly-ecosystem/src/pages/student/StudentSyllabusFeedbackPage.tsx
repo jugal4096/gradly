@@ -3,7 +3,6 @@ import { ArrowLeft, CheckCircle2, MessageSquareText, Send, ShieldCheck } from "l
 import { Link } from "react-router-dom";
 import { auth } from "../../config/firebase";
 const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, ""))+"/api";
-const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/, "").replace(/\\/api$/i, ""))+"/api";
 
 export default function StudentSyllabusFeedbackPage(){
   const [requestType,setRequestType]=useState("SYLLABUS_CHANGE");
