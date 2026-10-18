@@ -236,12 +236,27 @@ export default function AdminApply() {
     setSubmitting(true);
     try {
       const idToken = await user.getIdToken();
+      const authHeaders = {
+        Accept: "application/json",
+        Authorization: `Bearer ${idToken}`,
+      };
+      const syncResponse = await fetch(`${API_ROOT}/auth/sync`, {
+        method: "POST",
+        headers: {
+          ...authHeaders,
+          "Content-Type": "application/json",
+        },
+      });
+      const syncResult = await syncResponse.json().catch(() => ({}));
+      if (!syncResponse.ok) {
+        throw new Error(syncResult.message || "Could not prepare your Gradly account.");
+      }
+
       const response = await fetch(`${API_ROOT}/admin-applications`, {
         method: "POST",
         headers: {
+          ...authHeaders,
           "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           ...form,
