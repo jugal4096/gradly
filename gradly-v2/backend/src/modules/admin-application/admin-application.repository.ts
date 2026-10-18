@@ -50,37 +50,20 @@ export async function findBranchInInstitution(
 export async function findApplicationsForUser(userId: string) {
   const result = await pool.query(
     `SELECT
-       id,
-       institution_id,
-       program_id,
-       branch_id,
-       full_name,
-       enrollment_number,
-       mobile_number,
-       email,
-       graduation_date,
-       qualification,
-       requested_role,
-       reason,
-       additional_note,
-       status,
-       reviewed_at,
-       rejection_reason,
-       created_at,
-       updated_at,
-       p.name AS program_name,
-       b.name AS branch_name
+       aa.id, aa.institution_id, aa.program_id, aa.branch_id, aa.full_name,
+       aa.enrollment_number, aa.mobile_number, aa.email, aa.graduation_date,
+       aa.qualification, aa.requested_role, aa.reason, aa.additional_note,
+       aa.status, aa.reviewed_at, aa.rejection_reason, aa.created_at, aa.updated_at,
+       p.name AS program_name, b.name AS branch_name
      FROM public.admin_applications aa
      LEFT JOIN public.programs p ON p.id = aa.program_id
      LEFT JOIN public.branches b ON b.id = aa.branch_id
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
+     WHERE aa.user_id = $1
+     ORDER BY aa.created_at DESC`,
     [userId]
   );
-
   return result.rows;
 }
-
 export async function findDuplicateApplication(
   userId: string,
   _institutionId: string,
