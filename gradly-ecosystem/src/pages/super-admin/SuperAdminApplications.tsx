@@ -498,6 +498,7 @@ export default function SuperAdminApplications() {
             Accept: "application/json",
           },
           body: JSON.stringify({
+            programId,
             branchId: departmentId,
             approvedPermissions,
           }),
@@ -971,11 +972,12 @@ export default function SuperAdminApplications() {
                         disabled={
                           configurationLoading ||
                           configurationSaving ||
-                          actionLoading
+                          actionLoading ||
+                          !programId
                         }
                       >
                         <option value="">
-                          Select a department
+                          {programId ? "Select a department" : "Select a program first"}
                         </option>
 
                         {availableBranches.map((branch) => (
