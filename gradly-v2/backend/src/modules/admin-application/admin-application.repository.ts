@@ -75,18 +75,18 @@ export async function findApplicationsForUser(userId: string) {
 
 export async function findDuplicateApplication(
   userId: string,
-  institutionId: string,
-  branchId: string
+  _institutionId: string,
+  _branchId: string
 ) {
+  // One Firebase-backed Gradly account may submit only one admin application,
+  // regardless of institution, branch, or its current/reviewed status.
   const result = await pool.query(
     `SELECT id, status
      FROM public.admin_applications
      WHERE user_id = $1
-       AND institution_id = $2
-       AND branch_id = $3
-       AND status IN ('PENDING', 'ACCEPTED')
+     ORDER BY created_at ASC
      LIMIT 1`,
-    [userId, institutionId, branchId]
+    [userId]
   );
 
   return result.rows[0] ?? null;
