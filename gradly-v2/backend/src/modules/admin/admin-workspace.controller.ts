@@ -140,3 +140,58 @@ export async function createAdminWorkspaceNotification(req: Request, res: Respon
     return res.status(500).json({ success: false, message: "Unable to send Admin notification. Confirm the admin workspace governance migration has been applied." });
   }
 }
+
+
+export async function listAdminSubjectChangeRequestsForSuperAdmin(req: Request, res: Response) {
+  if (!(req as any).superAdmin?.superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  try {
+    const result = await pool.query(
+      `SELECT r.id, r.admin_id AS "adminId", a.admin_code AS "adminCode", a.full_name AS "adminName",
+              i.name AS institution, p.name AS program, b.name AS department,
+              r.request_type AS "requestType", r.reason, r.proposed_changes AS "proposedChanges",
+              r.status, r.review_note AS "reviewNote", r.created_at AS "createdAt", r.reviewed_at AS "reviewedAt"
+       FROM public.admin_subject_change_requests r
+       JOIN public.admins a ON a.id = r.admin_id
+       JOIN public.institutions i ON i.id = r.institution_id
+       LEFT JOIN public.programs p ON p.id = r.program_id
+       LEFT JOIN public.branches b ON b.id = r.branch_id
+       ORDER BY CASE WHEN r.status = 'PENDING' THEN 0 ELSE 1 END, r.created_at DESC
+       LIMIT 500`
+    );
+    return res.json({ success: true, requests: result.rows });
+  } catch (error) {
+    console.error("Super Admin subject requests load failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to load Admin subject requests. Confirm the admin workspace governance migration has been applied." });
+  }
+}
+
+export async function reviewAdminSubjectChangeRequest(req: Request, res: Response) {
+  const superAdminId = (req as any).superAdmin?.superAdminId;
+  if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  const { status, reviewNote } = req.body ?? {};
+  if (!["APPROVED", "REJECTED"].includes(status)) return res.status(400).json({ success: false, message: "Choose APPROVED or REJECTED." });
+  if (typeof reviewNote !== "string" || reviewNote.trim().length < 3 || reviewNote.trim().length > 2000) {
+    return res.status(400).json({ success: false, message: "Enter a review note between 3 and 2,000 characters." });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE public.admin_subject_change_requests
+       SET status = $2, reviewed_by = $3, reviewed_at = NOW(), review_note = $4, updated_at = NOW()
+       WHERE id = $1 AND status = 'PENDING'
+       RETURNING id, status, review_note AS "reviewNote", reviewed_at AS "reviewedAt"`,
+      [req.params.requestId, status, superAdminId, reviewNote.trim()]
+    );
+    if (!result.rowCount) return res.status(404).json({ success: false, message: "Pending subject request not found. It may already have been reviewed." });
+    const request = await pool.query("SELECT admin_id FROM public.admin_subject_change_requests WHERE id = $1", [req.params.requestId]);
+    if (request.rowCount) {
+      await pool.query(
+        "INSERT INTO public.admin_workspace_notifications (admin_id, notification_type, title, message, action_url) VALUES ($1, $2, $3, $4, $5)",
+        [request.rows[0].admin_id, "SUBJECT_REQUEST_REVIEW", `Subject change request ${status.toLowerCase()}`, reviewNote.trim(), "/admin/requests"]
+      );
+    }
+    return res.json({ success: true, message: `Request ${status.toLowerCase()} and the Admin has been notified.`, request: result.rows[0] });
+  } catch (error) {
+    console.error("Super Admin subject request review failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to review this subject request." });
+  }
+}
