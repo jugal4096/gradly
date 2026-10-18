@@ -1,1509 +1,450 @@
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import {
-  Activity,
   AlertCircle,
-  ArrowDownRight,
-  ArrowRight,
-  ArrowUpRight,
-  BookOpen,
-  Building2,
+  ArrowLeft,
   CheckCircle2,
-  ClipboardList,
   Clock3,
-  FileText,
-  LayoutDashboard,
-  Landmark,
   GraduationCap,
-  Settings,
-  ScrollText,
-  UserCog,
-  MessageSquare,
-  Menu,
   LogOut,
   RefreshCw,
-  Search,
   ShieldCheck,
-  Users,
-  X,
 } from "lucide-react";
-
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
-import { useNavigate } from "react-router-dom";
-
-import "../../styles/super-admin-dashboard.css";
+import { auth, signInWithGoogle, signOutUser } from "../../config/firebase";
+import "./AdminApply.css";
 
 const configuredApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api"
 ).trim().replace(/\/+$/, "");
+const API_ROOT = /\/api$/i.test(configuredApiBaseUrl)
+  ? configuredApiBaseUrl
+  : `${configuredApiBaseUrl}/api`;
 
-const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
-
-const STATS_ENDPOINT =
-  `${API_BASE_URL}/api/super-admin/dashboard/stats`;
-
-type Stats = {
-  totalUsers: number | null;
-  totalAdmins: number;
-  totalInstitutions: number;
-  totalCourses: number;
-  pendingApplications: number;
-  pendingCurriculumRequests: number;
-  pendingAdminRequests: number;
-  openFeedback: number;
-};
-
-type ActivityItem = {
+type Branch = { id: string; name: string };
+type Institution = { id: string; name: string; branches: Branch[] };
+type Application = {
   id: string;
-  title: string;
-  description?: string;
-  actorName?: string;
-  createdAt?: string;
-  category?: string;
+  institution_id?: string;
+  branch_id?: string;
+  full_name?: string;
+  enrollment_number?: string;
+  mobile_number?: string;
+  email?: string;
+  graduation_date?: string;
+  qualification?: string | null;
+  requested_role?: string;
+  reason?: string | null;
+  additional_note?: string | null;
+  status: string;
+  reviewed_at?: string | null;
+  rejection_reason?: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
-type OverviewKey =
-  | "totalUsers"
-  | "totalAdmins"
-  | "totalInstitutions"
-  | "totalCourses";
-
-type QueueKey =
-  | "pendingApplications"
-  | "pendingCurriculumRequests"
-  | "pendingAdminRequests"
-  | "openFeedback";
-
-type ActivityFilter =
-  | "all"
-  | "users"
-  | "admins"
-  | "curriculum";
-
-const EMPTY_STATS: Stats = {
-  totalUsers: null,
-  totalAdmins: 0,
-  totalInstitutions: 0,
-  totalCourses: 0,
-  pendingApplications: 0,
-  pendingCurriculumRequests: 0,
-  pendingAdminRequests: 0,
-  openFeedback: 0,
+type ApplicationForm = {
+  institution_id: string;
+  branch_id: string;
+  full_name: string;
+  enrollment_number: string;
+  mobile_number: string;
+  graduation_date: string;
+  qualification: string;
+  reason: string;
+  additional_note: string;
 };
 
-const overviewCards: {
-  key: OverviewKey;
-  label: string;
-  description: string;
-  icon: typeof Users;
-  tone: string;
-  detail: string;
-}[] = [
-  {
-    key: "totalUsers",
-    label: "Total users",
-    description: "Registered platform users",
-    icon: Users,
-    tone: "violet",
-    detail: "Monitor registered users and their account status.",
-  },
-  {
-    key: "totalAdmins",
-    label: "Administrators",
-    description: "Administrative accounts",
-    icon: ShieldCheck,
-    tone: "blue",
-    detail: "Review administrator accounts, assignments and permissions.",
-  },
-  {
-    key: "totalInstitutions",
-    label: "Institutions",
-    description: "Connected institutions",
-    icon: Building2,
-    tone: "green",
-    detail: "Inspect registered institutions and their branches.",
-  },
-  {
-    key: "totalCourses",
-    label: "Courses",
-    description: "Academic course catalogue",
-    icon: BookOpen,
-    tone: "amber",
-    detail: "Review courses and their associated academic curriculum.",
-  },
-];
+const emptyForm: ApplicationForm = {
+  institution_id: "",
+  branch_id: "",
+  full_name: "",
+  enrollment_number: "",
+  mobile_number: "",
+  graduation_date: "",
+  qualification: "B.Tech",
+  reason: "",
+  additional_note: "",
+};
 
-const queueCards: {
-  key: QueueKey;
-  label: string;
-  description: string;
-  icon: typeof ClipboardList;
-  tone: string;
-}[] = [
-  {
-    key: "pendingApplications",
-    label: "Admin applications",
-    description: "Administrator applications awaiting review",
-    icon: ClipboardList,
-    tone: "violet",
-  },
-  {
-    key: "pendingCurriculumRequests",
-    label: "Curriculum requests",
-    description: "Proposed academic curriculum changes",
-    icon: BookOpen,
-    tone: "blue",
-  },
-  {
-    key: "pendingAdminRequests",
-    label: "Admin requests",
-    description: "Requests submitted by administrators",
-    icon: FileText,
-    tone: "amber",
-  },
-  {
-    key: "openFeedback",
-    label: "Feedback",
-    description: "Open feedback items",
-    icon: MessageSquare,
-    tone: "green",
-  },
-];
-
-const quickActions: {
-  label: string;
-  description: string;
-  icon: typeof Users;
-  target: OverviewKey;
-}[] = [
-  {
-    label: "Manage users",
-    description: "Review platform accounts",
-    icon: Users,
-    target: "totalUsers",
-  },
-  {
-    label: "Manage administrators",
-    description: "Review access and permissions",
-    icon: ShieldCheck,
-    target: "totalAdmins",
-  },
-  {
-    label: "Manage institutions",
-    description: "Inspect institutions and branches",
-    icon: Building2,
-    target: "totalInstitutions",
-  },
-  {
-    label: "Manage courses",
-    description: "Inspect academic courses",
-    icon: BookOpen,
-    target: "totalCourses",
-  },
-];
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-IN").format(value);
+function humanizeStatus(status: string) {
+  return status.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function safeCount(value: unknown): number {
-  if (value === null || value === undefined || value === "") {
-    return 0;
-  }
-
-  const number = Number(value);
-
-  return Number.isFinite(number) && number >= 0 ? number : 0;
-}
-
-function nullableCount(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-
-  const number = Number(value);
-
-  return Number.isFinite(number) && number >= 0 ? number : null;
-}
-
-function formatCount(value: number | null): string {
-  return value === null ? "—" : formatNumber(value);
-}
-
-function formatDate(value?: string) {
-  if (!value) return "Date unavailable";
-
+function formatDate(value?: string | null) {
+  if (!value) return "Not available";
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date unavailable";
-  }
-
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+  return Number.isNaN(date.getTime())
+    ? "Not available"
+    : new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error
-    ? error.message
-    : "Unable to load dashboard data.";
+function messageFrom(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
-function normalizeActivity(
-  item: Record<string, unknown>,
-  index: number
-): ActivityItem {
-  const action = String(
-    item.action ?? item.title ?? "Administrative activity"
-  );
-
-  const actorRole = item.actorRole
-    ? String(item.actorRole)
-    : item.actor_role
-      ? String(item.actor_role)
-      : "";
-
-  const entityTable = item.entityTable
-    ? String(item.entityTable)
-    : item.entity_table
-      ? String(item.entity_table)
-      : "";
-
-  const explicitDescription = item.description
-    ? String(item.description)
-    : "";
-
-  const description =
-    explicitDescription ||
-    ([actorRole, entityTable].filter(Boolean).join(" · ") ||
-      "Administrative event");
-
-  const categoryText = [
-    action,
-    actorRole,
-    entityTable,
-    item.category ? String(item.category) : "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  let category = "other";
-
-  if (
-    categoryText.includes("curriculum") ||
-    categoryText.includes("course") ||
-    categoryText.includes("subject")
-  ) {
-    category = "curriculum";
-  } else if (
-    categoryText.includes("admin") ||
-    categoryText.includes("permission") ||
-    categoryText.includes("role")
-  ) {
-    category = "admins";
-  } else if (
-    categoryText.includes("user") ||
-    categoryText.includes("account") ||
-    categoryText.includes("login")
-  ) {
-    category = "users";
-  }
-
-  return {
-    id: String(item.id ?? index),
-    title: action,
-    description,
-    actorName: actorRole || undefined,
-    createdAt: item.createdAt
-      ? String(item.createdAt)
-      : item.created_at
-        ? String(item.created_at)
-        : undefined,
-    category,
-  };
-}
-
-export default function SuperAdminDashboard() {
+export default function AdminApply() {
   const navigate = useNavigate();
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const drawerRef = useRef<HTMLElement | null>(null);
-
-  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [form, setForm] = useState<ApplicationForm>(emptyForm);
+  const [loadingInstitutions, setLoadingInstitutions] = useState(true);
+  const [loadingApplications, setLoadingApplications] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const [selectedOverview, setSelectedOverview] =
-    useState<OverviewKey | null>(null);
+  const selectedInstitution = useMemo(
+    () => institutions.find((institution) => institution.id === form.institution_id),
+    [institutions, form.institution_id]
+  );
+  const availableBranches = selectedInstitution?.branches ?? [];
 
-  const [selectedQueue, setSelectedQueue] =
-    useState<QueueKey | null>(null);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
+    return unsubscribe;
+  }, []);
 
-  const [selectedAction, setSelectedAction] =
-    useState<OverviewKey | null>(null);
-
-  const [activitySearch, setActivitySearch] = useState("");
-  const [activityFilter, setActivityFilter] =
-    useState<ActivityFilter>("all");
-
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
+  const loadInstitutions = useCallback(async () => {
+    setLoadingInstitutions(true);
     try {
-      const token = localStorage.getItem("gradly_super_admin_token");
+      const response = await fetch(`${API_ROOT}/academic/institutions`, {
+        headers: { Accept: "application/json" },
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Could not load institutions and branches.");
+      }
+      const rows = result.data ?? result.institutions ?? [];
+      setInstitutions(Array.isArray(rows) ? rows : []);
+    } catch (caught) {
+      setError(messageFrom(caught, "Could not load institutions and branches."));
+    } finally {
+      setLoadingInstitutions(false);
+    }
+  }, []);
 
-      const response = await fetch(STATS_ENDPOINT, {
-        method: "GET",
-        credentials: "include",
+  const loadApplications = useCallback(async (currentUser: User, quiet = false) => {
+    if (!quiet) setLoadingApplications(true);
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch(`${API_ROOT}/admin-applications/mine`, {
         headers: {
           Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${idToken}`,
         },
       });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem("gradly_super_admin_token");
-          navigate("/super-admin/login", { replace: true });
-          throw new Error("Your session expired. Please sign in again.");
-        }
-
-        if (response.status === 403) {
-          throw new Error(
-            "This account does not have permission to access the dashboard."
-          );
-        }
-
-        if (response.status === 404) {
-          throw new Error(
-            "The dashboard statistics endpoint was not found. Check the backend route."
-          );
-        }
-
-        throw new Error(`Dashboard request failed (${response.status}).`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Could not load your application history.");
       }
-
-      const result = await response.json();
-
-      if (result?.success === false) {
-        throw new Error(
-          result.message ??
-            "The server could not return dashboard statistics."
-        );
-      }
-
-      const data = result?.data ?? result;
-
-      setStats({
-        totalUsers: nullableCount(data.totalUsers),
-        totalAdmins: safeCount(data.totalAdmins),
-        totalInstitutions: safeCount(data.totalInstitutions),
-        totalCourses: safeCount(data.totalCourses),
-        pendingApplications: safeCount(data.pendingApplications),
-        pendingCurriculumRequests: safeCount(
-          data.pendingCurriculumRequests
-        ),
-        pendingAdminRequests: safeCount(data.pendingAdminRequests),
-        openFeedback: safeCount(data.openFeedback),
-      });
-
-      setActivities(
-        Array.isArray(data.recentActivity)
-          ? data.recentActivity.map(
-              (
-                item: Record<string, unknown>,
-                index: number
-              ) => normalizeActivity(item, index)
-            )
-          : []
-      );
+      setApplications(Array.isArray(result.applications) ? result.applications : []);
     } catch (caught) {
-      setError(getErrorMessage(caught));
+      setError(messageFrom(caught, "Could not load your application history."));
     } finally {
-      setLoading(false);
+      setLoadingApplications(false);
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+    void loadInstitutions();
+  }, [loadInstitutions]);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (user) {
+      void loadApplications(user);
+    } else {
+      setApplications([]);
+    }
+  }, [user, loadApplications]);
 
-    const drawer = drawerRef.current;
+  async function handleGoogleSignIn() {
+    setError("");
+    setNotice("");
+    setSigningIn(true);
+    try {
+      const signedInUser = await signInWithGoogle();
+      setUser(signedInUser);
+      await loadApplications(signedInUser);
+    } catch (caught) {
+      setError(messageFrom(caught, "Google sign-in failed. Please try again."));
+    } finally {
+      setSigningIn(false);
+    }
+  }
 
-    const getFocusableElements = () =>
-      drawer?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      ) ?? [];
+  async function handleSignOut() {
+    setError("");
+    try {
+      await signOutUser();
+      setUser(null);
+      setApplications([]);
+      setNotice("You have signed out. Sign in with the same Google account to track your applications.");
+    } catch (caught) {
+      setError(messageFrom(caught, "Unable to sign out."));
+    }
+  }
 
-    getFocusableElements()[0]?.focus();
+  function updateField<K extends keyof ApplicationForm>(key: K, value: ApplicationForm[K]) {
+    setForm((previous) => ({
+      ...previous,
+      [key]: value,
+      ...(key === "institution_id" ? { branch_id: "" } : {}),
+    }));
+  }
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-        return;
-      }
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
 
-      if (event.key !== "Tab") return;
-
-      const focusable = Array.from(getFocusableElements());
-
-      if (focusable.length === 0) {
-        event.preventDefault();
-        return;
-      }
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === last
-      ) {
-        event.preventDefault();
-        first.focus();
-      }
+    if (!user) {
+      setError("Sign in with Google before submitting your application.");
+      return;
+    }
+    if (!form.institution_id || !form.branch_id) {
+      setError("Select both an institution and a branch.");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(form.mobile_number.trim())) {
+      setError("Enter a valid 10-digit Indian mobile number.");
+      return;
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      menuButtonRef.current?.focus();
-    };
-  }, [menuOpen]);
-
-  function goToSection(sectionId: string) {
-    setMenuOpen(false);
-
-    window.setTimeout(() => {
-      document.getElementById(sectionId)?.scrollIntoView({
-        behavior: window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        ).matches
-          ? "auto"
-          : "smooth",
-        block: "start",
+    setSubmitting(true);
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(`${API_ROOT}/admin-applications`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          ...form,
+          full_name: form.full_name.trim(),
+          enrollment_number: form.enrollment_number.trim(),
+          mobile_number: form.mobile_number.trim(),
+          qualification: form.qualification.trim(),
+          reason: form.reason.trim(),
+          additional_note: form.additional_note.trim(),
+        }),
       });
-    }, 50);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Unable to submit your application.");
+      }
+
+      setNotice(result.message || "Your application was submitted successfully.");
+      setForm({ ...emptyForm, full_name: user.displayName ?? "", qualification: "B.Tech" });
+      await loadApplications(user, true);
+    } catch (caught) {
+      setError(messageFrom(caught, "Unable to submit your application."));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function openApplications() {
-    setMenuOpen(false);
-    navigate("/super-admin/applications");
-  }
-
-  function signOut() {
-    localStorage.removeItem("gradly_super_admin_token");
-    setMenuOpen(false);
-    navigate("/super-admin/login", { replace: true });
-  }
-
-  const filteredActivities = useMemo(() => {
-    const query = activitySearch.trim().toLowerCase();
-
-    return activities.filter((item) => {
-      const searchableText = [
-        item.title,
-        item.description,
-        item.actorName,
-        item.category,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch =
-        !query || searchableText.includes(query);
-
-      const category = (item.category ?? "").toLowerCase();
-
-      const matchesFilter =
-        activityFilter === "all" ||
-        (activityFilter === "users" &&
-          (category.includes("user") ||
-            searchableText.includes("user"))) ||
-        (activityFilter === "admins" &&
-          (category.includes("admin") ||
-            searchableText.includes("admin"))) ||
-        (activityFilter === "curriculum" &&
-          (category.includes("curriculum") ||
-            searchableText.includes("curriculum")));
-
-      return matchesSearch && matchesFilter;
-    });
-  }, [activities, activitySearch, activityFilter]);
-
-  const pendingTotal =
-    stats.pendingApplications +
-    stats.pendingCurriculumRequests +
-    stats.pendingAdminRequests +
-    stats.openFeedback;
-
-  const selectedOverviewCard = overviewCards.find(
-    (card) => card.key === selectedOverview
-  );
-
-  const selectedQueueCard = queueCards.find(
-    (card) => card.key === selectedQueue
-  );
-
-  const selectedActionCard = quickActions.find(
-    (action) => action.target === selectedAction
-  );
-
-  function closeDetails() {
-    setSelectedOverview(null);
-    setSelectedQueue(null);
-    setSelectedAction(null);
-  }
-
-  function openOverview(key: OverviewKey) {
-    setSelectedOverview(key);
-    setSelectedQueue(null);
-    setSelectedAction(null);
-  }
-
-  function openQueue(key: QueueKey) {
-    setSelectedQueue(key);
-    setSelectedOverview(null);
-    setSelectedAction(null);
-  }
-
-  function openAction(target: OverviewKey) {
-    setSelectedAction(target);
-    setSelectedOverview(null);
-    setSelectedQueue(null);
-  }
-
-  const selectedCount: number | null =
-    selectedOverviewCard
-      ? stats[selectedOverviewCard.key]
-      : selectedQueueCard
-        ? stats[selectedQueueCard.key]
-        : selectedActionCard
-          ? stats[selectedActionCard.target]
-          : null;
+  const latestApplication = applications[0];
+  const canRegister = (application: Application) =>
+    ["ACCEPTED", "APPROVED"].includes(application.status.toUpperCase());
 
   return (
-    <main className="super-dashboard">
-      <div className="sd-background-orb sd-orb-one" aria-hidden="true" />
-      <div className="sd-background-orb sd-orb-two" aria-hidden="true" />
-
-      <div className="sd-shell">
-        <aside className="sd-sidebar" aria-label="Super Admin sidebar">
-          <div className="sd-sidebar-brand">
-            <span className="sd-brand-mark">G</span>
-            <span className="sd-brand-name">
-              GRADLY <small>ECOSYSTEM</small>
-            </span>
+    <main className="admin-apply-page">
+      <header className="admin-header">
+        <div className="brand">
+          <span className="brand-mark">G</span>
+          <div>
+            <div className="brand-name">GRADLY</div>
+            <div className="brand-subtitle">Institution administration</div>
           </div>
+        </div>
+        <span className="system-badge">ADMIN APPLICATIONS</span>
+      </header>
 
-          <div className="sd-sidebar-caption">WORKSPACE</div>
+      <div className="admin-main">
+        <div className="page-container">
+          <button className="admin-apply-text-button" type="button" onClick={() => navigate("/admin/login")}>
+            <ArrowLeft size={16} /> Back to Admin login
+          </button>
 
-          <nav className="sd-sidebar-nav" aria-label="Main administration">
-            <button
-              type="button"
-              className="sd-side-link is-active"
-              onClick={() => goToSection("sd-dashboard-top")}
-            >
-              <LayoutDashboard size={18} />
-              <span>Dashboard</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/users")}
-            >
-              <Users size={18} />
-              <span>Users</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/administrators")}
-            >
-              <UserCog size={18} />
-              <span>Admins</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/institutions")}
-            >
-              <Landmark size={18} />
-              <span>Institutions</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/courses")}
-            >
-              <GraduationCap size={18} />
-              <span>Courses</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={openApplications}
-            >
-              <ClipboardList size={18} />
-              <span>Applications</span>
-              {stats.pendingApplications > 0 && (
-                <span className="sd-side-count">
-                  {stats.pendingApplications}
-                </span>
-              )}
-            </button>
-
-            <div className="sd-sidebar-caption sd-sidebar-caption-spaced">
-              ACADEMIC &amp; SUPPORT
-            </div>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/curriculum")}
-            >
-              <BookOpen size={18} />
-              <span>Curriculum</span>
-              {stats.pendingCurriculumRequests > 0 && (
-                <span className="sd-side-count">
-                  {stats.pendingCurriculumRequests}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/feedback")}
-            >
-              <MessageSquare size={18} />
-              <span>Feedback</span>
-              {stats.openFeedback > 0 && (
-                <span className="sd-side-count">
-                  {stats.openFeedback}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/audit-logs")}
-            >
-              <ScrollText size={18} />
-              <span>Audit logs</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/settings")}
-            >
-              <Settings size={18} />
-              <span>Settings</span>
-            </button>
-          </nav>
-
-          <div className="sd-sidebar-bottom">
-            <div className="sd-sidebar-secure">
-              <ShieldCheck size={16} />
-              <span>
-                <strong>Secure workspace</strong>
-                <small>Super Admin access</small>
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className="sd-sidebar-signout"
-              onClick={signOut}
-            >
-              <LogOut size={17} />
-              Sign out
-            </button>
-          </div>
-        </aside>
-
-        <div className="sd-main-column">
-          <div className="sd-navigation-bar">
-            <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
-              <span className="sd-brand-mark">G</span>
-              <span className="sd-brand-name">
-                GRADLY <small>ECOSYSTEM</small>
-              </span>
-            </div>
-
-            <div className="sd-navigation-actions">
-              <span className="sd-access-chip">
-                <ShieldCheck size={14} /> Super Admin
-              </span>
-
-              <button
-                type="button"
-                className="sd-menu-toggle"
-                aria-label={
-                  menuOpen ? "Close navigation menu" : "Open navigation menu"
-                }
-                aria-expanded={menuOpen}
-                aria-controls="sd-navigation-drawer"
-                ref={menuButtonRef}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                {menuOpen ? <X size={19} /> : <Menu size={19} />}
-                <span>{menuOpen ? "Close menu" : "Menu"}</span>
-              </button>
-            </div>
-          </div>
-
-          {menuOpen && (
-            <>
-              <button
-                type="button"
-                className="sd-menu-backdrop"
-                aria-label="Close navigation menu"
-                onClick={() => setMenuOpen(false)}
-              />
-
-              <aside
-                id="sd-navigation-drawer"
-                ref={drawerRef}
-                className="sd-navigation-drawer"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="sd-drawer-title"
-              >
-                <div className="sd-drawer-heading">
-                  <div>
-                    <span className="sd-section-kicker">
-                      GRADLY / CONTROL CENTER
-                    </span>
-                    <h2 id="sd-drawer-title">Navigation</h2>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="sd-icon-button"
-                    aria-label="Close navigation menu"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <nav
-                  className="sd-drawer-nav"
-                  aria-label="Super Admin navigation"
-                >
-                  <button
-                    type="button"
-                    className="sd-drawer-link is-current"
-                    onClick={() => goToSection("sd-dashboard-top")}
-                  >
-                    <LayoutDashboard size={18} />
-                    <span>Dashboard</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/users")}
-                  >
-                    <Users size={18} />
-                    <span>Users</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/administrators")}
-                  >
-                    <UserCog size={18} />
-                    <span>Admins</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/institutions")}
-                  >
-                    <Landmark size={18} />
-                    <span>Institutions</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/courses")}
-                  >
-                    <GraduationCap size={18} />
-                    <span>Courses</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={openApplications}
-                  >
-                    <ClipboardList size={18} />
-                    <span>Applications</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <div className="sd-drawer-divider" />
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/curriculum")}
-                  >
-                    <BookOpen size={18} />
-                    <span>Curriculum</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/feedback")}
-                  >
-                    <MessageSquare size={18} />
-                    <span>Feedback</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/audit-logs")}
-                  >
-                    <ScrollText size={18} />
-                    <span>Audit logs</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/settings")}
-                  >
-                    <Settings size={18} />
-                    <span>Settings</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <div className="sd-drawer-divider" />
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-platform-metrics")}
-                  >
-                    <Users size={18} />
-                    <span>Platform metrics</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-work-queues")}
-                  >
-                    <ClipboardList size={18} />
-                    <span>Work queues</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-quick-actions")}
-                  >
-                    <ShieldCheck size={18} />
-                    <span>Quick actions</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-recent-activity")}
-                  >
-                    <Activity size={18} />
-                    <span>Recent activity</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-system-information")}
-                  >
-                    <Building2 size={18} />
-                    <span>System information</span>
-                    <ArrowRight size={15} />
-                  </button>
-                </nav>
-
-                <div className="sd-drawer-footer">
-                  <div className="sd-drawer-secure-note">
-                    <ShieldCheck size={16} />
-                    <span>Protected administrative workspace</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="sd-signout-button"
-                    onClick={signOut}
-                  >
-                    <LogOut size={17} />
-                    Sign out
-                  </button>
-                </div>
-              </aside>
-            </>
-          )}
-
-          <div id="sd-dashboard-top" />
-
-          <header className="sd-header">
-            <div className="sd-header-copy">
-              <div className="sd-eyebrow">
-                <span className="sd-eyebrow-dot" />
-                GRADLY <span className="sd-slash">/</span> SYSTEM CONTROL
-              </div>
-
-              <h1>Super Admin Dashboard</h1>
-
-              <p>
-                Your command centre for users, administrators,
-                institutions and academic governance.
-              </p>
-            </div>
-
-            <button
-              className="sd-refresh-button"
-              type="button"
-              onClick={() => void loadDashboard()}
-              disabled={loading}
-            >
-              <RefreshCw
-                size={16}
-                className={loading ? "sd-spin" : ""}
-              />
-              {loading ? "Refreshing…" : "Refresh data"}
-            </button>
-          </header>
-
-          <section className="sd-hero">
-            <div className="sd-hero-symbol">
-              <LayoutDashboard size={23} />
-            </div>
-
-            <div className="sd-hero-copy">
-              <span className="sd-hero-label">ECOSYSTEM OVERVIEW</span>
-              <h2>Everything under control.</h2>
-              <p>
-                Review platform activity and keep important
-                administrative work moving.
-              </p>
-            </div>
-
-            <div className="sd-hero-summary">
-              <span className="sd-summary-label">OPEN WORK QUEUE</span>
-              <strong>{loading ? "—" : formatNumber(pendingTotal)}</strong>
-              <span className="sd-summary-caption">
-                Items across dashboard queues
-              </span>
+          <section className="page-intro">
+            <div className="intro-system-icon"><GraduationCap size={27} /></div>
+            <div className="intro-content">
+              <p className="micro-label">ADMINISTRATOR ONBOARDING</p>
+              <h1>Apply to become an Admin</h1>
+              <p>Submit an application for your institution and branch. The Gradly Super Admin team will review it before any administrator access is granted.</p>
             </div>
           </section>
 
           {error && (
-            <section className="sd-error" role="alert">
-              <div className="sd-error-icon">
-                <AlertCircle size={19} />
-              </div>
+            <div className="system-alert" role="alert">
+              <AlertCircle className="alert-icon" size={19} />
+              <span>{error}</span>
+            </div>
+          )}
+          {notice && (
+            <div className="system-alert" role="status">
+              <CheckCircle2 className="alert-icon" size={19} />
+              <span>{notice}</span>
+            </div>
+          )}
 
-              <div className="sd-error-copy">
-                <strong>Live data couldn't be loaded</strong>
-                <p>{error}</p>
-                <span>
-                  Expected endpoint:{" "}
-                  <code>/api/super-admin/dashboard/stats</code>
-                </span>
-              </div>
-
-              <button
-                className="sd-error-retry"
-                type="button"
-                onClick={() => void loadDashboard()}
-              >
-                Retry
+          {!authReady ? (
+            <section className="auth-card"><p>Checking your sign-in session…</p></section>
+          ) : !user ? (
+            <section className="auth-card">
+              <div className="success-symbol"><ShieldCheck size={26} /></div>
+              <h2>Sign in to apply</h2>
+              <p className="success-description">Use your Google account to submit your application and check its status later. Your application history is tied to this account.</p>
+              <button className="google-sign-in-button" type="button" onClick={handleGoogleSignIn} disabled={signingIn}>
+                <span className="google-g" aria-hidden="true">G</span>
+                {signingIn ? "Signing in…" : "Continue with Google"}
               </button>
+              <p className="auth-privacy-note"><ShieldCheck size={15} /> Google sign-in is used to identify your account. It does not grant Admin access by itself.</p>
             </section>
-          )}
-
-          <section
-            id="sd-platform-metrics"
-            className="sd-section sd-anchor-section"
-          >
-            <div className="sd-section-heading">
-              <div>
-                <span className="sd-section-kicker">PLATFORM METRICS</span>
-                <h2>At a glance</h2>
-              </div>
-
-              <span className="sd-data-status">
-                <span
-                  className={
-                    error ? "sd-status-dot sd-dot-error" : "sd-status-dot"
-                  }
-                />
-                {loading
-                  ? "Updating data"
-                  : error
-                    ? "API unavailable"
-                    : "Dashboard overview"}
-              </span>
-            </div>
-
-            <div className="sd-metrics-grid">
-              {overviewCards.map((card) => {
-                const Icon = card.icon;
-                const active = selectedOverview === card.key;
-                const value = stats[card.key];
-
-                return (
-                  <button
-                    type="button"
-                    key={card.key}
-                    className={`sd-metric-card sd-tone-${card.tone} ${
-                      active ? "is-selected" : ""
-                    }`}
-                    onClick={() => openOverview(card.key)}
-                    aria-pressed={active}
-                  >
-                    <span className="sd-metric-top">
-                      <span className="sd-metric-icon">
-                        <Icon size={21} strokeWidth={1.8} />
-                      </span>
-
-                      <span className="sd-metric-arrow">
-                        <ArrowUpRight size={17} />
-                      </span>
-                    </span>
-
-                    <span className="sd-metric-label">{card.label}</span>
-
-                    <span className="sd-metric-value">
-                      {loading ? (
-                        <span className="sd-skeleton" />
-                      ) : (
-                        formatCount(value)
-                      )}
-                    </span>
-
-                    <span className="sd-metric-bottom">
-                      <span>{card.description}</span>
-                      <ArrowRight size={14} />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section
-            id="sd-work-queues"
-            className="sd-section sd-anchor-section"
-          >
-            <div className="sd-section-heading">
-              <div>
-                <span className="sd-section-kicker">ADMINISTRATION</span>
-                <h2>Work queues</h2>
-              </div>
-
-              <span className="sd-muted-note">
-                Select a card to inspect
-              </span>
-            </div>
-
-            <div className="sd-queues-grid">
-              {queueCards.map((card) => {
-                const Icon = card.icon;
-                const count = stats[card.key];
-                const active = selectedQueue === card.key;
-
-                return (
-                  <button
-                    type="button"
-                    key={card.key}
-                    className={`sd-queue-card sd-queue-${card.tone} ${
-                      active ? "is-selected" : ""
-                    }`}
-                    onClick={() => openQueue(card.key)}
-                    aria-pressed={active}
-                  >
-                    <span className="sd-queue-top">
-                      <span className="sd-queue-icon">
-                        <Icon size={19} />
-                      </span>
-
-                      <span
-                        className={`sd-queue-count ${
-                          count > 0 ? "has-pending" : ""
-                        }`}
-                      >
-                        {loading ? "—" : formatNumber(count)}
-                      </span>
-                    </span>
-
-                    <span className="sd-queue-title">{card.label}</span>
-
-                    <span className="sd-queue-description">
-                      {card.description}
-                    </span>
-
-                    <span className="sd-queue-footer">
-                      <span
-                        className={`sd-queue-status ${
-                          count > 0 ? "is-pending" : ""
-                        }`}
-                      />
-
-                      {loading
-                        ? "Checking queue…"
-                        : count > 0
-                          ? "Awaiting attention"
-                          : "No pending items"}
-
-                      <ArrowRight size={14} />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          {(selectedOverviewCard ||
-            selectedQueueCard ||
-            selectedActionCard) && (
-            <section className="sd-detail-panel" aria-live="polite">
-              <div className="sd-detail-heading">
-                <div className="sd-detail-heading-icon">
-                  <Activity size={19} />
-                </div>
-
+          ) : (
+            <>
+              <section className="tracking-card">
                 <div>
-                  <span className="sd-section-kicker">QUICK INSPECT</span>
-                  <h2>
-                    {selectedOverviewCard?.label ??
-                      selectedQueueCard?.label ??
-                      selectedActionCard?.label}
-                  </h2>
+                  <p className="micro-label">SIGNED IN ACCOUNT</p>
+                  <h2>{user.displayName || user.email || "Gradly applicant"}</h2>
+                  <p>{user.email}</p>
                 </div>
-
-                <button
-                  type="button"
-                  className="sd-icon-button"
-                  onClick={closeDetails}
-                  aria-label="Close details"
-                >
-                  <X size={17} />
+                <button className="admin-apply-text-button" type="button" onClick={handleSignOut}>
+                  <LogOut size={15} /> Sign out
                 </button>
-              </div>
+              </section>
 
-              <p className="sd-detail-description">
-                {selectedOverviewCard?.detail ??
-                  selectedQueueCard?.description ??
-                  selectedActionCard?.description}
-              </p>
+              <section className="success-card">
+                <div className="success-kicker"><ShieldCheck size={16} /> REQUEST ADMINISTRATOR ACCESS</div>
+                <h2>Application details</h2>
+                <p className="success-description">Fields marked with * are required. Use accurate academic and contact details so your request can be verified.</p>
 
-              <div className="sd-detail-bottom">
-                <div className="sd-detail-count">
-                  <span>Current count</span>
-                  <strong>
-                    {loading ? "—" : formatCount(selectedCount)}
-                  </strong>
-                </div>
-
-                <span className="sd-detail-hint">
-                  <AlertCircle size={15} />
-                  Management actions must be connected to their
-                  authorized backend modules.
-                </span>
-              </div>
-            </section>
+                <form onSubmit={handleSubmit}>
+                  <div className="form-grid">
+                    <div className="form-field">
+                      <label htmlFor="app-full-name">Full name *</label>
+                      <input id="app-full-name" value={form.full_name} onChange={(event) => updateField("full_name", event.target.value)} autoComplete="name" maxLength={120} required />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-email">Google account email</label>
+                      <input id="app-email" value={user.email ?? ""} readOnly aria-readonly="true" />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-institution">Institution *</label>
+                      <select id="app-institution" value={form.institution_id} onChange={(event) => updateField("institution_id", event.target.value)} required disabled={loadingInstitutions}>
+                        <option value="">{loadingInstitutions ? "Loading institutions…" : "Select institution"}</option>
+                        {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-branch">Branch / department *</label>
+                      <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.institution_id || availableBranches.length === 0}>
+                        <option value="">Select branch</option>
+                        {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-enrollment">Enrollment / roll number *</label>
+                      <input id="app-enrollment" value={form.enrollment_number} onChange={(event) => updateField("enrollment_number", event.target.value)} autoComplete="off" maxLength={80} required />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-mobile">Mobile number *</label>
+                      <input id="app-mobile" type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number" value={form.mobile_number} onChange={(event) => updateField("mobile_number", event.target.value.replace(/\D/g, "").slice(0, 10))} autoComplete="tel" maxLength={10} required />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-qualification">Qualification</label>
+                      <input id="app-qualification" value={form.qualification} onChange={(event) => updateField("qualification", event.target.value)} maxLength={100} placeholder="e.g. B.Tech, M.Tech" />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-graduation-date">Expected / actual graduation date *</label>
+                      <input id="app-graduation-date" type="date" value={form.graduation_date} onChange={(event) => updateField("graduation_date", event.target.value)} min={new Date().toISOString().slice(0, 10)} required />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-reason">Why are you applying?</label>
+                      <textarea id="app-reason" value={form.reason} onChange={(event) => updateField("reason", event.target.value)} rows={3} maxLength={1500} placeholder="Briefly describe your responsibilities or reason for requesting access." />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="app-note">Additional note</label>
+                      <textarea id="app-note" value={form.additional_note} onChange={(event) => updateField("additional_note", event.target.value)} rows={3} maxLength={1500} placeholder="Anything else the review team should know (optional)." />
+                    </div>
+                  </div>
+                  <div className="form-footer">
+                    <p>Your request will remain pending until reviewed. Submitting this form does not create an Admin account.</p>
+                    <button className="system-button" type="submit" disabled={submitting || loadingInstitutions || institutions.length === 0}>
+                      {submitting ? "Submitting application…" : "Submit application"}
+                    </button>
+                  </div>
+                </form>
+              </section>
+            </>
           )}
 
-          <div
-            className="sd-content-grid sd-anchor-section"
-            id="sd-quick-actions"
-          >
-            <section className="sd-panel sd-quick-actions">
-              <div className="sd-panel-heading">
-                <div>
-                  <span className="sd-section-kicker">SHORTCUTS</span>
-                  <h2>Quick actions</h2>
-                </div>
-
-                <span className="sd-panel-badge">MANAGE</span>
+          <section className="tracking-card application-history">
+            <div className="application-status-heading">
+              <div>
+                <p className="micro-label">APPLICATION TRACKING</p>
+                <h2>Your application history</h2>
+                <p>Sign in with the same Google account whenever you want to check progress.</p>
               </div>
+              {user && (
+                <button className="admin-apply-text-button" type="button" onClick={() => void loadApplications(user)} disabled={loadingApplications}>
+                  <RefreshCw size={15} /> {loadingApplications ? "Refreshing…" : "Refresh status"}
+                </button>
+              )}
+            </div>
 
-              <div className="sd-action-list">
-                {quickActions.map((action) => {
-                  const Icon = action.icon;
-                  const active = selectedAction === action.target;
-
+            {!user ? (
+              <p className="success-description">Sign in with Google to view applications submitted from your account.</p>
+            ) : loadingApplications ? (
+              <p className="success-description">Loading your applications…</p>
+            ) : applications.length === 0 ? (
+              <p className="success-description">No applications found for this Google account yet.</p>
+            ) : (
+              <div className="application-history-list">
+                {applications.map((application) => {
+                  const statusClass = application.status.toLowerCase();
                   return (
-                    <button
-                      type="button"
-                      key={action.target}
-                      className={`sd-action-item ${
-                        active ? "is-selected" : ""
-                      }`}
-                      onClick={() => openAction(action.target)}
-                    >
-                      <span className="sd-action-icon">
-                        <Icon size={18} />
-                      </span>
-
-                      <span className="sd-action-copy">
-                        <strong>{action.label}</strong>
-                        <span>{action.description}</span>
-                      </span>
-
-                      <ArrowRight
-                        size={16}
-                        className="sd-action-arrow"
-                      />
-                    </button>
+                    <article className="application-status-card" key={application.id}>
+                      <div className="application-status-heading">
+                        <span className={`application-status-pill status-${statusClass}`}>
+                          {["PENDING", "UNDER_REVIEW"].includes(application.status.toUpperCase()) ? <Clock3 size={13} /> : <CheckCircle2 size={13} />}
+                          {humanizeStatus(application.status)}
+                        </span>
+                        <span className="application-date">Submitted {formatDate(application.created_at)}</span>
+                      </div>
+                      <h3>{application.full_name || "Admin access request"}</h3>
+                      <p><strong>Application ID:</strong> {application.id}</p>
+                      <p><strong>Role requested:</strong> {humanizeStatus(application.requested_role || "DEPARTMENT_ADMIN")}</p>
+                      <p><strong>Graduation date:</strong> {application.graduation_date || "Not provided"}</p>
+                      {application.reviewed_at && <p><strong>Reviewed:</strong> {formatDate(application.reviewed_at)}</p>}
+                      {application.rejection_reason && <div className="rejection-reason"><strong>Review note</strong><p>{application.rejection_reason}</p></div>}
+                      {canRegister(application) && (
+                        <div className="accepted-notice">
+                          <strong>Your application has been approved.</strong>
+                          <p>You can now create your Admin ID and password. Administrator access is not activated until registration is completed.</p>
+                          <button className="system-button" type="button" onClick={() => navigate(`/admin/register?applicationId=${encodeURIComponent(application.id)}`)}>
+                            Continue to registration
+                          </button>
+                        </div>
+                      )}
+                    </article>
                   );
                 })}
               </div>
-
-              <div className="sd-panel-note">
-                <ShieldCheck size={15} />
-                Access is enforced by the backend.
-              </div>
-            </section>
-
-            <section
-              className="sd-panel sd-activity-panel"
-              id="sd-recent-activity"
-            >
-              <div className="sd-panel-heading">
-                <div>
-                  <span className="sd-section-kicker">AUDIT TRAIL</span>
-                  <h2>Recent activity</h2>
-                </div>
-
-                <span className="sd-panel-badge">
-                  {activities.length} EVENTS
-                </span>
-              </div>
-
-              <div className="sd-activity-controls">
-                <label className="sd-search">
-                  <Search size={16} />
-
-                  <input
-                    type="search"
-                    placeholder="Search activity…"
-                    value={activitySearch}
-                    onChange={(event) =>
-                      setActivitySearch(event.target.value)
-                    }
-                    aria-label="Search administrative activity"
-                  />
-
-                  {activitySearch && (
-                    <button
-                      type="button"
-                      onClick={() => setActivitySearch("")}
-                      aria-label="Clear search"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </label>
-
-                <div
-                  className="sd-filter-tabs"
-                  aria-label="Activity category"
-                >
-                  {(
-                    [
-                      ["all", "All"],
-                      ["users", "Users"],
-                      ["admins", "Admins"],
-                      ["curriculum", "Curriculum"],
-                    ] as [ActivityFilter, string][]
-                  ).map(([value, label]) => (
-                    <button
-                      type="button"
-                      key={value}
-                      className={
-                        activityFilter === value ? "is-active" : ""
-                      }
-                      onClick={() => setActivityFilter(value)}
-                      aria-pressed={activityFilter === value}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="sd-activity-empty">
-                  <RefreshCw size={20} className="sd-spin" />
-                  <strong>Loading activity…</strong>
-                  <span>
-                    Fetching recent events from the dashboard API.
-                  </span>
-                </div>
-              ) : filteredActivities.length > 0 ? (
-                <div className="sd-activity-list">
-                  {filteredActivities.slice(0, 8).map((item) => (
-                    <article
-                      className="sd-activity-item"
-                      key={item.id}
-                    >
-                      <div className="sd-activity-icon">
-                        <Clock3 size={16} />
-                      </div>
-
-                      <div className="sd-activity-copy">
-                        <strong>{item.title}</strong>
-                        <p>
-                          {item.description ||
-                            item.actorName ||
-                            "Administrative event"}
-                        </p>
-                        <span>{formatDate(item.createdAt)}</span>
-                      </div>
-
-                      <ArrowDownRight
-                        size={15}
-                        className="sd-activity-trail"
-                      />
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="sd-activity-empty">
-                  <div className="sd-empty-icon">
-                    <Activity size={22} />
-                  </div>
-
-                  <strong>
-                    {error
-                      ? "Activity unavailable"
-                      : activities.length === 0
-                        ? "No activity loaded yet"
-                        : "No matching events"}
-                  </strong>
-
-                  <span>
-                    {error
-                      ? "Check the dashboard API and audit log source."
-                      : activities.length === 0
-                        ? "The API should return a recentActivity array to populate this feed."
-                        : "Try another search term or activity filter."}
-                  </span>
-
-                  {(activitySearch || activityFilter !== "all") && (
-                    <button
-                      type="button"
-                      className="sd-clear-filters"
-                      onClick={() => {
-                        setActivitySearch("");
-                        setActivityFilter("all");
-                      }}
-                    >
-                      Clear filters
-                    </button>
-                  )}
-                </div>
-              )}
-            </section>
-          </div>
-
-          <section
-            className="sd-system-strip sd-anchor-section"
-            id="sd-system-information"
-          >
-            <div className="sd-system-title">
-              <span className="sd-system-icon">
-                <ShieldCheck size={18} />
-              </span>
-
-              <div>
-                <strong>System information</strong>
-                <span>Gradly ecosystem · Version 2</span>
-              </div>
-            </div>
-
-            <div className="sd-system-item">
-              <span>Database</span>
-              <strong>
-                <CheckCircle2 size={14} />
-                PostgreSQL
-              </strong>
-            </div>
-
-            <div className="sd-system-item">
-              <span>Environment</span>
-              <strong>
-                <span className="sd-env-dot" />
-                Development
-              </strong>
-            </div>
-
-            <div className="sd-system-item">
-              <span>Dashboard API</span>
-              <strong className={error ? "sd-api-error" : ""}>
-                {error
-                  ? "Unavailable"
-                  : loading
-                    ? "Connecting…"
-                    : "Responded"}
-              </strong>
-            </div>
+            )}
+            {latestApplication && <p className="application-date">Last updated: {formatDate(latestApplication.updated_at)}</p>}
           </section>
 
-          <footer className="sd-footer">
-            <span>GRADLY ECOSYSTEM</span>
-            <span>Central administration · Protected workspace</span>
-          </footer>
+          <p className="auth-privacy-note"><ShieldCheck size={15} /> Applications are tied to your signed-in account. Only submit details you are authorized to provide.</p>
         </div>
       </div>
     </main>
