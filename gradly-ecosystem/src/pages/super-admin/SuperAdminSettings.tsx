@@ -5,8 +5,8 @@ import "./SuperAdminSettings.css";
 
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api")
   .trim()
-  .replace(/\\/+$/, "")
-  .replace(/\\/api$/i, "") + "/api";
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "") + "/api";
 type CheckState={state:"checking"|"ok"|"error";detail:string};
 type Theme="light"|"dark";
 type FontChoice="system"|"modern"|"serif";
