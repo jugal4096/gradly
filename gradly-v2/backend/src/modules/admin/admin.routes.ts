@@ -6,6 +6,7 @@ import {
 } from "../../middleware/admin-auth.middleware";
 import { requireAdminPermission } from "../../middleware/permission.middleware";
 import { listAdminCurriculum } from "./admin-curriculum.controller";
+import { getAdminWorkspaceProfile } from "./admin.repository";
 
 const router = Router();
 
@@ -15,11 +16,17 @@ router.post("/change-password", authenticateAdminToken, changeAdminPassword);
 router.get(
   "/me",
   authenticateAdminToken,
-  (req: AdminAuthenticatedRequest, res) => {
-    res.status(200).json({
-      message: "Admin authentication successful.",
-      admin: req.admin,
-    });
+  async (req: AdminAuthenticatedRequest, res) => {
+    try {
+      const adminId = req.admin?.adminId;
+      if (!adminId) return res.status(401).json({ success: false, message: "Admin session is missing." });
+      const admin = await getAdminWorkspaceProfile(adminId);
+      if (!admin || admin.status !== "ACTIVE") return res.status(403).json({ success: false, message: "This Admin account is not active." });
+      return res.status(200).json({ success: true, message: "Admin authentication successful.", admin });
+    } catch (error) {
+      console.error("Admin workspace profile load failed:", error);
+      return res.status(500).json({ success: false, message: "Unable to load Admin workspace profile." });
+    }
   }
 );
 
