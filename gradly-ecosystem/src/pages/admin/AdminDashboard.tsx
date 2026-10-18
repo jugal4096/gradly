@@ -45,13 +45,13 @@ export default function AdminDashboard() {
   useEffect(()=>{void load();},[load]);
 
   const adminName=display(profile?.full_name||profile?.fullName||profile?.admin_code||profile?.adminCode);
-  const institution=display(profile?.institution_name||profile?.institutionName||courses[0]?.branch);
+  const institution=display(profile?.institution_name||profile?.institutionName);
   const program=display(profile?.program_name||courses[0]?.program);
   const department=display(profile?.branch_name||profile?.branchName||courses[0]?.branch);
   const unread=notifications.filter(n=>!n.readAt).length;
   const pending=requests.filter(r=>String(r.status).toUpperCase()==="PENDING").length;
 
-  const navItems=[
+  const navItems: {to:string;label:string;icon:typeof LayoutDashboard;active?:boolean;badge?:number}[]=[
     {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard,active:true},
     {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
     {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
