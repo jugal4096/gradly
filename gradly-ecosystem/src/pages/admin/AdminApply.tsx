@@ -27,7 +27,10 @@ type Institution = { id: string; name: string; branches: Branch[] };
 type Application = {
   id: string;
   institution_id?: string;
+  program_id?: string;
+  program_name?: string | null;
   branch_id?: string;
+  branch_name?: string | null;
   full_name?: string;
   enrollment_number?: string;
   mobile_number?: string;
@@ -606,7 +609,7 @@ export default function AdminApply() {
                       </div>
                       <h3>{application.full_name || "Admin access request"}</h3>
                       <p><strong>Application ID:</strong> {application.id}</p>
-                      <p><strong>Role requested:</strong> {humanizeStatus(application.requested_role || "DEPARTMENT_ADMIN")}</p>
+                      <p><strong>Program:</strong> {application.program_name || "Not assigned"}</p><p><strong>Department:</strong> {application.branch_name || "Not assigned"}</p><p><strong>Role requested:</strong> {humanizeStatus(application.requested_role || "DEPARTMENT_ADMIN")}</p>
                       <p><strong>Graduation date:</strong> {application.graduation_date || "Not provided"}</p>
                       {application.reviewed_at && <p><strong>Reviewed:</strong> {formatDate(application.reviewed_at)}</p>}
                       {application.rejection_reason && <div className="rejection-reason"><strong>Review note</strong><p>{application.rejection_reason}</p></div>}
