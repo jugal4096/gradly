@@ -47,6 +47,7 @@ export async function submitAdminApplication(
     body.institution_id,
     "Institution"
   );
+  const programId = requiredString(body.program_id, "Program");
   const branchId = requiredString(body.branch_id, "Branch");
   const fullName = requiredString(body.full_name, "Full name");
   const enrollmentNumber = requiredString(
