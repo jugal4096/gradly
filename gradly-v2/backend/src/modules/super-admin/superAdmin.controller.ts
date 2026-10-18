@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { authenticateSuperAdmin } from "./superAdmin.service";
-import { LoginLockedError } from "../auth-security/login-security.service";
+import { InvalidLoginAttemptError, LoginLockedError } from "../auth-security/login-security.service";
 
 export async function loginSuperAdmin(
   req: Request,
@@ -31,6 +31,10 @@ export async function loginSuperAdmin(
       superAdmin: result.superAdmin,
     });
   } catch (error) {
+    if (error instanceof InvalidLoginAttemptError) {
+      return res.status(401).json({ code: "INVALID_CREDENTIALS", message: error.message, attemptsRemaining: error.attemptsRemaining });
+    }
+
     if (error instanceof LoginLockedError) {
       return res.status(423).json({
         code: "ACCOUNT_LOCKED",
