@@ -83,6 +83,7 @@ export async function createAdmin(
     INSERT INTO admins (
       admin_code,
       institution_id,
+      program_id,
       branch_id,
       full_name,
       email,
