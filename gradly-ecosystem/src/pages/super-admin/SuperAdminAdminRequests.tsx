@@ -4,7 +4,7 @@ import "./SuperAdminAdminRequests.css";
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
 type RequestItem={id:string;adminId:string;adminCode:string;adminName:string;institution:string;program:string|null;department:string|null;requestType:string;reason:string;proposedChanges:Record<string,unknown>;status:string;reviewNote?:string|null;createdAt:string;};
-const humanize=(v:string)=>v.toLowerCase().replace(/_/g," ").replace(/\\b\\w/g,m=>m.toUpperCase());
+const humanize=(v:string)=>v.toLowerCase().replace(/_/g," ").replace(/\b\w/g,m=>m.toUpperCase());
 const fmtDate=(v:string)=>new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v));
 
 export default function SuperAdminAdminRequests(){
