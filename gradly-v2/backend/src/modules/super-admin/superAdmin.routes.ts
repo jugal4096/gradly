@@ -15,7 +15,7 @@ import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.control
 import { listFeedbackRequests } from "./superAdmin-feedback.controller";
 import { listCurriculum } from "./superAdmin-curriculum.controller";
 import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
-import { createAdminWorkspaceNotification } from "../admin/admin-workspace.controller";
+import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
 
 const router = Router();
 
@@ -63,6 +63,8 @@ router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
 router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
 router.get("/security-notifications", authenticateSuperAdminToken, listSecurityNotifications);
 router.post("/admin-workspace-notifications", authenticateSuperAdminToken, createAdminWorkspaceNotification);
+router.get("/admin-subject-change-requests", authenticateSuperAdminToken, listAdminSubjectChangeRequestsForSuperAdmin);
+router.patch("/admin-subject-change-requests/:requestId/review", authenticateSuperAdminToken, reviewAdminSubjectChangeRequest);
 router.patch("/security-notifications/:notificationId/acknowledge", authenticateSuperAdminToken, acknowledgeSecurityNotification);
 router.patch("/security-notifications/:notificationId/revoke-lockout", authenticateSuperAdminToken, revokeAccountLockout);
 
