@@ -134,11 +134,27 @@ export default function AdminApply() {
     if (!quiet) setLoadingApplications(true);
     try {
       const idToken = await currentUser.getIdToken();
-      const response = await fetch(`${API_ROOT}/admin-applications/mine`, {
+      const authHeaders = {
+        Accept: "application/json",
+        Authorization: `Bearer ${idToken}`,
+      };
+
+      // Ensure a first-time Google applicant has a Gradly user record before
+      // submitting or tracking an application.
+      const syncResponse = await fetch(`${API_ROOT}/auth/sync`, {
+        method: "POST",
         headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${idToken}`,
+          ...authHeaders,
+          "Content-Type": "application/json",
         },
+      });
+      const syncResult = await syncResponse.json().catch(() => ({}));
+      if (!syncResponse.ok) {
+        throw new Error(syncResult.message || "Could not prepare your Gradly account.");
+      }
+
+      const response = await fetch(`${API_ROOT}/admin-applications/mine`, {
+        headers: authHeaders,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || result.success === false) {
