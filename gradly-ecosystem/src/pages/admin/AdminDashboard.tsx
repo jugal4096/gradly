@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         </tbody></table>{loading&&<div className="admin-curriculum-empty">Loading institution curriculum…</div>}</div>
         <p className="admin-dashboard-footnote"><GraduationCap size={15}/> Curriculum records are restricted by the program and department assigned by Super Admin. Editing and publishing require dedicated write permissions and backend workflows.</p>
       </section>}
-      {workspaceView==="overview"&&<section className="admin-dashboard-secondary"><div><Activity size={18}/><div><strong>Academic review</strong><p>Use the filters to check semester coverage, credit values and course classifications.</p></div></div><div><ShieldCheck size={18}/><div><strong>Access boundary</strong><p>Your curriculum endpoint scopes results to your assigned institution and, when assigned, branch.</p></div></div></section>
+      {workspaceView==="overview"&&<section className="admin-dashboard-secondary"><div><Activity size={18}/><div><strong>Academic review</strong><p>Use the filters to check semester coverage, credit values and course classifications.</p></div></div><div><ShieldCheck size={18}/><div><strong>Access boundary</strong><p>Your curriculum endpoint scopes results to your assigned institution and, when assigned, branch.</p></div></div></section>}
       <footer className="admin-dashboard-footer">GRADLY · Institution administration · Protected workspace</footer>
     </div>
   </main>;
