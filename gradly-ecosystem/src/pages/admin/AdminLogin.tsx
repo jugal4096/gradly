@@ -29,7 +29,7 @@ export default function AdminLogin(){
  }
  return <main className="admin-login-page"><section className="admin-login-card">
   <button className="admin-login-back" type="button" onClick={()=>navigate("/admin")}><ArrowLeft size={15}/> Admin Portal</button>
-  <div className="admin-login-brand"><img src="/logo.svg" alt="Gradly" onError={(event) => { const image = event.currentTarget; if (image.dataset.fallback === "1") { image.style.display = "none"; return; } image.dataset.fallback = "1"; image.src = "/gradly-logo.png"; }} /><div><strong>GRADLY</strong><small>Institution administration</small></div></div>
+  <div className="admin-login-brand"><img src="/gradly-ecosystem-logo.png" alt="Gradly" onError={(event) => { const image = event.currentTarget; if (image.dataset.fallback === "1") { image.style.display = "none"; return; } image.dataset.fallback = "1"; image.src = "/gradly-ecosystem-logo.png"; }} /><div><strong>GRADLY</strong><small>Institution administration</small></div></div>
   <div className="admin-login-icon"><ShieldCheck size={24}/></div>
   <p className="admin-login-eyebrow">AUTHORIZED ACCESS</p><h1>Admin sign in</h1><p className="admin-login-subtitle">Sign in with the Admin ID issued to your approved account.</p>
   {error&&<div className="admin-login-error" role="alert"><AlertCircle size={17}/><span>{error}</span></div>}
