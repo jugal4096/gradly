@@ -44,15 +44,15 @@
 .ad-settings-note{margin:16px 0 0;color:#7a8980;font-size:10px;line-height:1.7}
 .ad-danger-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid #f0d2ce;border-radius:9px;color:#a13e35;background:#fff7f6;cursor:pointer;font-size:10px;font-weight:800}
 .ad-danger-button:hover{background:#ffefed}
-html[data-admin-font="system"] .admin-dashboard{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-html[data-admin-font="modern"] .admin-dashboard{font-family:"DM Sans","Segoe UI",sans-serif}
-html[data-admin-font="serif"] .admin-dashboard{font-family:Georgia,"Times New Roman",serif}
-html[data-admin-font-size="small"] .admin-dashboard .ad-content{font-size:92%}
-html[data-admin-font-size="large"] .admin-dashboard .ad-content{font-size:110%}
-html[data-admin-compact="true"] .admin-dashboard .ad-content{padding-top:16px}
+.admin-dashboard[data-font="system"]{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.admin-dashboard[data-font="modern"]{font-family:"DM Sans","Segoe UI",sans-serif}
+.admin-dashboard[data-font="serif"]{font-family:Georgia,"Times New Roman",serif}
+.admin-dashboard[data-font-size="small"] .ad-content{font-size:92%}
+.admin-dashboard[data-font-size="large"] .ad-content{font-size:110%}
+.admin-dashboard[data-compact="true"] .ad-content{padding-top:16px}
 html[data-admin-compact="true"] .admin-dashboard .ad-panel{padding:16px;margin-top:12px}
 html[data-admin-compact="true"] .admin-dashboard .ad-table td,html[data-admin-compact="true"] .admin-dashboard .ad-table th{padding:8px}
-html[data-admin-reduced-motion="true"] .admin-dashboard *,html[data-admin-reduced-motion="true"] .admin-dashboard *::before,html[data-admin-reduced-motion="true"] .admin-dashboard *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+.admin-dashboard[data-reduced-motion="true"] *,html[data-admin-reduced-motion="true"] .admin-dashboard *::before,html[data-admin-reduced-motion="true"] .admin-dashboard *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 .admin-dashboard[data-theme="dark"] .ad-setting-control>span,.admin-dashboard[data-theme="dark"] .ad-setting-toggle strong{color:#d5e7db}
 .admin-dashboard[data-theme="dark"] .ad-setting-control select{background:#101a16;color:#e2eee6;border-color:#30463a}
 .admin-dashboard[data-theme="dark"] .ad-setting-toggle{border-color:#30463a}
