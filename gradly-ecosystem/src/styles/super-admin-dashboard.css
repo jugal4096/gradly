@@ -2187,3 +2187,99 @@
     min-width: 0;
   }
 }
+
+
+/* Academic governance cards — Admin workspace workflows */
+.sd-governance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.sd-governance-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  min-height: 116px;
+  padding: 18px;
+  border: 1px solid var(--sd-border);
+  border-radius: 17px;
+  background: #fff;
+  color: var(--sd-ink);
+  text-align: left;
+  box-shadow: 0 7px 20px #202d4d06;
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.sd-governance-card:hover {
+  border-color: #cfc5ff;
+  box-shadow: 0 12px 26px #4532a00e;
+  transform: translateY(-2px);
+}
+.sd-governance-card:focus-visible {
+  outline: 3px solid #a99aff;
+  outline-offset: 3px;
+}
+.sd-governance-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border-radius: 13px;
+}
+.sd-governance-icon.governance-violet { color: #7558e8; background: #f0edff; }
+.sd-governance-icon.governance-green { color: #178b65; background: #e8f8f0; }
+.sd-governance-icon.governance-blue { color: #2c69bf; background: #eaf3ff; }
+.sd-governance-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+}
+.sd-governance-copy strong {
+  color: #242b42;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+.sd-governance-copy small {
+  color: #778198;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.sd-governance-count {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 3px;
+  color: #282442;
+  font-size: 20px;
+  font-weight: 800;
+  text-align: right;
+}
+.sd-governance-count small {
+  color: #858ba1;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.sd-governance-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  color: #6550c9;
+  font-size: 11px;
+  font-weight: 800;
+}
+@media (max-width: 1050px) {
+  .sd-governance-grid { grid-template-columns: 1fr; }
+  .sd-governance-card { min-height: 94px; }
+}
+@media (max-width: 520px) {
+  .sd-governance-card { align-items: flex-start; gap: 10px; padding: 14px; }
+  .sd-governance-icon { width: 37px; height: 37px; }
+  .sd-governance-count { font-size: 17px; }
+  .sd-governance-action { font-size: 10px; }
+}
