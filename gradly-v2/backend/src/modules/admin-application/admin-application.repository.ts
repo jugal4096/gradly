@@ -103,7 +103,7 @@ export async function createApplication(input: CreateApplicationInput) {
        mobile_number, email, graduation_date, qualification, requested_role,
        reason, additional_note, status, created_at, updated_at
      ) VALUES (
-       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'DEPARTMENT_ADMIN', $11, $12,
        'PENDING', NOW(), NOW()
      ) RETURNING *`,
     [
