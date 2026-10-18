@@ -5,6 +5,7 @@ import {
   recordLoginAttempt,
   registerFailedLogin,
   resetExpiredLockout,
+  notifySecurityLockout,
   type LoginAttemptContext,
   type LoginSecurityState,
   type LoginSecurityUpdate,
@@ -38,9 +39,7 @@ export interface LoginTransactionResult<T> {
 }
 
 const NORMAL_ATTEMPT_LIMIT = 3;
-const FIRST_LOCKOUT_ATTEMPT_LIMIT = 2;
-const FIRST_LOCKOUT_DURATION_MS = 12 * 60 * 60 * 1000;
-const SECOND_LOCKOUT_DURATION_MS = 24 * 60 * 60 * 1000;
+const LOCKOUT_DURATION_MS = 12 * 60 * 60 * 1000;
 
 async function ensureLoginAllowed(
   context: LoginAttemptContext
@@ -102,21 +101,12 @@ async function handleFailedLogin(
   let lockoutLevel = state.lockout_level;
   let lockedUntil: Date | null = null;
 
-  if (failedAttempts >= attemptLimit) {
-    if (lockoutLevel === 0) {
-      lockoutLevel = 1;
-      attemptLimit = FIRST_LOCKOUT_ATTEMPT_LIMIT;
-
-      lockedUntil = new Date(
-        Date.now() + FIRST_LOCKOUT_DURATION_MS
-      );
-    } else {
-      lockoutLevel = 2;
-
-      lockedUntil = new Date(
-        Date.now() + SECOND_LOCKOUT_DURATION_MS
-      );
-    }
+  if (failedAttempts >= 3) {
+    lockoutLevel = lockoutLevel + 1;
+    attemptLimit = 3;
+    lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+  } else {
+    attemptLimit = 3;
   }
 
   const update: LoginSecurityUpdate = {
@@ -126,17 +116,12 @@ async function handleFailedLogin(
     lockedUntil,
   };
 
-  await registerFailedLogin(
-    context.principalType,
-    context.principalId,
-    update
-  );
+  await registerFailedLogin(context.principalType, context.principalId, update);
+  await recordLoginAttempt(context, false, "INVALID_CREDENTIALS");
 
-  await recordLoginAttempt(
-    context,
-    false,
-    "INVALID_CREDENTIALS"
-  );
+  if (lockedUntil) {
+    await notifySecurityLockout(context.principalType, context.principalId, lockedUntil);
+  }
 }
 
 async function handleSuccessfulLogin(
