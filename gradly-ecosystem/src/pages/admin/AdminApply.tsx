@@ -22,7 +22,7 @@ const API_ROOT = /\/api$/i.test(configuredApiBaseUrl)
   ? configuredApiBaseUrl
   : `${configuredApiBaseUrl}/api`;
 
-type Branch = { id: string; name: string };
+type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
 type Application = {
   id: string;
@@ -48,6 +48,7 @@ type PasswordRequest = { id: string; admin_code: string; admin_email: string; st
 
 type ApplicationForm = {
   institution_id: string;
+  program_id: string;
   branch_id: string;
   full_name: string;
   enrollment_number: string;
@@ -60,6 +61,7 @@ type ApplicationForm = {
 
 const emptyForm: ApplicationForm = {
   institution_id: "",
+  program_id: "",
   branch_id: "",
   full_name: "",
   enrollment_number: "",
@@ -111,7 +113,12 @@ export default function AdminApply() {
     () => institutions.find((institution) => institution.id === form.institution_id),
     [institutions, form.institution_id]
   );
-  const availableBranches = selectedInstitution?.branches ?? [];
+  const availablePrograms = useMemo(() => {
+    const uniquePrograms = new Map<string, { id: string; name: string; level?: string | null }>();
+    (selectedInstitution?.branches ?? []).forEach((branch) => uniquePrograms.set(branch.program_id, { id: branch.program_id, name: branch.program_name, level: branch.program_level }));
+    return Array.from(uniquePrograms.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [selectedInstitution]);
+  const availableBranches = (selectedInstitution?.branches ?? []).filter((branch) => branch.program_id === form.program_id);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -305,7 +312,8 @@ export default function AdminApply() {
     setForm((previous) => ({
       ...previous,
       [key]: value,
-      ...(key === "institution_id" ? { branch_id: "" } : {}),
+      ...(key === "institution_id" ? { program_id: "", branch_id: "" } : {}),
+      ...(key === "program_id" ? { branch_id: "" } : {}),
     }));
   }
 
@@ -318,8 +326,8 @@ export default function AdminApply() {
       setError("Sign in with Google before submitting your application.");
       return;
     }
-    if (!form.institution_id || !form.branch_id) {
-      setError("Select both an institution and a branch.");
+    if (!form.institution_id || !form.program_id || !form.branch_id) {
+      setError("Select an institution, program, and department.");
       return;
     }
     if (!/^[6-9]\d{9}$/.test(form.mobile_number.trim())) {
@@ -486,10 +494,18 @@ export default function AdminApply() {
                         </select>
                       </div>
                       <div className="form-field">
-                        <label htmlFor="app-branch">Branch / department *</label>
-                        <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.institution_id || availableBranches.length === 0}>
-                          <option value="">Select branch</option>
-                          {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+                        <label htmlFor="app-program">Program *</label>
+                        <select id="app-program" value={form.program_id} onChange={(event) => updateField("program_id", event.target.value)} required disabled={!form.institution_id || availablePrograms.length === 0}>
+                          <option value="">{availablePrograms.length ? "Select program (e.g. B.Tech, MCA)" : "Select institution first"}</option>
+                          {availablePrograms.map((program) => <option key={program.id} value={program.id}>{program.name}{program.level ? " · " + program.level : ""}</option>)}
+                        </select>
+                        <small>Choose the academic program for which you are requesting administrator access.</small>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="app-branch">Department / Branch *</label>
+                        <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.program_id || availableBranches.length === 0}>
+                          <option value="">{form.program_id ? "Select department / branch" : "Select program first"}</option>
+                          {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.code ? " (" + branch.code + ")" : ""}</option>)}
                         </select>
                       </div>
                       <div className="form-field">
