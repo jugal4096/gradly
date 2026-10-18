@@ -113,7 +113,8 @@ export async function submitAdminApplication(
 
   const branch = await findBranchInInstitution(
     branchId,
-    institutionId
+    institutionId,
+    programId
   );
 
   if (!branch) {
@@ -150,6 +151,7 @@ export async function submitAdminApplication(
   const input: CreateApplicationInput = {
     userId: user.id,
     institutionId,
+    programId,
     branchId,
     fullName,
     enrollmentNumber,
