@@ -7,7 +7,9 @@ const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api")
 type Profile={admin_code?:string;adminCode?:string;full_name?:string;fullName?:string;role?:string;status?:string;institution_name?:string;institutionName?:string;institution_id?:string;program_id?:string|null;program_name?:string|null;branch_id?:string|null;branchId?:string|null;branch_name?:string|null;branchName?:string|null;graduation_completion_date?:string|null;admin_expires_at?:string|null;};
 type Course={id:string;curriculumId?:string;code?:string;name?:string;credits?:number|string;courseType?:string;mandatory?:boolean;electiveGroup?:string|null;courseActive?:boolean;semester?:number|string;semesterName?:string|null;branch?:string|null;scheme?:string|null;program?:string|null;academicYear?:string|null;curriculumVersion?:number|string;};
 type RequestItem={id:string;requestType:string;reason:string;proposedChanges:Record<string,unknown>;status:string;reviewNote?:string|null;createdAt:string;reviewedAt?:string|null;};
-type NotificationItem={id:string;type:string;title:string;message:string;actionUrl?:string|null;readAt?:string|null;createdAt:string;};\ntype FeedbackItem={id:string;schemeName?:string|null;semesterNumber?:number|null;subjectName?:string|null;requestType:string;message:string;status:string;adminReviewNote?:string|null;createdAt:string;};\ntype ActivityCounts={loggedInUsers:number;guestUsers:number};
+type NotificationItem={id:string;type:string;title:string;message:string;actionUrl?:string|null;readAt?:string|null;createdAt:string;};
+type FeedbackItem={id:string;schemeName?:string|null;semesterNumber?:number|null;subjectName?:string|null;requestType:string;message:string;status:string;adminReviewNote?:string|null;createdAt:string;};
+type ActivityCounts={loggedInUsers:number;guestUsers:number};
 const clean=(v:unknown)=>String(v??"").trim();
 const fmtDate=(v?:string|null)=>v?new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v)):"—";
 const humanize=(v:string)=>v.toLowerCase().replace(/_/g," ").replace(/\\b\\w/g,m=>m.toUpperCase());
@@ -19,7 +21,10 @@ export default function AdminWorkspacePage(){
   const [profile,setProfile]=useState<Profile|null>(null);
   const [courses,setCourses]=useState<Course[]>([]);
   const [requests,setRequests]=useState<RequestItem[]>([]);
-  const [notifications,setNotifications]=useState<NotificationItem[]>([]);\n  const [feedback,setFeedback]=useState<FeedbackItem[]>([]);\n  const [activityCounts,setActivityCounts]=useState<ActivityCounts>({loggedInUsers:0,guestUsers:0});\n  const [feedbackStatus,setFeedbackStatus]=useState("ALL");
+  const [notifications,setNotifications]=useState<NotificationItem[]>([]);
+  const [feedback,setFeedback]=useState<FeedbackItem[]>([]);
+  const [activityCounts,setActivityCounts]=useState<ActivityCounts>({loggedInUsers:0,guestUsers:0});
+  const [feedbackStatus,setFeedbackStatus]=useState("ALL");
   const [loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const [search,setSearch]=useState(""),[scheme,setScheme]=useState("ALL"),[semester,setSemester]=useState("ALL");
   const [formOpen,setFormOpen]=useState(false),[requestType,setRequestType]=useState("ADD_SUBJECT"),[reason,setReason]=useState(""),[subjectName,setSubjectName]=useState(""),[subjectCode,setSubjectCode]=useState(""),[credits,setCredits]=useState(""),[targetSemester,setTargetSemester]=useState(""),[selectedCourse,setSelectedCourse]=useState(""),[submitting,setSubmitting]=useState(false);
@@ -42,7 +47,9 @@ export default function AdminWorkspacePage(){
       const [cd,rd,nd]=await Promise.all([c.json().catch(()=>({})),r.json().catch(()=>({})),n.json().catch(()=>({}))]);
       if(c.ok)setCourses(Array.isArray(cd.curriculum)?cd.curriculum:[]);else if(page==="curriculum")throw new Error(cd.message||"Unable to load assigned curriculum.");
       if(r.ok)setRequests(Array.isArray(rd.requests)?rd.requests:[]);else if(page==="requests")throw new Error(rd.message||"Unable to load requests.");
-      if(n.ok)setNotifications(Array.isArray(nd.notifications)?nd.notifications:[]);else if(page==="notifications")throw new Error(nd.message||"Unable to load notifications.");\n      if(a.ok)setActivityCounts({loggedInUsers:Number(ad.counts?.loggedInUsers||0),guestUsers:Number(ad.counts?.guestUsers||0)});else if(page==="activity")throw new Error(ad.message||"Unable to load anonymous activity counts.");\n      if(fb.ok)setFeedback(Array.isArray(fbd.feedback)?fbd.feedback:[]);else if(page==="feedback")throw new Error(fbd.message||"Unable to load student syllabus feedback.");
+      if(n.ok)setNotifications(Array.isArray(nd.notifications)?nd.notifications:[]);else if(page==="notifications")throw new Error(nd.message||"Unable to load notifications.");
+      if(a.ok)setActivityCounts({loggedInUsers:Number(ad.counts?.loggedInUsers||0),guestUsers:Number(ad.counts?.guestUsers||0)});else if(page==="activity")throw new Error(ad.message||"Unable to load anonymous activity counts.");
+      if(fb.ok)setFeedback(Array.isArray(fbd.feedback)?fbd.feedback:[]);else if(page==="feedback")throw new Error(fbd.message||"Unable to load student syllabus feedback.");
     }catch(e){setError(e instanceof Error?e.message:"Unable to load this workspace page.");}
     finally{setLoading(false);}
   },[logout,navigate,page]);
