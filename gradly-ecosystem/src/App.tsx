@@ -20,6 +20,7 @@ import AdminPortal from "./pages/admin/AdminPortal";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminApply from "./pages/admin/AdminApply";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
 import AdminChangePassword from "./pages/admin/AdminChangePassword";
 
 // =====================================================
@@ -104,6 +105,11 @@ function App() {
           path="/admin/dashboard"
           element={<AdminDashboard />}
         />
+
+        <Route path="/admin/curriculum" element={<AdminWorkspacePage />} />
+        <Route path="/admin/requests" element={<AdminWorkspacePage />} />
+        <Route path="/admin/notifications" element={<AdminWorkspacePage />} />
+        <Route path="/admin/department" element={<AdminWorkspacePage />} />
 
         <Route
           path="/admin/change-password"
