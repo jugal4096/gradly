@@ -201,8 +201,17 @@ INSERT INTO _geca_mtech_course_seed VALUES
 
 -- Ensure canonical subject rows exist. Gradly stores course-specific codes and
 -- stable IDs on curriculum_subjects, while subjects provides the referenced row.
-INSERT INTO public.subjects (id, name)
-SELECT DISTINCT md5('GECA-SUBJECT:' || course_code)::uuid, course_name
+INSERT INTO public.subjects (
+  id, institution_id, canonical_code, canonical_name, active, created_at, updated_at
+)
+SELECT DISTINCT
+  md5('GECA-SUBJECT:' || course_code)::uuid,
+  '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid,
+  course_code,
+  course_name,
+  TRUE,
+  NOW(),
+  NOW()
 FROM _geca_mtech_course_seed
 ON CONFLICT (id) DO NOTHING;
 
