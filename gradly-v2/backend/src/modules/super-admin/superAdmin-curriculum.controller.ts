@@ -17,16 +17,9 @@ function pick(records: RawRecord[], keys: string[]): unknown {
 
 function normalizeRecord(row: Record<string, RawRecord>) {
   const records = [
-    row.courseSubject || {},
-    row.subject || {},
-    row.semester || {},
-    row.curriculum || {},
-    row.branch || {},
-    row.scheme || {},
-    row.program || {},
-    row.institution || {},
-    row.academicYear || {},
-    row.gradingSystem || {},
+    row.courseSubject || {}, row.subject || {}, row.semester || {},
+    row.curriculum || {}, row.branch || {}, row.scheme || {}, row.program || {},
+    row.institution || {}, row.academicYear || {}, row.gradingSystem || {},
   ];
   const active = pick([row.courseSubject || {}], ["active"]);
   const mandatory = pick([row.courseSubject || {}], ["mandatory"]);
@@ -56,7 +49,6 @@ function normalizeRecord(row: Record<string, RawRecord>) {
     totalSemesters: pick([row.curriculum || {}], ["total_semesters"]),
     curriculumCredits: pick([row.curriculum || {}], ["total_credits"]),
     expectedSemesterCredits: pick([row.semester || {}], ["expected_credits"]),
-    // Keep no raw database records in the API response.
     rawFieldsAvailable: records.reduce((count, record) => count + Object.keys(record).length, 0),
   };
 }
@@ -92,17 +84,92 @@ export async function listCurriculum(
        LIMIT 5000`
     );
     const curriculum = result.rows.map((row: Record<string, RawRecord>) => normalizeRecord(row));
-    return res.status(200).json({
-      success: true,
-      curriculum,
-      count: curriculum.length,
-      limit: 5000,
-    });
+    return res.status(200).json({ success: true, curriculum, count: curriculum.length, limit: 5000 });
   } catch (error) {
     console.error("Failed to list curriculum subjects:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to load curriculum subjects from the configured database."
-    });
+    return res.status(500).json({ success: false, message: "Failed to load curriculum subjects from the configured database." });
+  }
+}
+
+/**
+ * Updates only editable fields on the curriculum_subjects row. Column names are
+ * discovered from PostgreSQL metadata so this endpoint does not assume optional
+ * columns exist in every deployment. It never updates shared subjects records.
+ */
+export async function updateCurriculumSubject(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const id = String(req.params.id || "").trim();
+  if (!id) return res.status(400).json({ success: false, message: "A curriculum subject ID is required." });
+
+  const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
+  const editable: Array<{ api: string; columns: string[]; type: "text" | "number" | "boolean" }> = [
+    { api: "code", columns: ["course_code", "code", "subject_code"], type: "text" },
+    { api: "name", columns: ["course_name"], type: "text" },
+    { api: "credits", columns: ["credits", "credit"], type: "number" },
+    { api: "courseType", columns: ["course_type"], type: "text" },
+    { api: "mandatory", columns: ["mandatory"], type: "boolean" },
+    { api: "active", columns: ["active"], type: "boolean" },
+  ];
+  const requested = editable.filter(field => Object.prototype.hasOwnProperty.call(body, field.api));
+  if (!requested.length) return res.status(400).json({ success: false, message: "No editable curriculum fields were provided." });
+
+  const client = await pool.connect();
+  try {
+    const metadata = await client.query(
+      `SELECT column_name
+         FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'curriculum_subjects'`
+    );
+    const actualColumns = new Set<string>(metadata.rows.map((row: { column_name: string }) => row.column_name));
+    const updates: Array<{ column: string; value: unknown }> = [];
+
+    for (const field of requested) {
+      const column = field.columns.find(candidate => actualColumns.has(candidate));
+      if (!column) {
+        return res.status(400).json({ success: false, message: `This database does not expose an editable ${field.api} field on curriculum_subjects.` });
+      }
+      let value = body[field.api];
+      if (field.type === "text") {
+        if (typeof value !== "string" || !value.trim()) {
+          return res.status(400).json({ success: false, message: `${field.api} must be a non-empty string.` });
+        }
+        value = value.trim();
+      } else if (field.type === "number") {
+        value = Number(value);
+        if (!Number.isFinite(value) || Number(value) < 0) {
+          return res.status(400).json({ success: false, message: "Credits must be a valid non-negative number." });
+        }
+      } else {
+        if (typeof value !== "boolean") {
+          if (value === "true" || value === 1 || value === "1") value = true;
+          else if (value === "false" || value === 0 || value === "0") value = false;
+          else return res.status(400).json({ success: false, message: `${field.api} must be true or false.` });
+        }
+      }
+      updates.push({ column, value });
+    }
+
+    await client.query("BEGIN");
+    const setSql = updates.map((item, index) => `"${item.column}" = $${index + 1}`).join(", ");
+    const values = updates.map(item => item.value);
+    values.push(id);
+    const result = await client.query(
+      `UPDATE public.curriculum_subjects SET ${setSql} WHERE id::text = $${values.length} RETURNING id`,
+      values
+    );
+    if (!result.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ success: false, message: "Curriculum record was not found. Refresh the page and try again." });
+    }
+    await client.query("COMMIT");
+    return res.status(200).json({ success: true, message: "Curriculum record updated in the database.", id: result.rows[0].id });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    console.error("Failed to update curriculum subject:", error);
+    return res.status(500).json({ success: false, message: "Could not update this curriculum record in the database." });
+  } finally {
+    client.release();
   }
 }
