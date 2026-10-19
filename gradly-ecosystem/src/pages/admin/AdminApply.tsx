@@ -499,7 +499,7 @@ export default function AdminApply() {
                       <div className="form-field">
                         <label htmlFor="app-program">Program *</label>
                         <select id="app-program" value={form.program_id} onChange={(event) => updateField("program_id", event.target.value)} required disabled={!form.institution_id || availablePrograms.length === 0}>
-                          <option value="">{availablePrograms.length ? "Select program (e.g. B.Tech, MCA)" : "Select institution first"}</option>
+                          <option value="">{availablePrograms.length ? "Select program" : "Select institution first"}</option>
                           {availablePrograms.map((program) => <option key={program.id} value={program.id}>{program.name}{program.level ? " · " + program.level : ""}</option>)}
                         </select>
                         <small>Choose the academic program for which you are requesting administrator access.</small>
