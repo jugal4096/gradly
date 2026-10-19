@@ -222,7 +222,7 @@ INSERT INTO public.curriculum_subjects (
   mandatory, active, course_id, elective_group, created_at, updated_at
 )
 SELECT
-  md5(c.id::text || ':' || s.semester_number::text || ':' || seed.course_code)::uuid,
+  md5(c.id::text || ':' || sem.semester_number::text || ':' || seed.course_code)::uuid,
   c.id,
   sem.id,
   md5('GECA-SUBJECT:' || seed.course_code)::uuid,
