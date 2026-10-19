@@ -26,9 +26,10 @@ function normalizeRecord(row: Record<string, RawRecord>) {
   const status = pick([row.curriculum || {}], ["status"]);
   return {
     id: pick([row.courseSubject || {}], ["id"]),
+    isStructureOnly: !pick([row.courseSubject || {}], ["id"]),
     code: pick([row.courseSubject || {}], ["course_code", "code", "subject_code"]),
     courseId: pick([row.courseSubject || {}], ["course_id"]),
-    name: pick([row.courseSubject || {}], ["course_name", "name", "subject_name"]) ?? pick([row.subject || {}], ["name", "subject_name", "title"]),
+    name: pick([row.courseSubject || {}], ["course_name", "name", "subject_name"]) ?? pick([row.subject || {}], ["name", "subject_name", "title"]) ?? (pick([row.semester || {}], ["name", "semester_number"]) ? `Curriculum structure — ${String(pick([row.semester || {}], ["name", "semester_number"]))}` : null),
     branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
     specialization: pick([row.specialization || {}], ["name", "code", "specialization_name"]),
     branchCode: pick([row.branch || {}], ["code"]),
@@ -73,9 +74,10 @@ export async function listCurriculum(
          to_jsonb(i) AS institution,
          to_jsonb(ay) AS "academicYear",
          to_jsonb(gs) AS "gradingSystem"
-       FROM public.curriculum_subjects cs
-       JOIN public.curricula c ON c.id = cs.curriculum_id
-       JOIN public.semesters sem ON sem.id = cs.semester_id
+       FROM public.curricula c
+       JOIN public.semesters sem ON sem.curriculum_id = c.id
+       LEFT JOIN public.curriculum_subjects cs
+         ON cs.curriculum_id = c.id AND cs.semester_id = sem.id
        LEFT JOIN public.subjects sub ON sub.id = cs.subject_id
        LEFT JOIN public.branches b ON b.id = c.branch_id
        LEFT JOIN public.specializations sp ON sp.id = c.specialization_id
@@ -84,7 +86,7 @@ export async function listCurriculum(
        LEFT JOIN public.institutions i ON i.id = c.institution_id
        LEFT JOIN public.academic_years ay ON ay.id = c.academic_year_id
        LEFT JOIN public.grading_systems gs ON gs.id = c.grading_system_id
-       ORDER BY i.name, p.name, b.name, sc.name, sem.semester_number, cs.course_code
+       ORDER BY i.name, p.name, b.name, sc.name, sem.semester_number, cs.course_code NULLS FIRST
        LIMIT 5000`
     );
     const curriculum = result.rows.map((row: Record<string, RawRecord>) => normalizeRecord(row));
