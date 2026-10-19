@@ -18,7 +18,7 @@ function pick(records: RawRecord[], keys: string[]): unknown {
 function normalizeRecord(row: Record<string, RawRecord>) {
   const records = [
     row.courseSubject || {}, row.subject || {}, row.semester || {},
-    row.curriculum || {}, row.branch || {}, row.scheme || {}, row.program || {},
+    row.curriculum || {}, row.branch || {}, row.specialization || {}, row.scheme || {}, row.program || {},
     row.institution || {}, row.academicYear || {}, row.gradingSystem || {},
   ];
   const active = pick([row.courseSubject || {}], ["active"]);
@@ -30,6 +30,7 @@ function normalizeRecord(row: Record<string, RawRecord>) {
     courseId: pick([row.courseSubject || {}], ["course_id"]),
     name: pick([row.courseSubject || {}], ["course_name", "name", "subject_name"]) ?? pick([row.subject || {}], ["name", "subject_name", "title"]),
     branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
+    specialization: pick([row.specialization || {}], ["name", "code", "specialization_name"]),
     branchCode: pick([row.branch || {}], ["code"]),
     semester: pick([row.semester || {}], ["semester_number", "name", "semester_no"]),
     semesterName: pick([row.semester || {}], ["name"]),
@@ -66,6 +67,7 @@ export async function listCurriculum(
          to_jsonb(sem) AS semester,
          to_jsonb(c) AS curriculum,
          to_jsonb(b) AS branch,
+         to_jsonb(sp) AS specialization,
          to_jsonb(sc) AS scheme,
          to_jsonb(p) AS program,
          to_jsonb(i) AS institution,
@@ -76,6 +78,7 @@ export async function listCurriculum(
        JOIN public.semesters sem ON sem.id = cs.semester_id
        LEFT JOIN public.subjects sub ON sub.id = cs.subject_id
        LEFT JOIN public.branches b ON b.id = c.branch_id
+       LEFT JOIN public.specializations sp ON sp.id = c.specialization_id
        LEFT JOIN public.schemes sc ON sc.id = c.scheme_id
        LEFT JOIN public.programs p ON p.id = c.program_id
        LEFT JOIN public.institutions i ON i.id = c.institution_id
