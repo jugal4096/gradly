@@ -24,7 +24,6 @@ BEGIN
   FROM public.programs p
   WHERE p.institution_id = v_institution_id
     AND lower(p.name) = 'master of technology'
-  ORDER BY p.created_at NULLS LAST
   LIMIT 1;
 
   IF v_program_id IS NULL THEN
