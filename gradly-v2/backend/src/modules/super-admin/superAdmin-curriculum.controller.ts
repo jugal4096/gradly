@@ -124,47 +124,88 @@ export async function updateCurriculumSubject(
     );
     const actualColumns = new Set<string>(metadata.rows.map((row: { column_name: string }) => row.column_name));
     const updates: Array<{ column: string; value: unknown }> = [];
+    let subjectName: string | null = null;
 
     for (const field of requested) {
-      const column = field.columns.find(candidate => actualColumns.has(candidate));
+      let column = field.columns.find(candidate => actualColumns.has(candidate));
+      let value = body[field.api];
+      if (field.api === "name" && !column) {
+        if (typeof value !== "string" || !value.trim()) {
+          return res.status(400).json({ success: false, message: "Course name must be a non-empty string." });
+        }
+        subjectName = value.trim();
+        continue;
+      }
       if (!column) {
         return res.status(400).json({ success: false, message: `This database does not expose an editable ${field.api} field on curriculum_subjects.` });
       }
-      let value = body[field.api];
       if (field.type === "text") {
-        if (typeof value !== "string" || !value.trim()) {
-          return res.status(400).json({ success: false, message: `${field.api} must be a non-empty string.` });
+        if (typeof value !== "string") {
+          return res.status(400).json({ success: false, message: `${field.api} must be text.` });
         }
         value = value.trim();
+        if (field.api !== "courseType" && !value) {
+          return res.status(400).json({ success: false, message: `${field.api} must not be empty.` });
+        }
       } else if (field.type === "number") {
         value = Number(value);
         if (!Number.isFinite(value) || Number(value) < 0) {
           return res.status(400).json({ success: false, message: "Credits must be a valid non-negative number." });
         }
-      } else {
-        if (typeof value !== "boolean") {
-          if (value === "true" || value === 1 || value === "1") value = true;
-          else if (value === "false" || value === 0 || value === "0") value = false;
-          else return res.status(400).json({ success: false, message: `${field.api} must be true or false.` });
-        }
+      } else if (typeof value !== "boolean") {
+        if (value === "true" || value === 1 || value === "1") value = true;
+        else if (value === "false" || value === 0 || value === "0") value = false;
+        else return res.status(400).json({ success: false, message: `${field.api} must be true or false.` });
       }
       updates.push({ column, value });
     }
 
     await client.query("BEGIN");
-    const setSql = updates.map((item, index) => `"${item.column}" = $${index + 1}`).join(", ");
-    const values = updates.map(item => item.value);
-    values.push(id);
-    const result = await client.query(
-      `UPDATE public.curriculum_subjects SET ${setSql} WHERE id::text = $${values.length} RETURNING id`,
-      values
-    );
-    if (!result.rowCount) {
+    let subjectRowFound = false;
+    if (subjectName !== null) {
+      const subjectMetadata = await client.query(
+        `SELECT column_name FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'subjects'`
+      );
+      const subjectColumns = new Set<string>(subjectMetadata.rows.map((row: { column_name: string }) => row.column_name));
+      const nameColumn = ["name", "subject_name", "title"].find(candidate => subjectColumns.has(candidate));
+      if (!nameColumn || !actualColumns.has("subject_id")) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ success: false, message: "This database does not expose a supported course-name field." });
+      }
+      const nameResult = await client.query(
+        `UPDATE public.subjects SET "${nameColumn}" = $1
+          WHERE id = (SELECT subject_id FROM public.curriculum_subjects WHERE id::text = $2)
+          RETURNING id`,
+        [subjectName, id]
+      );
+      subjectRowFound = Boolean(nameResult.rowCount);
+      if (!subjectRowFound) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ success: false, message: "The linked subject record was not found." });
+      }
+    }
+
+    let updatedId: unknown = id;
+    if (updates.length) {
+      const setSql = updates.map((item, index) => `"${item.column}" = $${index + 1}`).join(", ");
+      const values = updates.map(item => item.value);
+      values.push(id);
+      const result = await client.query(
+        `UPDATE public.curriculum_subjects SET ${setSql} WHERE id::text = $${values.length} RETURNING id`,
+        values
+      );
+      if (!result.rowCount) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ success: false, message: "Curriculum record was not found. Refresh the page and try again." });
+      }
+      updatedId = result.rows[0].id;
+    } else if (!subjectRowFound) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ success: false, message: "Curriculum record was not found. Refresh the page and try again." });
+      return res.status(404).json({ success: false, message: "Curriculum record was not found." });
     }
     await client.query("COMMIT");
-    return res.status(200).json({ success: true, message: "Curriculum record updated in the database.", id: result.rows[0].id });
+    return res.status(200).json({ success: true, message: "Curriculum record updated in the database.", id: updatedId });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     console.error("Failed to update curriculum subject:", error);
