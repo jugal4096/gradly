@@ -158,12 +158,18 @@ export default function AdminApply() {
     const isAppliedMechanics =
       branchName.includes("applied mechanics") || branchCode.includes("applied mechanics") ||
       branchCode === "am" || branchCode === "applied mech";
+    const isElectrical =
+      branchName.includes("electrical") || branchCode.includes("electrical") ||
+      branchCode === "ee" || branchCode === "elect";
     if (isCivil) return [
       { code: "WRE", name: "Water Resources Engineering" },
       { code: "GTE", name: "Geotechnical Engineering" },
     ];
     if (isAppliedMechanics) return [
       { code: "STRUCTURAL", name: "Structural Engineering" },
+    ];
+    if (isElectrical) return [
+      { code: "EPS", name: "Electrical Power Systems" },
     ];
     return [];
   }, [isMTech, selectedBranch]);
