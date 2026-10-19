@@ -47,7 +47,7 @@ INSERT INTO public.curricula (
   total_credits, created_at, updated_at
 )
 SELECT
-  'c6f77a0a-02e1-4c54-9f75-7b913f60a101'::uuid,
+  md5('GECA-MTECH-EPS-CURRICULUM-V2')::uuid,
   p.institution_id, p.id, b.id,
   'bd65c899-2c56-5166-bcb9-8945030e1277'::uuid,
   '2925d20a-df5c-5e3f-b7b2-57f557bde6a4'::uuid,
@@ -57,7 +57,8 @@ JOIN public.branches b ON b.program_id = p.id AND upper(b.name) = 'ELECTRICAL'
 JOIN public.specializations sp ON sp.program_id = p.id AND sp.branch_id = b.id AND sp.code = 'EPS'
 WHERE p.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
   AND (p.name = 'Master of Technology' OR p.short_name = 'M.Tech')
-  AND NOT EXISTS (SELECT 1 FROM public.curricula c WHERE c.specialization_id = sp.id);
+  AND NOT EXISTS (SELECT 1 FROM public.curricula c WHERE c.specialization_id = sp.id)
+ON CONFLICT (id) DO NOTHING;
 
 -- 5. Four semesters.
 INSERT INTO public.semesters (id, curriculum_id, semester_number, active, created_at, updated_at)
