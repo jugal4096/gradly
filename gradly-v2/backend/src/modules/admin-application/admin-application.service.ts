@@ -2,6 +2,7 @@ import {
   createApplication,
   findApplicationsForUser,
   findBranchInInstitution,
+  findSpecializationInBranch,
   findDuplicateApplication,
   findUserByFirebaseUid,
   CreateApplicationInput
@@ -124,6 +125,22 @@ export async function submitAdminApplication(
     );
   }
 
+  const specializationCode = typeof body.specialization_code === "string"
+    ? body.specialization_code.trim()
+    : "";
+  let specializationId: string | undefined;
+  if (specializationCode) {
+    const specialization = await findSpecializationInBranch(
+      specializationCode,
+      programId,
+      branchId
+    );
+    if (!specialization) {
+      throw new ApplicationError("The selected stream does not belong to the selected M.Tech department.");
+    }
+    specializationId = specialization.id;
+  }
+
   const duplicate = await findDuplicateApplication(
     user.id,
     institutionId,
@@ -154,6 +171,7 @@ export async function submitAdminApplication(
     institutionId,
     programId,
     branchId,
+    specializationId,
     fullName,
     enrollmentNumber,
     mobileNumber,
