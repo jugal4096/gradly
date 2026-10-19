@@ -148,7 +148,7 @@ INSERT INTO _geca_eps_course_seed VALUES
 INSERT INTO public.subjects
   (id, institution_id, canonical_code, canonical_name, active, created_at, updated_at)
 SELECT
-  md5('GECA-SUBJECT:' || seed.course_code)::uuid,
+  gen_random_uuid(),
   '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid,
   seed.course_code, seed.course_name, TRUE, NOW(), NOW()
 FROM (
@@ -158,13 +158,10 @@ FROM (
 WHERE NOT EXISTS (
   SELECT 1
   FROM public.subjects existing
-  WHERE existing.canonical_code = seed.course_code
+  WHERE existing.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
+    AND existing.canonical_code = seed.course_code
 )
-AND NOT EXISTS (
-  SELECT 1
-  FROM public.subjects existing
-  WHERE existing.id = md5('GECA-SUBJECT:' || seed.course_code)::uuid
-);
+;
 
 -- Curriculum subject catalogue rows, idempotent on curriculum + semester + code.
 INSERT INTO public.curriculum_subjects (
@@ -173,7 +170,7 @@ INSERT INTO public.curriculum_subjects (
 )
 SELECT
   md5(c.id::text || ':' || seed.semester_number::text || ':' || seed.course_code)::uuid,
-  c.id, sem.id, subj.id,
+  c.id, sem.id, s.id,
   seed.course_code, seed.course_name, seed.credits, seed.course_type, seed.mandatory,
   TRUE, 'GECA-EPS-' || seed.course_code, seed.elective_group, NOW(), NOW()
 FROM _geca_eps_course_seed seed
@@ -185,10 +182,6 @@ JOIN public.curricula c ON c.specialization_id IN (
 )
 JOIN public.semesters sem
   ON sem.curriculum_id = c.id AND sem.semester_number = seed.semester_number
-JOIN public.subjects subj
-  ON subj.institution_id = c.institution_id
- AND subj.canonical_code = seed.course_code
- AND subj.canonical_name = seed.course_name
 ON CONFLICT (curriculum_id, semester_id, course_code) DO NOTHING;
 
 -- Verification: counts by semester, including optional electives.
