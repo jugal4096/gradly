@@ -207,7 +207,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.curriculum_subjects (
   id, curriculum_id, semester_id, subject_id,
   course_code, course_name, credits, course_type,
-  mandatory, active, course_id, created_at, updated_at
+  mandatory, active, course_id, elective_group, created_at, updated_at
 )
 SELECT
   md5(c.id::text || ':' || s.semester_number::text || ':' || seed.course_code)::uuid,
@@ -221,6 +221,7 @@ SELECT
   seed.mandatory,
   TRUE,
   'GECA-' || seed.spec_code || '-' || seed.course_code,
+  seed.elective_group,
   NOW(),
   NOW()
 FROM _geca_mtech_course_seed seed
