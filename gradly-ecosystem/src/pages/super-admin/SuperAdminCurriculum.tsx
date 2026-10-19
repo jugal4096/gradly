@@ -22,7 +22,6 @@ export default function SuperAdminCurriculum(){
  const programFamily=(value:string):"MCA"|"MTECH"|"BTECH"|null=>{const n=value.trim().toLowerCase().replace(/\s+/g," ");if(n==="mca"||n.includes("master of computer applications"))return "MCA";if(n.includes("m.tech")||n.includes("m tech")||n.includes("master of technology"))return "MTECH";if(n==="btech"||n==="b.tech"||n.includes("bachelor of technology"))return "BTECH";return null;};
  const isMCAProgram=(value:string)=>programFamily(value)==="MCA";
  const isMTechProgram=(value:string)=>programFamily(value)==="MTECH";
- const isBTechProgram=(value:string)=>programFamily(value)==="BTECH";
  const programMatches=(actual:string,selected:string)=>{if(actual===selected)return true;const selectedFamily=programFamily(selected);return selectedFamily!==null&&programFamily(actual)===selectedFamily;};
  const programRows=rows.filter(r=>filters.program==="ALL"||programMatches(clean(r.program),filters.program));
  const branchOptions=unique(programRows.filter(r=>!isMCAProgram(clean(r.program))&&clean(r.branch).toLowerCase()!=="mca"&&clean(r.branch).toLowerCase()!=="master of computer applications"),"branch");
