@@ -5,7 +5,7 @@ export interface CreateApplicationInput {
   userId: string;
   institutionId: string;
   programId: string;
-  branchId: string;
+  branchId: string | null;
   specializationId?: string;
   fullName: string;
   enrollmentNumber: string;
@@ -26,6 +26,22 @@ export async function findUserByFirebaseUid(firebaseUid: string) {
     [firebaseUid]
   );
 
+  return result.rows[0] ?? null;
+}
+
+export async function findProgramName(programId: string) {
+  const result = await pool.query(
+    `SELECT name FROM public.programs WHERE id = $1 LIMIT 1`,
+    [programId]
+  );
+  return result.rows[0]?.name as string | undefined;
+}
+
+export async function findProgramInInstitution(programId: string, institutionId: string) {
+  const result = await pool.query(
+    `SELECT id FROM public.programs WHERE id = $1 AND institution_id = $2 LIMIT 1`,
+    [programId, institutionId]
+  );
   return result.rows[0] ?? null;
 }
 
@@ -114,7 +130,7 @@ export async function createApplication(input: CreateApplicationInput) {
        'PENDING', NOW(), NOW()
      ) RETURNING *`,
     [
-      input.userId, input.institutionId, input.programId, input.branchId,
+      input.userId, input.institutionId, input.programId, input.branchId || null,
       input.specializationId ?? null, input.fullName, input.enrollmentNumber, input.mobileNumber, input.email,
       input.graduationDate, input.qualification ?? null, input.reason ?? null,
       input.additionalNote ?? null
