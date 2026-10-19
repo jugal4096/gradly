@@ -126,7 +126,6 @@ INSERT INTO _geca_eps_course_seed VALUES
 (2,'CSOEC5002','Professional Ethics & Cyber Law',3,'ELECTIVE',FALSE,'EPS-SEM2-OE1'),
 (2,'CEOEC5003','Engineering Optimization',3,'ELECTIVE',FALSE,'EPS-SEM2-OE1'),
 (2,'MEOEC5004','Robotics',3,'ELECTIVE',FALSE,'EPS-SEM2-OE1'),
-(2,'EEOEC5001','Introduction to Electric Vehicle',3,'ELECTIVE',FALSE,'EPS-SEM2-OE1'),
 (2,'ECOEC5006','IoT for Smart Systems',3,'ELECTIVE',FALSE,'EPS-SEM2-OE1'),
 -- SEMESTER III: dissertation, institute electives and knowledge systems
 (3,'EEDIS5020','Dissertation Ph I',10,'PROJECT',TRUE,NULL),
