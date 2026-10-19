@@ -2,6 +2,8 @@ import {
   createApplication,
   findApplicationsForUser,
   findBranchInInstitution,
+  findProgramName,
+  findProgramInInstitution,
   findSpecializationInBranch,
   findDuplicateApplication,
   findUserByFirebaseUid,
@@ -49,7 +51,9 @@ export async function submitAdminApplication(
     "Institution"
   );
   const programId = requiredString(body.program_id, "Program");
-  const branchId = requiredString(body.branch_id, "Branch");
+  const programName = (await findProgramName(programId))?.trim().toLowerCase() ?? "";
+  const isMCA = programName === "mca" || programName.includes("master of computer applications");
+  const branchId = isMCA ? "" : requiredString(body.branch_id, "Branch");
   const fullName = requiredString(body.full_name, "Full name");
   const enrollmentNumber = requiredString(
     body.enrollment_number,
@@ -113,16 +117,20 @@ export async function submitAdminApplication(
     );
   }
 
-  const branch = await findBranchInInstitution(
-    branchId,
-    institutionId,
-    programId
-  );
+  if (isMCA) {
+    const program = await findProgramInInstitution(programId, institutionId);
+    if (!program) {
+      throw new ApplicationError("The selected program does not belong to the selected institution.");
+    }
+  } else {
+    const branch = await findBranchInInstitution(branchId, institutionId, programId);
+    if (!branch) {
+      throw new ApplicationError("The selected branch does not belong to the selected institution.");
+    }
+  }
 
-  if (!branch) {
-    throw new ApplicationError(
-      "The selected branch does not belong to the selected institution."
-    );
+  if (isMCA && typeof body.specialization_code === "string" && body.specialization_code.trim()) {
+    throw new ApplicationError("MCA does not use an M.Tech stream / specialization.");
   }
 
   const specializationCode = typeof body.specialization_code === "string"
