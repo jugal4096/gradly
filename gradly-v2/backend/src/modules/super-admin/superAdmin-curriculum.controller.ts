@@ -27,6 +27,7 @@ function normalizeRecord(row: Record<string, RawRecord>) {
   return {
     id: pick([row.courseSubject || {}], ["id"]),
     code: pick([row.courseSubject || {}], ["course_code", "code", "subject_code"]),
+    courseId: pick([row.courseSubject || {}], ["course_id"]),
     name: pick([row.courseSubject || {}], ["course_name", "name", "subject_name"]) ?? pick([row.subject || {}], ["name", "subject_name", "title"]),
     branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
     branchCode: pick([row.branch || {}], ["code"]),
