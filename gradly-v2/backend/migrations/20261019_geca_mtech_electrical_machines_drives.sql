@@ -13,7 +13,7 @@ SELECT 'c6f77a0a-02e1-4c54-9f75-7b913f60a003'::uuid, p.id,
 FROM public.programs p
 WHERE p.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
   AND (p.name = 'Master of Technology' OR p.short_name = 'M.Tech')
-ON CONFLICT (program_id, name) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- Register Electrical Machines and Drives specialization.
 INSERT INTO public.specializations (program_id, branch_id, name, code, active, created_at, updated_at)
@@ -22,7 +22,7 @@ FROM public.programs p
 JOIN public.branches b ON b.program_id = p.id AND upper(b.name) = 'ELECTRICAL'
 WHERE p.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
   AND (p.name = 'Master of Technology' OR p.short_name = 'M.Tech')
-ON CONFLICT (program_id, branch_id, code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- Create curriculum header. Keep DRAFT until the academic year and credits are reviewed.
 INSERT INTO public.curricula (
@@ -41,14 +41,16 @@ JOIN public.branches b ON b.program_id = p.id AND upper(b.name) = 'ELECTRICAL'
 JOIN public.specializations sp ON sp.program_id = p.id AND sp.branch_id = b.id AND sp.code = 'EMD'
 WHERE p.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
   AND (p.name = 'Master of Technology' OR p.short_name = 'M.Tech')
-  AND NOT EXISTS (SELECT 1 FROM public.curricula c WHERE c.specialization_id = sp.id);
+  AND NOT EXISTS (SELECT 1 FROM public.curricula c WHERE c.specialization_id = sp.id)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO public.semesters (id, curriculum_id, semester_number, active, created_at, updated_at)
-SELECT md5(c.id::text || ':semester:' || n)::uuid, c.id, n, TRUE, NOW(), NOW()
+SELECT md5(c.id::text || ':semester:' || gs.n)::uuid, c.id, gs.n, TRUE, NOW(), NOW()
 FROM public.curricula c
 JOIN public.specializations sp ON sp.id = c.specialization_id AND sp.code = 'EMD'
-CROSS JOIN generate_series(1,4) AS n
-ON CONFLICT (curriculum_id, semester_number) DO NOTHING;
+CROSS JOIN generate_series(1, 4) AS gs(n)
+WHERE c.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
+ON CONFLICT DO NOTHING;
 
 CREATE TEMP TABLE _geca_emd_course_seed (
   semester_number integer NOT NULL,
@@ -123,11 +125,11 @@ INSERT INTO _geca_emd_course_seed VALUES
 INSERT INTO public.subjects
   (id, institution_id, canonical_code, canonical_name, active, created_at, updated_at)
 SELECT DISTINCT
-  md5('GECA-SUBJECT:' || course_code)::uuid,
+  gen_random_uuid(),
   '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid,
   course_code, course_name, TRUE, NOW(), NOW()
 FROM _geca_emd_course_seed
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- Insert rows idempotently. Course IDs are namespaced to the EMD specialization.
 INSERT INTO public.curriculum_subjects (
@@ -136,16 +138,21 @@ INSERT INTO public.curriculum_subjects (
 )
 SELECT
   md5(c.id::text || ':' || seed.semester_number::text || ':' || seed.course_code)::uuid,
-  c.id, sem.id, md5('GECA-SUBJECT:' || seed.course_code)::uuid,
+  c.id, sem.id, subj.id,
   seed.course_code, seed.course_name, seed.credits, seed.course_type, seed.mandatory,
   TRUE, 'GECA-EMD-' || seed.course_code, seed.elective_group, NOW(), NOW()
 FROM _geca_emd_course_seed seed
-JOIN public.curricula c ON c.specialization_id IN (
-  SELECT id FROM public.specializations WHERE code = 'EMD'
-)
+JOIN public.curricula c
+  ON c.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
+JOIN public.specializations sp
+  ON sp.id = c.specialization_id AND sp.code = 'EMD'
 JOIN public.semesters sem
   ON sem.curriculum_id = c.id AND sem.semester_number = seed.semester_number
-ON CONFLICT (curriculum_id, semester_id, course_code) DO NOTHING;
+JOIN public.subjects subj
+  ON subj.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
+ AND subj.canonical_code = seed.course_code
+ AND subj.canonical_name = seed.course_name
+ON CONFLICT DO NOTHING;
 
 -- Verify seeded rows semester-wise.
 SELECT sp.name AS specialization, sem.semester_number,
