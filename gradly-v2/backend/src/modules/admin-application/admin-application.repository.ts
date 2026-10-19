@@ -48,6 +48,24 @@ export async function findBranchInInstitution(
   return result.rows[0] ?? null;
 }
 
+export async function findSpecializationInBranch(
+  specializationCode: string,
+  programId: string,
+  branchId: string
+) {
+  const result = await pool.query(
+    `SELECT sp.id
+       FROM public.specializations sp
+      WHERE sp.code = $1
+        AND sp.program_id = $2
+        AND sp.branch_id = $3
+        AND sp.active = TRUE
+      LIMIT 1`,
+    [specializationCode, programId, branchId]
+  );
+  return result.rows[0] ?? null;
+}
+
 export async function findApplicationsForUser(userId: string) {
   const result = await pool.query(
     `SELECT
