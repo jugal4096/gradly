@@ -136,15 +136,28 @@ export default function AdminApply() {
   // MCA is program-level and deliberately has no branch selection.
   const availableBranches = isMCA
     ? []
-    : (selectedInstitution?.branches ?? []).filter((branch) => branch.program_id === form.program_id);
+    : (selectedInstitution?.branches ?? []).filter((branch) => {
+        if (branch.program_id !== form.program_id) return false;
+        const name = branch.name.trim().toLowerCase().replace(/[_-]+/g, " ");
+        const code = (branch.code ?? "").trim().toLowerCase().replace(/[_-]+/g, " ");
+        // MCA is a program, never a branch. Exclude legacy/mislabelled records.
+        if (name === "mca" || name === "master of computer applications" ||
+            code === "mca") return false;
+        return true;
+      });
   const selectedBranch = availableBranches.find((branch) => branch.id === form.branch_id);
   const availableStreams = useMemo(() => {
     if (!isMTech || !selectedBranch) return [];
-    const branchName = selectedBranch.name.trim().toLowerCase().replace(/[_-]+/g, " ");
-    const branchCode = (selectedBranch.code ?? "").trim().toLowerCase().replace(/[_-]+/g, " ");
-    const isCivil = branchName.includes("civil") || branchCode.includes("civil");
+    const normalize = (value: string) => value.trim().toLowerCase()
+      .replace(/[_-]+/g, " ").replace(/\bengineering\b/g, "")
+      .replace(/\s+/g, " ").trim();
+    const branchName = normalize(selectedBranch.name);
+    const branchCode = normalize(selectedBranch.code ?? "");
+    const isCivil = branchName.includes("civil") || branchCode.includes("civil") ||
+      branchCode === "ce";
     const isAppliedMechanics =
-      branchName.includes("applied mechanics") || branchCode.includes("applied mechanics");
+      branchName.includes("applied mechanics") || branchCode.includes("applied mechanics") ||
+      branchCode === "am" || branchCode === "applied mech";
     if (isCivil) return [
       { code: "WRE", name: "Water Resources Engineering" },
       { code: "GTE", name: "Geotechnical Engineering" },
