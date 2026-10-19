@@ -123,14 +123,21 @@ export default function AdminApply() {
     (selectedInstitution?.branches ?? []).forEach((branch) => uniquePrograms.set(branch.program_id, { id: branch.program_id, name: branch.program_name, level: branch.program_level }));
     return Array.from(uniquePrograms.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [selectedInstitution]);
-  const availableBranches = (selectedInstitution?.branches ?? []).filter((branch) => branch.program_id === form.program_id);
   const selectedProgram = availablePrograms.find((program) => program.id === form.program_id);
-  const selectedBranch = availableBranches.find((branch) => branch.id === form.branch_id);
   const normalizedProgramName = (selectedProgram?.name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const isMCA =
+    normalizedProgramName === "mca" ||
+    normalizedProgramName.includes("master of computer applications");
   const isMTech =
     normalizedProgramName.includes("m.tech") ||
     normalizedProgramName.includes("m tech") ||
     normalizedProgramName.includes("master of technology");
+  // Branches are taken only from the selected program's actual institution records.
+  // MCA is program-level and deliberately has no branch selection.
+  const availableBranches = isMCA
+    ? []
+    : (selectedInstitution?.branches ?? []).filter((branch) => branch.program_id === form.program_id);
+  const selectedBranch = availableBranches.find((branch) => branch.id === form.branch_id);
   const availableStreams = useMemo(() => {
     if (!isMTech || !selectedBranch) return [];
     const branchName = selectedBranch.name.trim().toLowerCase().replace(/[_-]+/g, " ");
@@ -355,8 +362,8 @@ export default function AdminApply() {
       setError("Sign in with Google before submitting your application.");
       return;
     }
-    if (!form.institution_id || !form.program_id || !form.branch_id) {
-      setError("Select an institution, program, and department.");
+    if (!form.institution_id || !form.program_id || (!isMCA && !form.branch_id)) {
+      setError(isMCA ? "Select an institution and program." : "Select an institution, program, and department.");
       return;
     }
     if (isMTech && availableStreams.length > 0 && !form.specialization_code) {
@@ -534,13 +541,16 @@ export default function AdminApply() {
                         </select>
                         <small>Choose the academic program for which you are requesting administrator access.</small>
                       </div>
-                      <div className="form-field">
-                        <label htmlFor="app-branch">Department / Branch *</label>
-                        <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.program_id || availableBranches.length === 0}>
-                          <option value="">{form.program_id ? "Select department / branch" : "Select program first"}</option>
-                          {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.code ? " (" + branch.code + ")" : ""}</option>)}
-                        </select>
-                      </div>
+                      {!isMCA && (
+                        <div className="form-field">
+                          <label htmlFor="app-branch">Department / Branch *</label>
+                          <select id="app-branch" value={form.branch_id} onChange={(event) => updateField("branch_id", event.target.value)} required disabled={!form.program_id || availableBranches.length === 0}>
+                            <option value="">{form.program_id ? (availableBranches.length ? "Select department / branch" : "No branches configured for this program") : "Select program first"}</option>
+                            {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.code ? " (" + branch.code + ")" : ""}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      {isMCA && <div className="form-field"><small>Branch selection is not applicable for MCA.</small></div>}
                       {isMTech && availableStreams.length > 0 && (
                         <div className="form-field">
                           <label htmlFor="app-stream">Stream / Specialization *</label>
