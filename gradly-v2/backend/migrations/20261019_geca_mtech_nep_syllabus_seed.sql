@@ -7,6 +7,9 @@
 -- choices. They are not all simultaneously required for a student's credit total.
 -- Curricula remain DRAFT until reviewed. academic_year_id is left NULL because
 -- the exact academic_years schema/row was not supplied; assign it once verified.
+-- Source semester tables: WRE NEP 2023-24 and Structural NEP 2023-24 PDFs linked above.
+-- Apply this migration in Supabase SQL Editor; committing a file to GitHub does not
+-- execute it against the live database.
 
 BEGIN;
 
@@ -149,27 +152,27 @@ INSERT INTO _geca_mtech_course_seed VALUES
 ('STRUCTURAL',1,'AMPCC5002','Structural Dynamics and Earthquake Engineering',4,'THEORY',TRUE,NULL),
 ('STRUCTURAL',1,'AMPCC5003','Structural Dynamics and Earthquake Engineering Laboratory',1,'PRACTICAL',TRUE,NULL),
 ('STRUCTURAL',1,'AMPEC5004','Prestressed Concrete Design',4,'ELECTIVE',FALSE,'STR-PEC-I'),
-('STRUCTURAL',1,'AMPEC5005','Advanced Concrete Technology',4,'ELECTIVE',FALSE,'STR-PEC-I'),
+('STRUCTURAL',1,'AMPEC5005','Advance Concrete Technology',4,'ELECTIVE',FALSE,'STR-PEC-I'),
 ('STRUCTURAL',1,'AMPEC5006','Numerical Methods and Optimization Techniques',4,'ELECTIVE',FALSE,'STR-PEC-I'),
-('STRUCTURAL',1,'AMPEC5007','Project Planning and Management',4,'ELECTIVE',FALSE,'STR-PEC-I'),
+('STRUCTURAL',1,'AMPEC5007','Project Planning & Management',4,'ELECTIVE',FALSE,'STR-PEC-I'),
 ('STRUCTURAL',1,'AMPEC5008','Design of Bridges',4,'ELECTIVE',FALSE,'STR-PEC-II'),
 ('STRUCTURAL',1,'AMPEC5009','Stability of Structure',4,'ELECTIVE',FALSE,'STR-PEC-II'),
 ('STRUCTURAL',1,'AMPEC5010','Soil Structure Interaction',4,'ELECTIVE',FALSE,'STR-PEC-II'),
-('STRUCTURAL',1,'AMPEC5011','Advanced Structural Analysis',4,'ELECTIVE',FALSE,'STR-PEC-II'),
+('STRUCTURAL',1,'AMPEC5011','Advance Structural Analysis',4,'ELECTIVE',FALSE,'STR-PEC-II'),
 ('STRUCTURAL',1,'AMVSEC5012','Mini Project-I',2,'PROJECT',TRUE,NULL),
 ('STRUCTURAL',1,'MERMC5001','Research Methodology',4,'THEORY',TRUE,NULL),
 ('STRUCTURAL',1,'INCCC5001','Stress Management by Yoga / Club Activity',0,'AUDIT',FALSE,NULL),
 
 -- STRUCTURAL ENGINEERING: SEMESTER II
 ('STRUCTURAL',2,'AMPCC5101','Finite Element Method',4,'THEORY',TRUE,NULL),
-('STRUCTURAL',2,'AMPCC5102','Theory of Plates and Shells',4,'THEORY',TRUE,NULL),
-('STRUCTURAL',2,'AMPCC5103','Design of Advanced RC Structures',4,'THEORY',TRUE,NULL),
-('STRUCTURAL',2,'AMPEC5104','Advanced Seismic Analysis and Design',3,'ELECTIVE',FALSE,'STR-PEC-III'),
+('STRUCTURAL',2,'AMPCC5102','Theory of Plates & Shells',4,'THEORY',TRUE,NULL),
+('STRUCTURAL',2,'AMPCC5103','Design of Advance RC Structures',4,'THEORY',TRUE,NULL),
+('STRUCTURAL',2,'AMPEC5104','Advance Seismic Analysis & Design',3,'ELECTIVE',FALSE,'STR-PEC-III'),
 ('STRUCTURAL',2,'AMPEC5105','Mechanics of Composite Materials',3,'ELECTIVE',FALSE,'STR-PEC-III'),
-('STRUCTURAL',2,'AMPEC5106','Design of Advanced Steel Structure',3,'ELECTIVE',FALSE,'STR-PEC-III'),
+('STRUCTURAL',2,'AMPEC5106','Design of Advance Steel Structure',3,'ELECTIVE',FALSE,'STR-PEC-III'),
 ('STRUCTURAL',2,'AMPEC5107','Fracture Mechanics',3,'ELECTIVE',FALSE,'STR-PEC-IV'),
 ('STRUCTURAL',2,'AMPEC5108','Design of High-rise Structures',3,'ELECTIVE',FALSE,'STR-PEC-IV'),
-('STRUCTURAL',2,'AMPEC5109','Structural Assessments and Rehabilitations',3,'ELECTIVE',FALSE,'STR-PEC-IV'),
+('STRUCTURAL',2,'AMPEC5109','Structural Assessments & Rehabilitations',3,'ELECTIVE',FALSE,'STR-PEC-IV'),
 ('STRUCTURAL',2,'AMOEC5110','Basics of Finite Element Analysis',3,'ELECTIVE',FALSE,'STR-OE-I'),
 ('STRUCTURAL',2,'CSOEC5002','Professional Ethics and Cyber Law',3,'ELECTIVE',FALSE,'STR-OE-I'),
 ('STRUCTURAL',2,'CEOEC5003','Engineering Optimization',3,'ELECTIVE',FALSE,'STR-OE-I'),
