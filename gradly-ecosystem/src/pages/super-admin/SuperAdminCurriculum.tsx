@@ -24,8 +24,12 @@ export default function SuperAdminCurriculum(){
  const programRows=rows.filter(r=>filters.program==="ALL"||clean(r.program)===filters.program);
  const branchOptions=unique(programRows.filter(r=>!isMCAProgram(clean(r.program))&&clean(r.branch).toLowerCase()!=="mca"&&clean(r.branch).toLowerCase()!=="master of computer applications"),"branch");
  const showBranch=filters.program==="ALL"||!isMCAProgram(filters.program);
- const showStream=filters.program!=="ALL"&&isMTechProgram(filters.program)&&filters.branch!=="ALL";
- const streamOptions=showStream?unique(programRows.filter(r=>filters.branch==="ALL"||clean(r.branch)===filters.branch),"specialization"):[];
+ const streamOptions=filters.program!=="ALL"&&isMTechProgram(filters.program)&&filters.branch!=="ALL"
+  ?unique(programRows.filter(r=>filters.branch==="ALL"||clean(r.branch)===filters.branch),"specialization")
+  :[];
+ // Only render the stream filter when the selected branch actually has specializations.
+ // This keeps ordinary branches such as Computer Science and Engineering from showing an empty filter.
+ const showStream=streamOptions.length>0;
  const facets=useMemo(()=>({institution:unique(rows,"institution"),program:Array.from(new Set([...unique(rows,"program"),"Master of Technology"])).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"})),branch:branchOptions,scheme:unique(rows,"scheme"),semester:unique(rows,"semester"),credits:unique(rows,"credits"),status:unique(rows,"status")}),[rows,branchOptions.join("|")]);
  const filtered=useMemo(()=>{const q=search.trim().toLowerCase();return rows.filter(r=>{const searchable=[r.name,r.courseId,r.code,r.branch,r.specialization,r.scheme,r.program,r.semester,r.academicYear,r.courseType,r.gradingRule,r.institution,r.credits,r.mandatory,r.active,r.electiveGroup,r.curriculumVersion,r.isStructureOnly].map(clean).join(" ").toLowerCase();if(q&&!searchable.includes(q))return false;if(filters.program!=="ALL"&&clean(r.program)!==filters.program)return false;if(filters.branch!=="ALL"&&clean(r.branch)!==filters.branch)return false;if(filters.stream!=="ALL"&&clean(r.specialization)!==filters.stream)return false;return (["institution","scheme","semester","credits","status"] as (keyof Filters)[]).every(key=>filters[key]==="ALL"||clean(r[key])===filters[key]);});},[rows,search,filters]);
  const groups=useMemo(()=>{const map=new Map<string,{key:string;branch:string;scheme:string;semester:string;courses:Course[];credits:number}>();for(const r of filtered){const key=groupKey(r);const item=map.get(key)||{key,branch:show(r.branch),scheme:show(r.scheme),semester:show(r.semester),courses:[],credits:0};item.courses.push(r);item.credits+=numeric(r.credits);map.set(key,item);}return Array.from(map.values()).sort((a,b)=>a.branch.localeCompare(b.branch)||a.scheme.localeCompare(b.scheme)||numeric(a.semester)-numeric(b.semester));},[filtered]);
