@@ -53,6 +53,7 @@ type ApplicationForm = {
   institution_id: string;
   program_id: string;
   branch_id: string;
+  specialization_code: string;
   full_name: string;
   enrollment_number: string;
   mobile_number: string;
@@ -66,6 +67,7 @@ const emptyForm: ApplicationForm = {
   institution_id: "",
   program_id: "",
   branch_id: "",
+  specialization_code: "",
   full_name: "",
   enrollment_number: "",
   mobile_number: "",
@@ -122,6 +124,21 @@ export default function AdminApply() {
     return Array.from(uniquePrograms.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [selectedInstitution]);
   const availableBranches = (selectedInstitution?.branches ?? []).filter((branch) => branch.program_id === form.program_id);
+  const selectedProgram = availablePrograms.find((program) => program.id === form.program_id);
+  const selectedBranch = availableBranches.find((branch) => branch.id === form.branch_id);
+  const isMTech = /^(m\.tech|master of technology)$/i.test(selectedProgram?.name.trim() ?? "");
+  const availableStreams = useMemo(() => {
+    if (!isMTech || !selectedBranch) return [];
+    const branchName = selectedBranch.name.trim().toLowerCase();
+    if (branchName === "civil") return [
+      { code: "WRE", name: "Water Resources Engineering" },
+      { code: "GTE", name: "Geotechnical Engineering" },
+    ];
+    if (branchName === "applied mechanics") return [
+      { code: "STRUCTURAL", name: "Structural Engineering" },
+    ];
+    return [];
+  }, [isMTech, selectedBranch]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -315,8 +332,9 @@ export default function AdminApply() {
     setForm((previous) => ({
       ...previous,
       [key]: value,
-      ...(key === "institution_id" ? { program_id: "", branch_id: "" } : {}),
-      ...(key === "program_id" ? { branch_id: "" } : {}),
+      ...(key === "institution_id" ? { program_id: "", branch_id: "", specialization_code: "" } : {}),
+      ...(key === "program_id" ? { branch_id: "", specialization_code: "" } : {}),
+      ...(key === "branch_id" ? { specialization_code: "" } : {}),
     }));
   }
 
@@ -331,6 +349,10 @@ export default function AdminApply() {
     }
     if (!form.institution_id || !form.program_id || !form.branch_id) {
       setError("Select an institution, program, and department.");
+      return;
+    }
+    if (isMTech && availableStreams.length > 0 && !form.specialization_code) {
+      setError("Select an M.Tech stream / specialization.");
       return;
     }
     if (!/^[6-9]\d{9}$/.test(form.mobile_number.trim())) {
@@ -511,6 +533,16 @@ export default function AdminApply() {
                           {availableBranches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.code ? " (" + branch.code + ")" : ""}</option>)}
                         </select>
                       </div>
+                      {isMTech && availableStreams.length > 0 && (
+                        <div className="form-field">
+                          <label htmlFor="app-stream">Stream / Specialization *</label>
+                          <select id="app-stream" value={form.specialization_code} onChange={(event) => updateField("specialization_code", event.target.value)} required>
+                            <option value="">Select stream / specialization</option>
+                            {availableStreams.map((stream) => <option key={stream.code} value={stream.code}>{stream.name} ({stream.code})</option>)}
+                          </select>
+                          <small>Select the M.Tech stream within the chosen department.</small>
+                        </div>
+                      )}
                       <div className="form-field">
                         <label htmlFor="app-enrollment">Enrollment / roll number *</label>
                         <input id="app-enrollment" value={form.enrollment_number} onChange={(event) => updateField("enrollment_number", event.target.value)} autoComplete="off" maxLength={80} required />
