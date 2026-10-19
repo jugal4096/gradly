@@ -143,14 +143,28 @@ INSERT INTO _geca_eps_course_seed VALUES
 (4,'EEDIS5021','Dissertation Ph II',16,'PROJECT',TRUE,NULL);
 
 -- Canonical subject catalogue.
+-- Avoid primary-key collisions and reuse existing subject rows by canonical_code.
+-- This is safe when the database already contains some or all of these subjects.
 INSERT INTO public.subjects
   (id, institution_id, canonical_code, canonical_name, active, created_at, updated_at)
-SELECT DISTINCT
+SELECT
   md5('GECA-SUBJECT:' || seed.course_code)::uuid,
   '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid,
   seed.course_code, seed.course_name, TRUE, NOW(), NOW()
-FROM _geca_eps_course_seed seed
-ON CONFLICT (institution_id, canonical_code, canonical_name) DO NOTHING;
+FROM (
+  SELECT DISTINCT course_code, course_name
+  FROM _geca_eps_course_seed
+) seed
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.subjects existing
+  WHERE existing.canonical_code = seed.course_code
+)
+AND NOT EXISTS (
+  SELECT 1
+  FROM public.subjects existing
+  WHERE existing.id = md5('GECA-SUBJECT:' || seed.course_code)::uuid
+);
 
 -- Curriculum subject catalogue rows, idempotent on curriculum + semester + code.
 INSERT INTO public.curriculum_subjects (
@@ -163,6 +177,9 @@ SELECT
   seed.course_code, seed.course_name, seed.credits, seed.course_type, seed.mandatory,
   TRUE, 'GECA-EPS-' || seed.course_code, seed.elective_group, NOW(), NOW()
 FROM _geca_eps_course_seed seed
+JOIN public.subjects s
+  ON s.canonical_code = seed.course_code
+ AND s.institution_id = '0072cf6d-55a1-54e1-9a8c-767d8058f60a'::uuid
 JOIN public.curricula c ON c.specialization_id IN (
   SELECT id FROM public.specializations WHERE code = 'EPS'
 )
