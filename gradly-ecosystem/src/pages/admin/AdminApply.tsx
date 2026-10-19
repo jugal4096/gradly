@@ -126,15 +126,23 @@ export default function AdminApply() {
   const availableBranches = (selectedInstitution?.branches ?? []).filter((branch) => branch.program_id === form.program_id);
   const selectedProgram = availablePrograms.find((program) => program.id === form.program_id);
   const selectedBranch = availableBranches.find((branch) => branch.id === form.branch_id);
-  const isMTech = /^(m\.tech|master of technology)$/i.test(selectedProgram?.name.trim() ?? "");
+  const normalizedProgramName = (selectedProgram?.name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const isMTech =
+    normalizedProgramName.includes("m.tech") ||
+    normalizedProgramName.includes("m tech") ||
+    normalizedProgramName.includes("master of technology");
   const availableStreams = useMemo(() => {
     if (!isMTech || !selectedBranch) return [];
-    const branchName = selectedBranch.name.trim().toLowerCase();
-    if (branchName === "civil") return [
+    const branchName = selectedBranch.name.trim().toLowerCase().replace(/[_-]+/g, " ");
+    const branchCode = (selectedBranch.code ?? "").trim().toLowerCase().replace(/[_-]+/g, " ");
+    const isCivil = branchName.includes("civil") || branchCode.includes("civil");
+    const isAppliedMechanics =
+      branchName.includes("applied mechanics") || branchCode.includes("applied mechanics");
+    if (isCivil) return [
       { code: "WRE", name: "Water Resources Engineering" },
       { code: "GTE", name: "Geotechnical Engineering" },
     ];
-    if (branchName === "applied mechanics") return [
+    if (isAppliedMechanics) return [
       { code: "STRUCTURAL", name: "Structural Engineering" },
     ];
     return [];
