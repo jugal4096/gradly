@@ -75,6 +75,47 @@ export async function getGuest(req: Request, res: Response) {
   }
 }
 
+
+const allowedGuestActions = new Set([
+  "GUEST_FEATURE_LOCK_CLICKED",
+  "GUEST_CALCULATOR_SWITCHED",
+  "GUEST_SUBJECT_ADDED",
+  "GUEST_SUBJECT_REMOVED",
+  "GUEST_CGPA_ENTRY_ADDED",
+  "GUEST_CGPA_ENTRY_REMOVED",
+]);
+
+export async function recordGuestEvent(req: Request, res: Response) {
+  try {
+    const sessionToken = req.headers["x-guest-session"];
+    if (typeof sessionToken !== "string" || !sessionToken) {
+      return res.status(401).json({ message: "Guest session token is required." });
+    }
+    const session = await getGuestSession(sessionToken);
+    if (!session) {
+      return res.status(401).json({ message: "Guest session is invalid or expired." });
+    }
+    const action = typeof req.body?.action === "string" ? req.body.action : "";
+    if (!allowedGuestActions.has(action)) {
+      return res.status(400).json({ message: "Unsupported guest activity event." });
+    }
+
+    const incoming = req.body?.metadata && typeof req.body.metadata === "object" && !Array.isArray(req.body.metadata)
+      ? req.body.metadata as Record<string, unknown>
+      : {};
+    const safeMetadata: Record<string, string> = {};
+    for (const key of ["feature", "calculator", "itemType"] as const) {
+      const value = incoming[key];
+      if (typeof value === "string" && value.trim()) safeMetadata[key] = value.trim().slice(0, 80);
+    }
+    await recordGuestActivity(session.id, action, safeMetadata);
+    return res.status(201).json({ message: "Guest activity recorded." });
+  } catch (error) {
+    console.error("Failed to record guest activity:", error);
+    return res.status(500).json({ message: "Could not record guest activity." });
+  }
+}
+
 export async function saveGuestWorkspace(req: Request, res: Response) {
   try {
     const sessionToken = req.headers["x-guest-session"];
