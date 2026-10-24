@@ -24,7 +24,7 @@ function readStoredProfile(): GuestProfile | null {
 export default function GuestDashboardPage() {
   const navigate = useNavigate();
   const { loginWithGoogle } = useAuth();
-  const [profile, setProfile] = useState<GuestProfile | null>(readStoredProfile);
+  const [profile] = useState<GuestProfile | null>(readStoredProfile);
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [semesters, setSemesters] = useState<SemesterEntry[]>([
     { id: "sem1", sgpa: 0, credits: 0 },
@@ -55,7 +55,6 @@ export default function GuestDashboardPage() {
         if (cancelled) return;
         const guest = data.guest;
         const nextProfile = { ...storedProfile, guestId: guest.guestId ?? storedProfile.guestId, displayName: guest.displayName ?? storedProfile.displayName, expiresAt: guest.expiresAt };
-        setProfile(nextProfile);
         sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
         const workspace = guest.workspace;
         if (Array.isArray(workspace?.subjects)) setSubjects(workspace.subjects);
