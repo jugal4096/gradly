@@ -39,13 +39,18 @@ export default function GuestDashboardPage() {
       return;
     }
     let cancelled = false;
+    const storedProfile = readStoredProfile();
+    if (!storedProfile) {
+      navigate("/login", { replace: true });
+      return;
+    }
     fetch(`${API_BASE_URL}/api/guest/session`, { headers: { "x-guest-session": token } })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data?.message || "Guest session expired.");
         if (cancelled) return;
         const guest = data.guest;
-        const nextProfile = { ...profile, guestId: guest.guestId ?? profile.guestId, displayName: guest.displayName ?? profile.displayName, expiresAt: guest.expiresAt };
+        const nextProfile = { ...storedProfile, guestId: guest.guestId ?? storedProfile.guestId, displayName: guest.displayName ?? storedProfile.displayName, expiresAt: guest.expiresAt };
         setProfile(nextProfile);
         sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
         const workspace = guest.workspace;
@@ -113,7 +118,7 @@ export default function GuestDashboardPage() {
         <a className="guest-brand" href="/guest"><span>G</span> GRADLY</a>
         <div className="guest-mode-label"><i /> GUEST WORKSPACE</div>
         <nav className="guest-nav" aria-label="Guest navigation">
-          <button className="guest-nav__item guest-nav__item--active" onClick={() => setActiveTab("sgpa")}>◫ <span>SGPA Calculator</span></button>
+          <button className={`guest-nav__item ${activeTab === "sgpa" ? "guest-nav__item--active" : ""}`} onClick={() => setActiveTab("sgpa")}>◫ <span>SGPA Calculator</span></button>
           <button className={`guest-nav__item ${activeTab === "cgpa" ? "guest-nav__item--active" : ""}`} onClick={() => setActiveTab("cgpa")}>⌁ <span>CGPA Calculator</span></button>
           {lockedFeatures.map((feature) => <button key={feature} className="guest-nav__item guest-nav__item--locked" onClick={() => setNotice(`${feature} is available to registered students. Continue with Google to unlock it.`)}><span className="guest-lock">▣</span><span>{feature}</span><span className="guest-nav__lock">LOCKED</span></button>)}
         </nav>
