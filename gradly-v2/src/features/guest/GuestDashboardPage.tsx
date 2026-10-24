@@ -34,7 +34,7 @@ export default function GuestDashboardPage() {
   const token = sessionStorage.getItem("gradly_guest_session_token");
 
   useEffect(() => {
-    if (!token || !profile) {
+    if (!token) {
       navigate("/login", { replace: true });
       return;
     }
@@ -54,8 +54,8 @@ export default function GuestDashboardPage() {
         setProfile(nextProfile);
         sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
         const workspace = guest.workspace;
-        if (workspace?.subjects?.length) setSubjects(workspace.subjects);
-        if (workspace?.semesters?.length) setSemesters(workspace.semesters);
+        if (Array.isArray(workspace?.subjects)) setSubjects(workspace.subjects);
+        if (Array.isArray(workspace?.semesters)) setSemesters(workspace.semesters);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
