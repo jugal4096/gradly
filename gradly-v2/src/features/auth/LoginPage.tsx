@@ -6,6 +6,8 @@ import "./LoginPage.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-audit-2026-10-17/gradly-ecosystem/public/gradly-ecosystem-logo.png";
 
+const heroPhrases = ["Learn smarter.", "Plan your future.", "Track your progress.", "Achieve more."];
+
 const galleryImages = [
   "photo-1523050854058-8df90110c9f1",
   "photo-1523240795612-9a054b0db644",
@@ -40,6 +42,16 @@ export default function LoginPage() {
   const [guestSetupOpen, setGuestSetupOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [startingGuest, setStartingGuest] = useState(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
+    const timer = window.setInterval(() => {
+      setPhraseIndex((current) => (current + 1) % heroPhrases.length);
+    }, 2800);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user) navigate("/dashboard", { replace: true });
@@ -119,6 +131,10 @@ export default function LoginPage() {
           <span className="login-title__line">Make every</span>
           <span className="login-title__line login-title__line--accent">semester count.</span>
         </h1>
+        <div className="login-phrase" aria-live="polite" aria-atomic="true">
+          <span className="login-phrase__label">A little better, every semester</span>
+          <span key={heroPhrases[phraseIndex]} className="login-phrase__value">{heroPhrases[phraseIndex]}</span>
+        </div>
         <p className="login-description">
           Your grades, your goals, your next big move — all in one place.
           Meet the academic sidekick that moves with you.
