@@ -8,32 +8,6 @@ const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-
 
 const heroPhrases = ["Learn smarter.", "Plan your future.", "Track your progress.", "Achieve more."];
 
-const galleryImages = [
-  "photo-1523050854058-8df90110c9f1",
-  "photo-1523240795612-9a054b0db644",
-  "photo-1517486808906-6ca8b3f04846",
-  "photo-1434030216411-0b793f4b4173",
-  "photo-1523580846011-d3a5bc25702b",
-  "photo-1529390079861-591de354faf5",
-];
-
-function ImageRail({ side }: { side: "left" | "right" }) {
-  const images = side === "left" ? galleryImages : [...galleryImages].reverse();
-  return (
-    <div className={`login-rail login-rail--${side}`} aria-hidden="true">
-      <div className="login-rail__track">
-        {[...images, ...images].map((image, index) => (
-          <div
-            className={`login-rail__tile login-rail__tile--${index % 6}`}
-            key={`${side}-${image}-${index}`}
-            style={{ backgroundImage: `url(https://images.unsplash.com/${image}?auto=format&fit=crop&w=900&q=85)` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function LoginPage() {
   const { loginWithGoogle, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
