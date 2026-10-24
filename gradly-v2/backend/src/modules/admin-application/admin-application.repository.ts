@@ -1,4 +1,3 @@
-import { PoolClient } from "pg";
 import { pool } from "../../config/database";
 
 export interface CreateApplicationInput {
@@ -105,6 +104,9 @@ export async function findDuplicateApplication(
   _institutionId: string,
   _branchId: string
 ) {
+  // These legacy arguments remain for existing callers; duplicate detection is account-wide.
+  void _institutionId;
+  void _branchId;
   // One Firebase-backed Gradly account may submit only one admin application,
   // regardless of institution, branch, or its current/reviewed status.
   const result = await pool.query(
