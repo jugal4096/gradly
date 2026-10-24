@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { pool } from "../../config/database";
 import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.middleware";
+import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 
 const allowedRequestTypes = new Set(["ADD_SUBJECT", "REMOVE_SUBJECT", "MODIFY_SUBJECT", "RENAME_CURRICULUM", "DELETE_CURRICULUM"]);
 
@@ -123,8 +124,8 @@ export async function createSubjectChangeRequest(req: AdminAuthenticatedRequest,
 }
 
 /** Super Admin can send a message to one active Admin or broadcast to all active Admins. */
-export async function createAdminWorkspaceNotification(req: Request, res: Response) {
-  const superAdminId = (req as any).superAdmin?.superAdminId;
+export async function createAdminWorkspaceNotification(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
   if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   const { adminId, title, message, notificationType, actionUrl } = req.body ?? {};
   if (typeof title !== "string" || title.trim().length < 3 || title.trim().length > 160 ||
@@ -158,8 +159,8 @@ export async function createAdminWorkspaceNotification(req: Request, res: Respon
 }
 
 
-export async function listAdminSubjectChangeRequestsForSuperAdmin(req: Request, res: Response) {
-  if (!(req as any).superAdmin?.superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+export async function listAdminSubjectChangeRequestsForSuperAdmin(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin?.superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   try {
     const result = await pool.query(
       `SELECT r.id, r.admin_id AS "adminId", a.admin_code AS "adminCode", a.full_name AS "adminName",
@@ -181,8 +182,8 @@ export async function listAdminSubjectChangeRequestsForSuperAdmin(req: Request, 
   }
 }
 
-export async function reviewAdminSubjectChangeRequest(req: Request, res: Response) {
-  const superAdminId = (req as any).superAdmin?.superAdminId;
+export async function reviewAdminSubjectChangeRequest(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
   if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   const { status, reviewNote } = req.body ?? {};
   if (!["APPROVED", "REJECTED"].includes(status)) return res.status(400).json({ success: false, message: "Choose APPROVED or REJECTED." });
