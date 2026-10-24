@@ -12,7 +12,7 @@ const initialSubjects: Subject[] = [
   { id: "s2", name: "Subject 02", credits: 3, gradePoint: 8 },
   { id: "s3", name: "Subject 03", credits: 3, gradePoint: 10 },
 ];
-const lockedFeatures = ["My academic profile", "Curriculum explorer", "Official result import", "Semester-wise history", "Target CGPA planner", "Academic insights"];
+const lockedFeatures = ["My academic profile", "Curriculum explorer", "Official result import", "Semester-wise history", "Target CGPA planner", "Academic insights", "Study planner & reminders", "AI academic assistant", "Student community"];
 
 function readStoredProfile(): GuestProfile | null {
   try {
@@ -27,8 +27,8 @@ export default function GuestDashboardPage() {
   const [profile, setProfile] = useState<GuestProfile | null>(readStoredProfile);
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [semesters, setSemesters] = useState<SemesterEntry[]>([
-    { id: "sem1", sgpa: 8.1, credits: 22 },
-    { id: "sem2", sgpa: 8.4, credits: 24 },
+    { id: "sem1", sgpa: 0, credits: 0 },
+    { id: "sem2", sgpa: 0, credits: 0 },
   ]);
   const [notice, setNotice] = useState("");
   const [lockedFeature, setLockedFeature] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function GuestDashboardPage() {
         sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
         const workspace = guest.workspace;
         if (Array.isArray(workspace?.subjects)) setSubjects(workspace.subjects);
-        if (Array.isArray(workspace?.semesters)) setSemesters(workspace.semesters);
+        if (Array.isArray(workspace?.semesters) && workspace.semesters.length) setSemesters(workspace.semesters);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
