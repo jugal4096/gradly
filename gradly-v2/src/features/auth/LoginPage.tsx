@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
@@ -32,7 +32,7 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGuestStart(event: React.FormEvent<HTMLFormElement>) {
+  async function handleGuestStart(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const displayName = guestName.trim();
     if (displayName.length < 3 || displayName.length > 24) {
