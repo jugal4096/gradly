@@ -11,7 +11,7 @@ const capabilities = [
   { number: "02", icon: "⌁", title: "Plan with purpose", body: "Turn a big target into a next step that feels clear, realistic and yours.", tag: "GOAL SETTING" },
   { number: "03", icon: "✳", title: "Keep your momentum", body: "Bring your academic journey into one calmer space, semester by semester.", tag: "YOUR WORKSPACE" },
 ];
-const steps = [
+function scrollToSection(id: string) {\n  const target = document.getElementById(id);\n  if (!target) return;\n  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;\n  target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });\n}\n\nconst steps = [
   { number: "01", title: "Start where you are", body: "Sign in with Google or try Gradly in Guest Mode. No complicated setup." },
   { number: "02", title: "Make the picture clearer", body: "Explore your academic numbers and begin shaping your next goal." },
   { number: "03", title: "Keep moving forward", body: "Build a more intentional student routine, one useful step at a time." },
@@ -95,7 +95,7 @@ export default function LoginPage() {
           <a href="#how-it-works">How it works</a>
           <a href="#about">Our idea</a>
         </nav>
-        <button className="landing-nav__cta" onClick={() => document.getElementById("get-started")?.scrollIntoView({ behavior: "smooth" })}>
+        <button className="landing-nav__cta" onClick={() => scrollToSection("get-started")}>
           Get started <span aria-hidden="true">↗</span>
         </button>
       </header>
@@ -109,7 +109,7 @@ export default function LoginPage() {
             <button className="button-primary" onClick={handleGoogleLogin} disabled={loggingIn || startingGuest}>
               {loggingIn ? "Signing you in…" : "Start with Google"} <span aria-hidden="true">↗</span>
             </button>
-            <button className="button-quiet" onClick={() => { setError(""); setGuestSetupOpen(true); document.getElementById("guest-entry")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>
+            <button className="button-quiet" onClick={() => { setError(""); setGuestSetupOpen(true); scrollToSection("guest-entry"); }}>
               Explore as guest <span aria-hidden="true">→</span>
             </button>
           </div>
