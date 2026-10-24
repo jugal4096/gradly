@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { pool } from "../../config/database";
 import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.middleware";
 import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
