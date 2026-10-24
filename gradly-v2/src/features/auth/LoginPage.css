@@ -173,3 +173,38 @@
   .gradly-wordmark__tagline { opacity:1; }
   .showcase-progress i { width:85%; }
 }
+
+
+/* Gradly cinematic system — midnight violet */
+.gradly-login{--purple:#a78bfa;--purple-dark:#6d28d9;--ink:#f5f3ff;--muted:#b6accb;color:#f5f3ff;background:radial-gradient(ellipse at 78% 42%,rgba(124,58,237,.22),transparent 36%),radial-gradient(ellipse at 12% 85%,rgba(91,33,182,.22),transparent 38%),linear-gradient(135deg,#090711 0%,#100b1e 50%,#0a0a14 100%);isolation:isolate}
+.gradly-login::before{opacity:.13;background-image:radial-gradient(rgba(196,181,253,.75) .65px,transparent .65px);mask-image:linear-gradient(90deg,#000,transparent 85%)}
+.gradly-login::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(115deg,transparent 25%,rgba(167,139,250,.045) 48%,transparent 68%);background-size:220% 100%;animation:cinema-sweep 18s ease-in-out infinite}
+.login-ambient{opacity:.25;filter:blur(110px)}.login-ambient--one{background:#7c3aed}.login-ambient--two{background:#c026d3}
+.login-topbar{position:relative;z-index:4}.gradly-logo-image{filter:drop-shadow(0 0 18px rgba(167,139,250,.24));}
+.gradly-wordmark__tagline{color:#b8a3f2}
+.login-eyebrow{color:#c4b5fd}.login-eyebrow span{background:#c4b5fd;box-shadow:0 0 0 5px rgba(167,139,250,.13),0 0 20px rgba(167,139,250,.5)}
+.login-title{color:#faf8ff;text-shadow:0 4px 35px rgba(0,0,0,.18)}
+.login-title__line--accent{background:linear-gradient(100deg,#c4b5fd 0%,#a78bfa 38%,#f0abfc 72%,#c4b5fd 100%);background-size:200% auto;animation:title-reveal .8s cubic-bezier(.2,.75,.2,1) .14s both,gradient-flow 9s linear infinite}
+.login-phrase__label{color:#a99bbf}.login-phrase__value{color:#d8c8ff}
+.login-description{color:#b9b0ca}
+.login-button--google{background:linear-gradient(110deg,#8b5cf6,#7c3aed 58%,#a855f7);box-shadow:0 14px 42px rgba(124,58,237,.3),inset 0 1px 0 rgba(255,255,255,.22)}
+.login-button--google:hover:not(:disabled){background:linear-gradient(110deg,#a78bfa,#8b5cf6 58%,#d946ef);box-shadow:0 20px 48px rgba(124,58,237,.42)}
+.login-button--guest{color:#e7ddff;background:rgba(28,20,46,.76);border-color:rgba(196,181,253,.2);box-shadow:0 8px 25px rgba(0,0,0,.12);backdrop-filter:blur(12px)}
+.login-button--guest:hover:not(:disabled){background:rgba(57,39,88,.8);border-color:rgba(196,181,253,.5)}
+.login-button:focus-visible,.guest-setup input:focus-visible,.guest-setup button:focus-visible{outline-color:#c4b5fd}
+.guest-setup{background:rgba(22,16,36,.96);border-color:rgba(196,181,253,.22);box-shadow:0 22px 65px rgba(0,0,0,.28)}
+.guest-setup label{color:#eee7ff}.guest-setup input{color:#f5f3ff;background:#100b1e;border-color:#493568}.guest-setup input::placeholder{color:#8f82a7}.guest-setup p{color:#a99bbf}
+.login-error{color:#fda4af}.login-privacy{color:#a69bb9}
+.login-showcase{transform-style:preserve-3d}
+.showcase-orbit{border-color:rgba(167,139,250,.22);box-shadow:0 0 45px rgba(124,58,237,.05)}
+.showcase-orbit--two{border-color:rgba(217,70,239,.18)}
+.showcase-window{background:linear-gradient(145deg,rgba(31,23,49,.96),rgba(16,12,28,.94));border-color:rgba(221,214,254,.17);box-shadow:0 45px 120px rgba(0,0,0,.42),0 0 0 1px rgba(167,139,250,.06),inset 0 1px 0 rgba(255,255,255,.09);backdrop-filter:blur(22px)}
+.showcase-window__top{border-color:rgba(221,214,254,.1)}.showcase-window__caption{color:#a99bbf}.showcase-dots i{background:#8b7ca2}.showcase-avatar{color:#f5f3ff;background:linear-gradient(135deg,#8b5cf6,#c026d3)}
+.showcase-kicker{color:#b5a2dc}.showcase-welcome h2{color:#f5f3ff}.showcase-welcome h2 em{color:#c4b5fd}.showcase-sparkle{color:#e9d5ff;text-shadow:0 0 24px rgba(192,132,252,.7)}
+.showcase-metric--purple{background:linear-gradient(145deg,#6d28d9,#4c1d95);border:1px solid rgba(221,214,254,.15)}.showcase-metric--white{color:#f5f3ff;background:linear-gradient(145deg,#2a203d,#1b1429);border:1px solid rgba(221,214,254,.12)}.showcase-metric--white>span,.showcase-metric--white .showcase-footnote{color:#b5a2d1}.showcase-metric--white strong{color:#faf8ff}.showcase-semesters i{background:#4d3c68}.showcase-semesters i.active{background:#c4b5fd;box-shadow:0 0 12px rgba(196,181,253,.55)}
+.showcase-bottom{border-color:rgba(221,214,254,.1)}.showcase-mini-icon{color:#e9d5ff;background:rgba(139,92,246,.18)}.showcase-bottom strong{color:#f5f3ff}.showcase-bottom span{color:#a99bbf}
+.floating-note{color:#eee7ff;background:rgba(35,25,55,.94);border-color:rgba(221,214,254,.16);box-shadow:0 20px 50px rgba(0,0,0,.3);backdrop-filter:blur(16px)}
+@keyframes cinema-sweep{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+@keyframes gradient-flow{to{background-position:200% center}}
+@media(max-width:760px){.gradly-login{background:radial-gradient(ellipse at 50% 15%,rgba(124,58,237,.2),transparent 42%),linear-gradient(160deg,#090711,#100b1e 60%,#0a0a14)}.login-showcase{padding-inline:6px}}
+@media(prefers-reduced-motion:reduce){.gradly-login::after{animation:none}.login-title__line--accent{animation:title-reveal .01ms forwards}}
