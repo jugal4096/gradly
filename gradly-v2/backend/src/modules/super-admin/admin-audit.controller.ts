@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { findAdminAuditEvents, listAdminAuditActions } from "./admin-audit.repository";
 import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 
