@@ -113,7 +113,6 @@ async function handleFailedLogin(
     lockoutLevel = lockoutLevel + 1;
     lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
   }
-  }
 
   const update: LoginSecurityUpdate = {
     failedAttempts: lockedUntil ? 0 : failedAttempts,
