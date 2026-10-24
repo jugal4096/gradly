@@ -11,7 +11,7 @@ function HomePage() {
   if (loading) return <main className="app-loading">Loading Gradly…</main>;
   if (user) return <Navigate to="/dashboard" replace />;
   if (sessionStorage.getItem("gradly_guest_session_token")) return <Navigate to="/guest" replace />;
-  return <Navigate to="/login" replace />;
+  return <LoginPage />;
 }
 
 function NotFoundPage() {
