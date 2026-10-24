@@ -105,16 +105,14 @@ async function handleFailedLogin(
 
   const failedAttempts = state.failed_attempts + 1;
 
-  let attemptLimit = state.attempt_limit;
+  const attemptLimit = 3;
   let lockoutLevel = state.lockout_level;
   let lockedUntil: Date | null = null;
 
   if (failedAttempts >= 3) {
     lockoutLevel = lockoutLevel + 1;
-    attemptLimit = 3;
     lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
-  } else {
-    attemptLimit = 3;
+  }
   }
 
   const update: LoginSecurityUpdate = {
