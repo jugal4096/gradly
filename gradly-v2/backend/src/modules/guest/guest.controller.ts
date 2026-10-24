@@ -1,19 +1,33 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import {
   getGuestSession,
   startGuestSession,
 } from "./guest.service";
-import { listGuestBranchOptions, recordGuestActivity, setGuestBranch } from "./guest.repository";
+import {
+  recordGuestActivity,
+  updateGuestWorkspace,
+} from "./guest.repository";
 
-export async function createGuest(_req: Request, res: Response) {
+export async function createGuest(req: Request, res: Response) {
   try {
-    const session = await startGuestSession();
-    await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", { source: "web" });
+    const displayName = typeof req.body?.displayName === "string" ? req.body.displayName : "";
+    if (!displayName.trim()) {
+      return res.status(400).json({ message: "Choose a guest display name to continue." });
+    }
+
+    const session = await startGuestSession(displayName);
+    await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", {
+      source: "web",
+      displayId: session.metadata?.display_id,
+      displayName: session.metadata?.display_name,
+    });
 
     return res.status(201).json({
       message: "Guest session created successfully.",
       guest: {
         id: session.id,
+        guestId: session.metadata?.display_id,
+        displayName: session.metadata?.display_name,
         sessionToken: session.sessionToken,
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
@@ -21,84 +35,80 @@ export async function createGuest(_req: Request, res: Response) {
       },
     });
   } catch (error) {
+    if (error instanceof Error && (error as Error & { code?: string }).code === "GUEST_NAME_TAKEN") {
+      return res.status(409).json({ code: "GUEST_NAME_TAKEN", message: error.message });
+    }
+    if (error instanceof Error && error.message.startsWith("Choose a display name")) {
+      return res.status(400).json({ message: error.message });
+    }
     console.error("Failed to create guest session:", error);
-
-    return res.status(500).json({
-      message: "Failed to create guest session.",
-    });
+    return res.status(500).json({ message: "Failed to start Guest Mode. Please try again." });
   }
 }
 
 export async function getGuest(req: Request, res: Response) {
   try {
     const sessionToken = req.headers["x-guest-session"];
-
     if (typeof sessionToken !== "string" || !sessionToken) {
-      return res.status(401).json({
-        message: "Guest session token is required.",
-      });
+      return res.status(401).json({ message: "Guest session token is required." });
     }
 
     const session = await getGuestSession(sessionToken);
-
     if (!session) {
-      return res.status(401).json({
-        message: "Guest session is invalid or expired.",
-      });
+      return res.status(401).json({ message: "Guest session is invalid or expired." });
     }
 
     return res.status(200).json({
       guest: {
         id: session.id,
+        guestId: session.metadata?.display_id ?? null,
+        displayName: session.metadata?.display_name ?? "Guest",
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
         expiresAt: session.expires_at,
-        metadata: session.metadata ?? {},
-        branch: {
-          id: session.metadata?.branch_id ?? null,
-          name: session.metadata?.branch_name ?? null,
-          programName: session.metadata?.program_name ?? null,
-          institutionName: session.metadata?.institution_name ?? null,
-        },
+        workspace: session.metadata?.guest_workspace ?? { subjects: [], semesters: [], lastActiveCalculator: "sgpa" },
       },
     });
   } catch (error) {
     console.error("Failed to retrieve guest session:", error);
-
-    return res.status(500).json({
-      message: "Failed to retrieve guest session.",
-    });
+    return res.status(500).json({ message: "Failed to retrieve guest session." });
   }
 }
 
-export async function listGuestBranches(_req: Request, res: Response) {
-  try {
-    const branches = await listGuestBranchOptions();
-    return res.status(200).json({ branches });
-  } catch (error) {
-    console.error("Failed to list guest branch options:", error);
-    return res.status(500).json({ message: "Failed to load branch options." });
-  }
-}
-
-export async function updateGuestBranch(req: Request, res: Response) {
+export async function saveGuestWorkspace(req: Request, res: Response) {
   try {
     const sessionToken = req.headers["x-guest-session"];
     if (typeof sessionToken !== "string" || !sessionToken) {
       return res.status(401).json({ message: "Guest session token is required." });
     }
     const session = await getGuestSession(sessionToken);
-    if (!session) return res.status(401).json({ message: "Guest session is invalid or expired." });
-    const branchId = typeof req.body?.branchId === "string" ? req.body.branchId : "";
-    if (!branchId) return res.status(400).json({ message: "branchId is required." });
-    const updated = await setGuestBranch(session.id, branchId);
-    if (!updated) return res.status(404).json({ message: "Branch not found." });
-    return res.status(200).json({
-      message: "Guest branch saved.",
-      guest: { id: updated.id, lastSeenAt: updated.last_seen_at, metadata: updated.metadata, branch: updated.branch }
-    });
+    if (!session) {
+      return res.status(401).json({ message: "Guest session is invalid or expired." });
+    }
+
+    const workspace = req.body?.workspace;
+    if (!workspace || typeof workspace !== "object" || Array.isArray(workspace)) {
+      return res.status(400).json({ message: "A valid workspace object is required." });
+    }
+    const encoded = JSON.stringify(workspace);
+    if (encoded.length > 25000) {
+      return res.status(413).json({ message: "Your saved calculator workspace is too large." });
+    }
+
+    const updated = await updateGuestWorkspace(session.id, workspace as Record<string, unknown>);
+    if (!updated) return res.status(404).json({ message: "Guest profile was not found." });
+
+    const subjects = Array.isArray((workspace as { subjects?: unknown }).subjects)
+      ? (workspace as { subjects: unknown[] }).subjects.length
+      : 0;
+    const semesters = Array.isArray((workspace as { semesters?: unknown }).semesters)
+      ? (workspace as { semesters: unknown[] }).semesters.length
+      : 0;
+    await recordGuestActivity(session.id, "GUEST_WORKSPACE_SAVED", { subjectCount: subjects, semesterEntryCount: semesters });
+
+    return res.status(200).json({ message: "Guest workspace saved.", savedAt: updated.last_seen_at });
   } catch (error) {
-    console.error("Failed to save guest branch:", error);
-    return res.status(500).json({ message: "Failed to save guest branch." });
+    console.error("Failed to save guest workspace:", error);
+    return res.status(500).json({ message: "Could not save your guest workspace." });
   }
 }
