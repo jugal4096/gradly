@@ -115,11 +115,19 @@ export async function findGuestSessions(search?: string) {
       last_seen_at,
       expires_at,
       metadata,
-      (expires_at IS NULL OR expires_at > NOW()) AS active
+      metadata->>'display_id' AS guest_id,
+      metadata->>'display_name' AS display_name,
+      (expires_at IS NULL OR expires_at > NOW()) AS active,
+      jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'subjects') = 'array'
+        THEN metadata->'guest_workspace'->'subjects' ELSE '[]'::jsonb END) AS subject_count,
+      jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'semesters') = 'array'
+        THEN metadata->'guest_workspace'->'semesters' ELSE '[]'::jsonb END) AS semester_entry_count
     FROM guest_sessions
     WHERE
       $1::text IS NULL
       OR id::text ILIKE '%' || $1 || '%'
+      OR metadata->>'display_id' ILIKE '%' || $1 || '%'
+      OR metadata->>'display_name' ILIKE '%' || $1 || '%'
     ORDER BY last_seen_at DESC NULLS LAST
     LIMIT 500;
   `;
