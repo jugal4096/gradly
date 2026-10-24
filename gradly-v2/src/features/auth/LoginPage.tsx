@@ -4,6 +4,33 @@ import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-audit-2026-10-17/gradly-ecosystem/public/gradly-ecosystem-logo.png";
+
+const galleryImages = [
+  "photo-1523050854058-8df90110c9f1",
+  "photo-1523240795612-9a054b0db644",
+  "photo-1517486808906-6ca8b3f04846",
+  "photo-1434030216411-0b793f4b4173",
+  "photo-1523580846011-d3a5bc25702b",
+  "photo-1529390079861-591de354faf5",
+];
+
+function ImageRail({ side }: { side: "left" | "right" }) {
+  const images = side === "left" ? galleryImages : [...galleryImages].reverse();
+  return (
+    <div className={`login-rail login-rail--${side}`} aria-hidden="true">
+      <div className="login-rail__track">
+        {[...images, ...images].map((image, index) => (
+          <div
+            className={`login-rail__tile login-rail__tile--${index % 6}`}
+            key={`${side}-${image}-${index}`}
+            style={{ backgroundImage: `url(https://images.unsplash.com/${image}?auto=format&fit=crop&w=900&q=85)` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const { loginWithGoogle, user, loading: authLoading } = useAuth();
@@ -68,23 +95,19 @@ export default function LoginPage() {
 
   return (
     <main className="gradly-login">
-      <div className="login-backdrop" aria-hidden="true">
-        <div className="login-backdrop__image login-backdrop__image--one" />
-        <div className="login-backdrop__image login-backdrop__image--two" />
-        <div className="login-backdrop__image login-backdrop__image--three" />
-        <div className="login-backdrop__image login-backdrop__image--four" />
-        <div className="login-backdrop__image login-backdrop__image--five" />
-      </div>
-      <div className="login-vignette" aria-hidden="true" />
+      <div className="login-ambient login-ambient--one" aria-hidden="true" />
+      <div className="login-ambient login-ambient--two" aria-hidden="true" />
+      <ImageRail side="left" />
+      <ImageRail side="right" />
+
       <header className="login-topbar">
-        <a className="gradly-wordmark" href="/" aria-label="Gradly home">
-          <span className="gradly-wordmark__mark">G</span><span>GRADLY</span>
+        <a className="gradly-logo-link" href="/" aria-label="Gradly home">
+          <img className="gradly-logo-image" src={LOGO_URL} alt="Gradly" />
         </a>
-        <span className="login-topbar__tagline">YOUR JOURNEY. YOUR NUMBERS. YOUR FUTURE.</span>
       </header>
 
       <section className="login-content" aria-labelledby="login-title">
-        <p className="login-eyebrow"><span /> YOUR ACADEMIC STORY STARTS HERE</p>
+        <p className="login-eyebrow"><span /> YOUR ACADEMIC STORY STARTS HERE <span /></p>
         <h1 id="login-title" className="login-title">
           <span className="login-title__line">Make every</span>
           <span className="login-title__line login-title__line--accent">semester count.</span>
@@ -121,8 +144,9 @@ export default function LoginPage() {
       </section>
 
       <footer className="login-footer">
+        <span className="login-footer__spark" />
         <span>BUILT FOR THE NEXT VERSION OF YOU.</span>
-        <span className="login-footer__status"><i /> A LITTLE MORE CLARITY. EVERY DAY.</span>
+        <span className="login-footer__spark" />
       </footer>
     </main>
   );
