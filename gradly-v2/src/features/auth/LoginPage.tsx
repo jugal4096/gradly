@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
@@ -114,12 +114,9 @@ export default function LoginPage() {
 
       <header className="login-topbar">
         <a className="gradly-logo-link" href="/" aria-label="Gradly home">
-          <span className="gradly-wordmark" aria-label="Gradly">
-            {"Gradly".split("").map((letter, index) => (
-              <span className="gradly-wordmark__letter" style={{ "--letter-index": index } as CSSProperties} key={letter + index}>
-                {letter}
-              </span>
-            ))}
+          <span className="gradly-logo-stage">
+            <img className="gradly-logo-image" src={LOGO_URL} alt="Gradly" />
+            <span className="gradly-logo-shimmer" aria-hidden="true" />
           </span>
           <span className="gradly-wordmark__tagline">YOUR ACADEMIC SIDEKICK</span>
         </a>
