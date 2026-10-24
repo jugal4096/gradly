@@ -149,6 +149,7 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
+    void _next; // Express requires four arguments for error middleware.
     console.error("Unhandled API error:", error);
 
     res.status(500).json({
