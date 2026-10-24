@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 .gradly-login {
   --gradly-accent: #c4a5ff;
@@ -16,7 +16,7 @@
   background:
     radial-gradient(ellipse at 50% 44%, rgba(93, 47, 165, .3) 0%, rgba(23, 13, 47, .18) 35%, transparent 68%),
     linear-gradient(135deg, #080711 0%, #100b20 48%, #080a16 100%);
-  font-family: 'DM Sans', Inter, system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
 }
 .gradly-login::before {
   position: absolute;
@@ -95,8 +95,8 @@
   transition: transform .3s ease, filter .3s ease;
 }
 .gradly-logo-link:hover { transform: translateY(-3px) scale(1.035); filter: drop-shadow(0 0 20px rgba(157,126,255,.7)); }
-.gradly-wordmark { display: inline-flex; align-items: baseline; font-family: 'Space Grotesk', Inter, sans-serif; font-size: clamp(48px, 5vw, 64px); font-weight: 700; letter-spacing: -.075em; line-height: 1.08; color: #fff; }
-.gradly-wordmark__letter { display: inline-block; opacity: 0; background: linear-gradient(135deg, #fff 5%, #e3d4ff 48%, #8ce8ff 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: gradly-letter-reveal .72s cubic-bezier(.2,.8,.25,1.25) calc(.18s + var(--letter-index) * .105s) forwards; }
+.gradly-wordmark { display: inline-flex; align-items: baseline; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: clamp(52px, 5.2vw, 70px); font-weight: 800; letter-spacing: -.085em; line-height: 1.08; color: #fff; perspective: 500px; filter: drop-shadow(0 0 20px rgba(134,99,255,.16)); animation: gradly-wordmark-ambient 6s ease-in-out 1.5s infinite; }
+.gradly-wordmark__letter { display: inline-block; opacity: 0; background: linear-gradient(105deg, #fff 0%, #e5d7ff 28%, #9beaff 48%, #fff 62%, #c9b2ff 78%, #fff 100%); background-size: 260% 100%; background-position: 100% 50%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: gradly-letter-reveal .72s cubic-bezier(.2,.8,.25,1.12) calc(.18s + var(--letter-index) * .105s) forwards, gradly-gradient-sweep 5.5s ease-in-out 1.8s infinite; }
 .gradly-wordmark__tagline { display: block; margin-top: 3px; color: rgba(210,197,255,.82); font-size: 9px; font-weight: 700; letter-spacing: .31em; opacity: 0; animation: gradly-tagline-reveal .6s ease 1.05s forwards; }
 
 .login-content {
@@ -150,6 +150,9 @@
   -webkit-text-fill-color: transparent;
   animation-delay: .42s;
 }
+.login-phrase { display: flex; min-height: 72px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; margin: 8px 0 0; }
+.login-phrase__label { color: rgba(233,224,255,.66); font-size: 10px; font-weight: 600; letter-spacing: .12em; }
+.login-phrase__value { display: block; color: #e4d7ff; font-size: clamp(19px, 2.1vw, 25px); font-weight: 700; letter-spacing: -.035em; animation: gradly-phrase-enter .55s cubic-bezier(.2,.7,.25,1) both; }
 .login-description {
   max-width: 440px;
   margin: 23px auto 27px;
@@ -239,12 +242,12 @@
   to { transform: translateY(0); }
 }
 @keyframes gradly-brand-arrive { from { opacity: 0; transform: translateY(-16px) scale(.94); filter: blur(8px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-@keyframes gradly-letter-reveal { 0% { opacity: 0; transform: translateY(26px) rotateX(-65deg) scale(.75); filter: blur(9px); } 65% { opacity: 1; transform: translateY(-4px) rotateX(8deg) scale(1.08); filter: blur(0); } 100% { opacity: 1; transform: translateY(0) rotateX(0) scale(1); filter: drop-shadow(0 0 18px rgba(171,140,255,.24)); } }
+@keyframes gradly-letter-reveal { 0% { opacity: 0; transform: translateY(28px) rotateX(-48deg) scale(.82); filter: blur(8px); } 68% { opacity: 1; transform: translateY(-3px) rotateX(4deg) scale(1.04); filter: blur(0); } 100% { opacity: 1; transform: translateY(0) rotateX(0) scale(1); filter: drop-shadow(0 0 14px rgba(171,140,255,.18)); } }
 @keyframes gradly-tagline-reveal { from { opacity: 0; transform: translateY(8px); letter-spacing: .48em; } to { opacity: 1; transform: translateY(0); letter-spacing: .31em; } }
-  28% { opacity: 1; }
-  55%, 100% { left: 130%; opacity: 0; }
-}
+@keyframes gradly-gradient-sweep { 0%, 20% { background-position: 100% 50%; } 58%, 100% { background-position: 0% 50%; } }
+@keyframes gradly-wordmark-ambient { 0%, 100% { filter: drop-shadow(0 0 15px rgba(134,99,255,.13)); } 50% { filter: drop-shadow(0 0 24px rgba(134,99,255,.29)); } }
 @keyframes gradly-ambient-float { from { transform: translate3d(-12px,-15px,0) scale(.92); } to { transform: translate3d(18px,22px,0) scale(1.12); } }
+@keyframes gradly-phrase-enter { from { opacity: 0; transform: translateY(13px); filter: blur(5px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
 @keyframes gradly-content-arrive { from { opacity: 0; transform: translateY(24px) scale(.985); filter: blur(4px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
 @keyframes gradly-title-reveal { from { opacity: 0; transform: translateY(18px); clip-path: inset(0 0 100% 0); } to { opacity: 1; transform: translateY(0); clip-path: inset(0 0 0 0); } }
 
@@ -262,18 +265,26 @@
   .login-eyebrow { gap: 8px; font-size: 8px; letter-spacing: .13em; }
   .login-title { font-size: clamp(43px, 10.5vw, 64px); }
   .login-description { max-width: 360px; font-size: 13px; }
+  .login-phrase { min-height: 66px; }
+  .login-phrase__label { font-size: 9px; }
+  .login-phrase__value { font-size: 21px; }
   .login-footer { padding-bottom: 20px; font-size: 8px; letter-spacing: .13em; }
 }
 @media (max-width: 400px) {
   .login-rail { width: 38vw; opacity: .45; }
   .login-content { width: 100%; padding-inline: 18px; }
   .login-title { font-size: 42px; }
+  .gradly-wordmark { font-size: 52px; }
+  .gradly-wordmark__tagline { letter-spacing: .24em; }
+  .login-phrase__value { font-size: 19px; }
   .login-description { max-width: 320px; }
   .login-footer__spark { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .login-rail__track, .login-ambient, .gradly-logo-link, .login-content, .login-title__line { animation: none; }
   .gradly-logo-link { opacity: 1; transform: none; filter: none; }
-  .gradly-wordmark__letter { opacity: 1; animation: none; }
+  .gradly-wordmark__letter { opacity: 1; animation: none; background-position: 50% 50%; }
+  .gradly-wordmark { animation: none; }
+  .login-phrase__value { animation: none; }
   .gradly-wordmark__tagline { opacity: 1; animation: none; }
 }
