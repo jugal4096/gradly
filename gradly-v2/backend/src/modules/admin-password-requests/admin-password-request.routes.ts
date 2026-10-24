@@ -1,24 +1,29 @@
-import { Router, type RequestHandler } from "express";
+import { Router, type Request, type Response, type RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import { pool } from "../../config/database";
-import { authenticateFirebaseToken } from "../../middleware/auth.middleware";
-import { authenticateSuperAdminToken } from "../../middleware/super-admin-auth.middleware";
+import { authenticateFirebaseToken, type AuthenticatedRequest } from "../../middleware/auth.middleware";
+import { authenticateSuperAdminToken, type SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 
 const router = Router();
 const superAdminAuth = authenticateSuperAdminToken as RequestHandler;
 
-function firebaseIdentity(req: any) {
-  const user = req.firebaseUser;
+function firebaseIdentity(req: Request) {
+  const user = (req as AuthenticatedRequest).firebaseUser;
   if (!user?.uid || !user?.email || user.emailVerified !== true) {
-    const error: any = new Error("Sign in with the verified Google account linked to your administrator account.");
-    error.statusCode = 401;
-    throw error;
+    throw Object.assign(
+      new Error("Sign in with the verified Google account linked to your administrator account."),
+      { statusCode: 401 }
+    );
   }
   return { uid: String(user.uid), email: String(user.email).trim().toLowerCase() };
 }
 
-function fail(res: any, error: any) {
-  const status = Number(error?.statusCode);
+function fail(res: Response, error: unknown) {
+  const rawStatus =
+    typeof error === "object" && error !== null && "statusCode" in error
+      ? Number((error as { statusCode?: unknown }).statusCode)
+      : 500;
+  const status = rawStatus;
   return res.status(status >= 400 && status <= 599 ? status : 500).json({
     success: false,
     message: error instanceof Error ? error.message : "Password request failed."
@@ -165,7 +170,7 @@ router.get("/review", superAdminAuth, async (_req, res) => {
   }
 });
 
-router.patch("/:requestId/review", superAdminAuth, async (req: any, res) => {
+router.patch("/:requestId/review", superAdminAuth, async (req: Request, res: Response) => {
   try {
     const decision = req.body?.decision;
     const note = typeof req.body?.review_note === "string" ? req.body.review_note.trim().slice(0, 1000) : "";
@@ -180,7 +185,7 @@ router.patch("/:requestId/review", superAdminAuth, async (req: any, res) => {
        SET status = $2, review_note = $3, reviewed_at = NOW(), reviewed_by_super_admin_id = $4, updated_at = NOW()
        WHERE id = $1 AND status = 'PENDING'
        RETURNING id, admin_code, admin_email, status, created_at, reviewed_at, review_note`,
-      [req.params.requestId, decision, note || null, req.superAdmin?.superAdminId ?? null]
+      [req.params.requestId, decision, note || null, (req as SuperAdminAuthenticatedRequest).superAdmin?.superAdminId ?? null]
     );
     if (!result.rowCount) {
       return res.status(409).json({ success: false, message: "Request not found or already reviewed." });
