@@ -1,17 +1,10 @@
 import { Router } from "express";
-
-import {
-  createGuest,
-  getGuest,
-  listGuestBranches,
-  updateGuestBranch,
-} from "./guest.controller";
+import { createGuest, getGuest, saveGuestWorkspace } from "./guest.controller";
 
 const router = Router();
 
-router.get("/branches", listGuestBranches);
 router.post("/session", createGuest);
 router.get("/session", getGuest);
-router.patch("/session/branch", updateGuestBranch);
+router.patch("/session/workspace", saveGuestWorkspace);
 
 export default router;
