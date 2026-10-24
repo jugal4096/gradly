@@ -11,7 +11,14 @@ const capabilities = [
   { number: "02", icon: "⌁", title: "Plan with purpose", body: "Turn a big target into a next step that feels clear, realistic and yours.", tag: "GOAL SETTING" },
   { number: "03", icon: "✳", title: "Keep your momentum", body: "Bring your academic journey into one calmer space, semester by semester.", tag: "YOUR WORKSPACE" },
 ];
-function scrollToSection(id: string) {\n  const target = document.getElementById(id);\n  if (!target) return;\n  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;\n  target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });\n}\n\nconst steps = [
+function scrollToSection(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+}
+
+const steps = [
   { number: "01", title: "Start where you are", body: "Sign in with Google or try Gradly in Guest Mode. No complicated setup." },
   { number: "02", title: "Make the picture clearer", body: "Explore your academic numbers and begin shaping your next goal." },
   { number: "03", title: "Keep moving forward", body: "Build a more intentional student routine, one useful step at a time." },
