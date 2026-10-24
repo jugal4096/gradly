@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
+import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 import { pool } from "../../config/database";
 
 export async function listSecurityNotifications(_req: Request, res: Response) {
@@ -11,8 +12,8 @@ export async function listSecurityNotifications(_req: Request, res: Response) {
   }
 }
 
-export async function revokeAccountLockout(req: Request, res: Response) {
-  const superAdminId = (req as any).superAdmin?.superAdminId;
+export async function revokeAccountLockout(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
   if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   const client = await pool.connect();
   try {
@@ -33,8 +34,8 @@ export async function revokeAccountLockout(req: Request, res: Response) {
   } finally { client.release(); }
 }
 
-export async function acknowledgeSecurityNotification(req: Request, res: Response) {
-  const superAdminId = (req as any).superAdmin?.superAdminId;
+export async function acknowledgeSecurityNotification(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
   if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   try {
     const result = await pool.query("UPDATE public.security_notifications SET status = 'ACKNOWLEDGED', reviewed_by_super_admin_id = $2, reviewed_at = NOW() WHERE id = $1 AND status = 'OPEN' RETURNING id, status", [req.params.notificationId, superAdminId]);
