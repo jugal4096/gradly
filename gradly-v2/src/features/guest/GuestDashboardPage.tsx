@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import "./GuestDashboard.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
@@ -22,6 +23,7 @@ function readStoredProfile(): GuestProfile | null {
 
 export default function GuestDashboardPage() {
   const navigate = useNavigate();
+  const { loginWithGoogle } = useAuth();
   const [profile, setProfile] = useState<GuestProfile | null>(readStoredProfile);
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [semesters, setSemesters] = useState<SemesterEntry[]>([
@@ -29,6 +31,8 @@ export default function GuestDashboardPage() {
     { id: "sem2", sgpa: 8.4, credits: 24 },
   ]);
   const [notice, setNotice] = useState("");
+  const [lockedFeature, setLockedFeature] = useState<string | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"sgpa" | "cgpa">("sgpa");
   const token = sessionStorage.getItem("gradly_guest_session_token");
@@ -99,6 +103,18 @@ export default function GuestDashboardPage() {
     } : subject));
   }
 
+  async function handleUnlock() {
+    try {
+      setUnlocking(true);
+      await loginWithGoogle();
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Google sign-in failed. Please try again.");
+    } finally {
+      setUnlocking(false);
+    }
+  }
+
   async function saveWorkspace() {
     const sessionToken = sessionStorage.getItem("gradly_guest_session_token");
     if (!sessionToken) { navigate("/login", { replace: true }); return; }
@@ -134,7 +150,7 @@ export default function GuestDashboardPage() {
         <nav className="guest-nav" aria-label="Guest navigation">
           <button className={`guest-nav__item ${activeTab === "sgpa" ? "guest-nav__item--active" : ""}`} onClick={() => { setActiveTab("sgpa"); void trackActivity("GUEST_CALCULATOR_SWITCHED", { calculator: "sgpa" }); }}>◫ <span>SGPA Calculator</span></button>
           <button className={`guest-nav__item ${activeTab === "cgpa" ? "guest-nav__item--active" : ""}`} onClick={() => { setActiveTab("cgpa"); void trackActivity("GUEST_CALCULATOR_SWITCHED", { calculator: "cgpa" }); }}>⌁ <span>CGPA Calculator</span></button>
-          {lockedFeatures.map((feature) => <button key={feature} className="guest-nav__item guest-nav__item--locked" onClick={() => { setNotice(`${feature} is available to registered students. Continue with Google to unlock it.`); void trackActivity("GUEST_FEATURE_LOCK_CLICKED", { feature }); }}><span className="guest-lock">▣</span><span>{feature}</span><span className="guest-nav__lock">LOCKED</span></button>)}
+          {lockedFeatures.map((feature) => <button key={feature} className="guest-nav__item guest-nav__item--locked" onClick={() => { setLockedFeature(feature); void trackActivity("GUEST_FEATURE_LOCK_CLICKED", { feature }); }}><span className="guest-lock">▣</span><span>{feature}</span><span className="guest-nav__lock">LOCKED</span></button>)}
         </nav>
         <div className="guest-sidebar__bottom">
           <div className="guest-avatar">{profile?.displayName?.slice(0, 1).toUpperCase() ?? "G"}</div>
@@ -185,6 +201,19 @@ export default function GuestDashboardPage() {
           </div>
           {notice && <p className="guest-notice" role="status">{notice}</p>}
         </div>
+        {lockedFeature && (
+          <div className="guest-modal-backdrop" role="presentation" onClick={() => setLockedFeature(null)}>
+            <section className="guest-lock-modal" role="dialog" aria-modal="true" aria-labelledby="guest-lock-title" onClick={(event) => event.stopPropagation()}>
+              <button className="guest-lock-modal__close" onClick={() => setLockedFeature(null)} aria-label="Close dialog">×</button>
+              <span className="guest-lock-modal__icon" aria-hidden="true">⌑</span>
+              <p className="guest-kicker">A LITTLE MORE IS WAITING</p>
+              <h2 id="guest-lock-title">Unlock your Gradly experience</h2>
+              <p><strong>{lockedFeature}</strong> is available to registered students. Sign in with Google to build your academic profile and unlock personalized tools.</p>
+              <button className="guest-lock-modal__primary" onClick={() => void handleUnlock()} disabled={unlocking}>{unlocking ? "Signing you in…" : "Continue with Google"} <span>↗</span></button>
+              <button className="guest-lock-modal__secondary" onClick={() => setLockedFeature(null)}>Keep using Guest Mode</button>
+            </section>
+          </div>
+        )}
         <footer className="guest-disclaimer">Guest calculations are estimates using a generic credit-weighted method. <button onClick={() => setNotice("Sign in with Google to set up your institution, branch, curriculum and personalized academic profile.")}>Unlock full Gradly →</button></footer>
       </section>
     </main>
