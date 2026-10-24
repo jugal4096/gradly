@@ -109,9 +109,6 @@ export default function LoginPage() {
     <main className="gradly-login">
       <div className="login-ambient login-ambient--one" aria-hidden="true" />
       <div className="login-ambient login-ambient--two" aria-hidden="true" />
-      <ImageRail side="left" />
-      <ImageRail side="right" />
-
       <header className="login-topbar">
         <a className="gradly-logo-link" href="/" aria-label="Gradly home">
           <span className="gradly-logo-stage">
@@ -122,14 +119,15 @@ export default function LoginPage() {
         </a>
       </header>
 
+      <div className="login-shell">
       <section className="login-content" aria-labelledby="login-title">
-        <p className="login-eyebrow"><span /> YOUR ACADEMIC STORY STARTS HERE <span /></p>
+        <p className="login-eyebrow"><span /> YOUR ACADEMIC STORY STARTS HERE</p>
         <h1 id="login-title" className="login-title">
           <span className="login-title__line">Make every</span>
           <span className="login-title__line login-title__line--accent">semester count.</span>
         </h1>
         <div className="login-phrase" aria-live="polite" aria-atomic="true">
-          <span className="login-phrase__label">A little better, every semester</span>
+          <span className="login-phrase__label">YOUR NEXT CHAPTER STARTS WITH</span>
           <span key={heroPhrases[phraseIndex]} className="login-phrase__value">{heroPhrases[phraseIndex]}</span>
         </div>
         <p className="login-description">
@@ -162,6 +160,31 @@ export default function LoginPage() {
         </div>
         <p className="login-privacy">Guest mode saves your calculator work to Gradly. Use Google sign-in to unlock your personalized academic profile.</p>
       </section>
+      <aside className="login-showcase" aria-label="Gradly academic dashboard preview">
+        <div className="showcase-orbit showcase-orbit--one" />
+        <div className="showcase-orbit showcase-orbit--two" />
+        <div className="showcase-window">
+          <div className="showcase-window__top">
+            <span className="showcase-dots"><i /><i /><i /></span>
+            <span className="showcase-window__caption">YOUR ACADEMIC SPACE</span>
+            <span className="showcase-avatar">G</span>
+          </div>
+          <div className="showcase-welcome">
+            <div><span className="showcase-kicker">YOUR SEMESTER AT A GLANCE</span><h2>Keep your goals<br /><em>in motion.</em></h2></div>
+            <div className="showcase-sparkle" aria-hidden="true">✦</div>
+          </div>
+          <div className="showcase-metrics">
+            <div className="showcase-metric showcase-metric--purple"><span>CGPA GOAL</span><strong>8.5 <small>/ 10</small></strong><div className="showcase-progress"><i /></div><small className="showcase-footnote">You're building momentum</small></div>
+            <div className="showcase-metric showcase-metric--white"><span>SEMESTER</span><strong>06 <small>of 08</small></strong><div className="showcase-semesters"><i /><i /><i /><i /><i /><i className="active" /><i /><i /></div><small className="showcase-footnote">One step at a time</small></div>
+          </div>
+          <div className="showcase-bottom">
+            <div className="showcase-mini-icon">↗</div><div><strong>Your progress, made visible</strong><span>Grades, goals and growth — together.</span></div><span className="showcase-arrow">↗</span>
+          </div>
+        </div>
+        <div className="floating-note floating-note--top"><span className="floating-note__icon">✦</span><span><strong>Small wins add up</strong><small>Keep showing up.</small></span></div>
+        <div className="floating-note floating-note--bottom"><span className="floating-note__check">✓</span><span><strong>Goal tracking</strong><small>Your future, in focus.</small></span></div>
+      </aside>
+      </div>
 
       <footer className="login-footer">
         <span className="login-footer__spark" />
