@@ -2,6 +2,7 @@ import type { Response } from "express";
 import { pool } from "../../config/database";
 import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.middleware";
 import type { AuthenticatedRequest } from "../../middleware/auth.middleware";
+import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 
 export async function getAdminPrivacyActivity(req: AdminAuthenticatedRequest, res: Response) {
@@ -134,8 +135,8 @@ export async function recordAuthenticatedActivity(firebaseUid: string) {
   `, [firebaseUid]);
 }
 
-export async function listForwardedStudentSyllabusFeedback(req: import("express").Request, res: Response) {
-  const superAdminId = (req as any).superAdmin?.superAdminId;
+export async function listForwardedStudentSyllabusFeedback(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
   if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   try {
     const result = await pool.query(`
