@@ -17,6 +17,7 @@ import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum
 import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
 import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
 import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
+import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
 
 const router = Router();
 
@@ -76,6 +77,12 @@ router.patch("/security-notifications/:notificationId/revoke-lockout", authentic
  */
 router.get("/audit/admin-activity", authenticateSuperAdminToken, getAdminAuditEvents);
 router.get("/audit/admin-actions", authenticateSuperAdminToken, getAdminAuditActions);
+
+/*
+ * GUEST SESSION REVIEW — Super Admin only
+ */
+router.get("/guest-sessions", authenticateSuperAdminToken, listGuestSessionsForSuperAdmin);
+router.get("/guest-sessions/:guestSessionId", authenticateSuperAdminToken, getGuestSessionForSuperAdmin);
 
 /*
  * USER MANAGEMENT
