@@ -67,6 +67,20 @@ export default function GuestDashboardPage() {
     return () => { cancelled = true; };
   }, [navigate, token]);
 
+  async function trackActivity(action: string, metadata: Record<string, string>) {
+    const sessionToken = sessionStorage.getItem("gradly_guest_session_token");
+    if (!sessionToken) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/guest/session/activity`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-guest-session": sessionToken },
+        body: JSON.stringify({ action, metadata }),
+      });
+    } catch {
+      // Activity telemetry must not interrupt calculator use.
+    }
+  }
+
   const sgpa = useMemo(() => {
     const valid = subjects.filter((subject) => subject.credits > 0 && subject.gradePoint >= 0);
     const credits = valid.reduce((sum, subject) => sum + subject.credits, 0);
@@ -118,9 +132,9 @@ export default function GuestDashboardPage() {
         <a className="guest-brand" href="/guest"><span>G</span> GRADLY</a>
         <div className="guest-mode-label"><i /> GUEST WORKSPACE</div>
         <nav className="guest-nav" aria-label="Guest navigation">
-          <button className={`guest-nav__item ${activeTab === "sgpa" ? "guest-nav__item--active" : ""}`} onClick={() => setActiveTab("sgpa")}>◫ <span>SGPA Calculator</span></button>
-          <button className={`guest-nav__item ${activeTab === "cgpa" ? "guest-nav__item--active" : ""}`} onClick={() => setActiveTab("cgpa")}>⌁ <span>CGPA Calculator</span></button>
-          {lockedFeatures.map((feature) => <button key={feature} className="guest-nav__item guest-nav__item--locked" onClick={() => setNotice(`${feature} is available to registered students. Continue with Google to unlock it.`)}><span className="guest-lock">▣</span><span>{feature}</span><span className="guest-nav__lock">LOCKED</span></button>)}
+          <button className={`guest-nav__item ${activeTab === "sgpa" ? "guest-nav__item--active" : ""}`} onClick={() => { setActiveTab("sgpa"); void trackActivity("GUEST_CALCULATOR_SWITCHED", { calculator: "sgpa" }); }}>◫ <span>SGPA Calculator</span></button>
+          <button className={`guest-nav__item ${activeTab === "cgpa" ? "guest-nav__item--active" : ""}`} onClick={() => { setActiveTab("cgpa"); void trackActivity("GUEST_CALCULATOR_SWITCHED", { calculator: "cgpa" }); }}>⌁ <span>CGPA Calculator</span></button>
+          {lockedFeatures.map((feature) => <button key={feature} className="guest-nav__item guest-nav__item--locked" onClick={() => { setNotice(`${feature} is available to registered students. Continue with Google to unlock it.`); void trackActivity("GUEST_FEATURE_LOCK_CLICKED", { feature }); }}><span className="guest-lock">▣</span><span>{feature}</span><span className="guest-nav__lock">LOCKED</span></button>)}
         </nav>
         <div className="guest-sidebar__bottom">
           <div className="guest-avatar">{profile?.displayName?.slice(0, 1).toUpperCase() ?? "G"}</div>
