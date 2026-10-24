@@ -133,7 +133,7 @@ export async function updateCurriculumSubject(
     let subjectName: string | null = null;
 
     for (const field of requested) {
-      let column = field.columns.find(candidate => actualColumns.has(candidate));
+      const column = field.columns.find(candidate => actualColumns.has(candidate));
       let value = body[field.api];
       if (field.api === "name" && !column) {
         if (typeof value !== "string" || !value.trim()) {
