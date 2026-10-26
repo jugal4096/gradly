@@ -6,28 +6,46 @@ import {
 import {
   recordGuestActivity,
   updateGuestWorkspace,
+  listGuestInstitutionOptions,
 } from "./guest.repository";
+
+export async function listGuestInstitutions(_req: Request, res: Response) {
+  try {
+    const institutions = await listGuestInstitutionOptions();
+    return res.status(200).json({ institutions });
+  } catch (error) {
+    console.error("Failed to load guest institution options:", error);
+    return res.status(500).json({ message: "Unable to load institutions. Please try again." });
+  }
+}
 
 export async function createGuest(req: Request, res: Response) {
   try {
-    const displayName = typeof req.body?.displayName === "string" ? req.body.displayName : "";
-    if (!displayName.trim()) {
-      return res.status(400).json({ message: "Choose a guest display name to continue." });
+    const guestId = typeof req.body?.guestId === "string" ? req.body.guestId : "";
+    const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
+    if (!guestId.trim()) {
+      return res.status(400).json({ message: "Choose a unique Guest ID to continue." });
+    }
+    if (!institutionId.trim()) {
+      return res.status(400).json({ message: "Select your institution to continue." });
     }
 
-    const session = await startGuestSession(displayName);
+    const session = await startGuestSession(guestId, institutionId);
     await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", {
       source: "web",
-      displayId: session.metadata?.display_id,
-      displayName: session.metadata?.display_name,
+      guestId: session.metadata?.guest_id ?? session.metadata?.display_id,
+      institutionId: session.metadata?.institution_id,
+      institutionName: session.metadata?.institution_name,
     });
 
     return res.status(201).json({
-      message: "Guest session created successfully.",
+      message: "Guest workspace created successfully.",
       guest: {
         id: session.id,
-        guestId: session.metadata?.display_id,
-        displayName: session.metadata?.display_name,
+        guestId: session.metadata?.guest_id ?? session.metadata?.display_id,
+        displayName: session.metadata?.display_name ?? session.metadata?.guest_id,
+        institutionId: session.metadata?.institution_id,
+        institutionName: session.metadata?.institution_name,
         sessionToken: session.sessionToken,
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
@@ -35,10 +53,17 @@ export async function createGuest(req: Request, res: Response) {
       },
     });
   } catch (error) {
-    if (error instanceof Error && (error as Error & { code?: string }).code === "GUEST_NAME_TAKEN") {
-      return res.status(409).json({ code: "GUEST_NAME_TAKEN", message: error.message });
+    const code = error instanceof Error ? (error as Error & { code?: string }).code : undefined;
+    if (code === "GUEST_ID_TAKEN") {
+      return res.status(409).json({ code, message: error instanceof Error ? error.message : "That Guest ID is already in use." });
     }
-    if (error instanceof Error && error.message.startsWith("Choose a display name")) {
+    if (code === "GUEST_INSTITUTION_INVALID") {
+      return res.status(400).json({ code, message: error instanceof Error ? error.message : "Choose a valid institution." });
+    }
+    if (error instanceof Error && error.message.startsWith("Choose a Guest ID")) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error instanceof Error && error.message.startsWith("Select your institution")) {
       return res.status(400).json({ message: error.message });
     }
     console.error("Failed to create guest session:", error);
@@ -61,8 +86,10 @@ export async function getGuest(req: Request, res: Response) {
     return res.status(200).json({
       guest: {
         id: session.id,
-        guestId: session.metadata?.display_id ?? null,
-        displayName: session.metadata?.display_name ?? "Guest",
+        guestId: session.metadata?.guest_id ?? session.metadata?.display_id ?? null,
+        displayName: session.metadata?.display_name ?? session.metadata?.guest_id ?? "Guest",
+        institutionId: session.metadata?.institution_id ?? null,
+        institutionName: session.metadata?.institution_name ?? null,
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
         expiresAt: session.expires_at,
