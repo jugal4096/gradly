@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000
 type Subject = { id: string; name: string; credits: number; gradePoint: number };
 type SemesterEntry = { id: string; sgpa: number; credits: number };
 type GuestProfile = { id: string; guestId: string; displayName: string; institutionId?: string; institutionName?: string; expiresAt: string | null };
-const initialSubjects: Subject[] = [
+const GECA_GRADE_SCALE = [\n  { label: "A++", value: 10 },\n  { label: "A+", value: 9 },\n  { label: "A", value: 8 },\n  { label: "B+", value: 7 },\n  { label: "B", value: 6 },\n  { label: "C+", value: 5 },\n  { label: "C", value: 4 },\n  { label: "D", value: 0 },\n] as const;\n\nconst initialSubjects: Subject[] = [
   { id: "s1", name: "Subject 01", credits: 4, gradePoint: 9 },
   { id: "s2", name: "Subject 02", credits: 3, gradePoint: 8 },
   { id: "s3", name: "Subject 03", credits: 3, gradePoint: 10 },
@@ -169,15 +169,15 @@ export default function GuestDashboardPage() {
             <>
               <p className="guest-helper">Use any subject names. Guest Mode does not load institution-specific curriculum or official results.</p>
               <div className="guest-subject-table">
-                <div className="guest-table-head"><span>SUBJECT</span><span>CREDITS</span><span>GRADE POINT</span><span /></div>
+                <div className="guest-table-head"><span>SUBJECT</span><span>CREDITS</span><span>GRADE</span><span /></div>
                 {subjects.map((subject) => <div className="guest-subject-row" key={subject.id}>
                   <input aria-label="Subject name" value={subject.name} onChange={(event) => updateSubject(subject.id, "name", event.target.value)} maxLength={80} />
                   <input aria-label={`${subject.name} credits`} type="number" min="0" max="30" step="0.5" value={subject.credits} onChange={(event) => updateSubject(subject.id, "credits", event.target.value)} />
-                  <input aria-label={`${subject.name} grade point`} type="number" min="0" max="10" step="0.1" value={subject.gradePoint} onChange={(event) => updateSubject(subject.id, "gradePoint", event.target.value)} />
+                  <select className="guest-grade-select" aria-label={`${subject.name} grade`} value={String(subject.gradePoint)} onChange={(event) => updateSubject(subject.id, "gradePoint", event.target.value)}>{GECA_GRADE_SCALE.map((grade) => <option key={grade.label} value={grade.value}>{grade.label}</option>)}</select>
                   <button className="guest-remove" aria-label={`Remove ${subject.name}`} onClick={() => { setSubjects((current) => current.filter((item) => item.id !== subject.id)); void trackActivity("GUEST_SUBJECT_REMOVED", { itemType: "subject" }); }}>×</button>
                 </div>)}
               </div>
-              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => { setSubjects((current) => [...current, { id: crypto.randomUUID(), name: `Subject ${String(current.length + 1).padStart(2, "0")}`, credits: 3, gradePoint: 8 }]); void trackActivity("GUEST_SUBJECT_ADDED", { itemType: "subject" }); }}>＋ Add subject</button><span>Credits × grade point ÷ total credits</span></div>
+              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => { setSubjects((current) => [...current, { id: crypto.randomUUID(), name: `Subject ${String(current.length + 1).padStart(2, "0")}`, credits: 3, gradePoint: 8 }]); void trackActivity("GUEST_SUBJECT_ADDED", { itemType: "subject" }); }}>＋ Add subject</button><span>GECA grade scale · credits × grade point ÷ total credits</span></div>
             </>
           ) : (
             <>
