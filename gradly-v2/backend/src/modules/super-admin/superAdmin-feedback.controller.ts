@@ -28,7 +28,43 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
        LIMIT ${limit}`,
       values
     );
-    const feedback = result.rows.map((row) => row.record as Record<string, unknown>);
+    const institutionValues: unknown[] = [];
+    const institutionWhere: string[] = [];
+    const addInstitutionValue = (value: unknown) => { institutionValues.push(value); return `${institutionValues.length}`; };
+    if (search) {
+      const p = addInstitutionValue(`%${search}%`);
+      institutionWhere.push(`concat_ws(' ', id::text, college_name, locality, guest_id, status) ILIKE ${p}`);
+    }
+    if (status === "OPEN") {
+      institutionWhere.push("status IN ('PENDING','IN_REVIEW')");
+    } else if (status !== "ALL") {
+      institutionWhere.push(`status = ${addInstitutionValue(status)}`);
+    }
+    const institutionLimit = addInstitutionValue(200);
+    const institutionResult = await pool.query(
+      `SELECT id, college_name AS subject, college_name AS title,
+              'Institution addition request' AS category, 'INSTITUTION_REQUEST' AS type,
+              concat('College: ', college_name, E'\\nLocality / City: ', locality,
+                E'\\nGuest ID: ', COALESCE(guest_id, 'Not provided'),
+                E'\\nExternal directory ID: ', COALESCE(external_institution_id, 'Not provided')) AS message,
+              status, created_at, created_at AS updated_at,
+              guest_id AS name, NULL::text AS email,
+              jsonb_build_object('locality', locality, 'externalInstitutionId', external_institution_id,
+                'source', source) AS metadata
+       FROM public.guest_institution_requests
+       ${institutionWhere.length ? "WHERE " + institutionWhere.join(" AND ") : ""}
+       ORDER BY created_at DESC
+       LIMIT ${institutionLimit}`,
+      institutionValues
+    );
+    const feedback = [
+      ...result.rows.map((row) => row.record as Record<string, unknown>),
+      ...institutionResult.rows as Record<string, unknown>[],
+    ].sort((a, b) => {
+      const at = new Date(String(a.created_at ?? a.submitted_at ?? 0)).getTime() || 0;
+      const bt = new Date(String(b.created_at ?? b.submitted_at ?? 0)).getTime() || 0;
+      return bt - at;
+    });
     return res.status(200).json({ success: true, feedback, count: feedback.length });
   } catch (error) {
     console.error("Failed to load feedback requests:", error);
