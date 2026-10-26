@@ -4,8 +4,8 @@ import {
   updateGuestActivity,
 } from "./guest.repository";
 
-export async function startGuestSession(displayName: string) {
-  return createGuestSession(displayName);
+export async function startGuestSession(guestId: string, institutionId: string) {
+  return createGuestSession(guestId, institutionId);
 }
 
 export async function getGuestSession(sessionToken: string) {
