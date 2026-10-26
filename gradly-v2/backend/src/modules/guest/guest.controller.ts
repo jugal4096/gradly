@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { sendInstitutionRequest } from "./institution-request.email";
 import {
   getGuestSession,
   startGuestSession,
@@ -186,5 +187,34 @@ export async function saveGuestWorkspace(req: Request, res: Response) {
   } catch (error) {
     console.error("Failed to save guest workspace:", error);
     return res.status(500).json({ message: "Could not save your guest workspace." });
+  }
+}
+
+
+export async function requestInstitution(req: Request, res: Response) {
+  const collegeName = typeof req.body?.collegeName === "string" ? req.body.collegeName.trim() : "";
+  const locality = typeof req.body?.locality === "string" ? req.body.locality.trim() : "";
+  const guestId = typeof req.body?.guestId === "string" ? req.body.guestId.trim().slice(0, 24) : "";
+
+  if (collegeName.length < 2 || collegeName.length > 160) {
+    return res.status(400).json({ message: "Enter a college name between 2 and 160 characters." });
+  }
+  if (locality.length < 2 || locality.length > 120) {
+    return res.status(400).json({ message: "Enter a locality or city between 2 and 120 characters." });
+  }
+  if (/[<>]/.test(collegeName) || /[<>]/.test(locality)) {
+    return res.status(400).json({ message: "Please remove unsupported characters from the form." });
+  }
+
+  try {
+    await sendInstitutionRequest({ collegeName, locality, guestId });
+    return res.status(200).json({
+      message: "Thanks! Your institution request has been emailed to the Gradly administrator.",
+    });
+  } catch (error) {
+    console.error("Failed to send institution request:", error);
+    return res.status(503).json({
+      message: "We couldn't email your request right now. Please try again later or contact jugalpkhr@gmail.com directly.",
+    });
   }
 }
