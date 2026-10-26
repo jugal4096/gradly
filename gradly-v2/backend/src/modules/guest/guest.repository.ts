@@ -5,10 +5,13 @@ function hashGuestToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function createGuestSession(displayName: string) {
-  const normalizedName = displayName.trim().replace(/\s+/g, " ");
-  if (normalizedName.length < 3 || normalizedName.length > 24 || !/^[\p{L}\p{N} _.-]+$/u.test(normalizedName)) {
-    throw new Error("Choose a display name between 3 and 24 characters using letters, numbers, spaces, dots, dashes or underscores.");
+export async function createGuestSession(guestIdInput: string, institutionIdInput: string) {
+  const guestId = guestIdInput.trim().toUpperCase();
+  if (guestId.length < 4 || guestId.length > 24 || !/^[A-Z0-9][A-Z0-9_-]*$/.test(guestId)) {
+    throw new Error("Choose a Guest ID between 4 and 24 characters using letters, numbers, hyphens or underscores.");
+  }
+  if (!institutionIdInput || typeof institutionIdInput !== "string") {
+    throw new Error("Select your institution to continue.");
   }
 
   const client = await pool.connect();
@@ -17,38 +20,37 @@ export async function createGuestSession(displayName: string) {
 
   try {
     await client.query("BEGIN");
-    // Serialize guest identity allocation so concurrent requests cannot claim the same name or display ID.
+    // Serialize ID claims; still check the database so existing and legacy IDs cannot collide.
     await client.query("SELECT pg_advisory_xact_lock($1)", [43829011]);
 
-    const nameCheck = await client.query(
-      "SELECT id FROM guest_sessions WHERE lower(metadata->>'display_name') = lower($1) LIMIT 1",
-      [normalizedName]
+    const idCheck = await client.query(
+      "SELECT id FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1) LIMIT 1",
+      [guestId]
     );
-    if (nameCheck.rows.length) {
-      await client.query("ROLLBACK");
-      const error = new Error("That guest display name is already taken. Please choose another.");
-      (error as Error & { code?: string }).code = "GUEST_NAME_TAKEN";
+    if (idCheck.rows.length) {
+      const error = new Error("That Guest ID is already in use. Please choose another.");
+      (error as Error & { code?: string }).code = "GUEST_ID_TAKEN";
       throw error;
     }
 
-    let displayId = "";
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      const candidate = String(randomInt(1000, 10000));
-      const idCheck = await client.query(
-        "SELECT id FROM guest_sessions WHERE metadata->>'display_id' = $1 LIMIT 1",
-        [candidate]
-      );
-      if (!idCheck.rows.length) {
-        displayId = candidate;
-        break;
-      }
+    const institutionResult = await client.query(
+      "SELECT id, name FROM institutions WHERE id::text = $1 LIMIT 1",
+      [institutionIdInput]
+    );
+    const institution = institutionResult.rows[0];
+    if (!institution) {
+      const error = new Error("Please select an institution from the list.");
+      (error as Error & { code?: string }).code = "GUEST_INSTITUTION_INVALID";
+      throw error;
     }
-    if (!displayId) throw new Error("Unable to allocate a guest ID. Please try again.");
 
     const metadata = {
       source: "web",
-      display_name: normalizedName,
-      display_id: displayId,
+      guest_id: guestId,
+      display_id: guestId,
+      display_name: guestId,
+      institution_id: institution.id,
+      institution_name: institution.name,
       guest_workspace: { subjects: [], semesters: [], lastActiveCalculator: "sgpa" },
     };
     const result = await client.query(
@@ -66,6 +68,13 @@ export async function createGuestSession(displayName: string) {
   } finally {
     client.release();
   }
+}
+
+export async function listGuestInstitutionOptions() {
+  const result = await pool.query(
+    "SELECT id, name FROM institutions ORDER BY name"
+  );
+  return result.rows;
 }
 
 export async function findGuestSessionByToken(sessionToken: string) {
