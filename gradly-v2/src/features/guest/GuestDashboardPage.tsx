@@ -6,7 +6,7 @@ import "./GuestDashboard.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 type Subject = { id: string; name: string; credits: number; gradePoint: number };
 type SemesterEntry = { id: string; sgpa: number; credits: number };
-type GuestProfile = { id: string; guestId: string; displayName: string; expiresAt: string | null };
+type GuestProfile = { id: string; guestId: string; displayName: string; institutionId?: string; institutionName?: string; expiresAt: string | null };
 const initialSubjects: Subject[] = [
   { id: "s1", name: "Subject 01", credits: 4, gradePoint: 9 },
   { id: "s2", name: "Subject 02", credits: 3, gradePoint: 8 },
@@ -54,7 +54,7 @@ export default function GuestDashboardPage() {
         if (!response.ok) throw new Error(data?.message || "Guest session expired.");
         if (cancelled) return;
         const guest = data.guest;
-        const nextProfile = { ...storedProfile, guestId: guest.guestId ?? storedProfile.guestId, displayName: guest.displayName ?? storedProfile.displayName, expiresAt: guest.expiresAt };
+        const nextProfile = { ...storedProfile, guestId: guest.guestId ?? storedProfile.guestId, displayName: guest.displayName ?? storedProfile.displayName, institutionId: guest.institutionId ?? storedProfile.institutionId, institutionName: guest.institutionName ?? storedProfile.institutionName, expiresAt: guest.expiresAt };
         sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
         const workspace = guest.workspace;
         if (Array.isArray(workspace?.subjects)) setSubjects(workspace.subjects);
@@ -159,7 +159,7 @@ export default function GuestDashboardPage() {
       </aside>
       <section className="guest-main">
         <header className="guest-topbar">
-          <div><p className="guest-kicker">YOUR SPACE TO EXPLORE</p><h1>Good to have you here{profile?.displayName ? `, ${profile.displayName}` : ""}.</h1></div>
+          <div><p className="guest-kicker">YOUR SPACE TO EXPLORE</p><h1>Good to have you here{profile?.displayName ? `, ${profile.displayName}` : ""}.</h1>{profile?.institutionName && <p className="guest-institution-label">INSTITUTION <strong>{profile.institutionName}</strong></p>}</div>
           <div className="guest-id-pill"><span>GUEST ID</span><strong>{profile?.guestId ?? "…"}</strong></div>
         </header>
         <div className="guest-banner"><div><span className="guest-banner__eyebrow">A LITTLE HEAD START</span><h2>Try it out. Find your numbers.</h2><p>Use the calculators freely. Your work stays attached to this guest profile.</p></div><span className="guest-banner__orb" aria-hidden="true">G</span></div>
@@ -174,10 +174,10 @@ export default function GuestDashboardPage() {
                   <input aria-label="Subject name" value={subject.name} onChange={(event) => updateSubject(subject.id, "name", event.target.value)} maxLength={80} />
                   <input aria-label={`${subject.name} credits`} type="number" min="0" max="30" step="0.5" value={subject.credits} onChange={(event) => updateSubject(subject.id, "credits", event.target.value)} />
                   <input aria-label={`${subject.name} grade point`} type="number" min="0" max="10" step="0.1" value={subject.gradePoint} onChange={(event) => updateSubject(subject.id, "gradePoint", event.target.value)} />
-                  <button className="guest-remove" aria-label={`Remove ${subject.name}`} onClick={() => setSubjects((current) => current.filter((item) => item.id !== subject.id))}>×</button>
+                  <button className="guest-remove" aria-label={`Remove ${subject.name}`} onClick={() => { setSubjects((current) => current.filter((item) => item.id !== subject.id)); void trackActivity("GUEST_SUBJECT_REMOVED", { itemType: "subject" }); }}>×</button>
                 </div>)}
               </div>
-              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => setSubjects((current) => [...current, { id: crypto.randomUUID(), name: `Subject ${String(current.length + 1).padStart(2, "0")}`, credits: 3, gradePoint: 8 }])}>＋ Add subject</button><span>Credits × grade point ÷ total credits</span></div>
+              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => { setSubjects((current) => [...current, { id: crypto.randomUUID(), name: `Subject ${String(current.length + 1).padStart(2, "0")}`, credits: 3, gradePoint: 8 }]); void trackActivity("GUEST_SUBJECT_ADDED", { itemType: "subject" }); }}>＋ Add subject</button><span>Credits × grade point ÷ total credits</span></div>
             </>
           ) : (
             <>
@@ -188,10 +188,10 @@ export default function GuestDashboardPage() {
                   <span className="guest-semester-label">Entry {index + 1}</span>
                   <input aria-label={`Entry ${index + 1} SGPA`} type="number" min="0" max="10" step="0.01" value={semester.sgpa} onChange={(event) => setSemesters((current) => current.map((item) => item.id === semester.id ? { ...item, sgpa: Number(event.target.value) } : item))} />
                   <input aria-label={`Entry ${index + 1} credits`} type="number" min="0" max="60" step="0.5" value={semester.credits} onChange={(event) => setSemesters((current) => current.map((item) => item.id === semester.id ? { ...item, credits: Number(event.target.value) } : item))} />
-                  <button className="guest-remove" aria-label={`Remove entry ${index + 1}`} onClick={() => setSemesters((current) => current.filter((item) => item.id !== semester.id))}>×</button>
+                  <button className="guest-remove" aria-label={`Remove entry ${index + 1}`} onClick={() => { setSemesters((current) => current.filter((item) => item.id !== semester.id)); void trackActivity("GUEST_CGPA_ENTRY_REMOVED", { itemType: "cgpa-entry" }); }}>×</button>
                 </div>)}
               </div>
-              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => setSemesters((current) => [...current, { id: crypto.randomUUID(), sgpa: 0, credits: 0 }])}>＋ Add semester entry</button><span>Weighted by credits</span></div>
+              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => { setSemesters((current) => [...current, { id: crypto.randomUUID(), sgpa: 0, credits: 0 }]); void trackActivity("GUEST_CGPA_ENTRY_ADDED", { itemType: "cgpa-entry" }); }}>＋ Add semester entry</button><span>Weighted by credits</span></div>
             </>
           )}
           <div className="guest-result-row">
