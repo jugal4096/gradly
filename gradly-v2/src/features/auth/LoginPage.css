@@ -618,3 +618,114 @@
   .gradly-landing--minimal .landing-brand { transition:none; }
   .gradly-landing--minimal .landing-brand img { animation:none!important; }
 }
+
+
+/* Immersive login experience: full-screen rotating campus photography */
+.gradly-landing--minimal {
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+  background:#08101f;
+}
+.gradly-landing--minimal .login-backdrop {
+  position:absolute;z-index:-2;inset:0;overflow:hidden;isolation:isolate;
+  background:#08101f;pointer-events:none;
+}
+.login-backdrop__slide {
+  position:absolute;inset:-3%;
+  background-size:cover;background-position:center;
+  opacity:0;transform:scale(1.06);
+  animation:gradly-backdrop-crossfade 32s linear infinite,gradly-backdrop-zoom 32s ease-in-out infinite;
+  will-change:opacity,transform;
+}
+.login-backdrop__slide--one {
+  background-image:url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2400&q=88");
+  animation-delay:0s,0s;
+}
+.login-backdrop__slide--two {
+  background-image:url("https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=2400&q=88");
+  animation-delay:8s,8s;
+}
+.login-backdrop__slide--three {
+  background-image:url("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=2400&q=88");
+  animation-delay:16s,16s;
+}
+.login-backdrop__slide--four {
+  background-image:url("https://images.unsplash.com/photo-1524176059713-2f4b5f4b4b8a?auto=format&fit=crop&w=2400&q=88");
+  animation-delay:24s,24s;
+}
+.login-backdrop__shade {
+  position:absolute;inset:0;z-index:1;
+  background:
+    linear-gradient(90deg,rgba(5,10,22,.88) 0%,rgba(5,10,22,.68) 45%,rgba(5,10,22,.48) 100%),
+    linear-gradient(180deg,rgba(5,10,22,.56) 0%,rgba(5,10,22,.38) 42%,rgba(5,10,22,.86) 100%),
+    radial-gradient(ellipse at 50% 40%,rgba(36,75,163,.17),transparent 60%);
+}
+.gradly-landing--minimal .landing-noise { z-index:-1;opacity:.055; }
+.gradly-landing--minimal .landing-nav--minimal {
+  position:relative;z-index:4;border-bottom-color:rgba(220,231,255,.18);
+  background:linear-gradient(180deg,rgba(5,10,22,.32),transparent);
+  backdrop-filter:blur(5px);
+}
+.gradly-landing--minimal .landing-nav__tag {
+  padding:9px 13px;border:1px solid rgba(220,231,255,.19);border-radius:999px;
+  background:rgba(10,18,36,.35);color:#e0e8fb;text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+.gradly-landing--minimal .landing-hero--minimal {
+  position:relative;z-index:2;flex:1;justify-content:center;gap:0;
+  min-height:calc(100svh - 150px);padding-top:58px;padding-bottom:66px;
+}
+.gradly-landing--minimal .hero-copy {
+  padding:clamp(30px,5vw,58px) clamp(22px,4vw,54px);
+  border:1px solid rgba(229,237,255,.2);border-radius:26px;
+  background:linear-gradient(145deg,rgba(10,18,36,.72),rgba(10,17,32,.48));
+  box-shadow:0 30px 100px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter:blur(18px) saturate(125%);
+  -webkit-backdrop-filter:blur(18px) saturate(125%);
+  animation:rise-in .9s cubic-bezier(.2,.7,.2,1) both;
+}
+.gradly-landing--minimal .landing-eyebrow { color:#d5def2;text-shadow:0 2px 12px rgba(0,0,0,.4); }
+.gradly-landing--minimal .hero-copy h1 {
+  font-size:clamp(48px,6.5vw,82px);
+  text-shadow:0 5px 28px rgba(0,0,0,.28);
+}
+.gradly-landing--minimal .hero-copy h1 span {
+  background:linear-gradient(100deg,#fff 0%,#c8d7ff 42%,#86a5ff 100%);
+  background-clip:text;-webkit-background-clip:text;
+}
+.gradly-landing--minimal .hero-description {
+  color:#e0e7f5;text-shadow:0 2px 10px rgba(0,0,0,.4);
+}
+.auth-prompt { margin-top:32px;color:#fff;font-size:14px; }
+.gradly-landing--minimal .hero-actions--minimal { margin-top:18px; }
+.gradly-landing--minimal .landing-footer--minimal {
+  position:relative;z-index:3;padding-top:20px;padding-bottom:20px;
+  border-top-color:rgba(220,231,255,.15);
+  background:rgba(5,10,22,.25);backdrop-filter:blur(8px);
+}
+.gradly-landing--minimal .landing-footer--minimal>span { color:#c3cde0; }
+@keyframes gradly-backdrop-crossfade {
+  0% { opacity:0; }
+  5% { opacity:1; }
+  24% { opacity:1; }
+  30% { opacity:0; }
+  100% { opacity:0; }
+}
+@keyframes gradly-backdrop-zoom {
+  0%,100% { transform:scale(1.04) translate3d(0,0,0); }
+  50% { transform:scale(1.13) translate3d(-1.2%,-.8%,0); }
+}
+@media(max-width:560px) {
+  .gradly-landing--minimal .landing-hero--minimal { min-height:calc(100svh - 125px);padding:38px 18px 46px; }
+  .gradly-landing--minimal .hero-copy { padding:30px 20px;border-radius:20px; }
+  .gradly-landing--minimal .hero-copy h1 { font-size:clamp(39px,10vw,56px); }
+  .gradly-landing--minimal .landing-nav__tag { max-width:130px;text-align:center;line-height:1.5; }
+  .login-backdrop__shade {
+    background:linear-gradient(180deg,rgba(5,10,22,.62),rgba(5,10,22,.58) 35%,rgba(5,10,22,.88)),
+      linear-gradient(90deg,rgba(5,10,22,.38),rgba(5,10,22,.38));
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .login-backdrop__slide { animation:none!important; }
+  .login-backdrop__slide--one { opacity:1;transform:none; }
+}
