@@ -31,3 +31,12 @@
 
 .guest-institution-label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:9px 0 0;color:#73809a;font-size:9px;font-weight:800;letter-spacing:.12em}
 .guest-institution-label strong{max-width:min(560px,65vw);overflow:hidden;color:#3859a8;font-size:11px;font-weight:700;letter-spacing:0;text-overflow:ellipsis;white-space:nowrap}
+
+
+/* GECA letter-grade selector; numeric values remain the calculation/storage format */
+.guest-grade-select{width:100%;min-width:0;min-height:39px;padding:9px 25px 9px 10px;border:1px solid rgba(221,214,254,.14);border-radius:9px;color:#f5f3ff;background:#100b1d;font:inherit;font-size:12px;font-weight:700;outline:none;cursor:pointer;transition:border-color .2s ease,background .2s ease,box-shadow .2s ease}
+.guest-grade-select:focus{border-color:#a78bfa;outline:0;box-shadow:0 0 0 3px rgba(167,139,250,.12);background:#171027}
+.guest-grade-select option{color:#f5f3ff;background:#171027}
+@media(max-width:680px){.guest-grade-select{min-height:36px;padding:8px 3px;font-size:11px}}
+@media(max-width:420px){.guest-grade-select{padding:8px 2px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){.guest-grade-select{transition:none}}
