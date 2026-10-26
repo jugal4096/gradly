@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { pool } from "../../config/database";
 import { sendInstitutionRequest } from "./institution-request.email";
 import {
   getGuestSession,
@@ -191,30 +192,76 @@ export async function saveGuestWorkspace(req: Request, res: Response) {
 }
 
 
+export async function searchGuestInstitutions(req: Request, res: Response) {
+  const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+  if (query.length < 2) return res.status(200).json({ institutions: [] });
+
+  try {
+    const params = new URLSearchParams({
+      search: query,
+      filter: "country_code:IN,type:education",
+      select: "id,display_name,geo,country_code,homepage_url",
+      "per-page": "12",
+    });
+    const response = await fetch("https://api.openalex.org/institutions?" + params.toString(), {
+      headers: { Accept: "application/json", "User-Agent": "Gradly/1.0 (institution search)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error("Institution directory is temporarily unavailable.");
+    const data = await response.json() as {
+      results?: Array<{
+        id?: string; display_name?: string;
+        geo?: { city?: string | null; region?: string | null; country?: string | null };
+        country_code?: string; homepage_url?: string | null;
+      }>;
+    };
+    const institutions = (data.results ?? []).map((item) => ({
+      externalId: item.id ?? "",
+      name: item.display_name ?? "",
+      city: item.geo?.city ?? "",
+      region: item.geo?.region ?? "",
+      country: item.geo?.country ?? "India",
+      homepageUrl: item.homepage_url ?? null,
+    })).filter((item) => item.name && item.externalId);
+    return res.status(200).json({ institutions, source: "OpenAlex" });
+  } catch (error) {
+    console.error("Guest institution search failed:", error);
+    return res.status(502).json({ message: "Live institution search is unavailable. You can still request that your college be added." });
+  }
+}
+
 export async function requestInstitution(req: Request, res: Response) {
   const collegeName = typeof req.body?.collegeName === "string" ? req.body.collegeName.trim() : "";
   const locality = typeof req.body?.locality === "string" ? req.body.locality.trim() : "";
   const guestId = typeof req.body?.guestId === "string" ? req.body.guestId.trim().slice(0, 24) : "";
+  const externalInstitutionId = typeof req.body?.externalInstitutionId === "string" ? req.body.externalInstitutionId.trim().slice(0, 200) : "";
 
   if (collegeName.length < 2 || collegeName.length > 160) {
     return res.status(400).json({ message: "Enter a college name between 2 and 160 characters." });
   }
-  if (locality.length < 2 || locality.length > 120) {
-    return res.status(400).json({ message: "Enter a locality or city between 2 and 120 characters." });
+  if (locality.length < 2 || locality.length > 160) {
+    return res.status(400).json({ message: "Enter a locality or city between 2 and 160 characters." });
   }
   if (/[<>]/.test(collegeName) || /[<>]/.test(locality)) {
     return res.status(400).json({ message: "Please remove unsupported characters from the form." });
   }
 
   try {
-    await sendInstitutionRequest({ collegeName, locality, guestId });
-    return res.status(200).json({
-      message: "Thanks! Your institution request has been emailed to the Gradly administrator.",
+    const result = await pool.query(
+      `INSERT INTO public.guest_institution_requests
+        (college_name, locality, guest_id, external_institution_id, source, status)
+       VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), 'GUEST_SETUP', 'PENDING')
+       RETURNING id, college_name, locality, guest_id, status, created_at`,
+      [collegeName, locality, guestId, externalInstitutionId]
+    );
+    return res.status(201).json({
+      message: "Your institution request has been sent to the Super Admin inbox.",
+      request: result.rows[0],
     });
   } catch (error) {
-    console.error("Failed to send institution request:", error);
+    console.error("Failed to save guest institution request:", error);
     return res.status(503).json({
-      message: "We couldn't email your request right now. Please try again later or contact jugalpkhr@gmail.com directly.",
+      message: "We couldn't submit your request right now. Please try again later.",
     });
   }
 }
