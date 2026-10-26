@@ -1013,3 +1013,21 @@
   .gradly-landing--minimal .guest-setup { padding:17px; }
   .gradly-landing--minimal .guest-setup__heading strong { font-size:16px; }
 }
+
+
+.gradly-landing--minimal .guest-setup__chosen-id {
+  display:flex;align-items:center;gap:10px;min-width:0;
+  padding:12px 13px;border:1px solid rgba(119,219,229,.25);border-radius:10px;
+  background:rgba(86,132,203,.10);
+}
+.gradly-landing--minimal .guest-setup__chosen-id span {
+  color:#92a9c8;font-size:8px;font-weight:800;letter-spacing:.1em;
+}
+.gradly-landing--minimal .guest-setup__chosen-id strong {
+  overflow:hidden;margin-right:auto;color:#e8f5ff;font-size:12px;text-overflow:ellipsis;
+}
+.gradly-landing--minimal .guest-setup__chosen-id button {
+  border:0;padding:4px 7px;border-radius:6px;color:#9df4ef;background:rgba(84,205,212,.1);
+  font:inherit;font-size:10px;font-weight:700;cursor:pointer;
+}
+.gradly-landing--minimal .guest-setup__chosen-id button:hover { background:rgba(84,205,212,.2); }
