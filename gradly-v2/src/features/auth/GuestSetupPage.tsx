@@ -16,6 +16,12 @@ export default function GuestSetupPage() {
   const [loadingInstitutions, setLoadingInstitutions] = useState(true);
   const [startingGuest, setStartingGuest] = useState(false);
   const [error, setError] = useState("");
+  const [showInstitutionRequest, setShowInstitutionRequest] = useState(false);
+  const [collegeName, setCollegeName] = useState("");
+  const [locality, setLocality] = useState("");
+  const [requestingInstitution, setRequestingInstitution] = useState(false);
+  const [institutionRequestSent, setInstitutionRequestSent] = useState(false);
+  const [institutionRequestError, setInstitutionRequestError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +47,29 @@ export default function GuestSetupPage() {
     setGuestId(normalized);
     setError("");
     setStep(2);
+  }
+
+  async function handleInstitutionRequest() {
+    if (collegeName.trim().length < 2 || locality.trim().length < 2) {
+      setInstitutionRequestError("Please enter both the college name and its locality or city.");
+      return;
+    }
+    try {
+      setRequestingInstitution(true);
+      setInstitutionRequestError("");
+      const response = await fetch(`${API_BASE_URL}/api/guest/institution-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collegeName: collegeName.trim(), locality: locality.trim(), guestId }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || "Could not send your institution request.");
+      setInstitutionRequestSent(true);
+    } catch (cause) {
+      setInstitutionRequestError(cause instanceof Error ? cause.message : "Could not send your institution request.");
+    } finally {
+      setRequestingInstitution(false);
+    }
   }
 
   async function handleGuestStart(event: FormEvent<HTMLFormElement>) {
@@ -124,7 +153,44 @@ export default function GuestSetupPage() {
                 <option value="">{loadingInstitutions ? "Loading institutions…" : "Choose your institution"}</option>
                 {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
               </select>
-              {!loadingInstitutions && institutions.length === 0 && <small className="guest-setup-form__hint">No institutions are available right now. Please try again later.</small>}
+              <div className="guest-institution-missing">
+                <span>Can’t find your college?</span>
+                <button type="button" onClick={() => { setShowInstitutionRequest((visible) => !visible); setInstitutionRequestError(""); }}>
+                  Your institution isn’t listed? Contact admin
+                </button>
+              </div>
+              {showInstitutionRequest && (
+                <section className="guest-institution-request" aria-label="Request an institution to be added">
+                  {institutionRequestSent ? (
+                    <div className="guest-institution-request__success" role="status">
+                      <strong>Request sent successfully!</strong>
+                      <p>Your request has been emailed to the Gradly administrator at jugalpkhr@gmail.com.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="guest-institution-request__heading">
+                        <strong>Request your institution</strong>
+                        <p>Share these details and we’ll review adding it to Gradly.</p>
+                      </div>
+                      <label htmlFor="request-college-name">College / Institution name</label>
+                      <input id="request-college-name" value={collegeName} onChange={(event) => setCollegeName(event.target.value)} maxLength={160} placeholder="e.g. Government College of Engineering" autoComplete="organization" />
+                      <label htmlFor="request-college-locality">Locality / City</label>
+                      <input id="request-college-locality" value={locality} onChange={(event) => setLocality(event.target.value)} maxLength={120} placeholder="e.g. Chhatrapati Sambhajinagar, Maharashtra" autoComplete="address-level2" />
+                      <div className="guest-institution-request__proforma">
+                        <span>EMAIL PROFORMA</span>
+                        <p><b>To:</b> jugalpkhr@gmail.com</p>
+                        <p><b>Subject:</b> Gradly institution request — {collegeName.trim() || "[College name]"}</p>
+                        <p><b>Details:</b> {collegeName.trim() || "[College name]"} · {locality.trim() || "[Locality / City]"} · Guest ID: {guestId}</p>
+                      </div>
+                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution}>
+                        {requestingInstitution ? "Sending request…" : "Send request to admin"} <span>↗</span>
+                      </button>
+                      <small className="guest-setup-form__hint">This sends an email directly through Gradly’s configured mail service.</small>
+                    </>
+                  )}
+                  {institutionRequestError && <p className="guest-setup-error" role="alert">{institutionRequestError}</p>}
+                </section>
+              )}
               <button className="guest-setup-form__submit" type="submit" disabled={startingGuest || loadingInstitutions || institutions.length === 0 || !institutionId}>{startingGuest ? "Creating workspace…" : "Enter Guest Mode"} <span>↗</span></button>
             </>}
             {error && <p className="guest-setup-error" role="alert">{error}</p>}
