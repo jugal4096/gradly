@@ -6,24 +6,6 @@ import "./LoginPage.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-audit-2026-10-17/gradly-ecosystem/public/gradly-ecosystem-logo.png";
 
-const capabilities = [
-  { number: "01", icon: "↗", title: "Know your numbers", body: "Make sense of SGPA, CGPA and the academic picture behind every result.", tag: "ACADEMIC CLARITY" },
-  { number: "02", icon: "⌁", title: "Plan with purpose", body: "Turn a big target into a next step that feels clear, realistic and yours.", tag: "GOAL SETTING" },
-  { number: "03", icon: "✳", title: "Keep your momentum", body: "Bring your academic journey into one calmer space, semester by semester.", tag: "YOUR WORKSPACE" },
-];
-function scrollToSection(id: string) {
-  const target = document.getElementById(id);
-  if (!target) return;
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-}
-
-const steps = [
-  { number: "01", title: "Start where you are", body: "Sign in with Google or try Gradly in Guest Mode. No complicated setup." },
-  { number: "02", title: "Make the picture clearer", body: "Explore your academic numbers and begin shaping your next goal." },
-  { number: "03", title: "Keep moving forward", body: "Build a more intentional student routine, one useful step at a time." },
-];
-
 export default function LoginPage() {
   const { loginWithGoogle, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -32,8 +14,6 @@ export default function LoginPage() {
   const [guestSetupOpen, setGuestSetupOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [startingGuest, setStartingGuest] = useState(false);
-  const [email, setEmail] = useState("");
-  const [waitlistNotice, setWaitlistNotice] = useState("");
 
   useEffect(() => {
     if (!authLoading && user) navigate("/dashboard", { replace: true });
@@ -83,47 +63,49 @@ export default function LoginPage() {
     }
   }
 
-  function handleWaitlist(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!email.trim()) return;
-    setWaitlistNotice("Email updates aren’t connected yet, so nothing was sent or saved. You can start using Gradly with Google or Guest Mode today.");
-  }
 
   return (
-    <main className="gradly-landing">
+    <main className="gradly-landing gradly-landing--minimal">
       <div className="landing-noise" aria-hidden="true" />
-      <header className="landing-nav">
+      <header className="landing-nav landing-nav--minimal">
         <a className="landing-brand" href="#home" aria-label="Gradly home">
           <img src={LOGO_URL} alt="Gradly" />
           <span className="landing-brand__fallback" aria-hidden="true">gradly<span>.</span></span>
         </a>
-        <nav className="landing-nav__links" aria-label="Main navigation">
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#about">Our idea</a>
-        </nav>
-        <button className="landing-nav__cta" onClick={() => scrollToSection("get-started")}>
-          Get started <span aria-hidden="true">↗</span>
-        </button>
+        <span className="landing-nav__tag">YOUR ACADEMIC SPACE</span>
       </header>
 
-      <section className="landing-hero" id="home" aria-labelledby="hero-title">
+      <section className="landing-hero landing-hero--minimal" id="home" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="landing-eyebrow"><span className="eyebrow-pulse" /> YOUR ACADEMIC SIDEKICK</p>
-          <h1 id="hero-title">Make your next<br />chapter <span>count.</span></h1>
-          <p className="hero-description">Your grades are part of the story. Not the whole story. Gradly helps you bring your academic goals, progress and next steps into focus.</p>
-          <div className="hero-actions">
-            <button className="button-primary" onClick={handleGoogleLogin} disabled={loggingIn || startingGuest}>
-              {loggingIn ? "Signing you in…" : "Start with Google"} <span aria-hidden="true">↗</span>
+          <p className="landing-eyebrow"><span className="eyebrow-pulse" /> YOUR NEXT CHAPTER STARTS HERE</p>
+          <h1 id="hero-title">Your goals.<br />Your grades.<br /><span>Your Gradly.</span></h1>
+          <p className="hero-description">A clearer view of your academic journey starts here.</p>
+          <div className="hero-actions hero-actions--minimal">
+            <button className="button-primary google-button" onClick={handleGoogleLogin} disabled={loggingIn || startingGuest}>
+              <svg className="google-mark" viewBox="0 0 48 48" role="img" aria-label="Google logo">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.74 7.18l7.65 5.93c4.46-4.12 7.13-10.2 7.13-17.58Z"/>
+                <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.87l-7.65-5.93c-2.13 1.43-4.85 2.28-8.25 2.28-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 43.62 14.62 48 24 48Z"/>
+              </svg>
+              <span>{loggingIn ? "Signing in…" : "Continue with Google"}</span>
             </button>
-            <button className="button-quiet" onClick={() => { setError(""); setGuestSetupOpen(true); scrollToSection("guest-entry"); }}>
+            <button className="button-quiet" onClick={() => { setError(""); setGuestSetupOpen(true); document.getElementById("guest-entry")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); }} disabled={loggingIn || startingGuest}>
               Explore as guest <span aria-hidden="true">→</span>
             </button>
           </div>
           {error && <p className="landing-error" role="alert">{error}</p>}
-          <div className="hero-trust"><span className="trust-check">✓</span><span>Start at your own pace</span><i /> <span>No pressure. Just progress.</span></div>
+          <div className="guest-entry guest-entry--minimal" id="guest-entry">
+            {!guestSetupOpen ? null : <form className="guest-setup" onSubmit={handleGuestStart}>
+              <label htmlFor="guest-name">Choose a display name</label>
+              <div className="guest-setup__row">
+                <input id="guest-name" value={guestName} onChange={(event) => setGuestName(event.target.value)} minLength={3} maxLength={24} placeholder="Your name" autoComplete="nickname" required />
+                <button type="submit" disabled={startingGuest || loggingIn}>{startingGuest ? "Creating…" : "Enter Guest Mode"} <span aria-hidden="true">↗</span></button>
+              </div>
+            </form>}
+          </div>
         </div>
-        <div className="hero-visual hero-visual--cinema" aria-label="A cinematic moving gallery of student life and learning">
+        <div className="hero-visual hero-visual--cinema" aria-label="Moving gallery of student life">
           <div className="cinema-backdrop" aria-hidden="true" />
           <div className="cinema-track cinema-track--one" aria-hidden="true">
             <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85" alt="" />
@@ -138,82 +120,15 @@ export default function LoginPage() {
             <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=85" alt="" />
           </div>
           <div className="cinema-vignette" aria-hidden="true" />
-          <div className="cinema-caption"><span className="cinema-live-dot" /> YOUR STORY, IN MOTION</div>
-          <div className="cinema-title"><span>THE STUDENT JOURNEY</span><strong>Every chapter<br />moves you forward.</strong><small>ACADEMICS · AMBITION · YOU</small></div>
+          <div className="cinema-title"><span>GRADLY</span><strong>Make progress<br />your own.</strong></div>
           <div className="cinema-index" aria-hidden="true"><span>01</span><i /><span>04</span></div>
         </div>
-        <a className="hero-scroll" href="#features"><span /> SCROLL TO EXPLORE <b aria-hidden="true">↓</b></a>
       </section>
-
-      <section className="landing-intro" id="about" aria-labelledby="intro-title">
-        <div className="section-label"><span>01</span> THE GRADLY MINDSET</div>
-        <div className="intro-layout">
-          <h2 id="intro-title">A little more clarity.<br /><em>A lot more possibility.</em></h2>
-          <div className="intro-copy"><p>Student life can feel like a hundred tabs open at once. Gradly is being built to make the academic side of that journey feel a little more organised — and a little more yours.</p><a className="text-link" href="#how-it-works">See how it works <span aria-hidden="true">↘</span></a></div>
-        </div>
-        <div className="intro-line" aria-hidden="true"><span /></div>
-      </section>
-
-      <section className="landing-features" id="features" aria-labelledby="features-title">
-        <div className="section-heading">
-          <div><div className="section-label"><span>02</span> MADE FOR YOUR JOURNEY</div><h2 id="features-title">Less noise.<br /><em>More direction.</em></h2></div>
-          <p>Useful tools and a clearer view of your progress — designed around the student, not just the score.</p>
-        </div>
-        <div className="feature-grid">
-          {capabilities.map((feature) => <article className="feature-card" key={feature.number}>
-            <div className="feature-card__top"><span>{feature.number}</span><span className="feature-card__icon" aria-hidden="true">{feature.icon}</span></div>
-            <p className="feature-card__tag">{feature.tag}</p><h3>{feature.title}</h3><p className="feature-card__body">{feature.body}</p>
-            <div className="feature-card__bottom"><span>EXPLORE THE POSSIBILITIES</span><span aria-hidden="true">↗</span></div>
-          </article>)}
-        </div>
-      </section>
-
-      <section className="landing-steps" id="how-it-works" aria-labelledby="steps-title">
-        <div className="steps-visual" aria-hidden="true">
-          <div className="steps-orbit steps-orbit--one" /><div className="steps-orbit steps-orbit--two" />
-          <div className="steps-monogram">g<span>.</span></div>
-          <div className="steps-caption">SMALL STEPS. REAL MOMENTUM.</div>
-        </div>
-        <div className="steps-content">
-          <div className="section-label"><span>03</span> SIMPLE BY DESIGN</div>
-          <h2 id="steps-title">Your journey.<br /><em>Your pace.</em></h2>
-          <div className="steps-list">
-            {steps.map((step) => <article className="step-row" key={step.number}><span className="step-number">{step.number}</span><div><h3>{step.title}</h3><p>{step.body}</p></div><span className="step-arrow" aria-hidden="true">↗</span></article>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-start" id="get-started" aria-labelledby="start-title">
-        <div className="start-glow" aria-hidden="true" />
-        <div className="section-label"><span>04</span> YOUR NEXT CHAPTER STARTS HERE</div>
-        <h2 id="start-title">Ready when<br /><em>you are.</em></h2>
-        <p>Start with what you have. Figure out the next step as you go.</p>
-        <div className="start-actions">
-          <button className="button-primary" onClick={handleGoogleLogin} disabled={loggingIn || startingGuest}>{loggingIn ? "Signing you in…" : "Continue with Google"} <span aria-hidden="true">↗</span></button>
-          <button className="button-quiet" onClick={() => { setGuestSetupOpen(true); document.getElementById("guest-entry")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>Try Guest Mode <span aria-hidden="true">→</span></button>
-        </div>
-        <div className="start-email">
-          <form onSubmit={handleWaitlist}>
-            <label htmlFor="updates-email">Prefer email updates?</label>
-            <div className="email-row"><input id="updates-email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => { setEmail(event.target.value); setWaitlistNotice(""); }} required /><button type="submit">Get updates <span aria-hidden="true">↗</span></button></div>
-          </form>
-          <p className="email-note" role={waitlistNotice ? "status" : undefined}>{waitlistNotice || "Email updates are not connected yet. Submitting will not send or store your email."}</p>
-        </div>
-        <div className="guest-entry" id="guest-entry">
-          {!guestSetupOpen ? <button className="guest-entry__toggle" onClick={() => setGuestSetupOpen(true)}>Or set up a guest workspace <span aria-hidden="true">＋</span></button> : <form className="guest-setup" onSubmit={handleGuestStart}>
-            <label htmlFor="guest-name">Choose your guest display name</label>
-            <div className="guest-setup__row"><input id="guest-name" value={guestName} onChange={(event) => setGuestName(event.target.value)} minLength={3} maxLength={24} placeholder="e.g. curiouslearner" autoComplete="nickname" required /><button type="submit" disabled={startingGuest || loggingIn}>{startingGuest ? "Creating…" : "Enter Guest Mode"} <span aria-hidden="true">↗</span></button></div>
-            <p>Your unique Guest ID will be assigned automatically.</p>
-          </form>}
-        </div>
-        {error && <p className="landing-error landing-error--center" role="alert">{error}</p>}
-      </section>
-
-      <footer className="landing-footer">
+      <footer className="landing-footer landing-footer--minimal">
         <a className="landing-footer__brand" href="#home">gradly<span>.</span></a>
-        <span>BUILT FOR THE JOURNEY, NOT JUST THE RESULT.</span>
-        <a href="#home">BACK TO TOP ↑</a>
+        <span>MADE FOR YOUR JOURNEY.</span>
       </footer>
     </main>
   );
+}
 }
