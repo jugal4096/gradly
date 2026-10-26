@@ -77,9 +77,10 @@ export default function LoginPage() {
 
       <section className="landing-hero landing-hero--minimal" id="home" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="landing-eyebrow"><span className="eyebrow-pulse" /> YOUR NEXT CHAPTER STARTS HERE</p>
-          <h1 id="hero-title">Your goals.<br />Your grades.<br /><span>Your Gradly.</span></h1>
-          <p className="hero-description">A clearer view of your academic journey starts here.</p>
+          <p className="landing-eyebrow"><span className="eyebrow-pulse" /> YOUR ACADEMIC JOURNEY, SIMPLIFIED</p>
+          <h1 id="hero-title">Your academics.<br /><span>All in one place.</span></h1>
+          <p className="hero-description">Track your progress, understand your results, and move toward your goals with confidence.</p>
+          <p className="auth-prompt">Get started with Gradly</p>
           <div className="hero-actions hero-actions--minimal">
             <button className="button-primary google-button" onClick={handleGoogleLogin} disabled={loggingIn || startingGuest}>
               <svg className="google-mark" viewBox="0 0 48 48" role="img" aria-label="Google logo">
@@ -91,7 +92,7 @@ export default function LoginPage() {
               <span>{loggingIn ? "Signing in…" : "Continue with Google"}</span>
             </button>
             <button className="button-quiet" onClick={() => { setError(""); setGuestSetupOpen(true); document.getElementById("guest-entry")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); }} disabled={loggingIn || startingGuest}>
-              Explore as guest <span aria-hidden="true">→</span>
+              Continue as Guest <span aria-hidden="true">→</span>
             </button>
           </div>
           {error && <p className="landing-error" role="alert">{error}</p>}
