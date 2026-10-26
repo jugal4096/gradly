@@ -82,6 +82,10 @@ export async function getGuest(req: Request, res: Response) {
     if (!session) {
       return res.status(401).json({ message: "Guest session is invalid or expired." });
     }
+    await recordGuestActivity(session.id, "GUEST_WORKSPACE_OPENED", {
+      source: "web",
+      institutionName: session.metadata?.institution_name ?? null,
+    });
 
     return res.status(200).json({
       guest: {
