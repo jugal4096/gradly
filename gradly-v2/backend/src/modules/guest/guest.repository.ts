@@ -5,7 +5,7 @@ function hashGuestToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function createGuestSession(guestIdInput: string, institutionIdInput: string) {
+export async function createGuestSession(guestIdInput: string, institutionIdInput: string, externalInstitution?: { name: string; locality: string; externalId?: string }) {
   const guestId = guestIdInput.trim().toUpperCase();
   if (guestId.length < 4 || guestId.length > 24 || !/^[A-Z0-9][A-Z0-9_-]*$/.test(guestId)) {
     throw new Error("Choose a Guest ID between 4 and 24 characters using letters, numbers, hyphens or underscores.");
@@ -33,13 +33,23 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
       throw error;
     }
 
-    const institutionResult = await client.query(
-      "SELECT id, name FROM institutions WHERE id::text = $1 LIMIT 1",
-      [institutionIdInput]
-    );
-    const institution = institutionResult.rows[0];
+    let institution: { id: string | null; name: string; locality?: string; externalId?: string } | undefined;
+    if (institutionIdInput) {
+      const institutionResult = await client.query(
+        "SELECT id, name FROM institutions WHERE id::text = $1 LIMIT 1",
+        [institutionIdInput]
+      );
+      institution = institutionResult.rows[0];
+    } else if (externalInstitution?.name?.trim() && externalInstitution.locality?.trim()) {
+      institution = {
+        id: null,
+        name: externalInstitution.name.trim().slice(0, 160),
+        locality: externalInstitution.locality.trim().slice(0, 160),
+        externalId: externalInstitution.externalId?.trim().slice(0, 200),
+      };
+    }
     if (!institution) {
-      const error = new Error("Please select an institution from the list.");
+      const error = new Error("Please select an institution from the list or live search.");
       (error as Error & { code?: string }).code = "GUEST_INSTITUTION_INVALID";
       throw error;
     }
@@ -51,6 +61,9 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
       display_name: guestId,
       institution_id: institution.id,
       institution_name: institution.name,
+      institution_locality: institution.locality ?? null,
+      institution_external_id: institution.externalId ?? null,
+      institution_source: institution.id ? "GRADLY_DIRECTORY" : "OPENALEX",
       guest_workspace: { subjects: [], semesters: [], lastActiveCalculator: "sgpa" },
     };
     const result = await client.query(
