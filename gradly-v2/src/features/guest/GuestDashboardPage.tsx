@@ -109,7 +109,7 @@ export default function GuestDashboardPage() {
   function updateSubject(id: string, key: "name" | "credits" | "gradePoint", value: string) {
     setSubjects((current) => current.map((subject) => subject.id === id ? {
       ...subject,
-      [key]: key === "name" ? value : Number(value),
+      [key]: key === "name" ? value : key === "credits" ? Math.min(15, Math.max(0, Number(value) || 0)) : Number(value),
     } : subject));
   }
 
@@ -183,12 +183,12 @@ export default function GuestDashboardPage() {
                 <div className="guest-table-head"><span>SUBJECT</span><span>CREDITS</span><span>GRADE</span><span /></div>
                 {subjects.map((subject) => <div className="guest-subject-row" key={subject.id}>
                   <input aria-label="Subject name" value={subject.name} onChange={(event) => updateSubject(subject.id, "name", event.target.value)} maxLength={80} />
-                  <input aria-label={`${subject.name} credits`} type="number" min="0" max="30" step="0.5" value={subject.credits} onChange={(event) => updateSubject(subject.id, "credits", event.target.value)} />
+                  <input aria-label={`${subject.name} credits`} type="number" min="0" max="15" step="0.5" value={subject.credits} onChange={(event) => updateSubject(subject.id, "credits", event.target.value)} />
                   <select className="guest-grade-select" aria-label={`${subject.name} grade`} value={String(subject.gradePoint)} onChange={(event) => updateSubject(subject.id, "gradePoint", event.target.value)}>{GECA_GRADE_SCALE.map((grade) => <option key={grade.label} value={grade.value}>{grade.label}</option>)}</select>
                   <button className="guest-remove" aria-label={`Remove ${subject.name}`} onClick={() => { setSubjects((current) => current.filter((item) => item.id !== subject.id)); void trackActivity("GUEST_SUBJECT_REMOVED", { itemType: "subject" }); }}>×</button>
                 </div>)}
               </div>
-              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => { setSubjects((current) => [...current, { id: crypto.randomUUID(), name: `Subject ${String(current.length + 1).padStart(2, "0")}`, credits: 3, gradePoint: 8 }]); void trackActivity("GUEST_SUBJECT_ADDED", { itemType: "subject" }); }}>＋ Add subject</button><span>GECA grade scale · credits × grade point ÷ total credits</span></div>
+              <div className="guest-calculator__footer"><button className="guest-add" onClick={() => { setSubjects((current) => [...current, { id: crypto.randomUUID(), name: `Subject ${String(current.length + 1).padStart(2, "0")}`, credits: 3, gradePoint: 8 }]); void trackActivity("GUEST_SUBJECT_ADDED", { itemType: "subject" }); }}>＋ Add subject</button><span>Max 15 credits per subject · GECA grade scale · credits × grade ÷ total credits</span></div>
             </>
           ) : (
             <>
