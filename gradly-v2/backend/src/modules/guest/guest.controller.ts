@@ -31,6 +31,10 @@ export async function createGuest(req: Request, res: Response) {
     }
 
     const session = await startGuestSession(guestId, institutionId);
+    await recordGuestActivity(session.id, "GUEST_INSTITUTION_SELECTED", {
+      institutionId: session.metadata?.institution_id,
+      institutionName: session.metadata?.institution_name,
+    });
     await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", {
       source: "web",
       guestId: session.metadata?.guest_id ?? session.metadata?.display_id,
