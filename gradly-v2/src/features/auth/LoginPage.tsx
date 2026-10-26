@@ -5,6 +5,7 @@ import "./LoginPage.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-audit-2026-10-17/gradly-ecosystem/public/gradly-ecosystem-logo.png";
+type GuestInstitution = { id: string; name: string };
 
 export default function LoginPage() {
   const { loginWithGoogle, user, loading: authLoading } = useAuth();
@@ -12,12 +13,32 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [guestSetupOpen, setGuestSetupOpen] = useState(false);
-  const [guestName, setGuestName] = useState("");
+  const [guestId, setGuestId] = useState("");
+  const [guestInstitutionId, setGuestInstitutionId] = useState("");
+  const [institutions, setInstitutions] = useState<GuestInstitution[]>([]);
+  const [loadingInstitutions, setLoadingInstitutions] = useState(false);
   const [startingGuest, setStartingGuest] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user) navigate("/dashboard", { replace: true });
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!guestSetupOpen || institutions.length > 0) return;
+    let cancelled = false;
+    setLoadingInstitutions(true);
+    fetch(`${API_BASE_URL}/api/guest/institutions`)
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message || "Could not load institutions.");
+        if (!cancelled) setInstitutions(Array.isArray(data?.institutions) ? data.institutions : []);
+      })
+      .catch((cause: unknown) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : "Could not load institutions.");
+      })
+      .finally(() => { if (!cancelled) setLoadingInstitutions(false); });
+    return () => { cancelled = true; };
+  }, [guestSetupOpen, institutions.length]);
 
   async function handleGoogleLogin() {
     try {
@@ -35,9 +56,13 @@ export default function LoginPage() {
 
   async function handleGuestStart(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const displayName = guestName.trim();
-    if (displayName.length < 3 || displayName.length > 24) {
-      setError("Choose a display name between 3 and 24 characters.");
+    const normalizedGuestId = guestId.trim().toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(normalizedGuestId)) {
+      setError("Guest ID must be 4–24 characters using letters, numbers, hyphens or underscores.");
+      return;
+    }
+    if (!guestInstitutionId) {
+      setError("Select your institution to continue.");
       return;
     }
     try {
@@ -46,14 +71,19 @@ export default function LoginPage() {
       const response = await fetch(`${API_BASE_URL}/api/guest/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName }),
+        body: JSON.stringify({ guestId: normalizedGuestId, institutionId: guestInstitutionId }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "We couldn't start Guest Mode. Please try again.");
-      sessionStorage.setItem("gradly_guest_session_token", data.guest.sessionToken);
+      const guest = data.guest;
+      sessionStorage.setItem("gradly_guest_session_token", guest.sessionToken);
       sessionStorage.setItem("gradly_guest_profile", JSON.stringify({
-        id: data.guest.id, guestId: data.guest.guestId,
-        displayName: data.guest.displayName, expiresAt: data.guest.expiresAt,
+        id: guest.id,
+        guestId: guest.guestId,
+        displayName: guest.displayName,
+        institutionId: guest.institutionId,
+        institutionName: guest.institutionName,
+        expiresAt: guest.expiresAt,
       }));
       navigate("/guest", { replace: true });
     } catch (cause) {
@@ -105,11 +135,22 @@ export default function LoginPage() {
           {error && <p className="landing-error" role="alert">{error}</p>}
           <div className="guest-entry guest-entry--minimal" id="guest-entry">
             {!guestSetupOpen ? null : <form className="guest-setup" onSubmit={handleGuestStart}>
-              <label htmlFor="guest-name">Choose a display name</label>
-              <div className="guest-setup__row">
-                <input id="guest-name" value={guestName} onChange={(event) => setGuestName(event.target.value)} minLength={3} maxLength={24} placeholder="Your name" autoComplete="nickname" required />
-                <button type="submit" disabled={startingGuest || loggingIn}>{startingGuest ? "Creating…" : "Enter Guest Mode"} <span aria-hidden="true">↗</span></button>
+              <div className="guest-setup__heading">
+                <span className="guest-setup__step">STEP 1 OF 1</span>
+                <strong>Create your guest identity</strong>
+                <p>Your unique ID and selected institution will be saved to your guest profile.</p>
               </div>
+              <label htmlFor="guest-id">Choose a unique Guest ID</label>
+              <input className="guest-setup__full-input" id="guest-id" value={guestId} onChange={(event) => setGuestId(event.target.value.replace(/\\s/g, "").toUpperCase())} minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" placeholder="e.g. JUGAL-01" autoComplete="off" required />
+              <small className="guest-setup__hint">4–24 characters · letters, numbers, hyphens or underscores</small>
+              <label htmlFor="guest-institution">Select your institution</label>
+              <select id="guest-institution" value={guestInstitutionId} onChange={(event) => setGuestInstitutionId(event.target.value)} required disabled={loadingInstitutions || startingGuest}>
+                <option value="">{loadingInstitutions ? "Loading institutions…" : "Choose an institution"}</option>
+                {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
+              </select>
+              {!loadingInstitutions && institutions.length === 0 && <small className="guest-setup__hint">No institutions are available yet. Please try again later.</small>}
+              <button className="guest-setup__submit" type="submit" disabled={startingGuest || loggingIn || loadingInstitutions || institutions.length === 0}>{startingGuest ? "Creating workspace…" : "Create guest workspace"} <span aria-hidden="true">↗</span></button>
+              <p className="guest-setup__privacy">Your calculator work and guest activity are recorded for Super Admin review.</p>
             </form>}
           </div>
         </div>
