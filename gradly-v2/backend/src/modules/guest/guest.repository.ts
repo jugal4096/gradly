@@ -10,7 +10,7 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
   if (guestId.length < 4 || guestId.length > 24 || !/^[A-Z0-9][A-Z0-9_-]*$/.test(guestId)) {
     throw new Error("Choose a Guest ID between 4 and 24 characters using letters, numbers, hyphens or underscores.");
   }
-  if (!institutionIdInput || typeof institutionIdInput !== "string") {
+  if ((!institutionIdInput || typeof institutionIdInput !== "string") && !(externalInstitution?.name?.trim() && externalInstitution.locality?.trim())) {
     throw new Error("Select your institution to continue.");
   }
 
