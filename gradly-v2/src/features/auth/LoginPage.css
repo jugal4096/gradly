@@ -639,19 +639,19 @@
   will-change:opacity,transform;
 }
 .login-backdrop__slide--one {
-  background-image:url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2400&q=88");
+  background-image:url("https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=2400&q=88");
   animation-delay:0s,0s;
 }
 .login-backdrop__slide--two {
-  background-image:url("https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=2400&q=88");
+  background-image:url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=2400&q=88");
   animation-delay:8s,8s;
 }
 .login-backdrop__slide--three {
-  background-image:url("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=2400&q=88");
+  background-image:url("https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=2400&q=88");
   animation-delay:16s,16s;
 }
 .login-backdrop__slide--four {
-  background-image:url("https://images.unsplash.com/photo-1524176059713-2f4b5f4b4b8a?auto=format&fit=crop&w=2400&q=88");
+  background-image:url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=2400&q=88");
   animation-delay:24s,24s;
 }
 .login-backdrop__shade {
@@ -728,4 +728,103 @@
 @media(prefers-reduced-motion:reduce) {
   .login-backdrop__slide { animation:none!important; }
   .login-backdrop__slide--one { opacity:1;transform:none; }
+}
+
+
+/* Indian campus atmosphere, centered transparent logo, and richer motion */
+.gradly-landing--minimal .landing-nav--minimal {
+  min-height:108px;
+  justify-content:center;
+  padding-top:20px;padding-bottom:20px;
+}
+.gradly-landing--minimal .landing-brand {
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:clamp(220px,27vw,320px);height:90px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:0;border-radius:0;box-shadow:none;
+  overflow:visible;
+}
+.gradly-landing--minimal .landing-brand:hover {
+  transform:translate(-50%,-50%) scale(1.045);
+  background:transparent;border:0;box-shadow:none;
+}
+.gradly-landing--minimal .landing-brand img {
+  display:block;width:100%;max-width:100%;max-height:86px;object-fit:contain;
+  background:transparent;filter:drop-shadow(0 5px 22px rgba(0,0,0,.45));
+  animation:gradly-logo-entrance 1.1s cubic-bezier(.16,1,.3,1) both,gradly-logo-glow 5s ease-in-out 1.1s infinite;
+}
+.gradly-landing--minimal .landing-brand__fallback { color:#fff; }
+.gradly-landing--minimal .landing-nav__tag {
+  position:relative;margin-left:auto;
+}
+.gradly-landing--minimal .landing-hero--minimal { padding-top:44px; }
+.gradly-landing--minimal .hero-copy {
+  border-color:rgba(206,224,255,.26);
+  background:linear-gradient(145deg,rgba(7,17,35,.68),rgba(9,20,39,.43));
+  box-shadow:0 30px 100px rgba(0,0,0,.42),0 0 70px rgba(64,115,235,.12),inset 0 1px 0 rgba(255,255,255,.11);
+  animation:gradly-card-arrive 1s cubic-bezier(.16,1,.3,1) both;
+}
+.gradly-landing--minimal .hero-copy::before {
+  content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+  background:linear-gradient(125deg,rgba(167,202,255,.48),transparent 32%,transparent 66%,rgba(88,159,255,.28));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+}
+.gradly-landing--minimal .landing-eyebrow .eyebrow-pulse {
+  animation:gradly-pulse-dot 2.1s ease-in-out infinite;
+}
+.gradly-landing--minimal .hero-copy h1 span {
+  background-size:200% 100%;
+  animation:gradly-title-shimmer 7s ease-in-out infinite;
+}
+.gradly-landing--minimal .hero-actions--minimal .button-primary,
+.gradly-landing--minimal .hero-actions--minimal .button-quiet {
+  position:relative;overflow:hidden;
+}
+.gradly-landing--minimal .hero-actions--minimal .button-primary::after,
+.gradly-landing--minimal .hero-actions--minimal .button-quiet::after {
+  content:"";position:absolute;top:-70%;left:-60%;width:35%;height:240%;
+  transform:rotate(22deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);
+  transition:left .65s ease;pointer-events:none;
+}
+.gradly-landing--minimal .hero-actions--minimal .button-primary:hover::after,
+.gradly-landing--minimal .hero-actions--minimal .button-quiet:hover::after { left:130%; }
+.login-backdrop__slide { filter:saturate(.9) contrast(1.06); }
+.login-backdrop__shade {
+  background:
+    linear-gradient(90deg,rgba(4,10,22,.72),rgba(4,10,22,.48) 48%,rgba(4,10,22,.60)),
+    linear-gradient(180deg,rgba(4,10,22,.45),rgba(4,10,22,.28) 42%,rgba(4,10,22,.76)),
+    radial-gradient(ellipse at 50% 38%,rgba(39,94,205,.20),transparent 60%);
+}
+@keyframes gradly-logo-glow {
+  0%,100% { filter:drop-shadow(0 5px 18px rgba(0,0,0,.4)) drop-shadow(0 0 0 rgba(118,164,255,0)); }
+  50% { filter:drop-shadow(0 7px 24px rgba(0,0,0,.48)) drop-shadow(0 0 16px rgba(118,164,255,.25)); }
+}
+@keyframes gradly-card-arrive {
+  from { opacity:0;transform:translateY(22px) scale(.985);filter:blur(5px); }
+  to { opacity:1;transform:translateY(0) scale(1);filter:blur(0); }
+}
+@keyframes gradly-pulse-dot {
+  0%,100% { box-shadow:0 0 0 0 rgba(109,140,255,.35); }
+  50% { box-shadow:0 0 0 7px rgba(109,140,255,0); }
+}
+@keyframes gradly-title-shimmer {
+  0%,100% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+}
+@media(max-width:560px) {
+  .gradly-landing--minimal .landing-nav--minimal { min-height:90px;padding:15px 16px; }
+  .gradly-landing--minimal .landing-brand { width:clamp(180px,54vw,230px);height:65px; }
+  .gradly-landing--minimal .landing-brand img { max-height:64px; }
+  .gradly-landing--minimal .landing-nav__tag { max-width:108px;padding:6px 8px;font-size:6px; }
+  .gradly-landing--minimal .landing-hero--minimal { padding-top:24px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .gradly-landing--minimal .landing-brand img,
+  .gradly-landing--minimal .hero-copy,
+  .gradly-landing--minimal .hero-copy h1 span,
+  .gradly-landing--minimal .landing-eyebrow .eyebrow-pulse { animation:none!important; }
+  .gradly-landing--minimal .landing-brand { transition:none; }
+  .gradly-landing--minimal .hero-actions--minimal .button-primary::after,
+  .gradly-landing--minimal .hero-actions--minimal .button-quiet::after { display:none; }
 }
