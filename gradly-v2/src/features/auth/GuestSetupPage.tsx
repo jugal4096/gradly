@@ -190,8 +190,8 @@ export default function GuestSetupPage() {
               </select>
               <div className="guest-live-institution-search">
                 <label htmlFor="guest-institution-search">Or search real colleges and universities</label>
-                <input id="guest-institution-search" value={institutionSearch} onChange={(event) => { setInstitutionSearch(event.target.value); setInstitutionId(""); setSelectedExternalInstitution(null); setError(""); }} maxLength={100} placeholder="Search college, university or city…" autoComplete="off" disabled={startingGuest} />
-                <small className="guest-setup-form__hint">Live results from OpenAlex’s public institution directory · India</small>
+                <input id="guest-institution-search" value={institutionSearch} onChange={(event) => { setInstitutionSearch(event.target.value); setInstitutionId(""); setSelectedExternalInstitution(null); setError(""); }} maxLength={100} placeholder="Search college or university name…" autoComplete="off" disabled={startingGuest} />
+                <small className="guest-setup-form__hint">Live institution directory · city and state shown when available · India</small>
                 {searchingInstitutions && <small className="guest-live-search-status">Searching institutions…</small>}
                 {institutionSearchError && <small className="guest-live-search-error" role="status">{institutionSearchError}</small>}
                 {externalInstitutions.length > 0 && !selectedExternalInstitution && (
