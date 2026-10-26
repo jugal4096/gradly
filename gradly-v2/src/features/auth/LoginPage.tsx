@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [guestSetupOpen, setGuestSetupOpen] = useState(false);
+  const [guestSetupStep, setGuestSetupStep] = useState<1 | 2>(1);
   const [guestId, setGuestId] = useState("");
   const [guestInstitutionId, setGuestInstitutionId] = useState("");
   const [institutions, setInstitutions] = useState<GuestInstitution[]>([]);
@@ -54,8 +55,20 @@ export default function LoginPage() {
     }
   }
 
+  function continueGuestSetup() {
+    const normalizedGuestId = guestId.trim().toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(normalizedGuestId)) {
+      setError("Guest ID must be 4–24 characters using letters, numbers, hyphens or underscores.");
+      return;
+    }
+    setGuestId(normalizedGuestId);
+    setError("");
+    setGuestSetupStep(2);
+  }
+
   async function handleGuestStart(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (guestSetupStep !== 2) return;
     const normalizedGuestId = guestId.trim().toUpperCase();
     if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(normalizedGuestId)) {
       setError("Guest ID must be 4–24 characters using letters, numbers, hyphens or underscores.");
@@ -87,7 +100,9 @@ export default function LoginPage() {
       }));
       navigate("/guest", { replace: true });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Guest Mode could not be started.");
+      const message = cause instanceof Error ? cause.message : "Guest Mode could not be started.";
+      setError(message);
+      if (message.toLowerCase().includes("guest id is already in use")) setGuestSetupStep(1);
     } finally {
       setStartingGuest(false);
     }
@@ -136,20 +151,25 @@ export default function LoginPage() {
           <div className="guest-entry guest-entry--minimal" id="guest-entry">
             {!guestSetupOpen ? null : <form className="guest-setup" onSubmit={handleGuestStart}>
               <div className="guest-setup__heading">
-                <span className="guest-setup__step">STEP 1 OF 1</span>
-                <strong>Create your guest identity</strong>
-                <p>Your unique ID and selected institution will be saved to your guest profile.</p>
+                <span className="guest-setup__step">STEP {guestSetupStep} OF 2</span>
+                <strong>{guestSetupStep === 1 ? "Create your guest identity" : "Choose your institution"}</strong>
+                <p>{guestSetupStep === 1 ? "Pick a unique ID to identify your guest workspace." : "Your institute is saved to your profile; calculators remain generic and open to everyone."}</p>
               </div>
-              <label htmlFor="guest-id">Choose a unique Guest ID</label>
-              <input className="guest-setup__full-input" id="guest-id" value={guestId} onChange={(event) => setGuestId(event.target.value.replace(/\\s/g, "").toUpperCase())} minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" placeholder="e.g. JUGAL-01" autoComplete="off" required />
-              <small className="guest-setup__hint">4–24 characters · letters, numbers, hyphens or underscores</small>
-              <label htmlFor="guest-institution">Select your institution</label>
-              <select id="guest-institution" value={guestInstitutionId} onChange={(event) => setGuestInstitutionId(event.target.value)} required disabled={loadingInstitutions || startingGuest}>
-                <option value="">{loadingInstitutions ? "Loading institutions…" : "Choose an institution"}</option>
-                {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
-              </select>
-              {!loadingInstitutions && institutions.length === 0 && <small className="guest-setup__hint">No institutions are available yet. Please try again later.</small>}
-              <button className="guest-setup__submit" type="submit" disabled={startingGuest || loggingIn || loadingInstitutions || institutions.length === 0}>{startingGuest ? "Creating workspace…" : "Create guest workspace"} <span aria-hidden="true">↗</span></button>
+              {guestSetupStep === 1 ? <>
+                <label htmlFor="guest-id">Choose a unique Guest ID</label>
+                <input className="guest-setup__full-input" id="guest-id" value={guestId} onChange={(event) => setGuestId(event.target.value.replace(/\\s/g, "").toUpperCase())} minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" placeholder="e.g. JUGAL-01" autoComplete="off" required />
+                <small className="guest-setup__hint">4–24 characters · letters, numbers, hyphens or underscores</small>
+                <button className="guest-setup__submit" type="button" onClick={continueGuestSetup}>Continue to institution <span aria-hidden="true">→</span></button>
+              </> : <>
+                <div className="guest-setup__chosen-id"><span>YOUR GUEST ID</span><strong>{guestId}</strong><button type="button" onClick={() => { setError(""); setGuestSetupStep(1); }}>Edit</button></div>
+                <label htmlFor="guest-institution">Select your institution</label>
+                <select id="guest-institution" value={guestInstitutionId} onChange={(event) => setGuestInstitutionId(event.target.value)} required disabled={loadingInstitutions || startingGuest}>
+                  <option value="">{loadingInstitutions ? "Loading institutions…" : "Choose an institution"}</option>
+                  {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
+                </select>
+                {!loadingInstitutions && institutions.length === 0 && <small className="guest-setup__hint">No institutions are available yet. Please try again later.</small>}
+                <button className="guest-setup__submit" type="submit" disabled={startingGuest || loggingIn || loadingInstitutions || institutions.length === 0 || !guestInstitutionId}>{startingGuest ? "Creating workspace…" : "Create guest workspace"} <span aria-hidden="true">↗</span></button>
+              </>}
               <p className="guest-setup__privacy">Your calculator work and guest activity are recorded for Super Admin review.</p>
             </form>}
           </div>
