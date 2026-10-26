@@ -219,3 +219,43 @@
   .gradly-landing *, .gradly-landing *::before, .gradly-landing *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .gradly-landing { scroll-behavior: auto; }
 }
+
+
+/* Cinematic, Netflix-inspired moving image gallery */
+.landing-brand { position: relative; isolation: isolate; }
+.landing-brand img { position: relative; z-index: 1; transform-origin: center; animation: gradly-logo-arrive 1s cubic-bezier(.2,.8,.2,1) both, gradly-logo-float 5s ease-in-out 1s infinite; filter: drop-shadow(0 0 0 rgba(77,141,255,0)); transition: filter .35s ease; }
+.landing-brand:hover img { filter: drop-shadow(0 0 13px rgba(77,141,255,.48)); }
+.landing-brand__fallback { animation: gradly-wordmark-glow 4s ease-in-out infinite; }
+@keyframes gradly-logo-arrive { from { opacity: 0; transform: translateY(9px) scale(.88); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes gradly-logo-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes gradly-wordmark-glow { 0%,100% { text-shadow: 0 0 0 rgba(77,141,255,0); } 50% { text-shadow: 0 0 18px rgba(77,141,255,.42); } }
+.hero-visual--cinema { isolation: isolate; overflow: hidden; border: 1px solid rgba(134,176,255,.2); border-radius: 20px; background: #050914; box-shadow: 0 28px 90px rgba(0,0,0,.55), 0 0 65px rgba(44,104,220,.12); }
+.cinema-backdrop { position:absolute; inset:-15%; z-index:-2; background: radial-gradient(ellipse at 50% 45%,rgba(43,105,221,.27),transparent 52%),#050914; }
+.cinema-track { position:absolute; top:-12%; bottom:-12%; width:48%; display:flex; flex-direction:column; gap:13px; will-change:transform; }
+.cinema-track--one { left:2%; animation: cinema-scroll-up 34s linear infinite; }
+.cinema-track--two { right:2%; top:-48%; animation: cinema-scroll-down 40s linear infinite; }
+.cinema-track img { display:block; width:100%; height:34%; min-height:145px; object-fit:cover; border-radius:10px; opacity:.88; filter:saturate(.78) contrast(1.03); border:1px solid rgba(255,255,255,.12); }
+.cinema-track--two img { height:27%; min-height:130px; }
+.cinema-vignette { position:absolute; inset:0; z-index:1; background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.08) 25%,rgba(0,0,0,.68) 75%,rgba(0,0,0,.86)),linear-gradient(90deg,rgba(0,0,0,.35),transparent 50%,rgba(0,0,0,.28)); pointer-events:none; }
+.cinema-caption { position:absolute; z-index:2; top:22px; left:22px; display:flex; align-items:center; gap:9px; color:#dbe8ff; font-size:9px; font-weight:700; letter-spacing:.19em; }
+.cinema-live-dot { width:7px; height:7px; border-radius:50%; background:#78aaff; box-shadow:0 0 14px #4d8dff; }
+.cinema-title { position:absolute; z-index:2; left:clamp(18px,5%,34px); right:18px; bottom:clamp(28px,9%,54px); display:flex; flex-direction:column; align-items:flex-start; gap:12px; text-align:left; }
+.cinema-title>span,.cinema-title small { color:#a8c8ff; font-size:9px; font-weight:700; letter-spacing:.18em; }
+.cinema-title strong { color:#fff; font-size:clamp(25px,3.1vw,42px); font-weight:500; line-height:1.08; letter-spacing:-.055em; text-shadow:0 3px 30px rgba(0,0,0,.4); }
+.cinema-title small { color:rgba(238,244,255,.68); font-size:8px; }
+.cinema-index { position:absolute; z-index:2; right:20px; bottom:19px; display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.7); font-size:9px; letter-spacing:.1em; }
+.cinema-index i { display:block; width:27px; height:1px; background:#78aaff; }
+@keyframes cinema-scroll-up { from { transform:translateY(0); } to { transform:translateY(-50%); } }
+@keyframes cinema-scroll-down { from { transform:translateY(0); } to { transform:translateY(50%); } }
+@media (max-width: 640px) {
+  .hero-visual--cinema { min-height:350px; width:100%; border-radius:15px; }
+  .cinema-track { width:49%; gap:9px; }
+  .cinema-track img { min-height:125px; }
+  .cinema-caption { top:16px; left:15px; font-size:8px; }
+  .cinema-title { bottom:35px; }
+  .cinema-title strong { font-size:clamp(26px,7vw,36px); }
+  .cinema-index { right:13px; bottom:13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-brand img,.landing-brand__fallback,.cinema-track--one,.cinema-track--two { animation:none !important; }
+}
