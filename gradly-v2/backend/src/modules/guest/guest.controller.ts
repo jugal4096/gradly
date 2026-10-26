@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import { pool } from "../../config/database";
-import { sendInstitutionRequest } from "./institution-request.email";
 import {
   getGuestSession,
   startGuestSession,
@@ -25,14 +24,17 @@ export async function createGuest(req: Request, res: Response) {
   try {
     const guestId = typeof req.body?.guestId === "string" ? req.body.guestId : "";
     const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
+    const externalName = typeof req.body?.institutionName === "string" ? req.body.institutionName.trim() : "";
+    const externalLocality = typeof req.body?.institutionLocality === "string" ? req.body.institutionLocality.trim() : "";
+    const externalId = typeof req.body?.externalInstitutionId === "string" ? req.body.externalInstitutionId.trim() : "";
     if (!guestId.trim()) {
       return res.status(400).json({ message: "Choose a unique Guest ID to continue." });
     }
-    if (!institutionId.trim()) {
-      return res.status(400).json({ message: "Select your institution to continue." });
+    if (!institutionId.trim() && (!externalName || !externalLocality)) {
+      return res.status(400).json({ message: "Select an institution from Gradly or the live institution search." });
     }
 
-    const session = await startGuestSession(guestId, institutionId);
+    const session = await startGuestSession(guestId, institutionId, externalName && externalLocality ? { name: externalName, locality: externalLocality, externalId } : undefined);
     await recordGuestActivity(session.id, "GUEST_INSTITUTION_SELECTED", {
       institutionId: session.metadata?.institution_id,
       institutionName: session.metadata?.institution_name,
