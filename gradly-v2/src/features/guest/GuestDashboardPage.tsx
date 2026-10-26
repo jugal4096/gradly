@@ -167,7 +167,7 @@ export default function GuestDashboardPage() {
           <div className="guest-calculator__header"><div><p className="guest-kicker">QUICK CALCULATORS</p><h2>{activeTab === "sgpa" ? "SGPA calculator" : "CGPA calculator"}</h2></div><div className="guest-tabs"><button className={activeTab === "sgpa" ? "is-active" : ""} onClick={() => setActiveTab("sgpa")}>SGPA</button><button className={activeTab === "cgpa" ? "is-active" : ""} onClick={() => setActiveTab("cgpa")}>CGPA</button></div></div>
           {activeTab === "sgpa" ? (
             <>
-              <p className="guest-helper">Add any subjects you like. No institution or semester setup needed.</p>
+              <p className="guest-helper">Use any subject names. Guest Mode does not load institution-specific curriculum or official results.</p>
               <div className="guest-subject-table">
                 <div className="guest-table-head"><span>SUBJECT</span><span>CREDITS</span><span>GRADE POINT</span><span /></div>
                 {subjects.map((subject) => <div className="guest-subject-row" key={subject.id}>
