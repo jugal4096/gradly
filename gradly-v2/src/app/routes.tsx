@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import LoginPage from "../features/auth/LoginPage";
+import GuestSetupPage from "../features/auth/GuestSetupPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import DashboardPage from "../features/dashboard/DashboardPage";
 import GuestDashboardPage from "../features/guest/GuestDashboardPage";
@@ -29,11 +30,9 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/guest/setup" element={<GuestSetupPage />} />
       <Route path="/guest" element={<GuestDashboardPage />} />
-      <Route
-        path="/dashboard"
-        element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
-      />
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
