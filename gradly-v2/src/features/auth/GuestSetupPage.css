@@ -100,3 +100,19 @@
 .guest-institution-request__success { padding:12px;border:1px solid rgba(112,237,193,.25);border-radius:9px;background:rgba(36,138,106,.1); }
 .guest-institution-request__success strong { color:#aaf5d7;font-size:11px; }
 .guest-institution-request__success p { margin:6px 0 0;color:#a7cbbf;font-size:10px;line-height:1.65;overflow-wrap:anywhere; }
+
+
+.guest-live-institution-search { display:grid;gap:9px;margin-top:3px; }
+.guest-live-institution-search>label { margin-top:2px; }
+.guest-live-institution-search>input { height:45px; }
+.guest-live-search-status,.guest-live-search-error { color:#a5b4ce;font-size:9px;line-height:1.5; }
+.guest-live-search-error { color:#ffb3c0; }
+.guest-live-institution-results { display:grid;gap:6px;max-height:230px;overflow:auto;padding:5px;border:1px solid rgba(151,195,232,.17);border-radius:11px;background:rgba(3,9,22,.65); }
+.guest-live-institution-results>button { display:grid;gap:5px;width:100%;padding:11px;border:1px solid transparent;border-radius:8px;color:#e9f2ff;background:transparent;text-align:left;cursor:pointer;transition:background .18s ease,border-color .18s ease; }
+.guest-live-institution-results>button:hover,.guest-live-institution-results>button:focus-visible { border-color:rgba(124,232,227,.28);outline:none;background:rgba(83,140,198,.14); }
+.guest-live-institution-results strong { font-size:10px;line-height:1.5; }
+.guest-live-institution-results span,.guest-live-institution-selected small { color:#99abc5;font-size:9px;line-height:1.5; }
+.guest-live-institution-selected { display:grid;gap:6px;padding:12px;border:1px solid rgba(124,232,227,.28);border-radius:11px;background:rgba(43,139,145,.1); }
+.guest-live-institution-selected>span { color:#8deee5;font-size:8px;font-weight:800;letter-spacing:.12em; }
+.guest-live-institution-selected>strong { color:#f1f8ff;font-size:11px;line-height:1.5; }
+.guest-live-institution-selected>button { justify-self:start;margin-top:2px;padding:5px 0;border:0;color:#9dece8;background:transparent;font-size:9px;font-weight:800;text-decoration:underline;text-underline-offset:3px;cursor:pointer; }
