@@ -7,7 +7,18 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000
 type Subject = { id: string; name: string; credits: number; gradePoint: number };
 type SemesterEntry = { id: string; sgpa: number; credits: number };
 type GuestProfile = { id: string; guestId: string; displayName: string; institutionId?: string; institutionName?: string; expiresAt: string | null };
-const GECA_GRADE_SCALE = [\n  { label: "A++", value: 10 },\n  { label: "A+", value: 9 },\n  { label: "A", value: 8 },\n  { label: "B+", value: 7 },\n  { label: "B", value: 6 },\n  { label: "C+", value: 5 },\n  { label: "C", value: 4 },\n  { label: "D", value: 0 },\n] as const;\n\nconst initialSubjects: Subject[] = [
+const GECA_GRADE_SCALE = [
+  { label: "A++", value: 10 },
+  { label: "A+", value: 9 },
+  { label: "A", value: 8 },
+  { label: "B+", value: 7 },
+  { label: "B", value: 6 },
+  { label: "C+", value: 5 },
+  { label: "C", value: 4 },
+  { label: "D", value: 0 },
+] as const;
+
+const initialSubjects: Subject[] = [
   { id: "s1", name: "Subject 01", credits: 4, gradePoint: 9 },
   { id: "s2", name: "Subject 02", credits: 3, gradePoint: 8 },
   { id: "s3", name: "Subject 03", credits: 3, gradePoint: 10 },
