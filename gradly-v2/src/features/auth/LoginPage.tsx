@@ -105,23 +105,32 @@ export default function LoginPage() {
             </form>}
           </div>
         </div>
-        <div className="hero-visual hero-visual--cinema" aria-label="Moving gallery of student life">
+        <div className="hero-visual hero-visual--cinema" aria-label="Horizontal cinematic gallery of student life">
           <div className="cinema-backdrop" aria-hidden="true" />
-          <div className="cinema-track cinema-track--one" aria-hidden="true">
-            <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85" alt="" />
-            <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=900&q=85" alt="" />
-            <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=85" alt="" />
-            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=85" alt="" />
-          </div>
-          <div className="cinema-track cinema-track--two" aria-hidden="true">
-            <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=900&q=85" alt="" />
-            <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=85" alt="" />
-            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85" alt="" />
-            <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=85" alt="" />
+          <div className="cinema-rail-label"><span className="cinema-live-dot" /> THE STUDENT EXPERIENCE</div>
+          <div className="cinema-horizontal-window" aria-hidden="true">
+            <div className="cinema-horizontal-track">
+              <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=760&q=85" alt="" />
+              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=760&q=85" alt="" />
+            </div>
           </div>
           <div className="cinema-vignette" aria-hidden="true" />
           <div className="cinema-title"><span>GRADLY</span><strong>Make progress<br />your own.</strong></div>
-          <div className="cinema-index" aria-hidden="true"><span>01</span><i /><span>04</span></div>
+          <div className="cinema-index" aria-hidden="true"><span>01</span><i /><span>08</span></div>
         </div>
       </section>
       <footer className="landing-footer landing-footer--minimal">
