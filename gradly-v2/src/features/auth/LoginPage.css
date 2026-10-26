@@ -1031,3 +1031,39 @@
   font:inherit;font-size:10px;font-weight:700;cursor:pointer;
 }
 .gradly-landing--minimal .guest-setup__chosen-id button:hover { background:rgba(84,205,212,.2); }
+
+
+/* Compact landing polish: feature previews without a long marketing page */
+.gradly-landing--minimal .landing-hero--minimal { min-height:calc(100svh - 190px);padding-top:26px;padding-bottom:34px; }
+.gradly-landing--minimal .hero-copy { width:min(780px,100%);margin:0 auto;padding:clamp(25px,3.2vw,42px) clamp(22px,4vw,48px); }
+.gradly-landing--minimal .hero-copy h1 { margin:17px 0 14px;font-size:clamp(43px,5.6vw,70px); }
+.gradly-landing--minimal .hero-description { max-width:560px;font-size:13px;line-height:1.75; }
+.gradly-landing--minimal .auth-prompt { margin-top:22px;color:#edf5ff;font-size:12px;font-weight:700; }
+.gradly-landing--minimal .landing-feature-pills { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:24px; }
+.landing-feature-pill { display:flex;align-items:center;gap:10px;min-width:0;padding:12px;border:1px solid rgba(174,215,255,.17);border-radius:13px;background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.025));transition:transform .22s ease,border-color .22s ease,background .22s ease; }
+.landing-feature-pill:hover { transform:translateY(-4px);border-color:rgba(129,235,238,.48);background:linear-gradient(135deg,rgba(46,169,191,.14),rgba(94,78,193,.12)); }
+.landing-feature-pill__icon { display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:1px solid rgba(124,220,235,.26);border-radius:10px;color:#9df4ef;background:rgba(55,151,188,.12);font-size:15px; }
+.landing-feature-pill>span:last-child { display:grid;gap:4px;min-width:0; }
+.landing-feature-pill strong { color:#f2f7ff;font-size:10px;line-height:1.35; }
+.landing-feature-pill small { color:#a4b5ce;font-size:9px;line-height:1.45; }
+.gradly-landing--minimal .hero-actions--minimal { gap:12px;margin-top:18px; }
+.gradly-landing--minimal .hero-actions--minimal .button-primary,.gradly-landing--minimal .hero-actions--minimal .button-quiet { min-height:47px;border-radius:11px;font-size:11px; }
+.landing-login-note { display:flex;align-items:flex-start;gap:8px;margin:18px 0 0;color:#aebed5;font-size:10px;line-height:1.7; }
+.landing-login-note span { color:#93f1e7; }
+.gradly-landing--minimal .landing-footer--minimal { padding-top:14px;padding-bottom:14px; }
+@media(max-width:560px) {
+ .gradly-landing--minimal .landing-hero--minimal { min-height:calc(100svh - 150px);padding:22px 15px 28px; }
+ .gradly-landing--minimal .hero-copy { padding:25px 19px;border-radius:20px; }
+ .gradly-landing--minimal .hero-copy h1 { margin:16px 0 12px;font-size:clamp(38px,10vw,52px); }
+ .gradly-landing--minimal .landing-feature-pills { grid-template-columns:1fr;gap:7px;margin-top:19px; }
+ .landing-feature-pill { padding:9px 11px; }
+ .landing-feature-pill__icon { width:27px;height:27px;flex-basis:27px; }
+ .landing-feature-pill strong { font-size:10px; }
+ .landing-feature-pill small { font-size:9px; }
+ .gradly-landing--minimal .auth-prompt { margin-top:18px; }
+ .landing-login-note { margin-top:14px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .landing-feature-pill { transition:none!important; }
+ .landing-feature-pill:hover { transform:none; }
+}
