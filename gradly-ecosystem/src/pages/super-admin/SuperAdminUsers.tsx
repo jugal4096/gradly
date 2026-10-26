@@ -265,12 +265,14 @@ export default function SuperAdminUsers() {
     } else {
       downloadCsv("gradly-guest-sessions.csv", filteredGuests.map((guest) => ({
         session_id: guest.id,
+        guest_id: guest.metadata?.guest_id ?? guest.metadata?.display_id ?? "",
+        display_name: guest.metadata?.display_name ?? "",
+        institution: guest.metadata?.institution_name ?? "",
         status: guest.active ? "Active" : "Expired",
         first_seen_at: guest.first_seen_at,
         last_seen_at: guest.last_seen_at,
         expires_at: guest.expires_at,
         source: guest.metadata?.source ?? "",
-        branch: guest.metadata?.branch_name ?? "",
       })));
     }
   }
@@ -334,7 +336,7 @@ export default function SuperAdminUsers() {
         <div className="super-users-toolbar">
           <label className="super-users-search">
             <Search size={18} aria-hidden="true" />
-            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search student name, email, enrollment no. or branch…" : "Search guest session ID…"} aria-label="Search directory" />
+            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search student name, email, enrollment no. or branch…" : "Search Guest ID or institution…"} aria-label="Search directory" />
             {searchInput && <button type="button" className="super-users-clear" onClick={() => setSearchInput("")} aria-label="Clear search"><X size={15} /></button>}
           </label>
           {directoryType === "registered" && <label className="super-users-filter">
@@ -384,14 +386,14 @@ export default function SuperAdminUsers() {
             </table>
           ) : (
             <table className="super-users-table super-users-guest-table">
-              <thead><tr><th>GUEST SESSION ID</th><th>BRANCH</th><th>FIRST SEEN</th><th>LAST ACTIVITY</th><th>EXPIRES</th><th>STATUS</th><th><span className="sr-only">Actions</span></th></tr></thead>
+              <thead><tr><th>GUEST ID</th><th>INSTITUTION</th><th>FIRST SEEN</th><th>LAST ACTIVITY</th><th>EXPIRES</th><th>STATUS</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
                 {loading ? <tr><td colSpan={7}><div className="super-users-state"><span className="super-users-loader" />Loading guest sessions…</div></td></tr>
                   : error ? <tr><td colSpan={7}><div className="super-users-state">Guest sessions could not be loaded.</div></td></tr>
                   : visibleGuests.length === 0 ? <tr><td colSpan={7}><div className="super-users-state"><Activity size={25} /><strong>No guest sessions found</strong><span>Guest sessions will appear here when the guest-session API has recorded them.</span></div></td></tr>
                   : visibleGuests.map((guest) => <tr key={guest.id}>
-                    <td><div className="super-users-person"><span className="super-users-avatar guest-avatar"><Activity size={16} /></span><span className="super-users-person-copy"><strong>Guest visitor</strong><small title={guest.id}>{guest.id}</small></span></div></td>
-                    <td><span className="super-users-branch">{String(guest.metadata?.branch_name || "Not selected")}</span><small className="super-users-subtext">{String(guest.metadata?.program_name || "")}</small></td>
+                    <td><div className="super-users-person"><span className="super-users-avatar guest-avatar"><Activity size={16} /></span><span className="super-users-person-copy"><strong>{String(guest.metadata?.guest_id || guest.metadata?.display_id || "Legacy guest")}</strong><small title={guest.id}>{String(guest.metadata?.display_name || "Guest workspace")}</small></span></div></td>
+                    <td><span className="super-users-branch">{String(guest.metadata?.institution_name || "Not selected")}</span><small className="super-users-subtext">{String(guest.metadata?.source || "Guest mode")}</small></td>
                     <td><span className="super-users-date">{formatDate(guest.first_seen_at)}</span></td>
                     <td><span className="super-users-date">{formatDate(guest.last_seen_at)}</span></td>
                     <td><span className="super-users-date">{guest.expires_at ? formatDate(guest.expires_at) : "No expiry set"}</span></td>
@@ -427,7 +429,7 @@ export default function SuperAdminUsers() {
 
       {guestActivityTarget && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setGuestActivityTarget(null)}>
         <section className="super-users-modal activity-modal" role="dialog" aria-modal="true" aria-labelledby="guest-activity-title" onClick={(event) => event.stopPropagation()}>
-          <div className="super-users-modal-heading"><div><span className="super-users-kicker">GUEST ACTIVITY</span><h2 id="guest-activity-title">Guest session timeline</h2><p>{guestActivityTarget.id}</p><p>{String(guestActivityTarget.metadata?.branch_name || "Branch not selected")}</p></div><button type="button" onClick={() => setGuestActivityTarget(null)} aria-label="Close guest activity"><X size={18} /></button></div>
+          <div className="super-users-modal-heading"><div><span className="super-users-kicker">GUEST ACTIVITY</span><h2 id="guest-activity-title">Guest session timeline</h2><p>Guest ID: {String(guestActivityTarget.metadata?.guest_id || guestActivityTarget.metadata?.display_id || guestActivityTarget.id)}</p><p>{String(guestActivityTarget.metadata?.institution_name || "Institution not selected")}</p></div><button type="button" onClick={() => setGuestActivityTarget(null)} aria-label="Close guest activity"><X size={18} /></button></div>
           {activityLoading ? <div className="super-users-state"><span className="super-users-loader" />Loading recorded activity…</div> : activityError ? <div className="super-users-error" role="alert">{activityError}</div> : activityEvents.length ? <ol className="super-users-activity-list">{activityEvents.map((event) => <li key={String(event.id)}><span className="activity-dot" /><div><strong>{event.action.replace(/_/g, " ").toLowerCase()}</strong><time>{formatDate(event.created_at)}</time><small>{event.metadata ? JSON.stringify(event.metadata) : (event.entity_table ? `Area: ${event.entity_table}` : "Recorded guest event")}</small></div></li>)}</ol> : <div className="super-users-state"><Activity size={24} /><strong>No recorded activity yet</strong><span>New guest branch selections and academic actions will appear here after the updated backend is running. Historical actions that were not logged cannot be reconstructed.</span></div>}
           <p className="super-users-activity-disclaimer">This timeline contains recorded events only. It does not expose guest session tokens.</p>
           <button type="button" className="super-users-modal-close" onClick={() => setGuestActivityTarget(null)}>Close timeline</button>
@@ -438,12 +440,14 @@ export default function SuperAdminUsers() {
         <section className="super-users-modal" role="dialog" aria-modal="true" aria-labelledby="guest-modal-title" onClick={(event) => event.stopPropagation()}>
           <div className="super-users-modal-heading"><div><span className="super-users-kicker">SESSION INSPECTOR</span><h2 id="guest-modal-title">Guest session details</h2></div><button type="button" onClick={() => setSelectedGuest(null)} aria-label="Close session details"><X size={18} /></button></div>
           <dl>
+            <div><dt>Guest ID</dt><dd>{String(selectedGuest.metadata?.guest_id || selectedGuest.metadata?.display_id || "Legacy guest")}</dd></div>
             <div><dt>Session ID</dt><dd>{selectedGuest.id}</dd></div>
+            <div><dt>Display name</dt><dd>{String(selectedGuest.metadata?.display_name || "Guest")}</dd></div>
             <div><dt>Status</dt><dd>{selectedGuest.active ? "Active / unexpired" : "Expired"}</dd></div>
             <div><dt>First seen</dt><dd>{formatDate(selectedGuest.first_seen_at)}</dd></div>
             <div><dt>Last activity</dt><dd>{formatDate(selectedGuest.last_seen_at)}</dd></div>
             <div><dt>Expires</dt><dd>{selectedGuest.expires_at ? formatDate(selectedGuest.expires_at) : "No expiry set"}</dd></div>
-            <div><dt>Branch</dt><dd>{String(selectedGuest.metadata?.branch_name || "Not selected")}</dd></div>
+            <div><dt>Branch</dt><dd>{String(selectedGuest.metadata?.branch_name || "Not available in common Guest Mode")}</dd></div>
             <div><dt>Program</dt><dd>{String(selectedGuest.metadata?.program_name || "Not selected")}</dd></div>
             <div><dt>Institution</dt><dd>{String(selectedGuest.metadata?.institution_name || "Not selected")}</dd></div>
             <div><dt>Metadata</dt><dd><code>{JSON.stringify(selectedGuest.metadata || {}, null, 2)}</code></dd></div>
