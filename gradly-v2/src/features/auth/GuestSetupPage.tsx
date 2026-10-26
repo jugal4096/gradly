@@ -19,7 +19,7 @@ export default function GuestSetupPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(\`${API_BASE_URL}/api/guest/institutions\`)
+    fetch(`${API_BASE_URL}/api/guest/institutions`)
       .then(async (response) => {
         const data = await response.json().catch(() => null);
         if (!response.ok) throw new Error(data?.message || "Could not load institutions.");
@@ -52,7 +52,7 @@ export default function GuestSetupPage() {
     try {
       setError("");
       setStartingGuest(true);
-      const response = await fetch(\`${API_BASE_URL}/api/guest/session\`, {
+      const response = await fetch(`${API_BASE_URL}/api/guest/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guestId: guestId.trim().toUpperCase(), institutionId }),
