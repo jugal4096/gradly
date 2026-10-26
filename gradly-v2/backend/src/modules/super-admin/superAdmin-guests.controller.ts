@@ -25,8 +25,9 @@ export async function listGuestSessionsForSuperAdmin(req: SuperAdminAuthenticate
   try {
     const result = await pool.query(
       `SELECT id, first_seen_at, last_seen_at, expires_at,
-              metadata->>'display_id' AS guest_id,
+              COALESCE(metadata->>'guest_id', metadata->>'display_id') AS guest_id,
               metadata->>'display_name' AS display_name,
+              metadata->>'institution_name' AS institution_name,
               jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'subjects') = 'array'
                 THEN metadata->'guest_workspace'->'subjects' ELSE '[]'::jsonb END) AS subject_count,
               jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'semesters') = 'array'
@@ -66,8 +67,10 @@ export async function getGuestSessionForSuperAdmin(req: SuperAdminAuthenticatedR
     return res.status(200).json({
       guest: {
         id: guest.id,
-        guestId: guest.metadata?.display_id ?? null,
-        displayName: guest.metadata?.display_name ?? "Guest",
+        guestId: guest.metadata?.guest_id ?? guest.metadata?.display_id ?? null,
+        displayName: guest.metadata?.display_name ?? guest.metadata?.guest_id ?? "Guest",
+        institutionId: guest.metadata?.institution_id ?? null,
+        institutionName: guest.metadata?.institution_name ?? null,
         firstSeenAt: guest.first_seen_at,
         lastSeenAt: guest.last_seen_at,
         expiresAt: guest.expires_at,
