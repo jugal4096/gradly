@@ -6,12 +6,18 @@ import "./GuestSetupPage.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-audit-2026-10-17/gradly-ecosystem/public/gradly-ecosystem-logo.png";
 type GuestInstitution = { id: string; name: string };
+type ExternalInstitution = { externalId: string; name: string; city: string; region: string; country: string; homepageUrl: string | null };
 
 export default function GuestSetupPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
   const [guestId, setGuestId] = useState("");
   const [institutionId, setInstitutionId] = useState("");
+  const [institutionSearch, setInstitutionSearch] = useState("");
+  const [externalInstitutions, setExternalInstitutions] = useState<ExternalInstitution[]>([]);
+  const [selectedExternalInstitution, setSelectedExternalInstitution] = useState<ExternalInstitution | null>(null);
+  const [searchingInstitutions, setSearchingInstitutions] = useState(false);
+  const [institutionSearchError, setInstitutionSearchError] = useState("");
   const [institutions, setInstitutions] = useState<GuestInstitution[]>([]);
   const [loadingInstitutions, setLoadingInstitutions] = useState(true);
   const [startingGuest, setStartingGuest] = useState(false);
@@ -38,6 +44,35 @@ export default function GuestSetupPage() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    const query = institutionSearch.trim();
+    if (query.length < 2 || step !== 2) {
+      setExternalInstitutions([]);
+      setInstitutionSearchError("");
+      setSearchingInstitutions(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        setSearchingInstitutions(true);
+        setInstitutionSearchError("");
+        const response = await fetch(`${API_BASE_URL}/api/guest/institution-search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message || "Could not search the institution directory.");
+        setExternalInstitutions(Array.isArray(data?.institutions) ? data.institutions : []);
+      } catch (cause) {
+        if (!controller.signal.aborted) {
+          setExternalInstitutions([]);
+          setInstitutionSearchError(cause instanceof Error ? cause.message : "Could not search institutions.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearchingInstitutions(false);
+      }
+    }, 450);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [institutionSearch, step]);
+
   function continueToInstitution() {
     const normalized = guestId.trim().toUpperCase();
     if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(normalized)) {
@@ -60,7 +95,7 @@ export default function GuestSetupPage() {
       const response = await fetch(`${API_BASE_URL}/api/guest/institution-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ collegeName: collegeName.trim(), locality: locality.trim(), guestId }),
+        body: JSON.stringify({ collegeName: collegeName.trim(), locality: locality.trim(), guestId, externalInstitutionId: selectedExternalInstitution?.externalId ?? "" }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "Could not send your institution request.");
@@ -74,8 +109,8 @@ export default function GuestSetupPage() {
 
   async function handleGuestStart(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (step !== 2 || !institutionId) {
-      setError("Select your institution to continue.");
+    if (step !== 2 || (!institutionId && !selectedExternalInstitution)) {
+      setError("Select your institution from the Gradly list or live search.");
       return;
     }
     try {
@@ -84,7 +119,7 @@ export default function GuestSetupPage() {
       const response = await fetch(`${API_BASE_URL}/api/guest/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guestId: guestId.trim().toUpperCase(), institutionId }),
+        body: JSON.stringify({ guestId: guestId.trim().toUpperCase(), institutionId, ...(selectedExternalInstitution ? { institutionName: selectedExternalInstitution.name, institutionLocality: [selectedExternalInstitution.city, selectedExternalInstitution.region, selectedExternalInstitution.country].filter(Boolean).join(", "), externalInstitutionId: selectedExternalInstitution.externalId } : {}) }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "We couldn't start Guest Mode. Please try again.");
@@ -149,14 +184,42 @@ export default function GuestSetupPage() {
               <div className="guest-setup-form__heading"><span>YOUR ID IS READY</span><h2>Select institution</h2><p>We’ll remember this choice on your guest profile.</p></div>
               <div className="guest-setup-form__identity"><span>GUEST ID</span><strong>{guestId}</strong><button type="button" onClick={() => { setError(""); setStep(1); }}>Edit</button></div>
               <label htmlFor="guest-institution">Institution</label>
-              <select id="guest-institution" value={institutionId} onChange={(event) => setInstitutionId(event.target.value)} required disabled={loadingInstitutions || startingGuest}>
+              <select id="guest-institution" value={institutionId} onChange={(event) => { setInstitutionId(event.target.value); setSelectedExternalInstitution(null); setError(""); }} required={!selectedExternalInstitution} disabled={loadingInstitutions || startingGuest}>
                 <option value="">{loadingInstitutions ? "Loading institutions…" : "Choose your institution"}</option>
                 {institutions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}</option>)}
               </select>
+              <div className="guest-live-institution-search">
+                <label htmlFor="guest-institution-search">Or search real colleges and universities</label>
+                <input id="guest-institution-search" value={institutionSearch} onChange={(event) => { setInstitutionSearch(event.target.value); setInstitutionId(""); setSelectedExternalInstitution(null); setError(""); }} maxLength={100} placeholder="Search college, university or city…" autoComplete="off" disabled={startingGuest} />
+                <small className="guest-setup-form__hint">Live results from OpenAlex’s public institution directory · India</small>
+                {searchingInstitutions && <small className="guest-live-search-status">Searching institutions…</small>}
+                {institutionSearchError && <small className="guest-live-search-error" role="status">{institutionSearchError}</small>}
+                {externalInstitutions.length > 0 && !selectedExternalInstitution && (
+                  <div className="guest-live-institution-results" role="listbox" aria-label="Live institution results">
+                    {externalInstitutions.map((institution) => (
+                      <button key={institution.externalId} type="button" role="option" aria-selected="false" onClick={() => { setSelectedExternalInstitution(institution); setInstitutionId(""); setInstitutionSearch(institution.name); setCollegeName(institution.name); setLocality([institution.city, institution.region, institution.country].filter(Boolean).join(", ")); setShowInstitutionRequest(false); setError(""); }}>
+                        <strong>{institution.name}</strong>
+                        <span>{[institution.city, institution.region, institution.country].filter(Boolean).join(", ") || "Location not listed"}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedExternalInstitution && (
+                  <div className="guest-live-institution-selected">
+                    <span>SELECTED FROM LIVE DIRECTORY</span>
+                    <strong>{selectedExternalInstitution.name}</strong>
+                    <small>{[selectedExternalInstitution.city, selectedExternalInstitution.region, selectedExternalInstitution.country].filter(Boolean).join(", ") || "Location not listed"}</small>
+                    <button type="button" onClick={() => { setSelectedExternalInstitution(null); setInstitutionSearch(""); }}>Change selection</button>
+                  </div>
+                )}
+                {institutionSearch.trim().length >= 2 && !searchingInstitutions && !institutionSearchError && externalInstitutions.length === 0 && !selectedExternalInstitution && (
+                  <small className="guest-live-search-status">No live matches. Try another spelling or request that your college be added below.</small>
+                )}
+              </div>
               <div className="guest-institution-missing">
                 <span>Can’t find your college?</span>
                 <button type="button" onClick={() => { setShowInstitutionRequest((visible) => !visible); setInstitutionRequestError(""); }}>
-                  Your institution isn’t listed? Contact admin
+                  Your institution isn’t listed? Contact Super Admin
                 </button>
               </div>
               {showInstitutionRequest && (
@@ -191,7 +254,7 @@ export default function GuestSetupPage() {
                   {institutionRequestError && <p className="guest-setup-error" role="alert">{institutionRequestError}</p>}
                 </section>
               )}
-              <button className="guest-setup-form__submit" type="submit" disabled={startingGuest || loadingInstitutions || institutions.length === 0 || !institutionId}>{startingGuest ? "Creating workspace…" : "Enter Guest Mode"} <span>↗</span></button>
+              <button className="guest-setup-form__submit" type="submit" disabled={startingGuest || loadingInstitutions || (!institutionId && !selectedExternalInstitution) || (institutions.length === 0 && !selectedExternalInstitution)}>{startingGuest ? "Creating workspace…" : "Enter Guest Mode"} <span>↗</span></button>
             </>}
             {error && <p className="guest-setup-error" role="alert">{error}</p>}
             <p className="guest-setup-form__footnote"><span>◈</span> Guest mode includes SGPA and CGPA calculators. Personalized student features require sign-in.</p>
