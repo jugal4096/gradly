@@ -30,7 +30,7 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
     );
     const institutionValues: unknown[] = [];
     const institutionWhere: string[] = [];
-    const addInstitutionValue = (value: unknown) => { institutionValues.push(value); return `${institutionValues.length}`; };
+    const addInstitutionValue = (value: unknown) => { institutionValues.push(value); return "$" + institutionValues.length; };
     if (search) {
       const p = addInstitutionValue(`%${search}%`);
       institutionWhere.push(`concat_ws(' ', id::text, college_name, locality, guest_id, status) ILIKE ${p}`);
