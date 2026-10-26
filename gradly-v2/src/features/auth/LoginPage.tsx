@@ -157,7 +157,7 @@ export default function LoginPage() {
               </div>
               {guestSetupStep === 1 ? <>
                 <label htmlFor="guest-id">Choose a unique Guest ID</label>
-                <input className="guest-setup__full-input" id="guest-id" value={guestId} onChange={(event) => setGuestId(event.target.value.replace(/\\s/g, "").toUpperCase())} minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" placeholder="e.g. JUGAL-01" autoComplete="off" required />
+                <input className="guest-setup__full-input" id="guest-id" value={guestId} onChange={(event) => setGuestId(event.target.value.replace(/\s/g, "").toUpperCase())} minLength={4} maxLength={24} pattern="[A-Za-z0-9][A-Za-z0-9_-]{3,23}" placeholder="e.g. JUGAL-01" autoComplete="off" required />
                 <small className="guest-setup__hint">4–24 characters · letters, numbers, hyphens or underscores</small>
                 <button className="guest-setup__submit" type="button" onClick={continueGuestSetup}>Continue to institution <span aria-hidden="true">→</span></button>
               </> : <>
