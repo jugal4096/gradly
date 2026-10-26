@@ -123,21 +123,24 @@ export default function LoginPage() {
           {error && <p className="landing-error" role="alert">{error}</p>}
           <div className="hero-trust"><span className="trust-check">✓</span><span>Start at your own pace</span><i /> <span>No pressure. Just progress.</span></div>
         </div>
-        <div className="hero-visual" aria-label="Abstract animated blue Gradly visual">
-          <div className="visual-grid" aria-hidden="true" />
-          <div className="visual-halo visual-halo--outer" aria-hidden="true" />
-          <div className="visual-halo visual-halo--inner" aria-hidden="true" />
-          <div className="visual-orbit visual-orbit--one" aria-hidden="true"><span /></div>
-          <div className="visual-orbit visual-orbit--two" aria-hidden="true"><span /></div>
-          <div className="visual-core" aria-hidden="true">
-            <div className="core-ring core-ring--one" /><div className="core-ring core-ring--two" />
-            <div className="core-mark">G<span>.</span></div>
-            <div className="core-caption">GROW AT YOUR PACE</div>
+        <div className="hero-visual hero-visual--cinema" aria-label="A cinematic moving gallery of student life and learning">
+          <div className="cinema-backdrop" aria-hidden="true" />
+          <div className="cinema-track cinema-track--one" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=85" alt="" />
+            <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=900&q=85" alt="" />
+            <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=85" alt="" />
+            <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=900&q=85" alt="" />
           </div>
-          <div className="visual-chip visual-chip--top"><span className="chip-dot" /><span>YOUR NEXT CHAPTER</span></div>
-          <div className="visual-chip visual-chip--bottom"><span className="chip-spark">✳</span><span><strong>Progress, not pressure.</strong><small>One step at a time.</small></span></div>
-          <span className="visual-coordinate visual-coordinate--one">18° 31' N</span>
-          <span className="visual-coordinate visual-coordinate--two">ACADEMIC / 001</span>
+          <div className="cinema-track cinema-track--two" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=900&q=85" alt="" />
+            <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=85" alt="" />
+            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=85" alt="" />
+            <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=85" alt="" />
+          </div>
+          <div className="cinema-vignette" aria-hidden="true" />
+          <div className="cinema-caption"><span className="cinema-live-dot" /> YOUR STORY, IN MOTION</div>
+          <div className="cinema-title"><span>THE STUDENT JOURNEY</span><strong>Every chapter<br />moves you forward.</strong><small>ACADEMICS · AMBITION · YOU</small></div>
+          <div className="cinema-index" aria-hidden="true"><span>01</span><i /><span>04</span></div>
         </div>
         <a className="hero-scroll" href="#features"><span /> SCROLL TO EXPLORE <b aria-hidden="true">↓</b></a>
       </section>
