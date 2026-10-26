@@ -227,7 +227,7 @@ export default function GuestSetupPage() {
                   {institutionRequestSent ? (
                     <div className="guest-institution-request__success" role="status">
                       <strong>Request sent successfully!</strong>
-                      <p>Your request has been emailed to the Gradly administrator at jugalpkhr@gmail.com.</p>
+                      <p>Your request is now available in the Super Admin’s Feedback & Requests inbox.</p>
                     </div>
                   ) : (
                     <>
@@ -248,7 +248,7 @@ export default function GuestSetupPage() {
                       <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution}>
                         {requestingInstitution ? "Sending request…" : "Send request to admin"} <span>↗</span>
                       </button>
-                      <small className="guest-setup-form__hint">This sends an email directly through Gradly’s configured mail service.</small>
+                      <small className="guest-setup-form__hint">This submits your request directly to the Super Admin inbox for review.</small>
                     </>
                   )}
                   {institutionRequestError && <p className="guest-setup-error" role="alert">{institutionRequestError}</p>}
