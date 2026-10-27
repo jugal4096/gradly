@@ -24,6 +24,9 @@ import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminChangePassword from "./pages/admin/AdminChangePassword";
 import StudentSyllabusFeedbackPage from "./pages/student/StudentSyllabusFeedbackPage";
+import StudentLogin from "./pages/student/StudentLogin";
+import StudentProfile from "./pages/student/StudentProfile";
+import StudentDashboard from "./pages/student/StudentDashboard";
 
 // =====================================================
 // SUPER ADMIN
@@ -65,6 +68,10 @@ function App() {
           path="/"
           element={<EcosystemEntry />}
         />
+
+        <Route path="/student/login" element={<StudentLogin />} />
+        <Route path="/student/profile" element={<StudentProfile />} />
+        <Route path="/student/dashboard" element={<StudentDashboard />} />
 
         {/* =============================================
             ADMIN PORTAL
