@@ -8,6 +8,7 @@ import {
   getStudent,
   listStudentActivity,
   listGuestActivity,
+  permanentlyDeleteGuest,
 } from "./user-management.controller";
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use(authenticateSuperAdminToken);
 // Keep the named route before /:userId so "guests" is not treated as a user ID.
 router.get("/guests", listGuests);
 router.get("/guests/:guestId/activity", listGuestActivity);
+router.delete("/guests/:guestId", permanentlyDeleteGuest);
 router.get("/branches", listBranches);
 router.get("/:userId/activity", listStudentActivity);
 router.get("/", listStudents);
