@@ -89,6 +89,8 @@ export async function createStudentProfileController(
       });
     }
 
+    const curriculumMatch = await pool.query("SELECT id FROM public.curricula WHERE id::text = $1 AND institution_id::text = $2 LIMIT 1", [String(curriculumId), String(institutionId)]);
+    if (!curriculumMatch.rows[0]) return res.status(400).json({ message: "The selected curriculum does not belong to the selected institution." });
     const admissionYearValue = Number(admissionYear);
     const semesterValue = Number(currentSemesterNumber);
     const gapYearValue = Number(gapYears ?? 0);
@@ -176,6 +178,8 @@ export async function updateStudentProfileController(
       "SELECT id FROM public.student_profiles WHERE user_id = $1 LIMIT 1",
       [user.id]
     );
+    const curriculumMatch = await client.query("SELECT id FROM public.curricula WHERE id::text = $1 AND institution_id::text = $2 LIMIT 1", [String(curriculumId), String(institutionId)]);
+    if (!curriculumMatch.rows[0]) return res.status(400).json({ message: "The selected curriculum does not belong to the selected institution." });
     if (!existing.rows[0]) return res.status(404).json({ message: "Student profile not found. Create your profile first." });
 
     const year = Number(admissionYear);
