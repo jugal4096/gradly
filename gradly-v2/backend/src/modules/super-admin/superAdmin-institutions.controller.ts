@@ -89,16 +89,18 @@ export async function updateInstitutionAdditionRequest(
 ) {
   const requestId = String(req.params.requestId || "").trim();
   const status = typeof req.body?.status === "string" ? req.body.status.trim().toUpperCase() : "";
-  const allowed = new Set(["PENDING", "IN_REVIEW", "COMPLETED", "REJECTED"]);
+  const allowed = new Set(["PENDING", "IN_REVIEW", "RESOLVED", "REJECTED"]);
   if (!requestId) return res.status(400).json({ success: false, message: "Request ID is required." });
-  if (!allowed.has(status)) return res.status(400).json({ success: false, message: "Choose Pending, In review, Completed, or Rejected." });
+  if (!allowed.has(status)) return res.status(400).json({ success: false, message: "Choose Pending, In review, Resolved, or Rejected." });
   try {
     const result = await pool.query(
       `UPDATE public.guest_institution_requests
-       SET status = $2, updated_at = NOW()
+       SET status = $2,
+           reviewed_at = CASE WHEN $2 IN ('RESOLVED','REJECTED') THEN NOW() ELSE reviewed_at END,
+           reviewed_by_super_admin_id = CASE WHEN $2 IN ('RESOLVED','REJECTED') THEN $3::uuid ELSE reviewed_by_super_admin_id END
        WHERE id::text = $1
-       RETURNING id, college_name, locality, guest_id, email, external_institution_id, source, status, created_at, updated_at`,
-      [requestId, status]
+       RETURNING id, college_name, locality, guest_id, email, external_institution_id, source, status, created_at, reviewed_at, reviewed_by_super_admin_id`,
+      [requestId, status, req.superAdmin?.superAdminId]
     );
     if (!result.rowCount) return res.status(404).json({ success: false, message: "Institution request not found." });
     return res.status(200).json({ success: true, message: "Institution request status updated.", request: result.rows[0] });
