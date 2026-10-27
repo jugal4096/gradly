@@ -327,7 +327,6 @@ export default function GuestSetupPage() {
                               const matchedState = indianStates.find((state) => state.toLowerCase() === institution.region.toLowerCase());
                               if (matchedState) setRequestState(matchedState);
                               if (institution.city) setRequestCity(institution.city);
-                              setLocality([institution.city, institution.region, institution.country].filter(Boolean).join(", "));
                               setRequestCollegeMatches([]);
                               setInstitutionRequestError("");
                             }}>
