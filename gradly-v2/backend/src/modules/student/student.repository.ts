@@ -7,6 +7,7 @@ export interface CreateStudentProfileData {
   admissionModeId?: string | null;
   studentIdentifier: string;
   admissionYear: number;
+  gapYears?: number;
   currentSemesterNumber: number;
   graduationYear?: number | null;
   targetCgpa?: number | null;
@@ -82,7 +83,8 @@ export async function createStudentProfile(
       admission_year,
       current_semester_number,
       graduation_year,
-      target_cgpa
+      target_cgpa,
+      gap_years
     )
     VALUES (
       $1,
@@ -93,7 +95,8 @@ export async function createStudentProfile(
       $6,
       $7,
       $8,
-      $9
+      $9,
+      $10
     )
 
     RETURNING
@@ -107,6 +110,7 @@ export async function createStudentProfile(
       current_semester_number,
       graduation_year,
       target_cgpa,
+      gap_years,
       current_cgpa,
       current_earned_credits,
       created_at,
@@ -123,6 +127,7 @@ export async function createStudentProfile(
     data.currentSemesterNumber,
     data.graduationYear ?? null,
     data.targetCgpa ?? null,
+    data.gapYears ?? 0,
   ];
 
   const result = await pool.query(query, values);
