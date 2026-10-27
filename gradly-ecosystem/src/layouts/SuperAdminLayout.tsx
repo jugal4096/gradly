@@ -14,6 +14,9 @@ import {
   Users,
 } from "lucide-react";
 
+import { useEffect, useState } from "react";
+import { API_BASE_URL, getToken } from "../lib/superAdminSession";
+
 import {
   NavLink,
   Outlet,
@@ -87,9 +90,50 @@ const systemNavigation = [
 ];
 
 
-export default function SuperAdminLayout() {
+function countRecords(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  if (!value || typeof value !== "object") return 0;
+  const record = value as Record<string, unknown>;
+  for (const key of ["data", "items", "requests", "feedback", "events", "activity", "notifications", "rows"]) {
+    if (Array.isArray(record[key])) return (record[key] as unknown[]).length;
+  }
+  if (record.data && typeof record.data === "object") return countRecords(record.data);
+  return 0;
+}
 
+const badgeEndpoints: Record<string, string> = {
+  "/super-admin/applications": "/api/super-admin/applications",
+  "/super-admin/institutions": "/api/super-admin/institutions/requests",
+  "/super-admin/feedback": "/api/super-admin/feedback",
+  "/super-admin/admin-requests": "/api/super-admin/admin-subject-change-requests",
+  "/super-admin/password-requests": "/api/admin-password-requests/review",
+};
+
+export default function SuperAdminLayout() {
   const navigate = useNavigate();
+  const [queueCounts, setQueueCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let alive = true;
+    const token = getToken();
+    if (!token) return;
+    const refreshCounts = async () => {
+      const entries = await Promise.all(Object.entries(badgeEndpoints).map(async ([path, endpoint]) => {
+        try {
+          const response = await fetch(API_BASE_URL + endpoint, {
+            headers: { Accept: "application/json", Authorization: "Bearer " + token },
+          });
+          if (!response.ok) return [path, 0] as const;
+          return [path, countRecords(await response.json())] as const;
+        } catch {
+          return [path, 0] as const;
+        }
+      }));
+      if (alive) setQueueCounts(Object.fromEntries(entries));
+    };
+    void refreshCounts();
+    return () => { alive = false; };
+  }, []);
 
 
   function handleLogout() {
@@ -209,6 +253,12 @@ export default function SuperAdminLayout() {
                     <span>
                       {item.label}
                     </span>
+
+                    {(queueCounts[item.path] || 0) > 0 && (
+                      <span className="sidebar-count" aria-label={String(queueCounts[item.path]) + " pending items"}>
+                        {queueCounts[item.path] > 99 ? "99+" : queueCounts[item.path]}
+                      </span>
+                    )}
 
                     <ChevronRight
                       className="sidebar-arrow"
