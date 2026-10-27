@@ -1,13 +1,9 @@
 import {
   Activity,
-  BellRing,
-  Send,
   BookOpen,
-  Building2,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
-  KeyRound,
   LogOut,
   MessageSquare,
   ScrollText,
@@ -48,34 +44,9 @@ const controlNavigation = [
     icon: ClipboardList,
   },
   {
-    label: "Password Requests",
-    path: "/super-admin/password-requests",
-    icon: KeyRound,
-  },
-  {
-    label: "Security Alerts",
-    path: "/super-admin/security-alerts",
-    icon: BellRing,
-  },
-  {
-    label: "Admin Announcements",
-    path: "/super-admin/admin-announcements",
-    icon: Send,
-  },
-  {
-    label: "Admin Subject Requests",
-    path: "/super-admin/admin-requests",
-    icon: ClipboardList,
-  },
-  {
     label: "Feedback",
     path: "/super-admin/feedback",
     icon: MessageSquare,
-  },
-  {
-    label: "Institutions",
-    path: "/super-admin/institutions",
-    icon: Building2,
   },
   {
     label: "Curriculum",
