@@ -9,3 +9,18 @@
 @media(max-width:850px){.topbar-brand{width:auto}.topbar-center{display:none}.topbar-status{margin-left:auto}.super-admin-sidebar{width:220px}}
 @media(max-width:650px){.super-admin-topbar{height:60px;padding:0 14px}.super-admin-sidebar{width:60px;padding:15px 7px}.sidebar-heading,.sidebar-link span,.sidebar-arrow,.sidebar-version{display:none}.sidebar-link{justify-content:center;padding:0}.sidebar-logout{justify-content:center;padding:0}.sidebar-logout span{display:none}.super-admin-page{padding:14px}.content-system-strip{padding:0 12px}.super-admin-footer{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Super Admin visual refresh: stronger purple command-centre hierarchy */
+.super-admin-topbar{background:linear-gradient(105deg,#fff 0%,#fbfaff 62%,#f0ebff 100%);border-bottom-color:#ded7ff}
+.super-admin-sidebar{background:linear-gradient(180deg,#fff 0%,#f9f7ff 100%);border-right-color:#e0d9ff}
+.brand-mark{border-radius:13px;background:linear-gradient(145deg,#8b70ff 0%,#6244dc 55%,#4930b5 100%);box-shadow:0 8px 22px #6345db35}
+.super-admin-content{background:radial-gradient(ellipse at 88% 2%,#e9e2ff 0,transparent 34%),radial-gradient(ellipse at 3% 70%,#f1edff 0,transparent 28%),#f7f7fc}
+.content-system-strip{background:#fff;border-bottom-color:#e5defd}
+.super-admin-page{padding:clamp(20px,3vw,38px)}
+.sidebar-link{min-height:45px;border-radius:11px}
+.sidebar-link-active{background:linear-gradient(100deg,#eee9ff,#faf9ff);border-color:#dcd2ff;color:#5639ca;box-shadow:0 5px 16px #6848dc12}
+.sidebar-link-active:before{background:linear-gradient(180deg,#9a7cff,#5c3bd2)}
+.sidebar-count{margin-left:auto;min-width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;border-radius:999px;background:linear-gradient(135deg,#7657e9,#5435c4);color:#fff;font-size:10px;font-weight:900;line-height:1;box-shadow:0 3px 9px #6546d52b}
+.sidebar-link .sidebar-count+.sidebar-arrow{margin-left:0}
+@media(max-width:650px){.sidebar-count{position:absolute;right:2px;top:3px;min-width:17px;height:17px;padding:0 4px;font-size:9px}.sidebar-link-active:before{left:-1px}}
