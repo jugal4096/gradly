@@ -73,6 +73,8 @@ export async function createStudentProfileController(
       currentSemesterNumber,
       graduationYear,
       targetCgpa,
+      gapYears,
+      displayName,
     } = req.body;
 
     if (
@@ -105,7 +107,16 @@ export async function createStudentProfileController(
         targetCgpa !== null
           ? Number(targetCgpa)
           : null,
+      gapYears: gapYears !== undefined && gapYears !== null ? Number(gapYears) : 0,
     });
+
+    if (typeof displayName === "string") {
+      await pool.query("UPDATE public.users SET display_name = $1, updated_at = NOW() WHERE id = $2", [displayName.trim().slice(0, 120) || null, user.id]);
+    }
+    await pool.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_PROFILE_CREATED', 'student_profiles', $2, $3::jsonb)",
+      [user.id, profile.id, JSON.stringify({ source: "student_portal" })]
+    );
 
     return res.status(201).json({
       message: "Student profile created successfully.",
