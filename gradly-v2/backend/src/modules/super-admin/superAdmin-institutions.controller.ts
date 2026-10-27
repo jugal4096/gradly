@@ -27,6 +27,13 @@ export async function listInstitutionDirectory(
              'branchCount', (
                SELECT COUNT(*)::int FROM public.branches bx WHERE bx.program_id = p.id
              ),
+             'branches', (
+               SELECT COALESCE(jsonb_agg(jsonb_build_object(
+                 'id', bx.id, 'name', bx.name, 'code', to_jsonb(bx)->>'code',
+                 'active', COALESCE((to_jsonb(bx)->>'active')::boolean, TRUE)
+               ) ORDER BY bx.name), '[]'::jsonb)
+               FROM public.branches bx WHERE bx.program_id = p.id
+             ),
              'curriculumCount', (
                SELECT COUNT(*)::int FROM public.curricula cx WHERE cx.program_id = p.id
              )
