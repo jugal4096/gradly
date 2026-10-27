@@ -40,6 +40,7 @@ import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
 import SuperAdminAdmins from "./pages/super-admin/SuperAdminAdmins";
 import SuperAdminFeedback from "./pages/super-admin/SuperAdminFeedback";
+import SuperAdminInstitutions from "./pages/super-admin/SuperAdminInstitutions";
 import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
 import SuperAdminSettings from "./pages/super-admin/SuperAdminSettings";
 import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRequests";
@@ -175,6 +176,11 @@ function App() {
           <Route
             path="feedback"
             element={<SuperAdminFeedback />}
+          />
+
+          <Route
+            path="institutions"
+            element={<SuperAdminInstitutions />}
           />
 
           <Route
