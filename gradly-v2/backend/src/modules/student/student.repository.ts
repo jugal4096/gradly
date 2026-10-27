@@ -24,6 +24,7 @@ export async function findStudentProfileByUserId(
       sp.admission_mode_id,
       sp.student_identifier,
       sp.admission_year,
+      sp.gap_years,
       sp.current_semester_number,
       sp.graduation_year,
       sp.target_cgpa,
