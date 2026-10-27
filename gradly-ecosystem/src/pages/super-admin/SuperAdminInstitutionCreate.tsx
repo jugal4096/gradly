@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Building2, BookOpen, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./SuperAdminInstitutionCreate.css";
@@ -24,7 +24,7 @@ export default function SuperAdminInstitutionCreate() {
   const branches = selectedProgram?.branches ?? [];
   const headers = useMemo(()=>({Authorization:"Bearer "+(localStorage.getItem("gradly_super_admin_token")||""),Accept:"application/json"}),[]);
 
-  async function loadInstitutions() {
+  const loadInstitutions = useCallback(async () => {
     setLoading(true);
     try {
       const response=await fetch(API_ROOT+"/super-admin/institutions",{headers});
@@ -33,8 +33,8 @@ export default function SuperAdminInstitutionCreate() {
       setInstitutions(Array.isArray(data.institutions)?data.institutions:[]);
     } catch(e) { setError(e instanceof Error?e.message:"Could not load institutions."); }
     finally { setLoading(false); }
-  }
-  useEffect(()=>{void loadInstitutions();},[]);
+  }, [headers]);
+  useEffect(()=>{void loadInstitutions();},[loadInstitutions]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setError(""); setNotice("");
