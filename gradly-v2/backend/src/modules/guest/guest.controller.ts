@@ -73,7 +73,7 @@ export async function createGuest(req: Request, res: Response) {
     if (error instanceof Error && error.message.startsWith("Choose a Guest ID")) {
       return res.status(400).json({ message: error.message });
     }
-    if (error instanceof Error && error.message.startsWith("Select your institution")) {
+    if (error instanceof Error && error.message.startsWith("Select an institution")) {
       return res.status(400).json({ message: error.message });
     }
     console.error("Failed to create guest session:", error);
