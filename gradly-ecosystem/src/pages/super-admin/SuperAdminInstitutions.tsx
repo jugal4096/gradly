@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Building2, BookOpen, RefreshCw, Search, MapPin, Layers3, Clock3, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import "./SuperAdminInstitutions.css";
 
@@ -96,7 +97,7 @@ export default function SuperAdminInstitutions() {
   return <main className="sa-institutions">
     <header className="sa-inst-head">
       <div><span className="sa-inst-kicker">ACADEMIC DIRECTORY / SUPER ADMIN</span><h1>Institutions</h1><p>Manage the Gradly institution directory, inspect programs and branches, and review colleges submitted by Guest Mode users.</p></div>
-      <button className="sa-inst-refresh" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} className={loading ? "sa-inst-spinning" : ""}/> Refresh data</button>
+      <div className="sa-inst-head-actions"><Link className="sa-inst-refresh" to="/super-admin/institutions/create"><Building2 size={15}/> Add institution / syllabus</Link><button className="sa-inst-refresh" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} className={loading ? "sa-inst-spinning" : ""}/> Refresh data</button></div>
     </header>
 
     <section className="sa-inst-stats">
