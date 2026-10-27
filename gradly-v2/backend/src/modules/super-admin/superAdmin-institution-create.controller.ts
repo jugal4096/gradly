@@ -1,11 +1,12 @@
 import type { Response } from "express";
 import { pool } from "../../config/database";
 import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
+import type { PoolClient } from "pg";
 
 type Column = { column_name: string; is_nullable: string; column_default: string | null; is_identity: string; is_generated: string };
-async function insertRecord(client: any, table: string, fields: Record<string, unknown>) {
-  const meta = await client.query("SELECT column_name,is_nullable,column_default,is_identity,is_generated FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position", [table]);
-  const columns: Column[] = meta.rows;
+async function insertRecord(client: PoolClient, table: string, fields: Record<string, unknown>) {
+  const meta = await client.query<Column>("SELECT column_name,is_nullable,column_default,is_identity,is_generated FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position", [table]);
+  const columns = meta.rows;
   if (!columns.length) throw new Error(`Table public.${table} does not exist.`);
   const valid = new Set(columns.map(c => c.column_name));
   const entries = Object.entries(fields).filter(([key,value]) => valid.has(key) && value !== undefined);
@@ -57,7 +58,7 @@ export async function createSyllabusManually(req: SuperAdminAuthenticatedRequest
   const raw = typeof body.subjectsText === "string" ? body.subjectsText : "";
   if (!institutionId || !programId || !branchId) return res.status(400).json({success:false,message:"Select institution, program and branch."});
   if (!Number.isInteger(semesterCount) || semesterCount < 1 || semesterCount > 16) return res.status(400).json({success:false,message:"Semester count must be between 1 and 16."});
-  const subjects = [];
+  const subjects: Array<{semester:number;code:string;name:string;credits:number;type:string}> = [];
   for (const [index,line] of raw.split(/\r?\n/).map(v=>v.trim()).filter(Boolean).entries()) {
     const [semesterText,code="",name="",creditsText,type="CORE"] = line.split("|").map(v=>v.trim());
     const semester = Number(semesterText), credits = Number(creditsText);
@@ -81,7 +82,7 @@ export async function createSyllabusManually(req: SuperAdminAuthenticatedRequest
       curriculumFields[column] = ref.rows[0].id;
     }
     const curriculum = await insertRecord(client,"curricula",curriculumFields);
-    const semesters = [];
+    const semesters: Array<Record<string, unknown>> = [];
     for(let n=1;n<=semesterCount;n++) {
       const rows = subjects.filter(x=>x.semester===n);
       semesters.push(await insertRecord(client,"semesters",{curriculum_id:curriculum.id,semester_number:n,semester_no:n,name:`Semester ${n}`,expected_credits:rows.reduce((s,x)=>s+x.credits,0)}));
