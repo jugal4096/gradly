@@ -89,14 +89,27 @@ export async function createStudentProfileController(
       });
     }
 
+    const admissionYearValue = Number(admissionYear);
+    const semesterValue = Number(currentSemesterNumber);
+    const gapYearValue = Number(gapYears ?? 0);
+    if (!Number.isInteger(admissionYearValue) || admissionYearValue < 1980 || admissionYearValue > new Date().getFullYear() + 1) {
+      return res.status(400).json({ message: "Enter a valid admission year." });
+    }
+    if (!Number.isInteger(semesterValue) || semesterValue < 1 || semesterValue > 16) {
+      return res.status(400).json({ message: "Current semester must be between 1 and 16." });
+    }
+    if (!Number.isInteger(gapYearValue) || gapYearValue < 0 || gapYearValue > 20) {
+      return res.status(400).json({ message: "Gap years must be a whole number from 0 to 20." });
+    }
+
     const profile = await createProfile({
       userId: user.id,
       institutionId,
       curriculumId,
       admissionModeId: admissionModeId ?? null,
       studentIdentifier,
-      admissionYear: Number(admissionYear),
-      currentSemesterNumber: Number(currentSemesterNumber),
+      admissionYear: admissionYearValue,
+      currentSemesterNumber: semesterValue,
       graduationYear:
         graduationYear !== undefined &&
         graduationYear !== null
@@ -107,7 +120,7 @@ export async function createStudentProfileController(
         targetCgpa !== null
           ? Number(targetCgpa)
           : null,
-      gapYears: gapYears !== undefined && gapYears !== null ? Number(gapYears) : 0,
+      gapYears: gapYearValue,
     });
 
     if (typeof displayName === "string") {
