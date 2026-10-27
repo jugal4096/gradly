@@ -666,3 +666,8 @@
   .super-users-branch-overview { padding: 13px; }
   .super-users-branch-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.guest-permanent-delete{color:#b42318!important;border-color:#f2c8c5!important;background:#fff4f2!important}
+.guest-permanent-delete:hover,.guest-permanent-delete-button:hover{background:#ffe8e5!important;border-color:#e9a29b!important}
+.guest-permanent-delete:disabled,.guest-permanent-delete-button:disabled{opacity:.55;cursor:wait}
+.guest-permanent-delete-button{display:block;width:100%;margin:10px 0;border-color:#f0c2be!important;color:#a32118!important;background:#fff4f2!important}
