@@ -6,7 +6,8 @@ import "./GuestDashboard.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 type Subject = { id: string; name: string; credits: number; gradePoint: number };
 type SemesterEntry = { id: string; sgpa: number; credits: number };
-type GuestProfile = { id: string; guestId: string; displayName: string; institutionId?: string; institutionName?: string; expiresAt: string | null };
+type GuestProfile = { id: string; guestId: string; displayName: string; institutionId?: string; institutionName?: string; institutionLocality?: string | null; institutionRegion?: string | null; institutionCountry?: string | null; expiresAt: string | null };
+type GuestInstitution = { id: string; name: string; city?: string | null; region?: string | null; country?: string | null };
 const GECA_GRADE_SCALE = [
   { label: "A++", value: 10 },
   { label: "A+", value: 9 },
@@ -35,7 +36,7 @@ function readStoredProfile(): GuestProfile | null {
 export default function GuestDashboardPage() {
   const navigate = useNavigate();
   const { loginWithGoogle } = useAuth();
-  const [profile] = useState<GuestProfile | null>(readStoredProfile);
+  const [profile, setProfile] = useState<GuestProfile | null>(readStoredProfile);
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
   const [semesters, setSemesters] = useState<SemesterEntry[]>([
     { id: "sem1", sgpa: 0, credits: 0 },
@@ -46,6 +47,12 @@ export default function GuestDashboardPage() {
   const [unlocking, setUnlocking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"sgpa" | "cgpa">("sgpa");
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editInstitutionId, setEditInstitutionId] = useState("");
+  const [institutionOptions, setInstitutionOptions] = useState<GuestInstitution[]>([]);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [deletingProfile, setDeletingProfile] = useState(false);
   const token = sessionStorage.getItem("gradly_guest_session_token");
 
   useEffect(() => {
@@ -65,8 +72,9 @@ export default function GuestDashboardPage() {
         if (!response.ok) throw new Error(data?.message || "Guest session expired.");
         if (cancelled) return;
         const guest = data.guest;
-        const nextProfile = { ...storedProfile, guestId: guest.guestId ?? storedProfile.guestId, displayName: guest.displayName ?? storedProfile.displayName, institutionId: guest.institutionId ?? storedProfile.institutionId, institutionName: guest.institutionName ?? storedProfile.institutionName, expiresAt: guest.expiresAt };
+        const nextProfile = { ...storedProfile, guestId: guest.guestId ?? storedProfile.guestId, displayName: guest.displayName ?? storedProfile.displayName, institutionId: guest.institutionId ?? storedProfile.institutionId, institutionName: guest.institutionName ?? storedProfile.institutionName, institutionLocality: guest.institutionLocality ?? storedProfile.institutionLocality, institutionRegion: guest.institutionRegion ?? storedProfile.institutionRegion, institutionCountry: guest.institutionCountry ?? storedProfile.institutionCountry, expiresAt: guest.expiresAt };
         sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
+        setProfile(nextProfile);
         const workspace = guest.workspace;
         if (Array.isArray(workspace?.subjects)) setSubjects(workspace.subjects);
         if (Array.isArray(workspace?.semesters) && workspace.semesters.length) setSemesters(workspace.semesters);
@@ -80,6 +88,76 @@ export default function GuestDashboardPage() {
       });
     return () => { cancelled = true; };
   }, [navigate, token]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/api/guest/institutions`)
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message || "Could not load institutions.");
+        if (!cancelled) setInstitutionOptions(Array.isArray(data?.institutions) ? data.institutions : []);
+      })
+      .catch(() => { if (!cancelled) setInstitutionOptions([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  function openProfileEditor() {
+    setEditDisplayName(profile?.displayName ?? profile?.guestId ?? "");
+    setEditInstitutionId(profile?.institutionId ?? "");
+    setProfileEditorOpen(true);
+    setNotice("");
+  }
+
+  async function saveProfile() {
+    const sessionToken = sessionStorage.getItem("gradly_guest_session_token");
+    if (!sessionToken) { navigate("/login", { replace: true }); return; }
+    if (editDisplayName.trim().length < 2 || !editInstitutionId) {
+      setNotice("Enter a display name and select an institution.");
+      return;
+    }
+    try {
+      setSavingProfile(true);
+      setNotice("");
+      const response = await fetch(`${API_BASE_URL}/api/guest/session/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-guest-session": sessionToken },
+        body: JSON.stringify({ displayName: editDisplayName.trim(), institutionId: editInstitutionId }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || "Could not update your profile.");
+      const nextProfile = { ...(profile ?? readStoredProfile()!), ...data.guest };
+      sessionStorage.setItem("gradly_guest_profile", JSON.stringify(nextProfile));
+      setProfile(nextProfile);
+      setProfileEditorOpen(false);
+      setNotice("Your guest profile has been updated.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not update your profile.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function deleteGuestAccount() {
+    if (!window.confirm("Delete your Guest Mode account? You will be signed out. The Super Admin can still review the deleted profile and its recorded activity until it is permanently deleted.")) return;
+    const sessionToken = sessionStorage.getItem("gradly_guest_session_token");
+    if (!sessionToken) { navigate("/login", { replace: true }); return; }
+    try {
+      setDeletingProfile(true);
+      const response = await fetch(`${API_BASE_URL}/api/guest/session`, {
+        method: "DELETE",
+        headers: { "x-guest-session": sessionToken },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || "Could not delete your guest account.");
+      sessionStorage.removeItem("gradly_guest_session_token");
+      sessionStorage.removeItem("gradly_guest_profile");
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not delete your guest account.");
+    } finally {
+      setDeletingProfile(false);
+    }
+  }
 
   async function trackActivity(action: string, metadata: Record<string, string>) {
     const sessionToken = sessionStorage.getItem("gradly_guest_session_token");
@@ -171,7 +249,7 @@ export default function GuestDashboardPage() {
       <section className="guest-main">
         <header className="guest-topbar">
           <div><p className="guest-kicker">YOUR SPACE TO EXPLORE</p><h1>Good to have you here{profile?.displayName ? `, ${profile.displayName}` : ""}.</h1>{profile?.institutionName && <p className="guest-institution-label">INSTITUTION <strong>{profile.institutionName}</strong></p>}</div>
-          <div className="guest-id-pill"><span>GUEST ID</span><strong>{profile?.guestId ?? "…"}</strong></div>
+          <div className="guest-header-actions"><button type="button" className="guest-profile-edit-trigger" onClick={openProfileEditor}>Edit profile</button><div className="guest-id-pill"><span>GUEST ID</span><strong>{profile?.guestId ?? "…"}</strong></div></div>
         </header>
         <div className="guest-banner"><div><span className="guest-banner__eyebrow">A LITTLE HEAD START</span><h2>Try it out. Find your numbers.</h2><p>Use the calculators freely. Your work stays attached to this guest profile.</p></div><span className="guest-banner__orb" aria-hidden="true">G</span></div>
         <div className="guest-calculator">
@@ -211,6 +289,25 @@ export default function GuestDashboardPage() {
           </div>
           {notice && <p className="guest-notice" role="status">{notice}</p>}
         </div>
+        {profileEditorOpen && (
+          <div className="guest-modal-backdrop" role="presentation" onClick={() => setProfileEditorOpen(false)}>
+            <section className="guest-lock-modal guest-profile-modal" role="dialog" aria-modal="true" aria-labelledby="guest-profile-title" onClick={(event) => event.stopPropagation()}>
+              <button className="guest-lock-modal__close" onClick={() => setProfileEditorOpen(false)} aria-label="Close profile editor">×</button>
+              <p className="guest-kicker">GUEST ACCOUNT</p>
+              <h2 id="guest-profile-title">Edit your profile</h2>
+              <p>Update your display name and institution. Your Guest ID stays the same.</p>
+              <label htmlFor="guest-profile-display-name">Display name</label>
+              <input id="guest-profile-display-name" value={editDisplayName} onChange={(event) => setEditDisplayName(event.target.value)} maxLength={80} minLength={2} autoComplete="name" />
+              <label htmlFor="guest-profile-institution">College / institution</label>
+              <select id="guest-profile-institution" value={editInstitutionId} onChange={(event) => setEditInstitutionId(event.target.value)}>
+                <option value="">Select an available institution</option>
+                {institutionOptions.map((institution) => <option key={institution.id} value={institution.id}>{institution.name}{[institution.city, institution.region, institution.country].filter(Boolean).length ? ` — ${[institution.city, institution.region, institution.country].filter(Boolean).join(", ")}` : ""}</option>)}
+              </select>
+              <div className="guest-profile-actions"><button className="guest-lock-modal__primary" onClick={() => void saveProfile()} disabled={savingProfile}>{savingProfile ? "Saving…" : "Save profile"}</button><button className="guest-lock-modal__secondary" onClick={() => setProfileEditorOpen(false)}>Cancel</button></div>
+              <div className="guest-profile-delete"><strong>Delete Guest Mode account</strong><p>Your account will be hidden from your session, but the Super Admin can still review its activity until permanent deletion.</p><button type="button" onClick={() => void deleteGuestAccount()} disabled={deletingProfile}>{deletingProfile ? "Deleting…" : "Delete my guest account"}</button></div>
+            </section>
+          </div>
+        )}
         {lockedFeature && (
           <div className="guest-modal-backdrop" role="presentation" onClick={() => setLockedFeature(null)}>
             <section className="guest-lock-modal" role="dialog" aria-modal="true" aria-labelledby="guest-lock-title" onClick={(event) => event.stopPropagation()}>
