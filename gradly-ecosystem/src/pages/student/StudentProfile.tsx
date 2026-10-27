@@ -10,7 +10,7 @@ type Curriculum = { id: string; institution_id: string; program_name: string; br
 type Profile = { id: string; institution_id: string; curriculum_id: string; student_identifier: string; admission_year: number; gap_years: number; current_semester_number: number; graduation_year: number | null; target_cgpa: number | null };
 type ProfileForm = { displayName: string; institutionId: string; curriculumId: string; studentIdentifier: string; admissionYear: string; gapYears: string; currentSemesterNumber: string; graduationYear: string; targetCgpa: string };
 const emptyForm: ProfileForm = { displayName: "", institutionId: "", curriculumId: "", studentIdentifier: "", admissionYear: String(new Date().getFullYear() - 3), gapYears: "0", currentSemesterNumber: "1", graduationYear: String(new Date().getFullYear() + 1), targetCgpa: "9.0" };
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\\/+$/, "").replace(/\\/api$/i, "");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "");
 
 export default function StudentProfile() {
   const navigate = useNavigate();
