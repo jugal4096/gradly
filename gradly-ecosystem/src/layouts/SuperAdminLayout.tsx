@@ -1,6 +1,7 @@
 import {
   Activity,
   BookOpen,
+  Building2,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
@@ -9,6 +10,7 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  KeyRound,
   Users,
 } from "lucide-react";
 
@@ -44,9 +46,9 @@ const controlNavigation = [
     icon: ClipboardList,
   },
   {
-    label: "Feedback",
-    path: "/super-admin/feedback",
-    icon: MessageSquare,
+    label: "Institutions",
+    path: "/super-admin/institutions",
+    icon: Building2,
   },
   {
     label: "Curriculum",
@@ -54,8 +56,23 @@ const controlNavigation = [
     icon: BookOpen,
   },
   {
+    label: "Feedback",
+    path: "/super-admin/feedback",
+    icon: MessageSquare,
+  },
+  {
+    label: "Admin change requests",
+    path: "/super-admin/admin-requests",
+    icon: ClipboardList,
+  },
+  {
+    label: "Password requests",
+    path: "/super-admin/password-requests",
+    icon: KeyRound,
+  },
+  {
     label: "Audit Logs",
-    path: "/super-admin/audit",
+    path: "/super-admin/audit-logs",
     icon: ScrollText,
   },
 ];
