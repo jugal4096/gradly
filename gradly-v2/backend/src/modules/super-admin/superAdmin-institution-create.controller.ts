@@ -70,7 +70,17 @@ export async function createSyllabusManually(req: SuperAdminAuthenticatedRequest
     const scope = await client.query("SELECT i.id institution_id,p.id program_id,b.id branch_id FROM public.institutions i JOIN public.programs p ON p.institution_id=i.id JOIN public.branches b ON b.program_id=p.id WHERE i.id::text=$1 AND p.id::text=$2 AND b.id::text=$3 LIMIT 1",[institutionId,programId,branchId]);
     if (!scope.rowCount) return res.status(400).json({success:false,message:"Institution, program and branch do not match."});
     await client.query("BEGIN");
-    const curriculum = await insertRecord(client,"curricula",{institution_id:scope.rows[0].institution_id,program_id:scope.rows[0].program_id,branch_id:scope.rows[0].branch_id,version,total_semesters:semesterCount,status:"ACTIVE",name:version,total_credits:subjects.reduce((s,x)=>s+x.credits,0)});
+    const curriculumFields: Record<string, unknown> = {institution_id:scope.rows[0].institution_id,program_id:scope.rows[0].program_id,branch_id:scope.rows[0].branch_id,version: Number(version) || 1,total_semesters:semesterCount,status:"ACTIVE",name:version,total_credits:subjects.reduce((s,x)=>s+x.credits,0)};
+    const curriculumMeta = await client.query("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='curricula' AND is_nullable='NO' AND column_default IS NULL");
+    const referenceTables: Record<string,string> = {scheme_id:"schemes",academic_year_id:"academic_years",grading_system_id:"grading_systems",specialization_id:"specializations",admission_mode_id:"admission_modes"};
+    for (const row of curriculumMeta.rows as Array<{column_name:string}>) {
+      const column = row.column_name;
+      if (column in curriculumFields || !referenceTables[column]) continue;
+      const ref = await client.query(`SELECT id FROM public."${referenceTables[column]}" ORDER BY id LIMIT 1`);
+      if (!ref.rowCount) throw new Error(`Add at least one record to public.${referenceTables[column]} before creating a syllabus.`);
+      curriculumFields[column] = ref.rows[0].id;
+    }
+    const curriculum = await insertRecord(client,"curricula",curriculumFields);
     const semesters = [];
     for(let n=1;n<=semesterCount;n++) {
       const rows = subjects.filter(x=>x.semester===n);
