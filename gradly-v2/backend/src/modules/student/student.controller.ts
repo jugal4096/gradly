@@ -330,3 +330,92 @@ export async function getStudentDashboardController(
     return res.status(500).json({ message: "Failed to load student dashboard." });
   }
 }
+
+
+export async function listStudentTasksController(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!req.firebaseUser) return res.status(401).json({ message: "User is not authenticated." });
+    const user = await getGradlyUserByFirebaseUid(req.firebaseUser.uid);
+    if (!user || !user.active) return res.status(403).json({ message: "An active student account is required." });
+    const result = await pool.query(
+      "SELECT id, title, due_date, done, created_at, updated_at FROM public.student_study_tasks WHERE user_id = $1 ORDER BY done ASC, due_date ASC, created_at DESC",
+      [user.id]
+    );
+    return res.status(200).json({ tasks: result.rows });
+  } catch (error) {
+    console.error("Failed to load study tasks:", error);
+    return res.status(500).json({ message: "Could not load study tasks." });
+  }
+}
+
+export async function createStudentTaskController(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!req.firebaseUser) return res.status(401).json({ message: "User is not authenticated." });
+    const user = await getGradlyUserByFirebaseUid(req.firebaseUser.uid);
+    if (!user || !user.active) return res.status(403).json({ message: "An active student account is required." });
+    const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+    const dueDate = typeof req.body?.dueDate === "string" ? req.body.dueDate : "";
+    if (!title || title.length > 240) return res.status(400).json({ message: "Task title must be between 1 and 240 characters." });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || Number.isNaN(Date.parse(dueDate))) return res.status(400).json({ message: "Choose a valid due date." });
+    const result = await pool.query(
+      "INSERT INTO public.student_study_tasks (user_id, title, due_date) VALUES ($1, $2, $3::date) RETURNING id, title, due_date, done, created_at, updated_at",
+      [user.id, title, dueDate]
+    );
+    await pool.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_STUDY_TASK_CREATED', 'student_study_tasks', $2, $3::jsonb)",
+      [user.id, result.rows[0].id, JSON.stringify({ source: "student_portal" })]
+    );
+    return res.status(201).json({ task: result.rows[0] });
+  } catch (error) {
+    console.error("Failed to create study task:", error);
+    return res.status(500).json({ message: "Could not create study task." });
+  }
+}
+
+export async function updateStudentTaskController(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!req.firebaseUser) return res.status(401).json({ message: "User is not authenticated." });
+    const user = await getGradlyUserByFirebaseUid(req.firebaseUser.uid);
+    if (!user || !user.active) return res.status(403).json({ message: "An active student account is required." });
+    const title = typeof req.body?.title === "string" ? req.body.title.trim() : null;
+    const dueDate = typeof req.body?.dueDate === "string" ? req.body.dueDate : null;
+    const done = typeof req.body?.done === "boolean" ? req.body.done : null;
+    if (title !== null && (!title || title.length > 240)) return res.status(400).json({ message: "Task title must be between 1 and 240 characters." });
+    if (dueDate !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || Number.isNaN(Date.parse(dueDate)))) return res.status(400).json({ message: "Choose a valid due date." });
+    if (title === null && dueDate === null && done === null) return res.status(400).json({ message: "Provide a task title, due date, or completion status." });
+    const result = await pool.query(
+      "UPDATE public.student_study_tasks SET title = COALESCE($1, title), due_date = COALESCE($2::date, due_date), done = COALESCE($3, done), updated_at = NOW() WHERE id::text = $4 AND user_id = $5 RETURNING id, title, due_date, done, created_at, updated_at",
+      [title, dueDate, done, req.params.taskId, user.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: "Study task not found." });
+    await pool.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_STUDY_TASK_UPDATED', 'student_study_tasks', $2, $3::jsonb)",
+      [user.id, result.rows[0].id, JSON.stringify({ changedFields: [title !== null ? "title" : null, dueDate !== null ? "dueDate" : null, done !== null ? "done" : null].filter(Boolean) })]
+    );
+    return res.status(200).json({ task: result.rows[0] });
+  } catch (error) {
+    console.error("Failed to update study task:", error);
+    return res.status(500).json({ message: "Could not update study task." });
+  }
+}
+
+export async function deleteStudentTaskController(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!req.firebaseUser) return res.status(401).json({ message: "User is not authenticated." });
+    const user = await getGradlyUserByFirebaseUid(req.firebaseUser.uid);
+    if (!user || !user.active) return res.status(403).json({ message: "An active student account is required." });
+    const result = await pool.query(
+      "DELETE FROM public.student_study_tasks WHERE id::text = $1 AND user_id = $2 RETURNING id",
+      [req.params.taskId, user.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ message: "Study task not found." });
+    await pool.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_STUDY_TASK_DELETED', 'student_study_tasks', $2, '{}'::jsonb)",
+      [user.id, result.rows[0].id]
+    );
+    return res.status(200).json({ deleted: true });
+  } catch (error) {
+    console.error("Failed to delete study task:", error);
+    return res.status(500).json({ message: "Could not delete study task." });
+  }
+}
