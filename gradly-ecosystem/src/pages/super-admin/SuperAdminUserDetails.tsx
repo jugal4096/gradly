@@ -29,6 +29,7 @@ import {
     id: string;
     display_name: string | null;
     active: boolean;
+    deleted_at?: string | null;
     created_at: string;
     last_login_at: string | null;
   
@@ -309,9 +310,7 @@ import {
                 : "student-account inactive"
             }
           >
-            {student.active
-              ? "ACTIVE"
-              : "INACTIVE"}
+            {student.deleted_at ? "DELETED · " + formatTimestamp(student.deleted_at) : student.active ? "ACTIVE" : "INACTIVE"}
           </div>
   
         </section>
