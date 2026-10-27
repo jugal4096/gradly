@@ -25,6 +25,17 @@ export default function GuestSetupPage() {
   const [showInstitutionRequest, setShowInstitutionRequest] = useState(false);
   const [collegeName, setCollegeName] = useState("");
   const [locality, setLocality] = useState("");
+  const [indianStates, setIndianStates] = useState<string[]>([]);
+  const [requestState, setRequestState] = useState("");
+  const [indianCities, setIndianCities] = useState<string[]>([]);
+  const [requestCity, setRequestCity] = useState("");
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [locationLookupError, setLocationLookupError] = useState("");
+  const [requestCollegeMatches, setRequestCollegeMatches] = useState<ExternalInstitution[]>([]);
+  const [searchingRequestColleges, setSearchingRequestColleges] = useState(false);
+  const [requestCollegeSearchError, setRequestCollegeSearchError] = useState("");
+  const [requestExternalInstitutionId, setRequestExternalInstitutionId] = useState("");
   const [requestingInstitution, setRequestingInstitution] = useState(false);
   const [institutionRequestSent, setInstitutionRequestSent] = useState(false);
   const [institutionRequestError, setInstitutionRequestError] = useState("");
@@ -43,6 +54,75 @@ export default function GuestSetupPage() {
       .finally(() => { if (!cancelled) setLoadingInstitutions(false); });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!showInstitutionRequest || indianStates.length > 0) return;
+    const controller = new AbortController();
+    setLoadingStates(true);
+    setLocationLookupError("");
+    fetch(`${API_BASE_URL}/api/guest/india/states`, { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message || "Could not load Indian states.");
+        setIndianStates(Array.isArray(data?.states) ? data.states : []);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setLocationLookupError(cause instanceof Error ? cause.message : "Could not load Indian states.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoadingStates(false); });
+    return () => controller.abort();
+  }, [showInstitutionRequest, indianStates.length]);
+
+  useEffect(() => {
+    if (!requestState || !showInstitutionRequest) {
+      setIndianCities([]);
+      setRequestCity("");
+      return;
+    }
+    const controller = new AbortController();
+    setLoadingCities(true);
+    setLocationLookupError("");
+    fetch(`${API_BASE_URL}/api/guest/india/cities?state=${encodeURIComponent(requestState)}`, { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message || "Could not load cities for this state.");
+        setIndianCities(Array.isArray(data?.cities) ? data.cities : []);
+      })
+      .catch((cause) => {
+        if (!controller.signal.aborted) setLocationLookupError(cause instanceof Error ? cause.message : "Could not load cities.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoadingCities(false); });
+    return () => controller.abort();
+  }, [requestState, showInstitutionRequest]);
+
+  useEffect(() => {
+    const query = collegeName.trim();
+    if (!showInstitutionRequest || query.length < 2 || institutionRequestSent) {
+      setRequestCollegeMatches([]);
+      setRequestCollegeSearchError("");
+      setSearchingRequestColleges(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        setSearchingRequestColleges(true);
+        setRequestCollegeSearchError("");
+        const response = await fetch(`${API_BASE_URL}/api/guest/institution-search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.message || "Could not search colleges.");
+        setRequestCollegeMatches(Array.isArray(data?.institutions) ? data.institutions : []);
+      } catch (cause) {
+        if (!controller.signal.aborted) {
+          setRequestCollegeMatches([]);
+          setRequestCollegeSearchError(cause instanceof Error ? cause.message : "Could not search colleges.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setSearchingRequestColleges(false);
+      }
+    }, 400);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [collegeName, showInstitutionRequest, institutionRequestSent]);
 
   useEffect(() => {
     const query = institutionSearch.trim();
@@ -85,8 +165,8 @@ export default function GuestSetupPage() {
   }
 
   async function handleInstitutionRequest() {
-    if (collegeName.trim().length < 2 || locality.trim().length < 2) {
-      setInstitutionRequestError("Please enter both the college name and its locality or city.");
+    if (collegeName.trim().length < 2 || !requestState || !requestCity) {
+      setInstitutionRequestError("Choose a college name, state and city before submitting.");
       return;
     }
     try {
@@ -95,7 +175,7 @@ export default function GuestSetupPage() {
       const response = await fetch(`${API_BASE_URL}/api/guest/institution-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ collegeName: collegeName.trim(), locality: locality.trim(), guestId, externalInstitutionId: selectedExternalInstitution?.externalId ?? "" }),
+        body: JSON.stringify({ collegeName: collegeName.trim(), locality: `${requestCity}, ${requestState}, India`, guestId, externalInstitutionId: requestExternalInstitutionId || selectedExternalInstitution?.externalId || "" }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "Could not send your institution request.");
@@ -236,14 +316,44 @@ export default function GuestSetupPage() {
                         <p>Share these details and we’ll review adding it to Gradly.</p>
                       </div>
                       <label htmlFor="request-college-name">College / Institution name</label>
-                      <input id="request-college-name" value={collegeName} onChange={(event) => setCollegeName(event.target.value)} maxLength={160} placeholder="e.g. Government College of Engineering" autoComplete="organization" />
-                      <label htmlFor="request-college-locality">Locality / City</label>
-                      <input id="request-college-locality" value={locality} onChange={(event) => setLocality(event.target.value)} maxLength={120} placeholder="e.g. Chhatrapati Sambhajinagar, Maharashtra" autoComplete="address-level2" />
+                      <input id="request-college-name" value={collegeName} onChange={(event) => { setCollegeName(event.target.value); setRequestExternalInstitutionId(""); }} maxLength={160} placeholder="Search college or enter its name…" autoComplete="organization" />
+                      {searchingRequestColleges && <small className="guest-live-search-status">Searching colleges and universities online…</small>}
+                      {requestCollegeSearchError && <small className="guest-live-search-error" role="status">{requestCollegeSearchError}</small>}
+                      {requestCollegeMatches.length > 0 && !requestExternalInstitutionId && (
+                        <div className="guest-live-institution-results guest-request-college-results" role="listbox" aria-label="College search results">
+                          {requestCollegeMatches.map((institution) => (
+                            <button key={institution.externalId} type="button" role="option" aria-selected="false" onClick={() => {
+                              setCollegeName(institution.name);
+                              setRequestExternalInstitutionId(institution.externalId);
+                              const matchedState = indianStates.find((state) => state.toLowerCase() === institution.region.toLowerCase());
+                              if (matchedState) setRequestState(matchedState);
+                              if (institution.city) setRequestCity(institution.city);
+                              setLocality([institution.city, institution.region, institution.country].filter(Boolean).join(", "));
+                              setRequestCollegeMatches([]);
+                              setInstitutionRequestError("");
+                            }}>
+                              <strong>{institution.name}</strong>
+                              <span>{[institution.city, institution.region, institution.country].filter(Boolean).join(", ") || "Location not listed"}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <label htmlFor="request-college-state">State / Union Territory</label>
+                      <select id="request-college-state" value={requestState} onChange={(event) => { setRequestState(event.target.value); setRequestCity(""); setLocality(""); setInstitutionRequestError(""); }} disabled={loadingStates || requestingInstitution} required>
+                        <option value="">{loadingStates ? "Loading Indian states…" : "Choose state / Union Territory"}</option>
+                        {indianStates.map((state) => <option key={state} value={state}>{state}</option>)}
+                      </select>
+                      <label htmlFor="request-college-city">City</label>
+                      <select id="request-college-city" value={requestCity} onChange={(event) => { setRequestCity(event.target.value); setLocality(event.target.value ? `${event.target.value}, ${requestState}, India` : ""); setInstitutionRequestError(""); }} disabled={!requestState || loadingCities || requestingInstitution} required>
+                        <option value="">{!requestState ? "Choose a state first" : loadingCities ? "Loading cities…" : "Choose city"}</option>
+                        {indianCities.map((city) => <option key={city} value={city}>{city}</option>)}
+                      </select>
+                      {locationLookupError && <small className="guest-live-search-error" role="status">{locationLookupError}</small>}
                       <div className="guest-institution-request__proforma">
-                        <span>EMAIL PROFORMA</span>
-                        <p><b>To:</b> jugalpkhr@gmail.com</p>
-                        <p><b>Subject:</b> Gradly institution request — {collegeName.trim() || "[College name]"}</p>
-                        <p><b>Details:</b> {collegeName.trim() || "[College name]"} · {locality.trim() || "[Locality / City]"} · Guest ID: {guestId}</p>
+                        <span>REQUEST PREVIEW</span>
+                        <p><b>College:</b> {collegeName.trim() || "[College name]"}</p>
+                        <p><b>Location:</b> {requestCity && requestState ? `${requestCity}, ${requestState}, India` : "[Choose state and city]"}</p>
+                        <p><b>Guest ID:</b> {guestId}</p>
                       </div>
                       <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution}>
                         {requestingInstitution ? "Sending request…" : "Send request to admin"} <span>↗</span>
