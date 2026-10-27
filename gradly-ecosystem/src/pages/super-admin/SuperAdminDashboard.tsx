@@ -691,7 +691,7 @@ export default function SuperAdminDashboard() {
             <button
               type="button"
               className="sd-side-link"
-              onClick={() => navigate("/super-admin/courses")}
+              onClick={() => navigate("/super-admin/institutions")}
             >
               <GraduationCap size={18} />
               <span>Courses</span>
@@ -916,7 +916,7 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/courses")}
+                    onClick={() => navigate("/super-admin/institutions")}
                   >
                     <GraduationCap size={18} />
                     <span>Courses</span>
