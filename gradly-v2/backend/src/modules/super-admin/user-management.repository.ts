@@ -118,7 +118,7 @@ export async function findGuestSessions(search?: string) {
       COALESCE(metadata->>'guest_id', metadata->>'display_id') AS guest_id,
       metadata->>'display_name' AS display_name,
       metadata->>'institution_name' AS institution_name,
-      (expires_at IS NULL OR expires_at > NOW()) AS active,
+      (COALESCE(metadata->>'deleted_at', '') = '' AND (expires_at IS NULL OR expires_at > NOW())) AS active,
       jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'subjects') = 'array'
         THEN metadata->'guest_workspace'->'subjects' ELSE '[]'::jsonb END) AS subject_count,
       jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'semesters') = 'array'
