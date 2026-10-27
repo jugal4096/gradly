@@ -194,6 +194,44 @@ export async function saveGuestWorkspace(req: Request, res: Response) {
 }
 
 
+export async function listIndianStates(_req: Request, res: Response) {
+  try {
+    const response = await fetch("https://countriesnow.space/api/v0.1/countries/states", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ country: "India" }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error("India states service unavailable.");
+    const data = await response.json() as { error?: boolean; data?: { states?: Array<{ name?: string }> } };
+    if (data.error || !Array.isArray(data.data?.states)) throw new Error("Could not read Indian states.");
+    return res.status(200).json({ states: data.data.states.map((item) => item.name ?? "").filter(Boolean).sort((a, b) => a.localeCompare(b)) });
+  } catch (error) {
+    console.error("Could not load Indian states:", error);
+    return res.status(502).json({ message: "Could not load Indian states right now. Please try again." });
+  }
+}
+
+export async function listIndianCities(req: Request, res: Response) {
+  const state = typeof req.query.state === "string" ? req.query.state.trim().slice(0, 100) : "";
+  if (!state) return res.status(400).json({ message: "Select an Indian state first." });
+  try {
+    const response = await fetch("https://countriesnow.space/api/v0.1/countries/state/cities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ country: "India", state }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error("India cities service unavailable.");
+    const data = await response.json() as { error?: boolean; data?: string[] };
+    if (data.error || !Array.isArray(data.data)) throw new Error("Could not read Indian cities.");
+    return res.status(200).json({ cities: [...new Set(data.data.filter((item) => typeof item === "string" && item.trim()))].sort((a, b) => a.localeCompare(b)) });
+  } catch (error) {
+    console.error("Could not load Indian cities:", error);
+    return res.status(502).json({ message: "Could not load cities for this state right now. Please try again." });
+  }
+}
+
 export async function searchGuestInstitutions(req: Request, res: Response) {
   const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
   if (query.length < 2) return res.status(200).json({ institutions: [] });
