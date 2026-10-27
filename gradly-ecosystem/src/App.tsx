@@ -136,13 +136,13 @@ function App() {
           />
 
           <Route path="admins" element={<SuperAdminControlCenter />} />
-          <Route path="institutions" element={<SuperAdminControlCenter />} />
+          <Route path="institutions" element={<SuperAdminControlCenter />} />\n          <Route path="institution-requests" element={<SuperAdminControlCenter />} />
           <Route path="courses" element={<SuperAdminControlCenter />} />
           <Route path="curriculum" element={<SuperAdminControlCenter />} />
-          <Route path="feedback" element={<SuperAdminControlCenter />} />
+          <Route path="feedback" element={<SuperAdminControlCenter />} />\n          <Route path="student-feedback" element={<SuperAdminControlCenter />} />
           <Route path="audit" element={<SuperAdminControlCenter />} />
           <Route path="audit-logs" element={<SuperAdminControlCenter />} />
-          <Route path="settings" element={<SuperAdminControlCenter />} />
+          <Route path="settings" element={<SuperAdminControlCenter />} />\n          <Route path="security-notifications" element={<SuperAdminControlCenter />} />\n          <Route path="guest-sessions" element={<SuperAdminControlCenter />} />
           <Route path="admin-requests" element={<SuperAdminControlCenter />} />
           <Route path="password-requests" element={<SuperAdminControlCenter />} />
         </Route>
