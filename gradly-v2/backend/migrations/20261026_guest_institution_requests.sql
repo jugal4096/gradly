@@ -12,3 +12,6 @@ CREATE TABLE IF NOT EXISTS public.guest_institution_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_guest_institution_requests_status_created
   ON public.guest_institution_requests (status, created_at DESC);
+
+ALTER TABLE public.guest_institution_requests
+  ADD COLUMN IF NOT EXISTS email TEXT;
