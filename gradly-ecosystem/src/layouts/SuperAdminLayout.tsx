@@ -3,6 +3,7 @@ import {
   BellRing,
   Send,
   BookOpen,
+  Building2,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
@@ -70,6 +71,11 @@ const controlNavigation = [
     label: "Feedback",
     path: "/super-admin/feedback",
     icon: MessageSquare,
+  },
+  {
+    label: "Institutions",
+    path: "/super-admin/institutions",
+    icon: Building2,
   },
   {
     label: "Curriculum",
