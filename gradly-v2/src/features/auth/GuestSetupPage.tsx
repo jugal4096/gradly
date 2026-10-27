@@ -63,10 +63,13 @@ export default function GuestSetupPage() {
         const response = await fetch(`${API_BASE_URL}/api/guest/institution-search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
         const data = await response.json().catch(() => null);
         if (!response.ok) throw new Error(data?.message || "Could not search colleges.");
-        setRequestCollegeMatches(Array.isArray(data?.institutions) ? data.institutions : []);
+        const matches = Array.isArray(data?.institutions) ? data.institutions : [];
+        setRequestCollegeMatches(matches);
+        if (matches.length === 0) setRequestLocality("Location not available from institution directory");
       } catch (cause) {
         if (!controller.signal.aborted) {
           setRequestCollegeMatches([]);
+          setRequestLocality("Location not available from institution directory");
           setRequestCollegeSearchError(cause instanceof Error ? cause.message : "Could not search colleges.");
         }
       } finally {
@@ -90,8 +93,8 @@ export default function GuestSetupPage() {
   }
 
   async function handleInstitutionRequest() {
-    if (collegeName.trim().length < 2 || !requestExternalInstitutionId || !requestLocality || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())) {
-      setInstitutionRequestError("Choose a college from the suggestions so its location can be detected automatically, and enter a valid email address.");
+    if (collegeName.trim().length < 2 || !requestLocality || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())) {
+      setInstitutionRequestError("Enter a college name and a valid email address. Gradly will attach the location it can find automatically.");
       return;
     }
     try {
@@ -251,7 +254,7 @@ export default function GuestSetupPage() {
                         <p><b>Guest ID:</b> {guestId}</p>
                         <p><b>Email:</b> {requestEmail.trim() || "[Your email address]"}</p>
                       </div>
-                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution || !requestExternalInstitutionId || !requestLocality || collegeName.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())}>
+                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution || !requestLocality || collegeName.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())}>
                         {requestingInstitution ? "Sending request…" : "Send request to admin"} <span>↗</span>
                       </button>
                       <small className="guest-setup-form__hint">This submits your request directly to the Super Admin inbox for review.</small>
