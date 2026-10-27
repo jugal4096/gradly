@@ -24,7 +24,6 @@ export default function GuestSetupPage() {
   const [error, setError] = useState("");
   const [showInstitutionRequest, setShowInstitutionRequest] = useState(false);
   const [collegeName, setCollegeName] = useState("");
-  const [locality, setLocality] = useState("");
   const [indianStates, setIndianStates] = useState<string[]>([]);
   const [requestState, setRequestState] = useState("");
   const [indianCities, setIndianCities] = useState<string[]>([]);
@@ -277,7 +276,7 @@ export default function GuestSetupPage() {
                 {externalInstitutions.length > 0 && !selectedExternalInstitution && (
                   <div className="guest-live-institution-results" role="listbox" aria-label="Live institution results">
                     {externalInstitutions.map((institution) => (
-                      <button key={institution.externalId} type="button" role="option" aria-selected="false" onClick={() => { setSelectedExternalInstitution(institution); setInstitutionId(""); setInstitutionSearch(institution.name); setCollegeName(institution.name); setLocality([institution.city, institution.region, institution.country].filter(Boolean).join(", ")); setShowInstitutionRequest(false); setError(""); }}>
+                      <button key={institution.externalId} type="button" role="option" aria-selected="false" onClick={() => { setSelectedExternalInstitution(institution); setInstitutionId(""); setInstitutionSearch(institution.name); setCollegeName(institution.name);  setShowInstitutionRequest(false); setError(""); }}>
                         <strong>{institution.name}</strong>
                         <span>{[institution.city, institution.region, institution.country].filter(Boolean).join(", ") || "Location not listed"}</span>
                       </button>
@@ -339,12 +338,12 @@ export default function GuestSetupPage() {
                         </div>
                       )}
                       <label htmlFor="request-college-state">State / Union Territory</label>
-                      <select id="request-college-state" value={requestState} onChange={(event) => { setRequestState(event.target.value); setRequestCity(""); setLocality(""); setInstitutionRequestError(""); }} disabled={loadingStates || requestingInstitution} required>
+                      <select id="request-college-state" value={requestState} onChange={(event) => { setRequestState(event.target.value); setRequestCity(""); setInstitutionRequestError(""); }} disabled={loadingStates || requestingInstitution} required>
                         <option value="">{loadingStates ? "Loading Indian states…" : "Choose state / Union Territory"}</option>
                         {indianStates.map((state) => <option key={state} value={state}>{state}</option>)}
                       </select>
                       <label htmlFor="request-college-city">City</label>
-                      <select id="request-college-city" value={requestCity} onChange={(event) => { setRequestCity(event.target.value); setLocality(event.target.value ? `${event.target.value}, ${requestState}, India` : ""); setInstitutionRequestError(""); }} disabled={!requestState || loadingCities || requestingInstitution} required>
+                      <select id="request-college-city" value={requestCity} onChange={(event) => { setRequestCity(event.target.value); setInstitutionRequestError(""); }} disabled={!requestState || loadingCities || requestingInstitution} required>
                         <option value="">{!requestState ? "Choose a state first" : loadingCities ? "Loading cities…" : "Choose city"}</option>
                         {indianCities.map((city) => <option key={city} value={city}>{city}</option>)}
                       </select>
@@ -355,7 +354,7 @@ export default function GuestSetupPage() {
                         <p><b>Location:</b> {requestCity && requestState ? `${requestCity}, ${requestState}, India` : "[Choose state and city]"}</p>
                         <p><b>Guest ID:</b> {guestId}</p>
                       </div>
-                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution}>
+                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution || loadingStates || loadingCities || !requestState || !requestCity || collegeName.trim().length < 2}>
                         {requestingInstitution ? "Sending request…" : "Send request to admin"} <span>↗</span>
                       </button>
                       <small className="guest-setup-form__hint">This submits your request directly to the Super Admin inbox for review.</small>
