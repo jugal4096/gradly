@@ -26,7 +26,6 @@ export default function AdminLogin() {
   const [mode, setMode] = useState<"login" | "forgot">("login");
   const [googleReady, setGoogleReady] = useState(false);
   const [requests, setRequests] = useState<PasswordRequest[]>([]);
-  const [newPassword, setNewPassword] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
 
   useEffect(() => onAuthStateChanged(auth, (user) => setGoogleReady(Boolean(user))), []);
@@ -92,26 +91,7 @@ export default function AdminLogin() {
     } finally { setRequestBusy(false); }
   }
 
-  async function finishApprovedReset(request: PasswordRequest) {
-    setRequestBusy(true); setError(""); setNotice("");
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Sign in with the same Google account first.");
-      if (newPassword.length < 12 || newPassword.length > 128) throw new Error("New password must be 12–128 characters.");
-      const token = await user.getIdToken();
-      const response = await fetch(`${API_BASE}/admin-password-requests/${encodeURIComponent(request.id)}/reset`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ password: newPassword }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || "Password reset could not be completed.");
-      setNotice(data.message || "Password updated. Sign in with your new password.");
-      setNewPassword(""); setMode("login");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Password reset failed.");
-    } finally { setRequestBusy(false); }
-  }
+
 
   return (
     <main className="admin-login-page">
@@ -152,7 +132,7 @@ export default function AdminLogin() {
             </form>
           ) : (
             <div className="admin-login-form">
-              <p className="admin-login-help">Password recovery is reviewed by Super Admin. Verify the Google account linked to your active Admin account, then submit a request. An approved request is required before setting a new password.</p>
+              <p className="admin-login-help">Password recovery is reviewed by Super Admin. Verify the Google account linked to your active Admin account, then submit a request. Only Super Admin can complete a forgotten-password request.</p>
               <label htmlFor="recovery-admin-code">Admin ID</label>
               <input id="recovery-admin-code" value={adminCode} onChange={e => setAdminCode(e.target.value)} placeholder="Enter your Admin ID" autoComplete="username" required />
               <button className="admin-login-google" type="button" onClick={withGoogle} disabled={requestBusy}><KeyRound size={17} /> {requestBusy ? "Please wait…" : googleReady ? "Verify / refresh Google session" : "Continue with Google"}</button>
@@ -160,7 +140,7 @@ export default function AdminLogin() {
               {requests.map(request => <div className="admin-login-request" key={request.id}>
                 <div><strong>{request.admin_code}</strong><span className={`request-status ${request.status.toLowerCase()}`}>{request.status.replaceAll("_", " ")}</span></div>
                 {request.review_note && <p>{request.review_note}</p>}
-                {request.status === "APPROVED" && <><label htmlFor={`new-password-${request.id}`}>New password (12–128 characters)</label><input id={`new-password-${request.id}`} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} autoComplete="new-password" /><button className="admin-login-submit" type="button" onClick={() => finishApprovedReset(request)} disabled={requestBusy}>{requestBusy ? "Updating…" : "Set new password"}</button></>}
+                {request.status === "APPROVED" && <p>Approved. Please contact Super Admin to complete your password reset; you cannot change it from this screen.</p>}
               </div>)}
             </div>
           )}
