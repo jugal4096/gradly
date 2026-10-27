@@ -44,6 +44,7 @@ export async function findAllStudents(search?: string) {
       u.display_name,
       u.role,
       u.active,
+      u.deleted_at,
       u.last_login_at,
       u.created_at,
 
@@ -147,6 +148,7 @@ export async function findStudentById(
       u.display_name,
       u.role,
       u.active,
+      u.deleted_at,
       u.last_login_at,
       u.created_at,
       u.updated_at,
