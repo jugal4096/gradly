@@ -42,6 +42,7 @@ export async function findAllStudents(search?: string) {
     SELECT
       u.id,
       u.display_name,
+      u.email,
       u.role,
       u.active,
       u.deleted_at,
@@ -49,6 +50,7 @@ export async function findAllStudents(search?: string) {
       u.created_at,
 
       sp.id AS student_profile_id,
+      sp.student_identifier,
       sp.admission_year,
       sp.current_semester_number,
       sp.graduation_year,
