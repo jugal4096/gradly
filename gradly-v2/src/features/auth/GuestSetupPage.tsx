@@ -244,6 +244,7 @@ export default function GuestSetupPage() {
                   setInstitutionId("");
                   setCollegeName(query);
                   setRequestExternalInstitutionId("");
+                  setInstitutionRequestSent(false);
                   setError("");
                   setInstitutionRequestError("");
                   setShowInstitutionRequest(false);
