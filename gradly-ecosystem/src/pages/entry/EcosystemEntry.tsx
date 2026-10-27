@@ -8,10 +8,6 @@ import {
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  const mainAppUrl =
-    import.meta.env.VITE_MAIN_APP_URL ||
-    "http://localhost:5174";
-
   return (
     <main className="system-page">
 
@@ -85,7 +81,7 @@ function EcosystemEntry() {
 
           {/* USER */}
           <a
-            href={mainAppUrl}
+            href="/student/login"
             className="interface-module user-module"
           >
 
