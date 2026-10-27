@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { firebaseAuth } from "../config/firebase-admin";
 import { recordAuthenticatedActivity } from "../modules/admin/admin-privacy.controller";
+import { pool } from "../config/database";
 
 export interface AuthenticatedRequest extends Request {
   firebaseUser?: {
@@ -28,6 +29,16 @@ export async function authenticateFirebaseToken(
     const token = authorization.split("Bearer ")[1];
 
     const decodedToken = await firebaseAuth.verifyIdToken(token);
+
+    // A valid Firebase token is not enough for a soft-deleted Gradly account.
+    // Unknown accounts may still call /auth/sync to create their first Gradly row.
+    const account = await pool.query(
+      "SELECT active, deleted_at FROM public.users WHERE firebase_uid = $1 LIMIT 1",
+      [decodedToken.uid]
+    );
+    if (account.rows[0] && (!account.rows[0].active || account.rows[0].deleted_at)) {
+      return res.status(403).json({ message: "This Gradly account has been deactivated." });
+    }
 
     req.firebaseUser = {
       uid: decodedToken.uid,
