@@ -5,7 +5,7 @@ import "./GuestSetupPage.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 const LOGO_URL = "https://raw.githubusercontent.com/jugal4096/gradly/fix/gradly-audit-2026-10-17/gradly-ecosystem/public/gradly-ecosystem-logo.png";
-type GuestInstitution = { id: string; name: string };
+type GuestInstitution = { id: string; name: string; city?: string | null; region?: string | null; country?: string | null };
 type ExternalInstitution = { externalId: string; name: string; city: string; region: string; country: string; homepageUrl: string | null };
 
 export default function GuestSetupPage() {
@@ -25,6 +25,7 @@ export default function GuestSetupPage() {
   const [requestState, setRequestState] = useState("");
   const [indianCities, setIndianCities] = useState<string[]>([]);
   const [requestCity, setRequestCity] = useState("");
+  const [requestLocality, setRequestLocality] = useState("");
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [locationLookupError, setLocationLookupError] = useState("");
@@ -34,10 +35,9 @@ export default function GuestSetupPage() {
   const [requestExternalInstitutionId, setRequestExternalInstitutionId] = useState("");
   const [requestingInstitution, setRequestingInstitution] = useState(false);
   const [institutionRequestSent, setInstitutionRequestSent] = useState(false);
-  const databaseInstitutionMatches = institutionSearch.trim().length >= 2
-    ? institutions.filter((institution) => institution.name.toLowerCase().includes(institutionSearch.trim().toLowerCase())).slice(0, 12)
-    : [];
-  const institutionNotAvailable = institutionSearch.trim().length >= 2 && !loadingInstitutions && databaseInstitutionMatches.length === 0 && !institutionId;
+  const databaseInstitutionMatches = institutions;
+  const selectedInstitution = institutions.find((institution) => institution.id === institutionId) ?? null;
+  const institutionNotAvailable = false;
   const [institutionRequestError, setInstitutionRequestError] = useState("");
 
   useEffect(() => {
@@ -138,8 +138,8 @@ export default function GuestSetupPage() {
   }
 
   async function handleInstitutionRequest() {
-    if (collegeName.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim()) || !requestState || !requestCity) {
-      setInstitutionRequestError("Enter a valid email address and choose a college name, state and city.");
+    if (collegeName.trim().length < 2 || !requestExternalInstitutionId || !requestLocality || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())) {
+      setInstitutionRequestError("Choose a college from the suggestions so its location can be detected automatically, and enter a valid email address.");
       return;
     }
     try {
@@ -148,7 +148,7 @@ export default function GuestSetupPage() {
       const response = await fetch(`${API_BASE_URL}/api/guest/institution-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ collegeName: collegeName.trim(), email: requestEmail.trim(), locality: `${requestCity}, ${requestState}, India`, guestId, externalInstitutionId: requestExternalInstitutionId }),
+        body: JSON.stringify({ collegeName: collegeName.trim(), email: requestEmail.trim(), locality: requestLocality, guestId, externalInstitutionId: requestExternalInstitutionId }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "Could not send your institution request.");
@@ -237,37 +237,22 @@ export default function GuestSetupPage() {
               <div className="guest-setup-form__heading"><span>YOUR ID IS READY</span><h2>Select institution</h2><p>We’ll remember this choice on your guest profile.</p></div>
               <div className="guest-setup-form__identity"><span>GUEST ID</span><strong>{guestId}</strong><button type="button" onClick={() => { setError(""); setStep(1); }}>Edit</button></div>
               <div className="guest-live-institution-search">
-                <label htmlFor="guest-institution-search">Search your college / university</label>
-                <input id="guest-institution-search" value={institutionSearch} onChange={(event) => {
-                  const query = event.target.value;
-                  setInstitutionSearch(query);
-                  setInstitutionId("");
-                  setCollegeName(query);
-                  setRequestExternalInstitutionId("");
-                  setInstitutionRequestSent(false);
+                <label htmlFor="guest-institution-select">Choose your college / university</label>
+                <select id="guest-institution-select" value={institutionId} onChange={(event) => {
+                  const id = event.target.value;
+                  setInstitutionId(id);
+                  setInstitutionSearch(institutions.find((item) => item.id === id)?.name ?? "");
                   setError("");
-                  setInstitutionRequestError("");
-                  setShowInstitutionRequest(false);
-                }} maxLength={100} placeholder="Start typing your college name…" autoComplete="off" disabled={startingGuest} />
-                <small className="guest-setup-form__hint">Searches colleges already listed in Gradly.</small>
+                }} disabled={startingGuest || loadingInstitutions} required>
+                  <option value="">{loadingInstitutions ? "Loading colleges…" : "Select an available institution"}</option>
+                  {databaseInstitutionMatches.map((institution) => (
+                    <option key={institution.id} value={institution.id}>{institution.name}</option>
+                  ))}
+                </select>
+                <small className="guest-setup-form__hint">Choose from colleges already in Gradly. The full list is shown directly—no search required.</small>
                 {loadingInstitutions && <small className="guest-live-search-status">Loading Gradly’s college directory…</small>}
-                {!loadingInstitutions && institutionSearch.trim().length >= 2 && databaseInstitutionMatches.length > 0 && (
-                  <div className="guest-live-institution-results" role="listbox" aria-label="Gradly college results">
-                    {databaseInstitutionMatches.map((institution) => (
-                      <button key={institution.id} type="button" role="option" aria-selected={institutionId === institution.id} onClick={() => {
-                        setInstitutionId(institution.id);
-                        setInstitutionSearch(institution.name);
-                        setCollegeName(institution.name);
-                        setShowInstitutionRequest(false);
-                        setError("");
-                      }}>
-                        <strong>{institution.name}</strong>
-                        <span>{institutionId === institution.id ? "Selected from Gradly database" : "Available in Gradly"}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {institutionId && <div className="guest-live-institution-selected"><span>COLLEGE SELECTED</span><strong>{institutionSearch}</strong><small>This college is available in Gradly.</small></div>}
+                {!loadingInstitutions && institutions.length === 0 && <small className="guest-live-search-error">The college directory is empty or unavailable right now.</small>}
+                {selectedInstitution && <div className="guest-live-institution-selected"><span>COLLEGE SELECTED</span><strong>{selectedInstitution.name}</strong><small>{[selectedInstitution.city, selectedInstitution.region, selectedInstitution.country].filter(Boolean).join(", ") || "Location not listed in Gradly"}</small></div>}
               </div>
               {institutionNotAvailable && <div className="guest-institution-missing" role="status"><span>Your college is currently not available in Gradly.</span><strong>Request the Super Admin to add it below.</strong></div>}
               {!institutionNotAvailable && !institutionId && <div className="guest-institution-missing"><span>Can’t find your college?</span><button type="button" onClick={() => { setShowInstitutionRequest((visible) => !visible); setInstitutionRequestError(""); }}>Request college addition</button></div>}
@@ -285,8 +270,8 @@ export default function GuestSetupPage() {
                         <p>Share these details and we’ll review adding it to Gradly.</p>
                       </div>
                       <label htmlFor="request-college-name">College / Institution name</label>
-                      <input id="request-college-name" value={collegeName} onChange={(event) => { setCollegeName(event.target.value); setRequestExternalInstitutionId(""); }} maxLength={160} placeholder="Search college or enter its name…" autoComplete="organization" />
-                      {searchingRequestColleges && <small className="guest-live-search-status">Searching colleges and universities online…</small>}
+                      <input id="request-college-name" value={collegeName} onChange={(event) => { setCollegeName(event.target.value); setRequestExternalInstitutionId(""); setRequestLocality(""); }} maxLength={160} placeholder="Type a college name and choose a match…" autoComplete="organization" />
+                      {searchingRequestColleges && <small className="guest-live-search-status">Finding college details and location…</small>}
                       {requestCollegeSearchError && <small className="guest-live-search-error" role="status">{requestCollegeSearchError}</small>}
                       {requestCollegeMatches.length > 0 && !requestExternalInstitutionId && (
                         <div className="guest-live-institution-results guest-request-college-results" role="listbox" aria-label="College search results">
@@ -294,9 +279,7 @@ export default function GuestSetupPage() {
                             <button key={institution.externalId} type="button" role="option" aria-selected="false" onClick={() => {
                               setCollegeName(institution.name);
                               setRequestExternalInstitutionId(institution.externalId);
-                              const matchedState = indianStates.find((state) => state.toLowerCase() === institution.region.toLowerCase());
-                              if (matchedState) setRequestState(matchedState);
-                              if (institution.city) setRequestCity(institution.city);
+                              setRequestLocality([institution.city, institution.region, institution.country].filter(Boolean).join(", ") || "Location unavailable");
                               setRequestCollegeMatches([]);
                               setInstitutionRequestError("");
                             }}>
@@ -306,28 +289,18 @@ export default function GuestSetupPage() {
                           ))}
                         </div>
                       )}
+                      {requestExternalInstitutionId && <div className="guest-live-institution-selected"><span>LOCATION DETECTED AUTOMATICALLY</span><strong>{collegeName}</strong><small>{requestLocality}</small></div>}
                       <label htmlFor="request-college-email">Your email address</label>
                       <input id="request-college-email" type="email" value={requestEmail} onChange={(event) => { setRequestEmail(event.target.value); setInstitutionRequestError(""); }} maxLength={254} placeholder="you@example.com" autoComplete="email" required />
                       <small className="guest-setup-form__hint">We’ll use this email if the admin needs to follow up about your college request.</small>
-                      <label htmlFor="request-college-state">State / Union Territory</label>
-                      <select id="request-college-state" value={requestState} onChange={(event) => { setRequestState(event.target.value); setRequestCity(""); setInstitutionRequestError(""); }} disabled={loadingStates || requestingInstitution} required>
-                        <option value="">{loadingStates ? "Loading Indian states…" : "Choose state / Union Territory"}</option>
-                        {indianStates.map((state) => <option key={state} value={state}>{state}</option>)}
-                      </select>
-                      <label htmlFor="request-college-city">City</label>
-                      <select id="request-college-city" value={requestCity} onChange={(event) => { setRequestCity(event.target.value); setInstitutionRequestError(""); }} disabled={!requestState || loadingCities || requestingInstitution} required>
-                        <option value="">{!requestState ? "Choose a state first" : loadingCities ? "Loading cities…" : "Choose city"}</option>
-                        {indianCities.map((city) => <option key={city} value={city}>{city}</option>)}
-                      </select>
-                      {locationLookupError && <small className="guest-live-search-error" role="status">{locationLookupError}</small>}
                       <div className="guest-institution-request__proforma">
                         <span>REQUEST PREVIEW</span>
                         <p><b>College:</b> {collegeName.trim() || "[College name]"}</p>
-                        <p><b>Location:</b> {requestCity && requestState ? `${requestCity}, ${requestState}, India` : "[Choose state and city]"}</p>
+                        <p><b>Location:</b> {requestLocality || "[Choose a college to detect location]"}</p>
                         <p><b>Guest ID:</b> {guestId}</p>
                         <p><b>Email:</b> {requestEmail.trim() || "[Your email address]"}</p>
                       </div>
-                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution || loadingStates || loadingCities || !requestState || !requestCity || collegeName.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())}>
+                      <button className="guest-institution-request__submit" type="button" onClick={handleInstitutionRequest} disabled={requestingInstitution || !requestExternalInstitutionId || !requestLocality || collegeName.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail.trim())}>
                         {requestingInstitution ? "Sending request…" : "Send request to admin"} <span>↗</span>
                       </button>
                       <small className="guest-setup-form__hint">This submits your request directly to the Super Admin inbox for review.</small>
