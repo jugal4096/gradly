@@ -1,3 +1,4 @@
+html, body, #root { height: auto; min-height: 100%; overflow: auto; }
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root { --student-ink:#17152f; --student-muted:#77758f; --student-purple:#7663f6; --student-purple-dark:#5845d7; --student-line:#e8e5f4; --student-bg:#f7f6fc; --student-white:#fff; }
