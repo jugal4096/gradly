@@ -8,6 +8,9 @@ import {
 import {
   getProfile,
   createStudentProfileController,
+  updateStudentProfileController,
+  deleteStudentProfileController,
+  getStudentDashboardController,
 } from "./student.controller";
 
 const router = Router();
@@ -15,6 +18,9 @@ const router = Router();
 router.use(authenticateFirebaseToken);
 
 router.get("/profile", getProfile);
+router.put("/profile", updateStudentProfileController);
+router.delete("/profile", deleteStudentProfileController);
+router.get("/dashboard", getStudentDashboardController);
 router.post("/syllabus-feedback", submitStudentSyllabusFeedback);
 
 router.post(
