@@ -98,4 +98,41 @@ router.get(
   }
 );
 
+
+/** Public curriculum selector used by student onboarding. */
+router.get("/curricula", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const institutionId = typeof req.query.institutionId === "string" ? req.query.institutionId : null;
+    const branchId = typeof req.query.branchId === "string" ? req.query.branchId : null;
+    const result = await pool.query(
+      `SELECT
+         c.id,
+         c.institution_id,
+         c.program_id,
+         c.branch_id,
+         c.scheme_id,
+         i.name AS institution_name,
+         p.name AS program_name,
+         b.name AS branch_name,
+         sc.name AS scheme_name,
+         COALESCE(NULLIF(to_jsonb(c)->>'version', ''), NULLIF(to_jsonb(c)->>'name', ''), sc.name, 'Curriculum') AS version_label,
+         (SELECT COUNT(*)::int FROM public.semesters sem WHERE sem.curriculum_id = c.id) AS semester_count
+       FROM public.curricula c
+       LEFT JOIN public.institutions i ON i.id = c.institution_id
+       LEFT JOIN public.programs p ON p.id = c.program_id
+       LEFT JOIN public.branches b ON b.id = c.branch_id
+       LEFT JOIN public.schemes sc ON sc.id = c.scheme_id
+       WHERE ($1::uuid IS NULL OR c.institution_id = $1::uuid)
+         AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
+       ORDER BY i.name, p.name, b.name, sc.name
+       LIMIT 1000`,
+      [institutionId, branchId]
+    );
+    res.status(200).json({ success: true, curricula: result.rows });
+  } catch (error) {
+    console.error("GET /api/academic/curricula error:", error);
+    res.status(500).json({ success: false, message: "Failed to load curriculum options." });
+  }
+});
+
 export default router;
