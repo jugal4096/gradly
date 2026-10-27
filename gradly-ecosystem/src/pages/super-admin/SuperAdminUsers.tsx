@@ -388,7 +388,7 @@ export default function SuperAdminUsers() {
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} aria-label="Filter by status">
               <option value="all">All statuses</option>
               <option value="active">Active</option>
-              <option value="inactive">{directoryType === "guest" ? "Expired" : "Inactive"}</option>
+              <option value="inactive">{directoryType === "guest" ? "Expired / deleted" : "Inactive"}</option>
             </select>
           </label>
         </div>
