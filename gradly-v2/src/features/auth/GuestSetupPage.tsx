@@ -13,7 +13,6 @@ export default function GuestSetupPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [guestId, setGuestId] = useState("");
   const [institutionId, setInstitutionId] = useState("");
-  const [institutionSearch, setInstitutionSearch] = useState("");
   const [institutions, setInstitutions] = useState<GuestInstitution[]>([]);
   const [loadingInstitutions, setLoadingInstitutions] = useState(true);
   const [startingGuest, setStartingGuest] = useState(false);
@@ -21,14 +20,7 @@ export default function GuestSetupPage() {
   const [showInstitutionRequest, setShowInstitutionRequest] = useState(false);
   const [collegeName, setCollegeName] = useState("");
   const [requestEmail, setRequestEmail] = useState("");
-  const [indianStates, setIndianStates] = useState<string[]>([]);
-  const [requestState, setRequestState] = useState("");
-  const [indianCities, setIndianCities] = useState<string[]>([]);
-  const [requestCity, setRequestCity] = useState("");
   const [requestLocality, setRequestLocality] = useState("");
-  const [loadingStates, setLoadingStates] = useState(false);
-  const [loadingCities, setLoadingCities] = useState(false);
-  const [locationLookupError, setLocationLookupError] = useState("");
   const [requestCollegeMatches, setRequestCollegeMatches] = useState<ExternalInstitution[]>([]);
   const [searchingRequestColleges, setSearchingRequestColleges] = useState(false);
   const [requestCollegeSearchError, setRequestCollegeSearchError] = useState("");
@@ -54,46 +46,6 @@ export default function GuestSetupPage() {
       .finally(() => { if (!cancelled) setLoadingInstitutions(false); });
     return () => { cancelled = true; };
   }, []);
-
-  useEffect(() => {
-    if (!(showInstitutionRequest || institutionNotAvailable) || indianStates.length > 0) return;
-    const controller = new AbortController();
-    setLoadingStates(true);
-    setLocationLookupError("");
-    fetch(`${API_BASE_URL}/api/guest/india/states`, { signal: controller.signal })
-      .then(async (response) => {
-        const data = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(data?.message || "Could not load Indian states.");
-        setIndianStates(Array.isArray(data?.states) ? data.states : []);
-      })
-      .catch((cause) => {
-        if (!controller.signal.aborted) setLocationLookupError(cause instanceof Error ? cause.message : "Could not load Indian states.");
-      })
-      .finally(() => { if (!controller.signal.aborted) setLoadingStates(false); });
-    return () => controller.abort();
-  }, [showInstitutionRequest, institutionNotAvailable, indianStates.length]);
-
-  useEffect(() => {
-    if (!requestState || !(showInstitutionRequest || institutionNotAvailable)) {
-      setIndianCities([]);
-      setRequestCity("");
-      return;
-    }
-    const controller = new AbortController();
-    setLoadingCities(true);
-    setLocationLookupError("");
-    fetch(`${API_BASE_URL}/api/guest/india/cities?state=${encodeURIComponent(requestState)}`, { signal: controller.signal })
-      .then(async (response) => {
-        const data = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(data?.message || "Could not load cities for this state.");
-        setIndianCities(Array.isArray(data?.cities) ? data.cities : []);
-      })
-      .catch((cause) => {
-        if (!controller.signal.aborted) setLocationLookupError(cause instanceof Error ? cause.message : "Could not load cities.");
-      })
-      .finally(() => { if (!controller.signal.aborted) setLoadingCities(false); });
-    return () => controller.abort();
-  }, [requestState, showInstitutionRequest, institutionNotAvailable]);
 
   useEffect(() => {
     const query = collegeName.trim();
@@ -241,7 +193,6 @@ export default function GuestSetupPage() {
                 <select id="guest-institution-select" value={institutionId} onChange={(event) => {
                   const id = event.target.value;
                   setInstitutionId(id);
-                  setInstitutionSearch(institutions.find((item) => item.id === id)?.name ?? "");
                   setError("");
                 }} disabled={startingGuest || loadingInstitutions} required>
                   <option value="">{loadingInstitutions ? "Loading colleges…" : "Select an available institution"}</option>
