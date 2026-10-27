@@ -12,6 +12,7 @@ import {
   UserRound,
   Users,
   UserRoundCheck,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -123,6 +124,7 @@ export default function SuperAdminUsers() {
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState("");
+  const [deletingGuestId, setDeletingGuestId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -232,6 +234,34 @@ export default function SuperAdminUsers() {
     finally { setActivityLoading(false); }
   }
 
+  async function permanentlyDeleteGuest(guest: GuestSession) {
+    const guestId = String(guest.metadata?.guest_id || guest.metadata?.display_id || "this guest");
+    if (!guest.metadata?.deleted_at) {
+      setError("Guests must delete their own account before permanent deletion is allowed.");
+      return;
+    }
+    if (!window.confirm(`Permanently delete guest ${guestId} and its saved workspace and activity history from the database? This cannot be undone.`)) return;
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
+    setDeletingGuestId(guest.id);
+    setError("");
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/guests/${encodeURIComponent(guest.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || "Could not permanently delete guest data.");
+      setSelectedGuest(null);
+      setGuestActivityTarget(null);
+      await loadDirectory(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not permanently delete guest data.");
+    } finally {
+      setDeletingGuestId(null);
+    }
+  }
+
   async function openStudentActivity(student: Student) {
     setActivityStudent(student);
     setActivityEvents([]);
@@ -268,7 +298,7 @@ export default function SuperAdminUsers() {
         guest_id: guest.metadata?.guest_id ?? guest.metadata?.display_id ?? "",
         display_name: guest.metadata?.display_name ?? "",
         institution: guest.metadata?.institution_name ?? "",
-        status: guest.active ? "Active" : "Expired",
+        status: guest.metadata?.deleted_at ? "Deleted" : guest.active ? "Active" : "Expired",
         first_seen_at: guest.first_seen_at,
         last_seen_at: guest.last_seen_at,
         expires_at: guest.expires_at,
@@ -397,8 +427,8 @@ export default function SuperAdminUsers() {
                     <td><span className="super-users-date">{formatDate(guest.first_seen_at)}</span></td>
                     <td><span className="super-users-date">{formatDate(guest.last_seen_at)}</span></td>
                     <td><span className="super-users-date">{guest.expires_at ? formatDate(guest.expires_at) : "No expiry set"}</span></td>
-                    <td><span className={`super-users-status ${guest.active ? "is-active" : "is-inactive"}`}><span />{guest.active ? "Active" : "Expired"}</span></td>
-                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button></div></td>
+                    <td><span className={`super-users-status ${guest.metadata?.deleted_at ? "is-inactive" : guest.active ? "is-active" : "is-inactive"}`}><span />{guest.metadata?.deleted_at ? "Deleted by guest" : guest.active ? "Active" : "Expired"}</span></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button>{guest.metadata?.deleted_at && <button type="button" className="super-users-view guest-permanent-delete" onClick={() => void permanentlyDeleteGuest(guest)} disabled={deletingGuestId === guest.id} aria-label="Permanently delete guest data" title={deletingGuestId === guest.id ? "Deleting…" : "Permanently delete guest data"}><Trash2 size={16} /></button>}</div></td>
                   </tr>)}
               </tbody>
             </table>
@@ -443,7 +473,7 @@ export default function SuperAdminUsers() {
             <div><dt>Guest ID</dt><dd>{String(selectedGuest.metadata?.guest_id || selectedGuest.metadata?.display_id || "Legacy guest")}</dd></div>
             <div><dt>Session ID</dt><dd>{selectedGuest.id}</dd></div>
             <div><dt>Display name</dt><dd>{String(selectedGuest.metadata?.display_name || "Guest")}</dd></div>
-            <div><dt>Status</dt><dd>{selectedGuest.active ? "Active / unexpired" : "Expired"}</dd></div>
+            <div><dt>Status</dt><dd>{selectedGuest.metadata?.deleted_at ? `Deleted by guest on ${formatDate(String(selectedGuest.metadata.deleted_at))}` : selectedGuest.active ? "Active / unexpired" : "Expired"}</dd></div>
             <div><dt>First seen</dt><dd>{formatDate(selectedGuest.first_seen_at)}</dd></div>
             <div><dt>Last activity</dt><dd>{formatDate(selectedGuest.last_seen_at)}</dd></div>
             <div><dt>Expires</dt><dd>{selectedGuest.expires_at ? formatDate(selectedGuest.expires_at) : "No expiry set"}</dd></div>
@@ -452,7 +482,8 @@ export default function SuperAdminUsers() {
             <div><dt>Institution</dt><dd>{String(selectedGuest.metadata?.institution_name || "Not selected")}</dd></div>
             <div><dt>Metadata</dt><dd><code>{JSON.stringify(selectedGuest.metadata || {}, null, 2)}</code></dd></div>
           </dl>
-          <p>Session credentials are intentionally hidden. This view is read-only.</p>
+          <p>Session credentials are intentionally hidden. Deleted guest records remain available for review until the Super Admin permanently removes them.</p>
+          {selectedGuest.metadata?.deleted_at && <button type="button" className="super-users-modal-close guest-permanent-delete-button" disabled={deletingGuestId === selectedGuest.id} onClick={() => void permanentlyDeleteGuest(selectedGuest)}>{deletingGuestId === selectedGuest.id ? "Permanently deleting…" : "Permanently delete guest data"}</button>}
           <button type="button" className="super-users-modal-close" onClick={() => setSelectedGuest(null)}>Close details</button>
         </section>
       </div>}
