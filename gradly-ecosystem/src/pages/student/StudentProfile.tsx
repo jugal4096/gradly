@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, GraduationCap, ShieldCheck, Sparkles } from "lucide-react";
-import { signOutUser, waitForFirebaseUser } from "../../config/firebase";
+import { auth, signOutUser, waitForFirebaseUser } from "../../config/firebase";
 import { studentApi, synchronizeStudent } from "../../lib/studentApi";
 import "./StudentPortal.css";
 
@@ -70,7 +70,7 @@ export default function StudentProfile() {
   }
 
   if (loading) return <main className="student-portal-loading"><div className="student-loader-orbit"/><p>Preparing your academic space…</p></main>;
-  const currentUser = (awaitUserNameSafe());
+  const currentUser = auth.currentUser?.displayName || auth.currentUser?.email || "Student";
   return <main className="student-portal-page">
     <header className="student-portal-header"><a className="student-brand" href="/"><span className="student-brand-mark"><GraduationCap size={21}/></span><span>gradly<span className="brand-dot">.</span></span></a><div className="student-header-user"><span className="student-avatar">{currentUser.slice(0,1).toUpperCase()}</span><span>{currentUser}</span><button type="button" onClick={() => void signOutUser().then(() => navigate("/student/login"))}>Sign out</button></div></header>
     <div className="student-profile-shell">
@@ -90,8 +90,3 @@ export default function StudentProfile() {
   </main>;
 }
 
-function awaitUserNameSafe() {
-  const user = (globalThis as typeof globalThis & { __unused?: string }).__unused;
-  void user;
-  return "Student";
-}
