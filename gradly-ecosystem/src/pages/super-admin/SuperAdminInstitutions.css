@@ -30,7 +30,7 @@
 .sa-inst-request{display:flex;justify-content:space-between;align-items:flex-start;gap:22px;padding:18px;border-bottom:1px solid #f0ebf8}.sa-inst-request:last-child{border-bottom:0}
 .sa-inst-request-main{flex:1;min-width:0}.sa-inst-request h3{margin:8px 0 7px;font-size:15px;color:#2b1c4c;overflow-wrap:anywhere}
 .sa-inst-status{display:inline-block;padding:5px 8px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.03em;background:#f0eaff;color:#6842c7}
-.sa-inst-status-completed{background:#e8f8ef;color:#18834c}.sa-inst-status-rejected{background:#fff0ee;color:#a63c35}.sa-inst-status-in_review{background:#fff5db;color:#8c6413}
+.sa-inst-status-completed,.sa-inst-status-resolved{background:#e8f8ef;color:#18834c}.sa-inst-status-rejected{background:#fff0ee;color:#a63c35}.sa-inst-status-in_review{background:#fff5db;color:#8c6413}
 .sa-inst-location{display:flex;align-items:center;gap:5px;margin:0 0 12px;color:#737b90;font-size:11px}
 .sa-inst-request-meta{display:flex;flex-wrap:wrap;gap:8px 18px}.sa-inst-request-meta span{font-size:11px;color:#697187;overflow-wrap:anywhere}.sa-inst-request-meta b{margin-right:4px;color:#9399a9;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
 .sa-inst-external{display:block;margin-top:9px;color:#9b94ae;font-size:10px;overflow-wrap:anywhere}
