@@ -30,6 +30,12 @@ export async function syncAuthUser(
       name
     );
 
+    if (!user.active) {
+      return res.status(403).json({
+        message: "This Gradly account has been deactivated. Contact the Super Admin if you believe this is a mistake.",
+      });
+    }
+
     return res.status(200).json({
       message: "User synchronized successfully.",
       user,
