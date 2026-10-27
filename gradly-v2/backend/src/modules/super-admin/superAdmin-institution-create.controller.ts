@@ -93,7 +93,14 @@ export async function createSyllabusManually(req: SuperAdminAuthenticatedRequest
         [subject.code, subject.name]
       );
       const savedSubject = existing.rowCount ? existing.rows[0] : await insertRecord(client,"subjects",{name:subject.name,subject_name:subject.name,title:subject.name,code:subject.code||undefined,subject_code:subject.code||undefined,course_code:subject.code||undefined});
-      await insertRecord(client,"curriculum_subjects",{curriculum_id:curriculum.id,semester_id:semesters[subject.semester-1].id,subject_id:savedSubject.id,course_id:savedSubject.id,course_code:subject.code||undefined,course_name:subject.name,credits:subject.credits,course_type:subject.type,mandatory:true,active:true});
+      const curriculumSubjectMeta = await client.query("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='curriculum_subjects'");
+      let courseId: unknown = undefined;
+      if ((curriculumSubjectMeta.rows as Array<{column_name:string}>).some(row => row.column_name === "course_id")) {
+        const existingCourse = await client.query("SELECT id FROM public.courses c WHERE ($1 <> '' AND LOWER(COALESCE(to_jsonb(c)->>'code',to_jsonb(c)->>'course_code',''))=LOWER($1)) OR LOWER(COALESCE(to_jsonb(c)->>'name',to_jsonb(c)->>'course_name',''))=LOWER($2) LIMIT 1",[subject.code,subject.name]);
+        const course = existingCourse.rowCount ? existingCourse.rows[0] : await insertRecord(client,"courses",{name:subject.name,course_name:subject.name,title:subject.name,code:subject.code||undefined,course_code:subject.code||undefined,credits:subject.credits,course_type:subject.type});
+        courseId = course.id;
+      }
+      await insertRecord(client,"curriculum_subjects",{curriculum_id:curriculum.id,semester_id:semesters[subject.semester-1].id,subject_id:savedSubject.id,course_id:courseId,course_code:subject.code||undefined,course_name:subject.name,credits:subject.credits,course_type:subject.type,mandatory:true,active:true});
     }
     await client.query("COMMIT");
     return res.status(201).json({success:true,message:`Syllabus created: ${semesterCount} semesters, ${subjects.length} subjects.`,curriculumId:curriculum.id});
