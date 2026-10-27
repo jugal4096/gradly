@@ -1,9 +1,18 @@
 import "dotenv/config";
 
-const corsOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173")
+const localDevelopmentOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+];
+
+const configuredCorsOrigins = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))
   .filter(Boolean);
+
+const corsOrigins = [...new Set([...localDevelopmentOrigins, ...configuredCorsOrigins])];
 
 export const env = {
   port: Number(process.env.PORT || 5000),
