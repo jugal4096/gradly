@@ -8,6 +8,8 @@ import {
   recordGuestActivity,
   updateGuestWorkspace,
   listGuestInstitutionOptions,
+  updateGuestProfile,
+  softDeleteGuestSession,
 } from "./guest.repository";
 
 export async function listGuestInstitutions(_req: Request, res: Response) {
@@ -24,17 +26,14 @@ export async function createGuest(req: Request, res: Response) {
   try {
     const guestId = typeof req.body?.guestId === "string" ? req.body.guestId : "";
     const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
-    const externalName = typeof req.body?.institutionName === "string" ? req.body.institutionName.trim() : "";
-    const externalLocality = typeof req.body?.institutionLocality === "string" ? req.body.institutionLocality.trim() : "";
-    const externalId = typeof req.body?.externalInstitutionId === "string" ? req.body.externalInstitutionId.trim() : "";
     if (!guestId.trim()) {
       return res.status(400).json({ message: "Choose a unique Guest ID to continue." });
     }
-    if (!institutionId.trim() && (!externalName || !externalLocality)) {
-      return res.status(400).json({ message: "Select an institution from Gradly or the live institution search." });
+    if (!institutionId.trim()) {
+      return res.status(400).json({ message: "Select an institution from the Gradly database. If it is missing, send a request to the Super Admin." });
     }
 
-    const session = await startGuestSession(guestId, institutionId, externalName && externalLocality ? { name: externalName, locality: externalLocality, externalId } : undefined);
+    const session = await startGuestSession(guestId, institutionId);
     await recordGuestActivity(session.id, "GUEST_INSTITUTION_SELECTED", {
       institutionId: session.metadata?.institution_id,
       institutionName: session.metadata?.institution_name,
@@ -54,6 +53,9 @@ export async function createGuest(req: Request, res: Response) {
         displayName: session.metadata?.display_name ?? session.metadata?.guest_id,
         institutionId: session.metadata?.institution_id,
         institutionName: session.metadata?.institution_name,
+        institutionLocality: session.metadata?.institution_locality ?? null,
+        institutionRegion: session.metadata?.institution_region ?? null,
+        institutionCountry: session.metadata?.institution_country ?? "India",
         sessionToken: session.sessionToken,
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
@@ -102,9 +104,13 @@ export async function getGuest(req: Request, res: Response) {
         displayName: session.metadata?.display_name ?? session.metadata?.guest_id ?? "Guest",
         institutionId: session.metadata?.institution_id ?? null,
         institutionName: session.metadata?.institution_name ?? null,
+        institutionLocality: session.metadata?.institution_locality ?? null,
+        institutionRegion: session.metadata?.institution_region ?? null,
+        institutionCountry: session.metadata?.institution_country ?? "India",
         firstSeenAt: session.first_seen_at,
         lastSeenAt: session.last_seen_at,
         expiresAt: session.expires_at,
+        deletedAt: session.metadata?.deleted_at ?? null,
         workspace: session.metadata?.guest_workspace ?? { subjects: [], semesters: [], lastActiveCalculator: "sgpa" },
       },
     });
@@ -114,6 +120,69 @@ export async function getGuest(req: Request, res: Response) {
   }
 }
 
+
+export async function updateGuestProfileController(req: Request, res: Response) {
+  try {
+    const sessionToken = req.headers["x-guest-session"];
+    if (typeof sessionToken !== "string" || !sessionToken) {
+      return res.status(401).json({ message: "Guest session token is required." });
+    }
+    const session = await getGuestSession(sessionToken);
+    if (!session) return res.status(401).json({ message: "Guest session is invalid, expired, or deleted." });
+
+    const displayName = typeof req.body?.displayName === "string" ? req.body.displayName.trim().slice(0, 80) : "";
+    const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId.trim() : "";
+    if (displayName.length < 2) return res.status(400).json({ message: "Display name must contain at least 2 characters." });
+    if (!institutionId) return res.status(400).json({ message: "Select an institution from the Gradly database." });
+
+    const updated = await updateGuestProfile(session.id, displayName, institutionId);
+    if (!updated) return res.status(400).json({ message: "Select a valid institution from the Gradly database." });
+    await recordGuestActivity(session.id, "GUEST_PROFILE_UPDATED", {
+      displayName,
+      institutionName: updated.metadata?.institution_name ?? null,
+    });
+    return res.status(200).json({
+      message: "Guest profile updated.",
+      guest: {
+        id: updated.id,
+        guestId: updated.metadata?.guest_id ?? updated.metadata?.display_id ?? null,
+        displayName: updated.metadata?.display_name ?? displayName,
+        institutionId: updated.metadata?.institution_id ?? null,
+        institutionName: updated.metadata?.institution_name ?? null,
+        institutionLocality: updated.metadata?.institution_locality ?? null,
+        institutionRegion: updated.metadata?.institution_region ?? null,
+        institutionCountry: updated.metadata?.institution_country ?? "India",
+        expiresAt: updated.expires_at,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update guest profile:", error);
+    return res.status(500).json({ message: "Could not update guest profile." });
+  }
+}
+
+export async function deleteGuestAccount(req: Request, res: Response) {
+  try {
+    const sessionToken = req.headers["x-guest-session"];
+    if (typeof sessionToken !== "string" || !sessionToken) {
+      return res.status(401).json({ message: "Guest session token is required." });
+    }
+    const session = await getGuestSession(sessionToken);
+    if (!session) return res.status(401).json({ message: "Guest session is invalid, expired, or already deleted." });
+    await recordGuestActivity(session.id, "GUEST_ACCOUNT_DELETION_REQUESTED", {
+      guestId: session.metadata?.guest_id ?? session.metadata?.display_id ?? null,
+    });
+    const deleted = await softDeleteGuestSession(session.id);
+    if (!deleted) return res.status(404).json({ message: "Guest profile was not found." });
+    await recordGuestActivity(session.id, "GUEST_ACCOUNT_SOFT_DELETED", {
+      deletedAt: deleted.metadata?.deleted_at ?? new Date().toISOString(),
+    });
+    return res.status(200).json({ message: "Your guest account has been deleted. Its profile and activity remain visible only to the Super Admin for review." });
+  } catch (error) {
+    console.error("Failed to delete guest account:", error);
+    return res.status(500).json({ message: "Could not delete guest account." });
+  }
+}
 
 const allowedGuestActions = new Set([
   "GUEST_FEATURE_LOCK_CLICKED",
