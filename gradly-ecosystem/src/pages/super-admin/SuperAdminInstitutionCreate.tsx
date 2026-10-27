@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, Building2, BookOpen, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./SuperAdminInstitutionCreate.css";
@@ -36,7 +36,7 @@ export default function SuperAdminInstitutionCreate() {
   }, [headers]);
   useEffect(()=>{void loadInstitutions();},[loadInstitutions]);
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setError(""); setNotice("");
     try {
       const isInstitution=mode==="institution";
