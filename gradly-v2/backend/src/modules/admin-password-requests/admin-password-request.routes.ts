@@ -1,5 +1,4 @@
 import { Router, type Request, type Response, type RequestHandler } from "express";
-import bcrypt from "bcrypt";
 import { pool } from "../../config/database";
 import { authenticateFirebaseToken, type AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { authenticateSuperAdminToken, type SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
@@ -94,63 +93,6 @@ router.get("/mine", authenticateFirebaseToken, async (req, res) => {
   }
 });
 
-router.post("/:requestId/reset", authenticateFirebaseToken, async (req, res) => {
-  try {
-    const identity = firebaseIdentity(req);
-    const password = req.body?.password;
-    if (typeof password !== "string" || password.length < 12 || password.length > 128) {
-      return res.status(400).json({ success: false, message: "New password must contain 12–128 characters." });
-    }
-    const passwordHash = await bcrypt.hash(password, 12);
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      const request = await client.query(
-        `SELECT r.id, r.admin_id, r.status, r.admin_email, r.firebase_uid, a.status AS admin_status
-         FROM public.admin_password_change_requests r
-         JOIN public.admins a ON a.id = r.admin_id
-         WHERE r.id = $1
-         FOR UPDATE OF r, a`,
-        [req.params.requestId]
-      );
-      if (!request.rowCount) {
-        await client.query("ROLLBACK");
-        return res.status(404).json({ success: false, message: "Password-change request not found." });
-      }
-      const row = request.rows[0];
-      if (row.firebase_uid !== identity.uid || String(row.admin_email).toLowerCase() !== identity.email) {
-        await client.query("ROLLBACK");
-        return res.status(403).json({ success: false, message: "This request does not belong to your signed-in account." });
-      }
-      if (row.status !== "APPROVED") {
-        await client.query("ROLLBACK");
-        return res.status(409).json({ success: false, message: "Super Admin must approve this request before a new password can be set." });
-      }
-      if (String(row.admin_status).toUpperCase() !== "ACTIVE") {
-        await client.query("ROLLBACK");
-        return res.status(403).json({ success: false, message: "This administrator account is not active." });
-      }
-      await client.query(
-        `UPDATE public.admins SET password_hash = $2, password_changed_at = NOW(), password_expires_at = NOW() + INTERVAL '1 month', updated_at = NOW() WHERE id = $1`,
-        [row.admin_id, passwordHash]
-      );
-      await client.query(
-        `UPDATE public.admin_password_change_requests SET status = 'COMPLETED', completed_at = NOW(), updated_at = NOW() WHERE id = $1`,
-        [row.id]
-      );
-      await client.query("COMMIT");
-      return res.json({ success: true, message: "Password updated. You can now sign in with your new password." });
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    return fail(res, error);
-  }
-});
-
 // Super Admin inbox: this is the in-app notification/approval queue.
 router.get("/review", superAdminAuth, async (_req, res) => {
   try {
@@ -190,7 +132,7 @@ router.patch("/:requestId/review", superAdminAuth, async (req: Request, res: Res
     if (!result.rowCount) {
       return res.status(409).json({ success: false, message: "Request not found or already reviewed." });
     }
-    return res.json({ success: true, message: decision === "APPROVED" ? "Password change approved. The admin can now set a new password." : "Password change request rejected.", request: result.rows[0] });
+    return res.json({ success: true, message: decision === "APPROVED" ? "Password request approved. Super Admin must complete the password reset." : "Password change request rejected.", request: result.rows[0] });
   } catch (error) {
     return fail(res, error);
   }
