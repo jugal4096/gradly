@@ -54,3 +54,5 @@
 @media(max-width:560px){.sa-inst-head{flex-direction:column}.sa-inst-refresh{width:100%}.sa-inst-stats{gap:8px}.sa-inst-stats article{padding:12px}.sa-inst-stats strong{font-size:23px}.sa-inst-tabs{width:100%;box-sizing:border-box}.sa-inst-tabs button{flex:1;justify-content:center;padding:9px 5px;font-size:10px}.sa-inst-toolbar{align-items:stretch;flex-direction:column}.sa-inst-toolbar select{max-width:none}.sa-inst-card-toggle{gap:8px;padding:12px}.sa-inst-card-icon{width:34px;height:34px}.sa-inst-card-counts{gap:2px 4px}.sa-inst-card-counts small{font-size:8px}.sa-inst-programs{padding-left:12px}.sa-inst-program{gap:7px;flex-wrap:wrap}.sa-inst-program-copy{flex-basis:calc(100% - 50px)}.sa-inst-program-meta{min-width:43px}}
 
 .sa-inst-program-copy .sa-inst-branch-names{display:block;margin-top:5px;line-height:1.55;color:#7c7198;overflow-wrap:anywhere}
+
+.sa-inst-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.sa-inst-head-actions a{text-decoration:none}@media(max-width:640px){.sa-inst-head-actions{justify-content:flex-start}}
