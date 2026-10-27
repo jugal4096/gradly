@@ -25,6 +25,7 @@ interface Student {
   display_name: string | null;
   role: string;
   active: boolean;
+  deleted_at?: string | null;
   last_login_at: string | null;
   created_at: string;
   student_identifier: string | null;
@@ -285,6 +286,7 @@ export default function SuperAdminUsers() {
         name: student.display_name,
         role: student.role,
         active: student.active,
+        deleted_at: student.deleted_at,
         branch: student.branch_name,
         program: student.program_name,
         semester: student.current_semester_number,
@@ -408,7 +410,7 @@ export default function SuperAdminUsers() {
                     <td><span className="super-users-branch">{student.branch_name || "Not provided"}</span><small className="super-users-subtext">{student.program_name || ""}</small></td>
                     <td>{student.current_semester_number ? `Semester ${student.current_semester_number}` : "—"}</td>
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
-                    <td><span className={`super-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Inactive"}</span></td>
+                    <td><span className={`super-users-status ${student.deleted_at ? "is-inactive" : student.active ? "is-active" : "is-inactive"}`}><span />{student.deleted_at ? `Deleted · ${formatDate(student.deleted_at)}` : student.active ? "Active" : "Inactive"}</span></td>
                     <td><span className="super-users-date">{formatDate(student.last_login_at)}</span></td>
                     <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button></div></td>
                   </tr>)}
