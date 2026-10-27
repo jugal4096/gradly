@@ -1,97 +1,324 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, UserRound, Settings, Users, MessageSquareText } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquare,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
 
-const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
-type Profile = { admin_code?: string; adminCode?: string; full_name?: string; fullName?: string; role?: string; status?: string; institution_id?: string; institutionId?: string; institution_name?: string; institutionName?: string; program_id?: string | null; program_name?: string | null; branch_id?: string | null; branchId?: string | null; branch_name?: string | null; branchName?: string | null; };
-type Course = { id: string; code?: string; name?: string; credits?: number | string; semester?: number | string; scheme?: string | null; branch?: string | null; program?: string | null; };
-type RequestItem = { id: string; status: string; };
-type NotificationItem = { id: string; readAt?: string | null; };
+type ModuleItem = {
+  id: string;
+  title: string;
+  description: string;
+  category: "Academics" | "Workflow" | "Support";
+  icon: typeof BookOpen;
+  details: string[];
+};
 
-const clean=(value:unknown)=>String(value??"").trim();
-const display=(value:unknown)=>clean(value)||"Not assigned";
-const unique=(rows:Course[],key:keyof Course)=>new Set(rows.map(row=>clean(row[key])).filter(Boolean)).size;
+const modules: ModuleItem[] = [
+  {
+    id: "curriculum",
+    title: "Curriculum & subjects",
+    description: "Browse assigned academic data and subjects semester-wise.",
+    category: "Academics",
+    icon: BookOpen,
+    details: [
+      "View the academic schemes available to your assigned scope.",
+      "Browse subjects by semester and inspect their credits.",
+      "Submit a change request to the Super Admin when information needs updating.",
+    ],
+  },
+  {
+    id: "semesters",
+    title: "Semesters & schemes",
+    description: "Explore the academic structure relevant to your department.",
+    category: "Academics",
+    icon: CalendarDays,
+    details: [
+      "Review available schemes and semester structures.",
+      "Use academic information for department-level coordination.",
+      "Request additions or corrections through the approval workflow.",
+    ],
+  },
+  {
+    id: "requests",
+    title: "Change requests",
+    description: "Prepare and track requests for academic data changes.",
+    category: "Workflow",
+    icon: ClipboardList,
+    details: [
+      "Request a subject addition, removal or modification.",
+      "Include the requested name, credits and reason for the change.",
+      "The Super Admin remains responsible for approving system-wide changes.",
+    ],
+  },
+  {
+    id: "feedback",
+    title: "Feedback & support",
+    description: "Keep track of feedback and issues within your assigned scope.",
+    category: "Support",
+    icon: MessageSquare,
+    details: [
+      "Organise academic issues before escalating them.",
+      "Keep relevant details ready when submitting a support request.",
+      "Access is limited to the features enabled for your administrator account.",
+    ],
+  },
+  {
+    id: "reports",
+    title: "Academic overview",
+    description: "Get a clear starting point for day-to-day academic operations.",
+    category: "Academics",
+    icon: GraduationCap,
+    details: [
+      "Use the dashboard as a shortcut to your academic workflows.",
+      "Check the assigned scope before making a request.",
+      "Dashboard totals will appear when a supported statistics API is connected.",
+    ],
+  },
+  {
+    id: "activity",
+    title: "Recent activity",
+    description: "A quick place to review the latest workflow updates.",
+    category: "Workflow",
+    icon: Activity,
+    details: [
+      "Review updates surfaced by the connected application.",
+      "Use request status and timestamps to follow up on pending work.",
+      "This preview does not fabricate activity records when no live feed is available.",
+    ],
+  },
+];
 
-export default function AdminDashboard() {
-  const navigate=useNavigate();
-  const [profile,setProfile]=useState<Profile|null>(null);
-  const [courses,setCourses]=useState<Course[]>([]);
-  const [requests,setRequests]=useState<RequestItem[]>([]);
-  const [notifications,setNotifications]=useState<NotificationItem[]>([]);
-  const [loading,setLoading]=useState(true);
-  const [error,setError]=useState("");
+const filters = ["All modules", "Academics", "Workflow", "Support"] as const;
+type Filter = (typeof filters)[number];
 
-  const logout=useCallback(()=>{localStorage.removeItem("gradly_admin_token");navigate("/admin/login",{replace:true});},[navigate]);
-  const load=useCallback(async()=>{
-    const token=localStorage.getItem("gradly_admin_token");
-    if(!token){navigate("/admin/login",{replace:true});return;}
-    setLoading(true);setError("");
-    try {
-      const headers={Authorization:"Bearer "+token,Accept:"application/json"};
-      const endpoints=["/admin/me","/admin/curriculum","/admin/subject-change-requests","/admin/workspace-notifications"];
-      const responses=await Promise.all(endpoints.map(path=>fetch(API_ROOT+path,{headers})));
-      if(responses.some(r=>r.status===401)){logout();return;}
-      const data=await Promise.all(responses.map(r=>r.json().catch(()=>({}))));
-      if(!responses[0].ok)throw new Error(data[0].message||"Unable to verify your Admin session.");
-      setProfile(data[0].admin||data[0].data?.admin||null);
-      if(responses[1].ok)setCourses(Array.isArray(data[1].curriculum)?data[1].curriculum:[]);
-      if(responses[2].ok)setRequests(Array.isArray(data[2].requests)?data[2].requests:[]);
-      if(responses[3].ok)setNotifications(Array.isArray(data[3].notifications)?data[3].notifications:[]);
-      if(!responses[1].ok)throw new Error(data[1].message||"Unable to load your assigned curriculum.");
-    } catch(e){setError(e instanceof Error?e.message:"Unable to load the Admin workspace.");}
-    finally{setLoading(false);}
-  },[logout,navigate]);
-  useEffect(()=>{void load();},[load]);
+function AdminDashboard() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("All modules");
+  const [selectedModule, setSelectedModule] = useState<ModuleItem | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const adminName=display(profile?.full_name||profile?.fullName||profile?.admin_code||profile?.adminCode);
-  const institution=display(profile?.institution_name||profile?.institutionName);
-  const program=display(profile?.program_name||courses[0]?.program);
-  const department=display(profile?.branch_name||profile?.branchName||courses[0]?.branch);
-  const unread=notifications.filter(n=>!n.readAt).length;
-  const pending=requests.filter(r=>String(r.status).toUpperCase()==="PENDING").length;
+  const visibleModules = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return modules.filter((item) => {
+      const matchesFilter = filter === "All modules" || item.category === filter;
+      const matchesSearch =
+        !query ||
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query);
+      return matchesFilter && matchesSearch;
+    });
+  }, [search, filter]);
 
-  const navItems: {to:string;label:string;icon:typeof LayoutDashboard;active?:boolean;badge?:number}[]=[
-    {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard,active:true},
-    {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
-    {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
-    {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},
-    {to:"/admin/activity",label:"User activity",icon:Users},
-    {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
-    {to:"/admin/department",label:"My assignment",icon:Building2},
-    {to:"/admin/profile",label:"My profile",icon:UserRound},
-    {to:"/admin/settings",label:"Settings",icon:Settings},
-  ];
+  const handleLogout = () => {
+    localStorage.removeItem("gradly_admin_token");
+    navigate("/admin", { replace: true });
+  };
 
-  return <main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
-    <aside className="ad-sidebar">
-      <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
-      <p className="ad-sidebar-label">WORKSPACE</p>
-      <nav className="ad-sidebar-nav" aria-label="Admin navigation">{navItems.map(item=><Link key={item.to} to={item.to} className={"ad-nav-link"+(item.active?" active":"")}><item.icon size={17}/><span>{item.label}</span>{Boolean(item.badge)&&<em>{item.badge}</em>}</Link>)}</nav>
-      <div className="ad-sidebar-bottom"><div className="ad-secure-card"><ShieldCheck size={19}/><span><strong>Scoped access</strong><small>Assigned department only</small></span></div><Link to="/admin/change-password" className="ad-nav-link"><ShieldCheck size={17}/><span>Account security</span></Link><button type="button" className="ad-logout" onClick={logout}><LogOut size={16}/> Sign out</button></div>
-    </aside>
-    <section className="ad-main-column">
-      <header className="ad-topbar"><div className="ad-breadcrumb"><span>Admin workspace</span><span>/</span><strong>Overview</strong></div><div className="ad-topbar-right"><span className="ad-live-dot"/><span>Signed in as {adminName}</span><button type="button" className="ad-icon-button" onClick={()=>void load()} disabled={loading} aria-label="Refresh workspace"><RefreshCw size={16}/></button><span className="ad-avatar">{adminName.slice(0,1).toUpperCase()}</span></div></header>
-      <div className="ad-content">
-        <section className="ad-hero"><div className="ad-hero-content"><span className="ad-eyebrow"><CheckCircle2 size={14}/> DEPARTMENT ADMINISTRATION</span><h1>Good to see you, <span>{adminName.split(" ")[0]}</span>.</h1><p>Your Gradly workspace, focused on the academic program and department assigned to you. Review curriculum, submit change requests and stay in touch with Super Admin.</p><div className="ad-assignment-line"><Building2 size={15}/><span>{institution}</span><i>·</i><span>{program}</span><i>·</i><span>{department}</span></div><Link to="/admin/curriculum" className="ad-primary-action">Review my curriculum <ArrowRight size={16}/></Link></div><div className="ad-hero-art" aria-hidden="true"><div className="ad-art-ring"/><div className="ad-art-card"><div className="ad-art-icon"><GraduationCap size={27}/></div><span className="ad-art-line wide"/><span className="ad-art-line"/><div className="ad-art-bars"><i/><i/><i/><i/><i/><i/></div><small>Academic workspace</small></div></div></section>
-        {error&&<div className="ad-alert" role="alert"><ShieldCheck size={18}/><div><strong>Workspace data could not be fully loaded</strong><p>{error}</p><button type="button" onClick={()=>void load()}>Try again</button></div></div>}
-        <section className="ad-section"><div className="ad-section-heading"><div><span className="ad-section-kicker">YOUR WORKSPACE</span><h2>Academic overview</h2><p>Live figures are based only on records returned for your assigned academic scope.</p></div><button type="button" className="ad-text-button" onClick={()=>void load()} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
-          <div className="ad-metric-grid">
-            <article className="ad-metric-card"><span className="ad-metric-icon"><BookOpen size={20}/></span><span className="ad-metric-label">Assigned curriculum</span><strong>{loading?"—":courses.length.toLocaleString("en-IN")}</strong><small>Courses visible to your assignment</small><Link to="/admin/curriculum">View curriculum <ArrowRight size={13}/></Link></article>
-            <article className="ad-metric-card"><span className="ad-metric-icon sage"><Layers3 size={20}/></span><span className="ad-metric-label">Semesters covered</span><strong>{loading?"—":unique(courses,"semester")}</strong><small>Across your assigned curriculum</small><Link to="/admin/curriculum">Browse semesters <ArrowRight size={13}/></Link></article>
-            <article className="ad-metric-card"><span className="ad-metric-icon amber"><ClipboardList size={20}/></span><span className="ad-metric-label">Pending requests</span><strong>{loading?"—":pending}</strong><small>Your requests awaiting review</small><Link to="/admin/requests">Track requests <ArrowRight size={13}/></Link></article>
-            <article className="ad-metric-card"><span className="ad-metric-icon blue"><Bell size={20}/></span><span className="ad-metric-label">Unread messages</span><strong>{loading?"—":unread}</strong><small>Updates from Super Admin</small><Link to="/admin/notifications">Open inbox <ArrowRight size={13}/></Link></article>
+  return (
+    <div className="admin-dashboard">
+      <aside className={`ad-sidebar ${menuOpen ? "ad-sidebar-open" : ""}`}>
+        <button className="ad-brand" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          <span className="ad-brand-mark">G</span>
+          <span className="ad-brand-copy">
+            <strong>GRADLY</strong>
+            <small>ADMIN PORTAL</small>
+          </span>
+        </button>
+
+        <div className="ad-sidebar-label">WORKSPACE</div>
+        <nav className="ad-sidebar-nav" aria-label="Admin navigation">
+          <a className="ad-nav-link active" href="#admin-dashboard-top" onClick={() => setMenuOpen(false)}>
+            <LayoutDashboard size={18} /> <span>Overview</span>
+          </a>
+          <a className="ad-nav-link" href="#admin-modules" onClick={() => setMenuOpen(false)}>
+            <BookOpen size={18} /> <span>Academic modules</span>
+          </a>
+          <a className="ad-nav-link" href="#admin-workflows" onClick={() => setMenuOpen(false)}>
+            <ClipboardList size={18} /> <span>Workflows</span>
+          </a>
+          <a className="ad-nav-link" href="#admin-help" onClick={() => setMenuOpen(false)}>
+            <MessageSquare size={18} /> <span>Help & support</span>
+          </a>
+        </nav>
+
+        <div className="ad-sidebar-bottom">
+          <div className="ad-secure-card">
+            <span className="ad-secure-icon"><ShieldCheck size={18} /></span>
+            <span><strong>Role-protected</strong><small>Administrator access</small></span>
           </div>
-        </section>
-        <section className="ad-section"><div className="ad-section-heading"><div><span className="ad-section-kicker">QUICK ACCESS</span><h2>What would you like to do?</h2><p>Common tasks for department administrators.</p></div></div><div className="ad-quick-grid">
-          <Link to="/admin/curriculum" className="ad-quick-card"><span><BookOpen size={20}/></span><strong>Review curriculum</strong><p>Find subjects, semester allocation, credits and schemes in your assigned department.</p><b>Open curriculum <ArrowRight size={14}/></b></Link>
-          <Link to="/admin/requests" className="ad-quick-card"><span><ClipboardList size={20}/></span><strong>Request a subject change</strong><p>Submit add, remove or modify proposals for Super Admin review.</p><b>Manage requests <ArrowRight size={14}/></b></Link>
-          <Link to="/admin/notifications" className="ad-quick-card"><span><Bell size={20}/></span><strong>Super Admin inbox</strong><p>Read official announcements and action notes sent to your account.</p><b>View messages <ArrowRight size={14}/></b></Link>
-          <Link to="/admin/activity" className="ad-quick-card"><span><Users size={20}/></span><strong>Anonymous user activity</strong><p>View aggregate logged-in and guest counts for your assigned department, without personal data.</p><b>View counts <ArrowRight size={14}/></b></Link>
-          <Link to="/admin/feedback" className="ad-quick-card"><span><MessageSquareText size={20}/></span><strong>Student syllabus feedback</strong><p>Review student requests and forward proposed changes to Super Admin.</p><b>Review feedback <ArrowRight size={14}/></b></Link>
-        </div></section>
-        <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><span>Academic changes require Super Admin approval.</span></footer>
+          <button type="button" className="ad-logout" onClick={handleLogout}>
+            <LogOut size={17} /> Sign out
+          </button>
+        </div>
+      </aside>
+
+      {menuOpen && <button className="ad-sidebar-backdrop" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
+
+      <div className="ad-main-column">
+        <header className="ad-topbar">
+          <button type="button" className="ad-mobile-menu" aria-label="Open navigation" onClick={() => setMenuOpen((open) => !open)}>
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <div className="ad-breadcrumb"><span>Gradly</span><span className="ad-breadcrumb-slash">/</span><strong>Admin workspace</strong></div>
+          <div className="ad-topbar-right">
+            <span className="ad-live-dot" />
+            <span>Secure session</span>
+            <span className="ad-avatar">A</span>
+          </div>
+        </header>
+
+        <main className="ad-content" id="admin-dashboard-top">
+          <section className="ad-hero">
+            <div className="ad-hero-glow" aria-hidden="true" />
+            <div className="ad-hero-content">
+              <span className="ad-eyebrow"><Sparkles size={14} /> YOUR ACADEMIC WORKSPACE</span>
+              <h1>Make academic operations <span>feel simpler.</span></h1>
+              <p>Manage your assigned academic workflows, organise requests, and keep the important work moving.</p>
+              <a className="ad-primary-action" href="#admin-modules">Explore workspace <ArrowRight size={17} /></a>
+            </div>
+            <div className="ad-hero-art" aria-hidden="true">
+              <div className="ad-art-ring ad-art-ring-one" />
+              <div className="ad-art-ring ad-art-ring-two" />
+              <div className="ad-art-card">
+                <div className="ad-art-card-head"><span className="ad-art-icon"><GraduationCap size={21} /></span><span className="ad-art-check"><CheckCircle2 size={17} /></span></div>
+                <strong>Academic workspace</strong>
+                <span className="ad-art-line ad-art-line-long" />
+                <span className="ad-art-line" />
+                <div className="ad-art-bars"><i /><i /><i /><i /><i /><i /><i /></div>
+                <small>Organised · Connected · Secure</small>
+              </div>
+              <span className="ad-art-float ad-art-float-one"><BookOpen size={18} /></span>
+              <span className="ad-art-float ad-art-float-two"><CheckCircle2 size={18} /></span>
+            </div>
+          </section>
+
+          <section className="ad-metric-grid" aria-label="Dashboard status">
+            <article className="ad-metric-card">
+              <span className="ad-metric-icon mint"><BookOpen size={20} /></span>
+              <span className="ad-metric-label">Academic modules</span>
+              <strong>{modules.filter((item) => item.category === "Academics").length.toString().padStart(2, "0")}</strong>
+              <span className="ad-metric-note">Available workspace shortcuts</span>
+            </article>
+            <article className="ad-metric-card">
+              <span className="ad-metric-icon sage"><ClipboardList size={20} /></span>
+              <span className="ad-metric-label">Request workflow</span>
+              <strong>Ready</strong>
+              <span className="ad-metric-note">Submit changes for approval</span>
+            </article>
+            <article className="ad-metric-card">
+              <span className="ad-metric-icon pale"><ShieldCheck size={20} /></span>
+              <span className="ad-metric-label">Access level</span>
+              <strong>Admin</strong>
+              <span className="ad-metric-note">Scoped to assigned privileges</span>
+            </article>
+          </section>
+
+          <section className="ad-section" id="admin-modules">
+            <div className="ad-section-heading">
+              <div>
+                <span className="ad-section-kicker">GET THINGS DONE</span>
+                <h2>Your workspace</h2>
+                <p>Choose a module to see what you can do from here.</p>
+              </div>
+              <span className="ad-module-count">{visibleModules.length} modules</span>
+            </div>
+
+            <div className="ad-module-toolbar">
+              <label className="ad-search">
+                <Search size={18} />
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search modules..." aria-label="Search modules" />
+                {search && <button type="button" aria-label="Clear search" onClick={() => setSearch("")}><X size={15} /></button>}
+              </label>
+              <div className="ad-filter-tabs" role="group" aria-label="Filter modules">
+                {filters.map((item) => (
+                  <button key={item} type="button" className={filter === item ? "selected" : ""} onClick={() => setFilter(item)}>{item}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="ad-module-grid">
+              {visibleModules.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button type="button" key={item.id} className="ad-module-card" onClick={() => setSelectedModule(item)}>
+                    <span className="ad-module-icon"><Icon size={21} /></span>
+                    <span className="ad-module-category">{item.category}</span>
+                    <strong>{item.title}</strong>
+                    <span className="ad-module-description">{item.description}</span>
+                    <span className="ad-module-open">Explore module <ArrowRight size={15} /></span>
+                  </button>
+                );
+              })}
+              {visibleModules.length === 0 && (
+                <div className="ad-empty-state"><Search size={24} /><strong>No matching modules</strong><span>Try another search or choose a different filter.</span><button type="button" onClick={() => { setSearch(""); setFilter("All modules"); }}>Clear filters</button></div>
+              )}
+            </div>
+          </section>
+
+          <section className="ad-lower-grid" id="admin-workflows">
+            <article className="ad-request-panel">
+              <div className="ad-panel-icon"><FileText size={21} /></div>
+              <div className="ad-panel-copy">
+                <span className="ad-section-kicker">ACADEMIC GOVERNANCE</span>
+                <h2>Need to change a subject?</h2>
+                <p>Submit a request to add, remove, or update a subject or its credits. The Super Admin reviews and approves system-level changes.</p>
+                <button type="button" className="ad-text-action" onClick={() => setSelectedModule(modules.find((item) => item.id === "requests") ?? null)}>Understand the request process <ArrowRight size={16} /></button>
+              </div>
+              <div className="ad-panel-decoration" aria-hidden="true"><ClipboardList size={62} /></div>
+            </article>
+            <article className="ad-help-panel" id="admin-help">
+              <span className="ad-help-icon"><MessageSquare size={20} /></span>
+              <span className="ad-section-kicker">HERE TO HELP</span>
+              <h2>Keep your workflow clear.</h2>
+              <p>Use the search and filters to find the right workspace quickly.</p>
+              <button type="button" className="ad-help-refresh" onClick={() => { setSearch(""); setFilter("All modules"); setSelectedModule(null); }}><RefreshCw size={15} /> Reset workspace view</button>
+            </article>
+          </section>
+
+          <footer className="ad-footer">
+            <span><span className="ad-footer-mark">G</span> Gradly Ecosystem</span>
+            <span><ShieldCheck size={14} /> Administrator workspace · Role-based access</span>
+          </footer>
+        </main>
       </div>
-    </section>
-  </main>;
+
+      {selectedModule && (
+        <div className="ad-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedModule(null); }}>
+          <section className="ad-modal" role="dialog" aria-modal="true" aria-labelledby="ad-modal-title">
+            <div className="ad-modal-top">
+              <span className="ad-modal-icon">{(() => { const Icon = selectedModule.icon; return <Icon size={23} />; })()}</span>
+              <button type="button" className="ad-modal-close" aria-label="Close module details" onClick={() => setSelectedModule(null)}><X size={19} /></button>
+            </div>
+            <span className="ad-section-kicker">{selectedModule.category.toUpperCase()}</span>
+            <h2 id="ad-modal-title">{selectedModule.title}</h2>
+            <p className="ad-modal-description">{selectedModule.description}</p>
+            <ul>{selectedModule.details.map((detail) => <li key={detail}><CheckCircle2 size={17} /><span>{detail}</span></li>)}</ul>
+            <div className="ad-modal-note"><ShieldCheck size={17} /><span>Actions are governed by your assigned administrator permissions. This dashboard does not grant Super Admin capabilities.</span></div>
+            <button type="button" className="ad-modal-done" onClick={() => setSelectedModule(null)}>Got it</button>
+          </section>
+        </div>
+      )}
+    </div>
+  );
 }
+
+export default AdminDashboard;
