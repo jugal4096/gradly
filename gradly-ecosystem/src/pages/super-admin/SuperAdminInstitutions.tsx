@@ -6,7 +6,7 @@ const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/ap
 
 type Program = { id: string; name: string; code?: string | null; level?: string | null; active?: boolean; branchCount?: number; curriculumCount?: number };
 type Institution = { id: string; name: string; city?: string | null; region?: string | null; country?: string | null; program_count: number; branch_count: number; curriculum_count: number; programs: Program[] };
-type InstitutionRequest = { id: string; college_name: string; locality: string; guest_id?: string | null; email: string; external_institution_id?: string | null; source?: string | null; status: string; created_at: string; updated_at?: string | null };
+type InstitutionRequest = { id: string; college_name: string; locality: string; guest_id?: string | null; email: string; external_institution_id?: string | null; source?: string | null; status: string; created_at: string; reviewed_at?: string | null };
 type View = "directory" | "requests";
 const date = (value?: string | null) => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString() : "—";
 const pretty = (value: string) => value.replace(/_/g, " ").toLowerCase().replace(/\\b\\w/g, (c) => c.toUpperCase());
@@ -112,7 +112,7 @@ export default function SuperAdminInstitutions() {
 
     <div className="sa-inst-toolbar">
       <label><Search size={16}/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={view === "requests" ? "Search college, email, Guest ID or location…" : "Search institution, location or program…"}/></label>
-      {view === "requests" && <select aria-label="Filter institution requests" value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)}><option value="OPEN">Open requests</option><option value="ALL">All requests</option><option value="PENDING">Pending</option><option value="IN_REVIEW">In review</option><option value="COMPLETED">Completed</option><option value="REJECTED">Rejected</option></select>}
+      {view === "requests" && <select aria-label="Filter institution requests" value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)}><option value="OPEN">Open requests</option><option value="ALL">All requests</option><option value="PENDING">Pending</option><option value="IN_REVIEW">In review</option><option value="RESOLVED">Resolved</option><option value="REJECTED">Rejected</option></select>}
     </div>
 
     {error && <div className="sa-inst-error" role="alert"><AlertCircle size={17}/><div><strong>Institution data could not be loaded</strong><p>{error}</p><small>Confirm the backend is restarted and the guest institution request migrations have been applied to the same database.</small></div></div>}
@@ -135,6 +135,6 @@ export default function SuperAdminInstitutions() {
       </article>)}
     </section>}
 
-    <p className="sa-inst-footnote">Directory details reflect the current connected database. Marking a request Completed records the review status; it does not automatically create a new institution or programs. Add the approved institution and its academic structure through your database/administration workflow before marking it completed.</p>
+    <p className="sa-inst-footnote">Directory details reflect the current connected database. Marking a request Resolved records the review status; it does not automatically create a new institution or programs. Add the approved institution and its academic structure through your database/administration workflow before marking it resolved.</p>
   </main>;
 }
