@@ -33,7 +33,7 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
     const addInstitutionValue = (value: unknown) => { institutionValues.push(value); return "$" + institutionValues.length; };
     if (search) {
       const p = addInstitutionValue(`%${search}%`);
-      institutionWhere.push(`concat_ws(' ', id::text, college_name, locality, guest_id, status) ILIKE ${p}`);
+      institutionWhere.push(`concat_ws(' ', id::text, college_name, locality, guest_id, email, status) ILIKE ${p}`);
     }
     if (status === "OPEN") {
       institutionWhere.push("status IN ('PENDING','IN_REVIEW')");
@@ -46,9 +46,10 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
               'Institution addition request' AS category, 'INSTITUTION_REQUEST' AS type,
               concat('College: ', college_name, E'\\nLocality / City: ', locality,
                 E'\\nGuest ID: ', COALESCE(guest_id, 'Not provided'),
+                E'\\nEmail: ', email,
                 E'\\nExternal directory ID: ', COALESCE(external_institution_id, 'Not provided')) AS message,
               status, created_at, created_at AS updated_at,
-              guest_id AS name, NULL::text AS email,
+              guest_id AS name, email,
               jsonb_build_object('locality', locality, 'externalInstitutionId', external_institution_id,
                 'source', source) AS metadata
        FROM public.guest_institution_requests
