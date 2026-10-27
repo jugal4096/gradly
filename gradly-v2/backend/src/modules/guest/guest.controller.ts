@@ -274,6 +274,7 @@ export async function requestInstitution(req: Request, res: Response) {
   const collegeName = typeof req.body?.collegeName === "string" ? req.body.collegeName.trim() : "";
   const locality = typeof req.body?.locality === "string" ? req.body.locality.trim() : "";
   const guestId = typeof req.body?.guestId === "string" ? req.body.guestId.trim().slice(0, 24) : "";
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase().slice(0, 254) : "";
   const externalInstitutionId = typeof req.body?.externalInstitutionId === "string" ? req.body.externalInstitutionId.trim().slice(0, 200) : "";
 
   if (collegeName.length < 2 || collegeName.length > 160) {
@@ -282,6 +283,9 @@ export async function requestInstitution(req: Request, res: Response) {
   if (locality.length < 2 || locality.length > 160) {
     return res.status(400).json({ message: "Enter a locality or city between 2 and 160 characters." });
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: "Enter a valid email address so the admin can follow up." });
+  }
   if (/[<>]/.test(collegeName) || /[<>]/.test(locality)) {
     return res.status(400).json({ message: "Please remove unsupported characters from the form." });
   }
@@ -289,10 +293,10 @@ export async function requestInstitution(req: Request, res: Response) {
   try {
     const result = await pool.query(
       `INSERT INTO public.guest_institution_requests
-        (college_name, locality, guest_id, external_institution_id, source, status)
-       VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), 'GUEST_SETUP', 'PENDING')
-       RETURNING id, college_name, locality, guest_id, status, created_at`,
-      [collegeName, locality, guestId, externalInstitutionId]
+        (college_name, locality, guest_id, email, external_institution_id, source, status)
+       VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, ''), 'GUEST_SETUP', 'PENDING')
+       RETURNING id, college_name, locality, guest_id, email, status, created_at`,
+      [collegeName, locality, guestId, email, externalInstitutionId]
     );
     return res.status(201).json({
       message: "Your institution request has been sent to the Super Admin inbox.",
