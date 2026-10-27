@@ -69,7 +69,7 @@ export async function listInstitutionAdditionRequests(
     values.push(500);
     const result = await pool.query(
       `SELECT id, college_name, locality, guest_id, email, external_institution_id,
-              source, status, created_at, updated_at
+              source, status, created_at, reviewed_at, reviewed_by_super_admin_id
        FROM public.guest_institution_requests
        ${where.length ? "WHERE " + where.join(" AND ") : ""}
        ORDER BY created_at DESC
