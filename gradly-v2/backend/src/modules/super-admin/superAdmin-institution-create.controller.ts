@@ -87,8 +87,12 @@ export async function createSyllabusManually(req: SuperAdminAuthenticatedRequest
       semesters.push(await insertRecord(client,"semesters",{curriculum_id:curriculum.id,semester_number:n,semester_no:n,name:`Semester ${n}`,expected_credits:rows.reduce((s,x)=>s+x.credits,0)}));
     }
     for(const subject of subjects) {
-      const savedSubject = await insertRecord(client,"subjects",{name:subject.name,subject_name:subject.name,title:subject.name,code:subject.code||undefined,subject_code:subject.code||undefined,course_code:subject.code||undefined});
-      await insertRecord(client,"curriculum_subjects",{curriculum_id:curriculum.id,semester_id:semesters[subject.semester-1].id,subject_id:savedSubject.id,course_code:subject.code||undefined,course_name:subject.name,credits:subject.credits,course_type:subject.type,mandatory:true,active:true});
+      const existing = await client.query(
+        "SELECT id FROM public.subjects s WHERE ($1 <> '' AND LOWER(COALESCE(to_jsonb(s)->>'code',to_jsonb(s)->>'subject_code',to_jsonb(s)->>'course_code',''))=LOWER($1)) OR LOWER(COALESCE(to_jsonb(s)->>'name',to_jsonb(s)->>'subject_name',to_jsonb(s)->>'title',''))=LOWER($2) LIMIT 1",
+        [subject.code, subject.name]
+      );
+      const savedSubject = existing.rowCount ? existing.rows[0] : await insertRecord(client,"subjects",{name:subject.name,subject_name:subject.name,title:subject.name,code:subject.code||undefined,subject_code:subject.code||undefined,course_code:subject.code||undefined});
+      await insertRecord(client,"curriculum_subjects",{curriculum_id:curriculum.id,semester_id:semesters[subject.semester-1].id,subject_id:savedSubject.id,course_id:savedSubject.id,course_code:subject.code||undefined,course_name:subject.name,credits:subject.credits,course_type:subject.type,mandatory:true,active:true});
     }
     await client.query("COMMIT");
     return res.status(201).json({success:true,message:`Syllabus created: ${semesterCount} semesters, ${subjects.length} subjects.`,curriculumId:curriculum.id});
