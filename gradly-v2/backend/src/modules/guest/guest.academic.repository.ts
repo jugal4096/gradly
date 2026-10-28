@@ -102,7 +102,8 @@ export async function createGuestSemester(
 }
 
 export async function createGuestCourse(
-  data: CreateGuestCourseData
+  data: CreateGuestCourseData,
+  guestSessionId: string
 ) {
   const query = `
     INSERT INTO guest_semester_courses (
@@ -119,10 +120,15 @@ export async function createGuestCourse(
       result_status,
       result_source
     )
-    VALUES (
+    SELECT
       $1, $2, $3, $4, $5,
       $6, $7, $8, $9, $10,
       $11, $12
+    WHERE EXISTS (
+      SELECT 1
+      FROM guest_semesters AS semester
+      WHERE semester.id = $1
+        AND semester.guest_session_id = $13
     )
     RETURNING
       id,
@@ -157,12 +163,31 @@ export async function createGuestCourse(
     data.maximumMarks ?? null,
     data.resultStatus ?? "PENDING",
     data.resultSource ?? "MANUAL_ENTRY",
+    guestSessionId,
   ]);
 
-  return result.rows[0];
+  return result.rows[0] ?? null;
+}
+
+export async function findGuestSemesterByIdAndSession(
+  guestSemesterId: string,
+  guestSessionId: string
+) {
+  const query = `
+    SELECT id
+    FROM guest_semesters
+    WHERE id = $1
+      AND guest_session_id = $2
+    LIMIT 1;
+  `;
+
+  const result = await pool.query(query, [guestSemesterId, guestSessionId]);
+
+  return result.rows[0] ?? null;
 }
 
 export async function getGuestSemesterCourses(
+  guestSessionId: string,
   guestSemesterId: string
 ) {
   const query = `
@@ -184,12 +209,15 @@ export async function getGuestSemesterCourses(
       attempt_number,
       created_at,
       updated_at
-    FROM guest_semester_courses
-    WHERE guest_semester_id = $1
-    ORDER BY created_at ASC;
+    FROM guest_semester_courses AS course
+    INNER JOIN guest_semesters AS semester
+      ON semester.id = course.guest_semester_id
+    WHERE semester.id = $1
+      AND semester.guest_session_id = $2
+    ORDER BY course.created_at ASC;
   `;
 
-  const result = await pool.query(query, [guestSemesterId]);
+  const result = await pool.query(query, [guestSemesterId, guestSessionId]);
 
   return result.rows;
 }
