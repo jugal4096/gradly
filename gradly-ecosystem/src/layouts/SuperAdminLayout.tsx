@@ -296,25 +296,6 @@ export default function SuperAdminLayout() {
           <div className="content-system-strip">
 
             <div className="content-system-left">
-
-              <Activity
-                size={15}
-                strokeWidth={1.8}
-              />
-
-              <span>
-                SYSTEM STATUS
-              </span>
-
-              <span className="system-status-value">
-                NORMAL
-              </span>
-
-            </div>
-
-
-            <div className="content-system-right">
-              <span className="sa-shell-role">SUPER ADMIN</span>
               <button
                 type="button"
                 className="sa-workspace-toggle"
@@ -323,8 +304,14 @@ export default function SuperAdminLayout() {
                 onClick={() => setWorkspaceOpen((open) => !open)}
               >
                 {workspaceOpen ? <X size={20} /> : <Menu size={21} />}
-                <span>Workspace</span>
               </button>
+              <Activity size={15} strokeWidth={1.8} />
+              <span>SYSTEM STATUS</span>
+              <span className="system-status-value">NORMAL</span>
+            </div>
+
+            <div className="content-system-right">
+              <span className="sa-shell-role">SUPER ADMIN</span>
             </div>
 
           </div>
