@@ -3,8 +3,8 @@ const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim();
 export const API_BASE_URL = (
   configuredApiBaseUrl || (import.meta.env.DEV ? "http://localhost:5000" : "")
 )
-  .replace(/\\/+$/, "")
-  .replace(/\\/api$/i, "");
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
 
 export function apiUrl(path: string): string {
   if (!API_BASE_URL) {
@@ -13,10 +13,10 @@ export function apiUrl(path: string): string {
     );
   }
 
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const normalizedPath = path.startsWith("/") ? path : \`/\${path}\`;
   const apiPath = normalizedPath.toLowerCase().startsWith("/api/")
     ? normalizedPath
-    : `/api${normalizedPath}`;
+    : \`/api\${normalizedPath}\`;
 
-  return `${API_BASE_URL}${apiPath}`;
+  return \`\${API_BASE_URL}\${apiPath}\`;
 }
