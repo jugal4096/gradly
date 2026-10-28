@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   KeyRound,
   Users,
+  Menu,
+  X,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -125,6 +127,7 @@ const badgeEndpoints: Record<string, string> = {
 export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const [queueCounts, setQueueCounts] = useState<Record<string, number>>({});
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -223,173 +226,63 @@ export default function SuperAdminLayout() {
       <div className="super-admin-body">
 
 
-        {/* ===================================================
-            SIDEBAR
-            =================================================== */}
-
-        <aside className="super-admin-sidebar">
-
-
-          <div className="sidebar-heading">
-            CONTROL
-          </div>
-
-
-          <nav className="sidebar-navigation">
-
-            {controlNavigation.map(
-              (item) => {
-
-                const Icon =
-                  item.icon;
-
-                return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.end}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    {(queueCounts[item.path] || 0) > 0 && (
-                      <span className="sidebar-count" aria-label={String(queueCounts[item.path]) + " pending items"}>
-                        {queueCounts[item.path] > 99 ? "99+" : queueCounts[item.path]}
-                      </span>
-                    )}
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
-                );
-
-              }
-            )}
-
-          </nav>
-
-
-          {/* =================================================
-              SYSTEM
-              ================================================= */}
-
-          <div className="sidebar-heading sidebar-system-heading">
-            SYSTEM
-          </div>
-
-
-          <nav className="sidebar-navigation">
-
-            {systemNavigation.map(
-              (item) => {
-
-                const Icon =
-                  item.icon;
-
-                return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
-                );
-
-              }
-            )}
-
-          </nav>
-
-
-          {/* =================================================
-              SPACER
-              ================================================= */}
-
-          <div className="sidebar-spacer" />
-
-
-          {/* =================================================
-              LOGOUT
-              ================================================= */}
-
-          <button
-            type="button"
-            className="sidebar-logout"
-            onClick={handleLogout}
-          >
-
-            <LogOut
-              size={17}
-              strokeWidth={1.8}
+        {/* Workspace navigation is hidden until the hamburger is clicked. */}
+        {workspaceOpen && (
+          <>
+            <button
+              type="button"
+              className="sa-workspace-backdrop"
+              aria-label="Close workspace menu"
+              onClick={() => setWorkspaceOpen(false)}
             />
-
-            <span>
-              Logout
-            </span>
-
-          </button>
-
-
-          {/* =================================================
-              VERSION
-              ================================================= */}
-
-          <div className="sidebar-version">
-
-            GRADLY ECOSYSTEM
-
-            <br />
-
-            ADMIN SYSTEM / V2
-
-          </div>
-
-        </aside>
-
+            <aside className="sa-workspace-drawer" aria-label="Super Admin workspace">
+              <div className="sa-workspace-drawer-head">
+                <div className="sa-workspace-brand">
+                  <span className="brand-mark">G</span>
+                  <span><strong>GRADLY</strong><small>ECOSYSTEM · WORKSPACE</small></span>
+                </div>
+                <button type="button" className="sa-workspace-close" aria-label="Close workspace" onClick={() => setWorkspaceOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="sa-workspace-caption">CONTROL CENTER</div>
+              <nav className="sa-workspace-nav" aria-label="Super Admin navigation">
+                {controlNavigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.end}
+                      onClick={() => setWorkspaceOpen(false)}
+                      className={({ isActive }) => `sa-workspace-link ${isActive ? "is-active" : ""}`}
+                    >
+                      <Icon size={18} strokeWidth={1.9} />
+                      <span>{item.label}</span>
+                      {(queueCounts[item.path] || 0) > 0 && (
+                        <span className="sidebar-count">{queueCounts[item.path] > 99 ? "99+" : queueCounts[item.path]}</span>
+                      )}
+                      <ChevronRight size={15} className="sa-workspace-chevron" />
+                    </NavLink>
+                  );
+                })}
+                <div className="sa-workspace-caption sa-workspace-system">SYSTEM</div>
+                {systemNavigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink key={item.path} to={item.path} onClick={() => setWorkspaceOpen(false)} className={({ isActive }) => `sa-workspace-link ${isActive ? "is-active" : ""}`}>
+                      <Icon size={18} strokeWidth={1.9} /><span>{item.label}</span><ChevronRight size={15} className="sa-workspace-chevron" />
+                    </NavLink>
+                  );
+                })}
+              </nav>
+              <div className="sa-workspace-drawer-footer">
+                <span><ShieldCheck size={16} /> Secure Super Admin session</span>
+                <button type="button" onClick={handleLogout}><LogOut size={17} /> Sign out</button>
+              </div>
+            </aside>
+          </>
+        )}
 
         {/* ===================================================
             CONTENT
@@ -421,9 +314,17 @@ export default function SuperAdminLayout() {
 
 
             <div className="content-system-right">
-
-              SUPER ADMIN
-
+              <span className="sa-shell-role">SUPER ADMIN</span>
+              <button
+                type="button"
+                className="sa-workspace-toggle"
+                aria-label={workspaceOpen ? "Close workspace navigation" : "Open workspace navigation"}
+                aria-expanded={workspaceOpen}
+                onClick={() => setWorkspaceOpen((open) => !open)}
+              >
+                {workspaceOpen ? <X size={20} /> : <Menu size={21} />}
+                <span>Workspace</span>
+              </button>
             </div>
 
           </div>
