@@ -22,6 +22,98 @@ settings:{title:"Security & platform settings",description:"Review security noti
 };
 function unwrap(v:unknown):Row[]{if(Array.isArray(v))return v.filter(x=>x&&typeof x==="object") as Row[];if(!v||typeof v!=="object")return[];const o=v as Record<string,unknown>;for(const k of ["data","items","requests","feedback","institutions","curriculum","events","activity","notifications","rows"])if(Array.isArray(o[k]))return(o[k] as unknown[]).filter(x=>x&&typeof x==="object") as Row[];if(o.data&&typeof o.data==="object")return unwrap(o.data);return[]}
 function label(v:unknown){if(v===null||v===undefined||v==="")return"—";return typeof v==="object"?JSON.stringify(v):String(v)}
+
+function AdminDirectory(){
+ const [rows,setRows]=useState<Row[]>([]);
+ const [activities,setActivities]=useState<Row[]>([]);
+ const [selected,setSelected]=useState<Row|null>(null);
+ const [search,setSearch]=useState("");
+ const [institution,setInstitution]=useState("all");
+ const [program,setProgram]=useState("all");
+ const [branch,setBranch]=useState("all");
+ const [status,setStatus]=useState("all");
+ const [loading,setLoading]=useState(true);
+ const [activityLoading,setActivityLoading]=useState(false);
+ const [error,setError]=useState("");
+ const [notice,setNotice]=useState("");
+ const [busy,setBusy]=useState(false);
+ const value=(...keys:string[])=>{for(const k of keys){const v=selected?.[k];if(v!==undefined&&v!==null&&String(v).trim())return String(v)}return "—"};
+ const get=(row:Row,...keys:string[])=>{for(const k of keys){const v=row[k];if(v!==undefined&&v!==null&&String(v).trim())return String(v)}return "—"};
+ const load=useCallback(async()=>{
+  setLoading(true);setError("");
+  try{
+   const token=getToken();if(!token)throw new Error("Your Super Admin session is missing. Sign in again.");
+   const url=new URL(API_BASE_URL+"/api/super-admin/administrators");
+   if(search.trim())url.searchParams.set("search",search.trim());
+   if(institution!=="all")url.searchParams.set("institutionId",institution);
+   if(branch!=="all")url.searchParams.set("branchId",branch);
+   if(status!=="all")url.searchParams.set("status",status);
+   const response=await fetch(url.toString(),{headers:{Accept:"application/json",Authorization:"Bearer "+token}});
+   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Unable to load administrator directory.");
+   const list=Array.isArray(data.administrators)?data.administrators:[];setRows(list);
+   if(selected){const fresh=list.find((r:Row)=>String(r.id)===String(selected.id));if(fresh)setSelected(fresh)}
+  }catch(e){setError(e instanceof Error?e.message:"Unable to load administrators.");setRows([])}
+  finally{setLoading(false)}
+ },[search,institution,branch,status]);
+ useEffect(()=>{void load()},[load]);
+ const unique=(keys:string[])=>Array.from(new Set(rows.map(r=>get(r,...keys)).filter(v=>v!=="—")));
+ const institutions=unique(["institution_name","institutionName"]);
+ const programs=unique(["program_name","programName","program"]);
+ const branches=unique(["branch_name","branchName","department_name"]);
+ const filtered=rows.filter(r=>(program==="all"||get(r,"program_name","programName","program")===program)&&(branch==="all"||get(r,"branch_name","branchName","department_name")===branch));
+ const activeCount=filtered.filter(r=>get(r,"status","admin_status").toUpperCase()==="ACTIVE").length;
+ const availableCount=filtered.filter(r=>["ACTIVE","AVAILABLE","REGISTERED","PENDING_SETUP"].includes(get(r,"status","admin_status","registration_status").toUpperCase())).length;
+ async function viewActivity(row:Row){
+  setSelected(row);setActivities([]);setActivityLoading(true);setError("");
+  try{const token=getToken();const url=new URL(API_BASE_URL+"/api/super-admin/audit/admin-activity");url.searchParams.set("adminId",String(row.id));url.searchParams.set("limit","100");
+   const response=await fetch(url.toString(),{headers:{Accept:"application/json",Authorization:"Bearer "+(token||"")}});
+   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Could not load this administrator's activity.");
+   setActivities(Array.isArray(data.events)?data.events:[]);
+  }catch(e){setError(e instanceof Error?e.message:"Could not load activity.")}finally{setActivityLoading(false)}
+ }
+ async function updateStatus(row:Row,next:string){
+  const id=get(row,"id");if(id==="—")return;
+  if(!window.confirm("Change this administrator's status to "+next+"?"))return;
+  setBusy(true);setError("");setNotice("");
+  try{const response=await fetch(API_BASE_URL+"/api/super-admin/administrators/"+encodeURIComponent(id)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(getToken()||"")},body:JSON.stringify({status:next})});
+   const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Could not update administrator status.");
+   setNotice(data.message||"Administrator status updated.");await load();if(selected)await viewActivity(row);
+  }catch(e){setError(e instanceof Error?e.message:"Status update failed.")}finally{setBusy(false)}
+ }
+ return <section className="sc-page sa-admin-directory">
+  <header className="sc-heading"><div className="sc-heading-icon"><ShieldCheck size={23}/></div><div><span className="sc-eyebrow">GRADLY / ADMIN GOVERNANCE</span><h1>Administrators</h1><p>Explore administrator coverage by institution, program and branch. Inspect availability, account progress and recorded activity.</p></div><button className="sc-refresh" type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/>{loading?"Loading":"Refresh"}</button></header>
+  {error&&<div className="sc-alert"><AlertTriangle size={17}/><span>{error}</span></div>}{notice&&<div className="sc-success"><CheckCircle2 size={17}/><span>{notice}</span></div>}
+  <div className="sa-admin-summary">
+   <article><span>Administrators in view</span><strong>{loading?"—":filtered.length}</strong><small>Matches current filters</small></article>
+   <article><span>Active administrators</span><strong>{loading?"—":activeCount}</strong><small>Marked ACTIVE by the backend</small></article>
+   <article><span>Available / provisioned</span><strong>{loading?"—":availableCount}</strong><small>Based on returned status fields</small></article>
+   <article><span>Institutions represented</span><strong>{loading?"—":new Set(filtered.map(r=>get(r,"institution_id","institutionId","institution_name","institutionName")).filter(v=>v!=="—")).size}</strong><small>Within the current view</small></article>
+  </div>
+  <div className="sa-admin-filters">
+   <label className="sa-admin-search"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, admin code, email…"/></label>
+   <label>Institution<select value={institution} onChange={e=>setInstitution(e.target.value)}><option value="all">All institutions</option>{institutions.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+   <label>Program<select value={program} onChange={e=>setProgram(e.target.value)}><option value="all">All programs</option>{programs.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+   <label>Branch<select value={branch} onChange={e=>setBranch(e.target.value)}><option value="all">All branches</option>{branches.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+   <label>Status<select value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All statuses</option><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option><option value="DISABLED">Disabled</option></select></label>
+  </div>
+  <div className="sa-admin-workspace">
+   <section className="sa-admin-list-panel"><div className="sa-admin-panel-head"><div><h2>Admin directory</h2><p>Choose an administrator to inspect their profile and activity.</p></div><span>{filtered.length} records</span></div>
+   {loading?<div className="sc-empty">Loading administrator records…</div>:filtered.length===0?<div className="sc-empty"><Users size={26}/><strong>No administrators found</strong><span>Try clearing a filter or changing your search.</span></div>:<div className="sa-admin-table-wrap"><table className="sc-table"><thead><tr><th>Administrator</th><th>Institution</th><th>Program / branch</th><th>Status</th><th>Progress</th><th></th></tr></thead><tbody>{filtered.map((r,i)=>{const id=get(r,"id");const name=get(r,"full_name","fullName","name");const state=get(r,"status","admin_status","registration_status");const progress=get(r,"registration_status","registrationStatus","setup_status","progress");return <tr key={id==="—"?i:id} className={selected&&String(selected.id)===String(r.id)?"is-selected":""}><td><button className="sa-admin-person" type="button" onClick={()=>void viewActivity(r)}><span className="sa-admin-avatar"><ShieldCheck size={16}/></span><span><strong>{name}</strong><small>{get(r,"admin_code","adminCode")} · {get(r,"email")}</small></span></button></td><td>{get(r,"institution_name","institutionName")}</td><td><strong>{get(r,"program_name","programName","program")}</strong><small className="sa-admin-cell-sub">{get(r,"branch_name","branchName","department_name")}</small></td><td><span className={"sa-admin-status "+state.toLowerCase().replace(/[^a-z]+/g,"-")}>{state}</span></td><td><span className="sa-admin-progress-label">{progress}</span><small className="sa-admin-cell-sub">{get(r,"created_at","createdAt")!=="—"?"Created "+get(r,"created_at","createdAt"):"Progress supplied by directory"}</small></td><td><button type="button" className="sa-admin-view" onClick={()=>void viewActivity(r)}>Details <ArrowRight size={14}/></button></td></tr>})}</tbody></table></div>}
+   </section>
+   <aside className="sa-admin-detail-panel"><div className="sa-admin-panel-head"><div><h2>Administrator profile</h2><p>Progress and activity details</p></div><Activity size={18}/></div>
+    {!selected?<div className="sc-empty"><UserCog size={26}/><strong>Select an administrator</strong><span>Their profile and latest recorded actions will appear here.</span></div>:<>
+     <div className="sa-admin-profile"><span className="sa-admin-avatar large"><ShieldCheck size={22}/></span><h3>{value("full_name","fullName","name")}</h3><p>{value("email")}</p><span className={"sa-admin-status "+value("status","admin_status").toLowerCase()}>{value("status","admin_status","registration_status")}</span></div>
+     <dl className="sa-admin-facts">{[["Admin code",value("admin_code","adminCode")],["Institution",value("institution_name","institutionName")],["Program",value("program_name","programName","program")],["Branch",value("branch_name","branchName","department_name")],["Role",value("role","admin_role")],["Last active",value("last_active_at","last_login_at","last_seen_at")],["Registration",value("registration_status","registrationStatus","setup_status")]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+     <div className="sa-admin-actions"><button disabled={busy||value("status","admin_status")==="SUSPENDED"} onClick={()=>void updateStatus(selected,"SUSPENDED")}>Suspend access</button><button disabled={busy||value("status","admin_status")==="ACTIVE"} onClick={()=>void updateStatus(selected,"ACTIVE")}>Set active</button></div>
+     <div className="sa-admin-activity-head"><h3>Recorded activity</h3><span>{activities.length}</span></div>
+     {activityLoading?<div className="sc-empty">Loading activity…</div>:activities.length===0?<div className="sa-admin-no-activity">No activity events were returned for this administrator.</div>:<div className="sa-admin-timeline">{activities.map((a,i)=><article key={get(a,"id")=== "—"?i:get(a,"id")}><span className="sa-admin-timeline-dot"/><div><strong>{get(a,"action","title")}</strong><p>{[get(a,"entity_table","entityTable"),get(a,"entity_id","entityId")].filter(v=>v!=="—").join(" · ")||get(a,"metadata")}</p><small>{get(a,"created_at","createdAt")}</small></div></article>)}</div>}
+    </>}
+   </aside>
+  </div>
+  <footer className="sc-foot"><ShieldCheck size={14}/> Protected administrator directory · Activity comes from recorded audit events · Status changes use existing Super Admin controls</footer>
+ </section>;
+}
+
 export default function SuperAdminControlCenter(){
  const location=useLocation();const key=location.pathname.split("/").filter(Boolean).at(-1)||"settings";const config=modules[key]||modules.settings;const Icon=config.icon;
  const[rows,setRows]=useState<Row[]>([]);const[loading,setLoading]=useState(true);const[error,setError]=useState("");const[message,setMessage]=useState("");const[notes,setNotes]=useState<Record<string,string>>({});const[busy,setBusy]=useState("");
@@ -61,6 +153,7 @@ export default function SuperAdminControlCenter(){
   }catch(e){setError(e instanceof Error?e.message:"Action failed.")}finally{setBusy("")}
  }
 
+ if(key==="admins") return <AdminDirectory />;
  const columns=Array.from(new Set(rows.flatMap(row=>Object.keys(row)))).slice(0,7);
  return <section className="sc-page"><header className="sc-heading"><div className="sc-heading-icon"><Icon size={23}/></div><div><span className="sc-eyebrow">GRADLY CONTROL CENTER</span><h1>{config.title}</h1><p>{config.description}</p></div><button className="sc-refresh" type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/>{loading?"Loading":"Refresh"}</button></header>
  {error&&<div className="sc-alert"><AlertTriangle size={17}/><span>{error}</span></div>}{message&&<div className="sc-success"><CheckCircle2 size={17}/><span>{message}</span></div>}
