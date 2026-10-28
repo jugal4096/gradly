@@ -1,4 +1,5 @@
 name: Gradly CI
+# Validation only: this workflow never deploys to production.
 
 on:
   pull_request:
