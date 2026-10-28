@@ -1,346 +1,121 @@
-import {
-    Activity,
-    BookOpen,
-    ClipboardList,
-    MessageSquare,
-    RefreshCw,
-    ShieldCheck,
-    Users,
-  } from "lucide-react";
-  
-  import { useEffect, useState } from "react";
-  import { useNavigate } from "react-router-dom";
-  
-  import "../../styles/super-admin-dashboard.css";
-  
-  interface Student {
-    id: string;
-    email: string | null;
-    display_name: string | null;
-    role: string;
-    active: boolean;
-    last_login_at: string | null;
-    created_at: string;
-    student_identifier: string | null;
-    current_semester_number: number | null;
-    current_cgpa: number | null;
-    branch_name: string | null;
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Activity, ArrowUpRight, Ban, CheckCircle2, Clock3, RefreshCw, Search, ShieldCheck, UserRound, Users, UserX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { API_BASE_URL, getToken } from "../../lib/superAdminSession";
+import "../../styles/super-admin-dashboard.css";
+
+type RecordRow = Record<string, unknown>;
+type Tab = "students" | "guests";
+function textValue(v: unknown) { return v === null || v === undefined || v === "" ? "—" : String(v); }
+function formatDate(v: unknown) { if (!v) return "—"; const d = new Date(String(v)); return Number.isNaN(d.getTime()) ? "—" : new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(d); }
+
+export default function SuperAdminUsers() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<Tab>("students");
+  const [rows, setRows] = useState<RecordRow[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState("");
+  const [activityFor, setActivityFor] = useState("");
+  const [activity, setActivity] = useState<RecordRow[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(""); setNotice("");
+    try {
+      const token = getToken();
+      if (!token) throw new Error("Your Super Admin session is missing. Sign in again.");
+      const endpoint = tab === "students" ? "/super-admin/users" : "/super-admin/users/guests";
+      const url = new URL(API_BASE_URL + endpoint);
+      if (search.trim()) url.searchParams.set("search", search.trim());
+      const response = await fetch(url.toString(), { headers: { Accept: "application/json", Authorization: "Bearer " + token } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Unable to load account records.");
+      const result = tab === "students" ? data.students : data.guests;
+      setRows(Array.isArray(result) ? result : []);
+    } catch (e) { setRows([]); setError(e instanceof Error ? e.message : "Unable to load accounts."); }
+    finally { setLoading(false); }
+  }, [tab, search]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const activeCount = useMemo(() => rows.filter(r => tab === "students" ? r.active === true : r.active === true).length, [rows, tab]);
+  const suspendedCount = useMemo(() => rows.filter(r => tab === "students" && r.active === false).length, [rows, tab]);
+
+  async function toggleAccount(row: RecordRow) {
+    const id = textValue(row.id);
+    const nextActive = row.active !== true;
+    const confirmed = window.confirm(nextActive ? "Restore this student account?" : "Temporarily suspend this student account? The student will need to be restored by a Super Admin.");
+    if (!confirmed) return;
+    setBusy(id); setError(""); setNotice("");
+    try {
+      const response = await fetch(API_BASE_URL + "/super-admin/users/" + encodeURIComponent(id) + "/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + (getToken() || "") },
+        body: JSON.stringify({ active: nextActive }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Could not update account status.");
+      setNotice(data.message || "Account status updated.");
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : "Account update failed."); }
+    finally { setBusy(""); }
   }
-  
-  interface UsersResponse {
-    students: Student[];
-    count: number;
+
+  async function showActivity(row: RecordRow) {
+    const id = textValue(row.id);
+    if (activityFor === id) { setActivityFor(""); setActivity([]); return; }
+    setActivityFor(id); setActivity([]); setActivityLoading(true); setError("");
+    try {
+      const endpoint = tab === "students" ? "/super-admin/users/" + encodeURIComponent(id) + "/activity" : "/super-admin/users/guests/" + encodeURIComponent(id) + "/activity";
+      const response = await fetch(API_BASE_URL + endpoint, { headers: { Accept: "application/json", Authorization: "Bearer " + (getToken() || "") } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Unable to load activity.");
+      const events = data.events ?? data.activity ?? [];
+      setActivity(Array.isArray(events) ? events : []);
+    } catch (e) { setError(e instanceof Error ? e.message : "Activity could not be loaded."); }
+    finally { setActivityLoading(false); }
   }
-  
-  const modules = [
-    {
-      label: "Administrators",
-      description: "Registered administrative accounts",
-      icon: ShieldCheck,
-      path: "/super-admin/admins",
-    },
-    {
-      label: "Applications",
-      description: "Pending administrator applications",
-      icon: ClipboardList,
-      path: "/super-admin/applications",
-    },
-    {
-      label: "Feedback",
-      description: "Open feedback requests",
-      icon: MessageSquare,
-      path: "/super-admin/feedback",
-    },
-    {
-      label: "Curriculum",
-      description: "Pending curriculum changes",
-      icon: BookOpen,
-      path: "/super-admin/curriculum",
-    },
-  ];
-  
-  export default function SuperAdminDashboard() {
-    const navigate = useNavigate();
-  
-    const [activeUsers, setActiveUsers] = useState<number | null>(null);
-    const [usersLoading, setUsersLoading] = useState(true);
-    const [usersError, setUsersError] = useState(false);
-  
-    async function loadActiveUsers() {
-      const token = localStorage.getItem("gradly_super_admin_token");
-  
-      if (!token) {
-        setUsersLoading(false);
-        setUsersError(true);
-        return;
-      }
-  
-      try {
-        setUsersLoading(true);
-        setUsersError(false);
-  
-        const apiBaseUrl =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  
-        const response = await fetch(`${apiBaseUrl}/super-admin/users`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to load users.");
-        }
-  
-        const data: UsersResponse = await response.json();
-  
-        const activeCount = Array.isArray(data.students)
-          ? data.students.filter((student) => student.active === true).length
-          : 0;
-  
-        setActiveUsers(activeCount);
-      } catch (error) {
-        console.error("Failed to load active users:", error);
-        setUsersError(true);
-        setActiveUsers(null);
-      } finally {
-        setUsersLoading(false);
-      }
-    }
-  
-    useEffect(() => {
-      loadActiveUsers();
-    }, []);
-  
-    function handleUsersClick() {
-      navigate("/super-admin/users");
-    }
-  
-    return (
-      <div className="super-dashboard">
-        {/* =====================================================
-            HEADER
-            ===================================================== */}
-  
-        <div className="super-dashboard-heading">
-          <div>
-            <div className="super-dashboard-kicker">
-              GRADLY / SYSTEM CONTROL
-            </div>
-  
-            <h1>Super Admin Dashboard</h1>
-  
-            <p>
-              Central administration and governance console for the Gradly
-              ecosystem.
-            </p>
-          </div>
-  
-          <div className="dashboard-status">
-            <Activity size={15} strokeWidth={1.8} />
-  
-            <span>SYSTEM READY</span>
-          </div>
-        </div>
-  
-        {/* =====================================================
-            MODULES
-            ===================================================== */}
-  
-        <section className="dashboard-module-grid">
-          {/* USERS */}
-  
-          <button
-            type="button"
-            className="dashboard-module dashboard-module-clickable"
-            onClick={handleUsersClick}
-            title="Open user management"
-          >
-            <div className="module-icon module-icon-users">
-              <Users size={19} strokeWidth={1.8} />
-            </div>
-  
-            <div className="module-info">
-              <div className="module-label">Users</div>
-  
-              <div className="module-value module-value-with-refresh">
-                {usersLoading ? (
-                  <span className="module-loading">...</span>
-                ) : usersError ? (
-                  <span className="module-error">ERR</span>
-                ) : (
-                  activeUsers ?? 0
-                )}
-  
-                <span
-                  className="module-refresh-button"
-                  role="button"
-                  tabIndex={0}
-                  title="Refresh active users"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    loadActiveUsers();
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      loadActiveUsers();
-                    }
-                  }}
-                >
-                  <RefreshCw
-                    size={13}
-                    strokeWidth={1.8}
-                    className={usersLoading ? "refresh-spinning" : ""}
-                  />
-                </span>
-              </div>
-  
-              <div className="module-description">
-                Currently active student accounts
-              </div>
-            </div>
-          </button>
-  
-          {/* EXISTING MODULES */}
-  
-          {modules.map((module) => {
-            const Icon = module.icon;
-  
-            return (
-              <button
-                type="button"
-                className="dashboard-module dashboard-module-clickable"
-                key={module.label}
-                onClick={() => navigate(module.path)}
-                title={`Open ${module.label}`}
-              >
-                <div className="module-icon">
-                  <Icon size={19} strokeWidth={1.8} />
-                </div>
-  
-                <div className="module-info">
-                  <div className="module-label">{module.label}</div>
-  
-                  <div className="module-value">—</div>
-  
-                  <div className="module-description">
-                    {module.description}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </section>
-  
-        {/* =====================================================
-            SYSTEM INFORMATION
-            ===================================================== */}
-  
-        <section className="dashboard-panel">
-          <div className="dashboard-panel-header">
-            <div>SYSTEM INFORMATION</div>
-  
-            <span>V2</span>
-          </div>
-  
-          <div className="dashboard-information">
-            <div>
-              <span>Environment</span>
-  
-              <strong>Development</strong>
-            </div>
-  
-            <div>
-              <span>Administration Mode</span>
-  
-              <strong>Super Admin</strong>
-            </div>
-  
-            <div>
-              <span>Database</span>
-  
-              <strong>PostgreSQL</strong>
-            </div>
-  
-            <div>
-              <span>Authentication</span>
-  
-              <strong>Protected</strong>
-            </div>
-          </div>
-        </section>
-  
-        {/* =====================================================
-            ACTIVE USERS INFORMATION
-            ===================================================== */}
-  
-        <section className="dashboard-panel">
-          <div className="dashboard-panel-header">
-            <div>USER ACTIVITY</div>
-  
-            <span>LIVE DATA</span>
-          </div>
-  
-          <div className="dashboard-user-summary">
-            <div className="dashboard-user-summary-icon">
-              <Users size={20} strokeWidth={1.8} />
-            </div>
-  
-            <div className="dashboard-user-summary-content">
-              <span className="dashboard-user-summary-label">
-                ACTIVE STUDENT ACCOUNTS
-              </span>
-  
-              <strong>
-                {usersLoading
-                  ? "Loading..."
-                  : usersError
-                    ? "Unavailable"
-                    : activeUsers ?? 0}
-              </strong>
-  
-              <p>
-                Number of student accounts currently marked as active in the
-                Gradly system.
-              </p>
-            </div>
-  
-            <button
-              type="button"
-              className="dashboard-user-summary-button"
-              onClick={handleUsersClick}
-            >
-              OPEN USERS
-            </button>
-          </div>
-        </section>
-  
-        {/* =====================================================
-            ADMINISTRATIVE ACTIVITY
-            ===================================================== */}
-  
-        <section className="dashboard-panel">
-          <div className="dashboard-panel-header">
-            <div>ADMINISTRATIVE ACTIVITY</div>
-  
-            <span>LIVE DATA</span>
-          </div>
-  
-          <div className="dashboard-empty">
-            <Activity size={20} strokeWidth={1.8} />
-  
-            <strong>No activity loaded</strong>
-  
-            <p>
-              Administrative activity will appear here once the audit API is
-              connected.
-            </p>
-          </div>
-        </section>
+
+  return <main className="super-dashboard sa-user-directory">
+    <header className="sa-directory-header">
+      <div><div className="sd-eyebrow"><span className="sd-eyebrow-dot"/> GRADLY <span className="sd-slash">/</span> GOVERNANCE</div><h1>People &amp; access</h1><p>Inspect student accounts and guest sessions, review their activity, and manage student account access.</p></div>
+      <button className="sd-refresh-button" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} className={loading ? "sd-spin" : ""}/>{loading ? "Refreshing…" : "Refresh directory"}</button>
+    </header>
+    <section className="sa-directory-hero">
+      <div className="sa-directory-hero-icon"><ShieldCheck size={24}/></div><div className="sa-directory-hero-copy"><span>SUPER ADMIN WORKSPACE</span><h2>Visibility with accountability.</h2><p>Account controls are audited. Guest activity is read-only; student access can be suspended and restored.</p></div>
+      <div className="sa-directory-summary"><strong>{loading ? "—" : rows.length.toLocaleString("en-IN")}</strong><span>Records in this view</span></div>
+    </section>
+    <div className="sa-directory-toolbar">
+      <div className="sa-directory-tabs" role="tablist" aria-label="Account type">
+        <button role="tab" aria-selected={tab === "students"} className={tab === "students" ? "active" : ""} onClick={() => {setTab("students");setActivityFor("");setActivity([]);}}> <Users size={16}/> Students </button>
+        <button role="tab" aria-selected={tab === "guests"} className={tab === "guests" ? "active" : ""} onClick={() => {setTab("guests");setActivityFor("");setActivity([]);}}> <UserRound size={16}/> Guest sessions </button>
       </div>
-    );
-  }
+      <label className="sa-directory-search"><Search size={17}/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, ID or institution…" /><span>{rows.length}</span></label>
+    </div>
+    <div className="sa-directory-stats">
+      <div><span>{tab === "students" ? "Active accounts" : "Active sessions"}</span><strong>{loading ? "—" : activeCount}</strong></div>
+      {tab === "students" && <div><span>Suspended accounts</span><strong>{loading ? "—" : suspendedCount}</strong></div>}
+      <div><span>Directory source</span><strong>Live API</strong></div>
+    </div>
+    {error && <div className="sd-error" role="alert"><UserX size={18}/><div className="sd-error-copy"><strong>Could not complete the action</strong><p>{error}</p></div></div>}
+    {notice && <div className="sc-success" role="status"><CheckCircle2 size={17}/>{notice}</div>}
+    {loading ? <div className="sc-empty"><RefreshCw className="sd-spin" size={24}/><strong>Loading directory</strong><span>Fetching live records from the protected backend.</span></div> : rows.length === 0 ? <div className="sc-empty"><Users size={27}/><strong>No {tab === "students" ? "student accounts" : "guest sessions"} found</strong><span>{search ? "Try a different search term." : "No records were returned by the backend."}</span></div> :
+      <div className="sa-directory-list">{rows.map((row,index) => {
+        const id = textValue(row.id);
+        const name = textValue(row.display_name ?? row.name ?? row.college_name ?? row.guest_id);
+        const email = textValue(row.email);
+        const active = row.active === true;
+        const deleted = Boolean(row.deleted_at ?? (row.metadata as Record<string,unknown> | undefined)?.deleted_at);
+        return <article className="sa-person-card" key={id === "—" ? index : id}>
+          <div className="sa-person-avatar">{tab === "students" ? <UserRound size={20}/> : <Users size={20}/>}</div>
+          <div className="sa-person-main"><div className="sa-person-name">{name}<span className={"sa-status-pill " + (deleted ? "muted" : active ? "active" : "paused")}>{deleted ? "Deleted by guest" : active ? "Active" : "Suspended"}</span></div><div className="sa-person-email">{email}</div><div className="sa-person-meta">{tab === "students" ? [row.student_identifier, row.institution_name, row.branch_name].filter(Boolean).map(String).join(" · ") || "Student profile" : [row.institution_name, row.subject_count !== undefined ? String(row.subject_count) + " subjects" : "", row.semester_entry_count !== undefined ? String(row.semester_entry_count) + " semester entries" : ""].filter(Boolean).join(" · ") || "Guest session"} </div><div className="sa-person-last"><Clock3 size={12}/> Last active {formatDate(row.last_login_at ?? row.last_seen_at ?? row.created_at ?? row.first_seen_at)}</div></div>
+          <div className="sa-person-actions">{tab === "students" && <button className="sa-secondary-action" type="button" onClick={() => navigate("/super-admin/users/" + encodeURIComponent(id))}>Academic profile <ArrowUpRight size={14}/></button>}<button className="sa-secondary-action" type="button" onClick={() => void showActivity(row)}><Activity size={14}/>{activityFor === id ? "Hide activity" : "View activity"}</button>{tab === "students" && <button className={active ? "sa-danger-action" : "sa-restore-action"} type="button" disabled={busy === id} onClick={() => void toggleAccount(row)}>{active ? <><Ban size={14}/> Suspend</> : <><CheckCircle2 size={14}/> Restore</>}</button>}</div>
+          {activityFor === id && <div className="sa-person-activity"><div className="sa-activity-heading"><Activity size={15}/><strong>Recent activity</strong></div>{activityLoading ? <span>Loading activity…</span> : activity.length ? activity.map((event,j)=><div className="sa-activity-event" key={textValue(event.id ?? event.created_at ?? j)}><strong>{textValue(event.action ?? event.event_type ?? event.title ?? "Activity event")}</strong><span>{textValue(event.description ?? event.entity_table ?? event.type)}</span><time>{formatDate(event.created_at ?? event.createdAt ?? event.timestamp)}</time></div>) : <span>No activity events returned for this record.</span>}</div>}
+        </article>;
+      })}</div>}
+    <footer className="sc-foot"><ShieldCheck size={14}/> Protected Super Admin directory · Student suspension/restoration writes audit events · Guest records are inspected read-only</footer>
+  </main>;
+}
