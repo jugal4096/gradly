@@ -69,7 +69,8 @@ export async function getStudent(
       });
     }
 
-    const { userId } = req.params;
+    const userId =
+      typeof req.params.userId === "string" ? req.params.userId : "";
 
     if (!userId) {
       return res.status(400).json({
