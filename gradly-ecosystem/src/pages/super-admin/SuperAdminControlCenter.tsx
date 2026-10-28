@@ -46,7 +46,7 @@ export default function SuperAdminControlCenter(){
   const id=label(row.id??row.request_id);const note=(notes[id]||"").trim();
   if(!id||id==="—"){setError("This record has no action ID.");return}
   if(key==="admin-requests"&&note.length<3){setError("Add a review note of at least 3 characters before reviewing an Admin request.");return}
-  if(action==="REJECTED"&&!note){setError("Add a review note before rejecting this request.");return}
+  if((key==="password-requests"||key==="admin-requests")&&action==="REJECTED"&&!note){setError("Add a review note before rejecting this request.");return}
   setBusy(id);setError("");setMessage("");
   try{
    let endpoint="",method="PATCH",payload:Record<string,unknown>={};
