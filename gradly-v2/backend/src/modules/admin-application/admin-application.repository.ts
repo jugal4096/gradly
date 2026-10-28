@@ -1,4 +1,3 @@
-import { PoolClient } from "pg";
 import { pool } from "../../config/database";
 
 export interface CreateApplicationInput {
