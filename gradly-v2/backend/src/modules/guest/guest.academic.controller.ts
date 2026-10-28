@@ -126,7 +126,13 @@ export async function addGuestSemesterCourse(
           : null,
       resultStatus,
       resultSource,
-    });
+    }, session.id);
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Guest semester not found.",
+      });
+    }
 
     return res.status(201).json({
       message: "Guest course saved successfully.",
@@ -164,7 +170,13 @@ export async function getGuestSemesterCoursesController(
 
     const { guestSemesterId } = req.params;
 
-    const courses = await getGuestCourses(guestSemesterId);
+    const courses = await getGuestCourses(session.id, guestSemesterId);
+
+    if (!courses) {
+      return res.status(404).json({
+        message: "Guest semester not found.",
+      });
+    }
 
     return res.status(200).json({
       courses,
