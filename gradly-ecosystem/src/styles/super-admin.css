@@ -56,3 +56,66 @@
 @media(max-width:850px){.super-admin-sidebar{width:230px}}
 @media(max-width:650px){.super-admin-topbar{height:62px}.super-admin-sidebar{width:64px;padding:15px 7px}.sidebar-link{min-height:43px;border-radius:11px}.sidebar-link-active{box-shadow:inset 0 0 0 1px rgba(186,167,255,.24)}.sidebar-count{right:0;top:0}.super-admin-page{padding:15px}}
 @media(prefers-reduced-motion:reduce){.sidebar-link,.sidebar-logout{transition:none!important}}
+
+
+/* Global Super Admin: one hamburger-triggered Workspace, never a permanent sidebar. */
+.super-admin-body { display: block !important; position: relative; }
+.super-admin-sidebar { display: none !important; }
+.super-admin-content { min-height: calc(100vh - 108px); }
+.content-system-strip { min-height: 58px; position: relative; z-index: 5; }
+.content-system-right { display: flex; align-items: center; justify-content: flex-end; gap: 15px; }
+.sa-shell-role { color: #8a7bb1; font-size: 9px; font-weight: 900; letter-spacing: 1.5px; }
+.sa-workspace-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-width: 48px; min-height: 44px; padding: 0 14px;
+  border: 1px solid #cdbdff; border-radius: 14px;
+  background: linear-gradient(145deg,#fff 0%,#f0eaff 100%);
+  color: #5e3bc7; font-size: 11px; font-weight: 850; cursor: pointer;
+  box-shadow: 0 6px 0 #e1d5ff, 0 11px 22px rgba(65,39,135,.15), inset 0 1px 0 #fff;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.sa-workspace-toggle:hover { transform: translateY(-3px); box-shadow: 0 9px 0 #e1d5ff,0 16px 27px rgba(65,39,135,.2),inset 0 1px 0 #fff; }
+.sa-workspace-toggle:active { transform: translateY(3px); box-shadow: 0 2px 0 #e1d5ff,0 5px 12px rgba(65,39,135,.12); }
+.sa-workspace-backdrop {
+  position: fixed; z-index: 50; inset: 0; width: 100%; height: 100%;
+  border: 0; background: rgba(18,9,43,.56); cursor: default;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  animation: sa-workspace-fade .2s ease both;
+}
+.sa-workspace-drawer {
+  position: fixed; z-index: 51; top: 12px; bottom: 12px; left: 12px;
+  display: flex; flex-direction: column; width: min(355px,calc(100vw - 24px));
+  overflow: hidden; border: 1px solid rgba(255,255,255,.28); border-radius: 25px;
+  color: #fff; background:
+    radial-gradient(ellipse at 0% 0%,rgba(153,121,255,.24),transparent 40%),
+    linear-gradient(155deg,#21143f 0%,#30205b 52%,#1c1238 100%);
+  box-shadow: 22px 0 80px rgba(13,5,36,.38), inset 0 1px 0 rgba(255,255,255,.15);
+  animation: sa-workspace-slide .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.sa-workspace-drawer-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:22px 19px 18px; border-bottom:1px solid rgba(255,255,255,.12); }
+.sa-workspace-brand { display:flex; align-items:center; gap:11px; min-width:0; }
+.sa-workspace-brand .brand-mark { width:42px;height:42px;flex:0 0 auto;border-radius:14px;background:linear-gradient(145deg,#a992ff,#7548e5 58%,#4b2bb2);box-shadow:0 8px 22px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.45); }
+.sa-workspace-brand>span:last-child { display:grid; gap:4px; }
+.sa-workspace-brand strong { color:#fff;font:850 13px Manrope,sans-serif;letter-spacing:1.8px; }
+.sa-workspace-brand small { color:#b8a8e7;font-size:8px;font-weight:800;letter-spacing:1.4px; }
+.sa-workspace-close { display:grid;place-items:center;width:39px;height:39px;flex:0 0 auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;transition:background .18s,transform .18s; }
+.sa-workspace-close:hover { transform:rotate(90deg);background:rgba(255,255,255,.14); }
+.sa-workspace-caption { padding:17px 21px 9px;color:#a99ad7;font-size:9px;font-weight:900;letter-spacing:2px; }
+.sa-workspace-nav { flex:1;min-height:0;overflow-y:auto;padding:0 12px 15px;scrollbar-width:thin;scrollbar-color:#8266d4 transparent; }
+.sa-workspace-link { position:relative;display:flex;align-items:center;gap:12px;min-height:45px;margin:4px 0;padding:0 12px;border:1px solid transparent;border-radius:12px;color:#d0c6eb;text-decoration:none;font-size:11px;font-weight:700;transition:transform .18s,background .18s,border-color .18s,color .18s; }
+.sa-workspace-link>svg:first-child { flex:0 0 auto;color:#b5a3ef; }
+.sa-workspace-link>span:nth-child(2) { flex:1;min-width:0; }
+.sa-workspace-link:hover { transform:translateX(3px);border-color:rgba(200,180,255,.16);background:rgba(255,255,255,.07);color:#fff; }
+.sa-workspace-link.is-active { border-color:rgba(194,172,255,.27);background:linear-gradient(100deg,rgba(151,116,255,.28),rgba(104,70,209,.12));color:#fff;box-shadow:inset 3px 0 #c7b4ff,0 7px 16px rgba(0,0,0,.1); }
+.sa-workspace-link.is-active>svg:first-child { color:#d6c7ff; }
+.sa-workspace-link .sidebar-count { min-width:21px;height:21px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;border-radius:99px;background:linear-gradient(135deg,#e2d5ff,#bda8ff);color:#38205f;font-size:10px;font-weight:900; }
+.sa-workspace-chevron { margin-left:auto;color:#8f80bb; }
+.sa-workspace-system { margin-top:12px;border-top:1px solid rgba(255,255,255,.1); }
+.sa-workspace-drawer-footer { display:grid;gap:10px;padding:14px 15px 16px;border-top:1px solid rgba(255,255,255,.12);background:rgba(10,5,28,.2); }
+.sa-workspace-drawer-footer>span { display:flex;align-items:center;gap:8px;padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:rgba(255,255,255,.045);color:#d0c3f4;font-size:10px;font-weight:700; }
+.sa-workspace-drawer-footer button { display:flex;align-items:center;gap:9px;min-height:41px;padding:0 12px;border:1px solid rgba(255,255,255,.13);border-radius:11px;background:rgba(255,255,255,.06);color:#fff;font-size:11px;font-weight:800;cursor:pointer; }
+.sa-workspace-drawer-footer button:hover { border-color:rgba(255,147,167,.35);background:rgba(255,92,127,.12); }
+@keyframes sa-workspace-slide { from { opacity:.4;transform:translateX(-22px) perspective(900px) rotateY(4deg); } to { opacity:1;transform:translateX(0) perspective(900px) rotateY(0); } }
+@keyframes sa-workspace-fade { from { opacity:0; } to { opacity:1; } }
+@media(max-width:650px) { .content-system-strip { min-height:54px;padding:0 12px; }.sa-shell-role { display:none; }.sa-workspace-toggle { min-height:42px;padding:0 12px; }.super-admin-content { min-height:calc(100vh - 62px); } }
+@media(prefers-reduced-motion:reduce) { .sa-workspace-backdrop,.sa-workspace-drawer { animation:none!important; }.sa-workspace-toggle,.sa-workspace-link,.sa-workspace-close { transition:none!important; } }
