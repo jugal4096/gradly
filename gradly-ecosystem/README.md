@@ -1,75 +1,58 @@
-# React + TypeScript + Vite
+# Gradly Ecosystem
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The Gradly Ecosystem is the React + TypeScript + Vite frontend for the Gradly administration experience.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js compatible with the installed Vite version
+- npm
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Quality checks
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run lint
+npm run build
 ```
+
+## Environment variables
+
+Create a local `.env` file if needed:
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:5000
+VITE_MAIN_APP_URL=http://localhost:5174
+```
+
+Use the real API origin for your environment. Vite exposes `VITE_*` values to the browser, so do not put server secrets in them.
+
+## Main routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Ecosystem entry |
+| `/admin` | Administrator portal |
+| `/admin/login` | Administrator sign-in |
+| `/admin/apply` | Apply for administrator access |
+| `/admin/register` | Administrator registration |
+| `/admin/dashboard` | Administrator workspace |
+| `/super-admin/login` | Super-admin sign-in |
+| `/super-admin` | Protected super-admin dashboard |
+| `/super-admin/users` | User management |
+| `/super-admin/users/:userId` | User detail |
+| `/super-admin/applications` | Application review |
+
+## Architecture
+
+- `src/main.tsx` is the Vite entry point and loads the shared design tokens and global accessibility/layout styles.
+- `src/App.tsx` is the canonical React Router configuration.
+- `src/app/App.tsx` re-exports the canonical router to prevent route drift.
+- `src/lib/superAdminSession.ts` owns the super-admin client session helpers.
+- Page-specific behavior and API contracts should be preserved when making visual changes.
+- `vercel.json` rewrites app paths to the SPA entry point so direct route visits can resolve through React Router.
