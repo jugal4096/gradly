@@ -7,6 +7,7 @@ import { pool } from "../../config/database";
 export type AdministratorListFilters = {
   institutionId?: string;
   branchId?: string;
+  programId?: string;
   status?: string;
   registrationStatus?: string;
   search?: string;
@@ -159,6 +160,9 @@ export async function findAdministrators(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN programs p
+      ON p.id = b.program_id
 
     ${whereClause}
 
