@@ -364,3 +364,13 @@
       gap: 4px;
     }
   }
+
+/* Gradly unified purple workspace polish */
+.admin-portal {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 15% 0%, #eee8ff 0, transparent 38%), #f8f7fc;
+  color: #28213f;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+.admin-portal button, .admin-portal a { transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease; }
+.admin-portal a:focus-visible, .admin-portal button:focus-visible { outline: 3px solid #b9a6ff; outline-offset: 3px; }
