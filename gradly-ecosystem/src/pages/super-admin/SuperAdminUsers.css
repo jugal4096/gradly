@@ -3,7 +3,7 @@
   
     min-height: 100%;
   
-    background: #f4f5f7;
+    background: #f8f7fc;
   
     color: #292e34;
   }
@@ -66,7 +66,7 @@
   
     background: #ffffff;
   
-    border: 1px solid #c6cbd0;
+    border: 1px solid #e5def5;
   
     color: #50575f;
   
@@ -76,9 +76,9 @@
   }
   
   .super-users-refresh:hover {
-    border-color: #6546d7;
+    border-color: #7654df;
   
-    color: #6546d7;
+    color: #7654df;
   }
   
   
@@ -108,7 +108,7 @@
   
     background: #ffffff;
   
-    border: 1px solid #c5c9ce;
+    border: 1px solid #e5def5;
   }
   
   .super-users-search svg {
@@ -134,9 +134,9 @@
     padding: 0 15px;
   
     border: 0;
-    border-left: 1px solid #c5c9ce;
+    border-left: 1px solid #e5def5;
   
-    background: #6546d7;
+    background: #7654df;
   
     color: #ffffff;
   
@@ -157,7 +157,7 @@
   
     background: #ffffff;
   
-    border: 1px solid #c5c9ce;
+    border: 1px solid #e5def5;
   
     font-family:
       Consolas,
@@ -220,9 +220,9 @@
   .super-users-table-head {
     min-height: 38px;
   
-    background: #eceef1;
+    background: #f0ecfa;
   
-    border-bottom: 1px solid #c5c9ce;
+    border-bottom: 1px solid #e5def5;
   
     font-family:
       Consolas,
@@ -289,11 +289,11 @@
     align-items: center;
     justify-content: center;
   
-    background: #eeeafb;
+    background: #eee8ff;
   
     border: 1px solid #d7d0ef;
   
-    color: #6546d7;
+    color: #7654df;
   }
   
   .super-user-main div:last-child {
