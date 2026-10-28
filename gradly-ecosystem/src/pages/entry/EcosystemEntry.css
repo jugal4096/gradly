@@ -1,15 +1,8 @@
-/* =========================================================
-   GRADLY ECOSYSTEM
-   ========================================================= */
-
-   html,
-   body,
-   #root {
-     width: 100%;
-     height: 100%;
-     margin: 0;
-     overflow: hidden;
-   }
+/* The entry screen owns its own layout; never lock scrolling globally. */
+.system-page {
+  width: 100%;
+  min-height: 100vh;
+}
    
    * {
      box-sizing: border-box;
@@ -787,11 +780,6 @@
       ========================================================= */
    
    @media (max-width: 950px) {
-     html,
-     body,
-     #root {
-       overflow-y: auto;
-     }
    
      .system-page {
        height: auto;
