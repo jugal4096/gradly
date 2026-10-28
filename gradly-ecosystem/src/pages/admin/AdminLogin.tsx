@@ -27,6 +27,8 @@ export default function AdminLogin() {
   const [googleReady, setGoogleReady] = useState(false);
   const [requests, setRequests] = useState<PasswordRequest[]>([]);
   const [requestBusy, setRequestBusy] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   useEffect(() => onAuthStateChanged(auth, (user) => setGoogleReady(Boolean(user))), []);
 
@@ -66,6 +68,31 @@ export default function AdminLogin() {
       setNotice("Google account verified. You can submit a request or continue an approved request below.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
+    } finally { setRequestBusy(false); }
+  }
+
+  async function completeApprovedPasswordReset() {
+    setRequestBusy(true); setError(""); setNotice("");
+    try {
+      if (newPassword.length < 12 || newPassword.length > 128) throw new Error("Choose a password between 12 and 128 characters.");
+      if (newPassword !== confirmNewPassword) throw new Error("The new passwords do not match.");
+      const user = auth.currentUser;
+      if (!user) throw new Error("Verify the Google account first.");
+      const token = await user.getIdToken();
+      const response = await fetch(`${API_BASE}/admin-password-requests/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ admin_code: adminCode.trim(), new_password: newPassword }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Could not complete the approved reset.");
+      setNewPassword(""); setConfirmNewPassword("");
+      setNotice(data.message || "Password reset completed. Sign in with the new password.");
+      const mine = await fetch(`${API_BASE}/admin-password-requests/mine`, { headers: { Authorization: `Bearer ${token}` } });
+      const mineData = await mine.json().catch(() => ({}));
+      setRequests(Array.isArray(mineData.requests) ? mineData.requests : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not complete the password reset.");
     } finally { setRequestBusy(false); }
   }
 
@@ -132,15 +159,16 @@ export default function AdminLogin() {
             </form>
           ) : (
             <div className="admin-login-form">
-              <p className="admin-login-help">Password recovery is reviewed by Super Admin. Verify the Google account linked to your active Admin account, then submit a request. Only Super Admin can complete a forgotten-password request.</p>
+              <p className="admin-login-help">Password recovery is reviewed by Super Admin. Verify the Google account linked to your active Admin account, then submit a request. Super Admin must approve the request first. After approval, verify your Google account here to set a new password.</p>
               <label htmlFor="recovery-admin-code">Admin ID</label>
               <input id="recovery-admin-code" value={adminCode} onChange={e => setAdminCode(e.target.value)} placeholder="Enter your Admin ID" autoComplete="username" required />
               <button className="admin-login-google" type="button" onClick={withGoogle} disabled={requestBusy}><KeyRound size={17} /> {requestBusy ? "Please wait…" : googleReady ? "Verify / refresh Google session" : "Continue with Google"}</button>
               {googleReady && <button className="admin-login-submit" type="button" onClick={submitPasswordRequest} disabled={requestBusy || !adminCode.trim()}>{requestBusy ? "Submitting…" : "Submit password request"}</button>}
+              {requests.some(request => request.status === "APPROVED") && <form className="admin-login-form admin-login-reset-form" onSubmit={event => { event.preventDefault(); void completeApprovedPasswordReset(); }}><div className="admin-login-request"><div><strong>Approved password reset</strong><span className="request-status approved">APPROVED</span></div><p>Set a new password for the Admin ID shown above. This form is available only after Super Admin approval.</p></div><label htmlFor="new-admin-password">New password</label><input id="new-admin-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 12 characters" required/><label htmlFor="confirm-admin-password">Confirm new password</label><input id="confirm-admin-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Re-enter new password" required/><button className="admin-login-submit" type="submit" disabled={requestBusy || !adminCode.trim()}>{requestBusy ? "Resetting…" : "Complete password reset"}</button></form>}
               {requests.map(request => <div className="admin-login-request" key={request.id}>
                 <div><strong>{request.admin_code}</strong><span className={`request-status ${request.status.toLowerCase()}`}>{request.status.replaceAll("_", " ")}</span></div>
                 {request.review_note && <p>{request.review_note}</p>}
-                {request.status === "APPROVED" && <p>Approved. Please contact Super Admin to complete your password reset; you cannot change it from this screen.</p>}
+                {request.status === "APPROVED" && <p>Approved. You can now set a new password below using this verified Google account.</p>}
               </div>)}
             </div>
           )}
