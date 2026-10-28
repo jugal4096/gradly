@@ -53,6 +53,10 @@ const controlNavigation = [
     path: "/super-admin/institutions",
     icon: Building2,
   },
+  { label: "Institution requests", path: "/super-admin/institution-requests", icon: ClipboardList },
+  { label: "Guest activity", path: "/super-admin/guest-sessions", icon: Activity },
+  { label: "Security notifications", path: "/super-admin/security-notifications", icon: ShieldCheck },
+  { label: "Student syllabus feedback", path: "/super-admin/student-feedback", icon: MessageSquare },
   {
     label: "Curriculum",
     path: "/super-admin/curriculum",
@@ -91,7 +95,14 @@ const systemNavigation = [
 
 
 function countRecords(value: unknown): number {
-  if (Array.isArray(value)) return value.filter((item) => {\n    if (!item || typeof item !== "object") return false;\n    const row = item as Record<string, unknown>;\n    const status = String(row.status ?? row.request_status ?? "").trim().toUpperCase().replace(/[ -]+/g, "_");\n    if (status) return ["PENDING", "OPEN", "IN_REVIEW", "UNREAD", "NEW", "SUBMITTED"].includes(status);\n    if (row.read_at !== undefined || row.readAt !== undefined) return !row.read_at && !row.readAt;\n    return true;\n  }).length;
+  if (Array.isArray(value)) return value.filter((item) => {
+    if (!item || typeof item !== "object") return false;
+    const row = item as Record<string, unknown>;
+    const status = String(row.status ?? row.request_status ?? "").trim().toUpperCase().replace(/[ -]+/g, "_");
+    if (status) return ["PENDING", "OPEN", "IN_REVIEW", "UNREAD", "NEW", "SUBMITTED"].includes(status);
+    if (row.read_at !== undefined || row.readAt !== undefined) return !row.read_at && !row.readAt;
+    return true;
+  }).length;
   if (!value || typeof value !== "object") return 0;
   const record = value as Record<string, unknown>;
   for (const key of ["data", "items", "requests", "feedback", "events", "activity", "notifications", "rows"]) {
@@ -107,6 +118,10 @@ const badgeEndpoints: Record<string, string> = {
   "/super-admin/feedback": "/api/super-admin/feedback?status=OPEN",
   "/super-admin/admin-requests": "/api/super-admin/admin-subject-change-requests?status=PENDING",
   "/super-admin/password-requests": "/api/admin-password-requests/review",
+  "/super-admin/institution-requests": "/api/super-admin/institutions/requests?status=OPEN",
+  "/super-admin/guest-sessions": "/api/super-admin/security-notifications",
+  "/super-admin/security-notifications": "/api/super-admin/security-notifications",
+  "/super-admin/student-feedback": "/api/super-admin/student-syllabus-feedback",
 };
 
 export default function SuperAdminLayout() {
