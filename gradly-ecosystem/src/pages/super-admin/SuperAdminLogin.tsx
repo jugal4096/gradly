@@ -8,6 +8,7 @@ import {
 } from "../../lib/superAdminSession";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "./SuperAdminLogin.css";
+import "../../styles/super-admin-theme.css";
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
