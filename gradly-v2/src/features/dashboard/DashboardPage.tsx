@@ -6,18 +6,8 @@ type Subject = { id: string; name: string; code: string; credits: number; gradeP
 type Semester = { id: string; name: string; sgpa: number; credits: number };
 type Profile = { name: string; institution: string; program: string; branch: string; semester: string };
 
-const defaultSubjects: Subject[] = [
-  { id: "s1", name: "Data Structures & Algorithms", code: "IT301", credits: 4, gradePoint: 9 },
-  { id: "s2", name: "Database Management Systems", code: "IT302", credits: 3, gradePoint: 8 },
-  { id: "s3", name: "Operating Systems", code: "IT303", credits: 3, gradePoint: 8 },
-  { id: "s4", name: "Artificial Intelligence", code: "IT304", credits: 3, gradePoint: 9 },
-];
-const defaultSemesters: Semester[] = [
-  { id: "sem1", name: "Semester 1", sgpa: 7.1, credits: 20 },
-  { id: "sem2", name: "Semester 2", sgpa: 7.4, credits: 21 },
-  { id: "sem3", name: "Semester 3", sgpa: 7.8, credits: 22 },
-  { id: "sem4", name: "Semester 4", sgpa: 8.1, credits: 22 },
-];
+const defaultSubjects: Subject[] = [];
+const defaultSemesters: Semester[] = [];
 const storageKey = "gradly_student_workspace_v1";
 
 function getWorkspaceStorage(): Storage {
