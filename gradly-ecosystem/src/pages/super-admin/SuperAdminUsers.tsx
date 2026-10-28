@@ -12,6 +12,7 @@ import {
   import { useNavigate } from "react-router-dom";
   
   import "../../styles/super-admin-dashboard.css";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
   
   interface Student {
     id: string;
@@ -79,10 +80,11 @@ import {
         setUsersLoading(true);
         setUsersError(false);
   
-        const apiBaseUrl =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  
-        const response = await fetch(`${apiBaseUrl}/super-admin/users`, {
+        if (!isApiConfigured) {
+          throw new Error(API_CONFIGURATION_ERROR);
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/super-admin/users`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
