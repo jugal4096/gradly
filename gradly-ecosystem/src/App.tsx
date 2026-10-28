@@ -31,6 +31,7 @@ import RequireSuperAdmin from "./components/RequireSuperAdmin";
 
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
+import SuperAdminAdminEdit from "./pages/super-admin/SuperAdminAdminEdit";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
 import SuperAdminUserActivity from "./pages/super-admin/SuperAdminUserActivity";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
@@ -142,6 +143,7 @@ function App() {
           />
 
           <Route path="admins" element={<SuperAdminControlCenter />} />
+          <Route path="admins/:adminId/edit" element={<SuperAdminAdminEdit />} />
           <Route path="institutions" element={<SuperAdminControlCenter />} />\n          <Route path="institution-requests" element={<SuperAdminControlCenter />} />
           <Route path="courses" element={<SuperAdminControlCenter />} />
           <Route path="curriculum" element={<SuperAdminControlCenter />} />
