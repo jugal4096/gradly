@@ -91,7 +91,7 @@ const systemNavigation = [
 
 
 function countRecords(value: unknown): number {
-  if (Array.isArray(value)) return value.length;
+  if (Array.isArray(value)) return value.filter((item) => {\n    if (!item || typeof item !== "object") return false;\n    const row = item as Record<string, unknown>;\n    const status = String(row.status ?? row.request_status ?? "").trim().toUpperCase().replace(/[ -]+/g, "_");\n    if (status) return ["PENDING", "OPEN", "IN_REVIEW", "UNREAD", "NEW", "SUBMITTED"].includes(status);\n    if (row.read_at !== undefined || row.readAt !== undefined) return !row.read_at && !row.readAt;\n    return true;\n  }).length;
   if (!value || typeof value !== "object") return 0;
   const record = value as Record<string, unknown>;
   for (const key of ["data", "items", "requests", "feedback", "events", "activity", "notifications", "rows"]) {
@@ -102,10 +102,10 @@ function countRecords(value: unknown): number {
 }
 
 const badgeEndpoints: Record<string, string> = {
-  "/super-admin/applications": "/api/super-admin/applications",
-  "/super-admin/institutions": "/api/super-admin/institutions/requests",
-  "/super-admin/feedback": "/api/super-admin/feedback",
-  "/super-admin/admin-requests": "/api/super-admin/admin-subject-change-requests",
+  "/super-admin/applications": "/api/super-admin/applications?status=PENDING",
+  "/super-admin/institutions": "/api/super-admin/institutions/requests?status=OPEN",
+  "/super-admin/feedback": "/api/super-admin/feedback?status=OPEN",
+  "/super-admin/admin-requests": "/api/super-admin/admin-subject-change-requests?status=PENDING",
   "/super-admin/password-requests": "/api/admin-password-requests/review",
 };
 
