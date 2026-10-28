@@ -68,7 +68,7 @@ function AdminDirectory(){
  const selectedProgramRecord=institutionPrograms.find(p=>get(p,"id","program_id","programId","name","code")===program);
  const availableBranchRecords=program==="all"?institutionPrograms.flatMap(p=>Array.isArray(p.branches)?p.branches as Row[]:[]):(Array.isArray(selectedProgramRecord?.branches)?selectedProgramRecord.branches as Row[]:[]);
  const branches=Array.from(new Map(availableBranchRecords.map(b=>[get(b,"id","branch_id","branchId","name"),get(b,"name","branch_name","branchName")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
- const filtered=rows.filter(r=>(institution==="all"||get(r,"institution_id","institutionId")===institution)&&(program==="all"||get(r,"program_name","programName","program")===program)&&(branch==="all"||get(r,"branch_id","branchId")===branch));
+ const filtered=rows.filter(r=>(institution==="all"||get(r,"institution_id","institutionId")===institution)&&(program==="all"||get(r,"program_id","programId")===program||get(r,"program_name","programName","program")===get(selectedProgramRecord||{},"name","program_name","programName","code"))&&(branch==="all"||get(r,"branch_id","branchId")===branch));
  const activeCount=filtered.filter(r=>get(r,"status","admin_status").toUpperCase()==="ACTIVE").length;
  const availableCount=filtered.filter(r=>["ACTIVE","AVAILABLE","REGISTERED","PENDING_SETUP"].includes(get(r,"status","admin_status","registration_status").toUpperCase())).length;
  async function viewActivity(row:Row, mode:"view"|"edit"="view"){
