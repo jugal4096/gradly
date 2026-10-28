@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { ArrowLeft, Eye, EyeOff, Fingerprint, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -6,42 +7,7 @@ import {
   setToken,
   verifySession,
 } from "../../lib/superAdminSession";
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "grid",
-    placeItems: "center",
-    background: "#f5f3ff",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 380,
-    background: "#fff",
-    borderRadius: 16,
-    padding: 28,
-    boxShadow: "0 10px 30px rgba(109, 40, 217, 0.15)",
-    display: "grid",
-    gap: 14,
-  },
-  input: {
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #c4b5fd",
-    fontSize: 15,
-  },
-  button: {
-    padding: "11px 12px",
-    borderRadius: 8,
-    border: "none",
-    background: "#6d28d9",
-    color: "#fff",
-    fontSize: 15,
-    cursor: "pointer",
-  },
-  error: { color: "#b91c1c", fontSize: 14, margin: 0 },
-} as const;
+import "./SuperAdminLogin.css";
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
@@ -52,6 +18,7 @@ export default function SuperAdminLogin() {
   const [checking, setChecking] = useState(true);
   const [adminCode, setAdminCode] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -67,18 +34,16 @@ export default function SuperAdminLogin() {
     };
   }, [navigate, from]);
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setSubmitting(true);
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/super-admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminCode: adminCode.trim(), password }),
       });
-
       const result = await response.json().catch(() => null);
       const token: unknown = result?.token ?? result?.accessToken;
 
@@ -86,7 +51,7 @@ export default function SuperAdminLogin() {
         setError(
           response.status === 429
             ? "Too many attempts. Please wait and try again."
-            : result?.message ?? "Login failed."
+            : result?.message ?? "Login failed. Check your credentials and try again."
         );
         return;
       }
@@ -95,48 +60,120 @@ export default function SuperAdminLogin() {
       setPassword("");
       navigate(from, { replace: true });
     } catch {
-      setError("Could not reach the server.");
+      setError("Could not reach the server. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
   }
 
   if (checking) {
-    return <p style={{ padding: 24 }}>Checking session…</p>;
+    return (
+      <div className="super-login-checking">
+        <span className="super-login-loader" />
+        <p>Securing your session…</p>
+      </div>
+    );
   }
 
   return (
-    <div style={styles.page}>
-      <form style={styles.card} onSubmit={handleSubmit}>
-        <h1 style={{ margin: 0, color: "#4c1d95" }}>Super Admin sign in</h1>
-
-        <input
-          style={styles.input}
-          type="text"
-          placeholder="Admin code"
-          autoComplete="username"
-          value={adminCode}
-          onChange={(e) => setAdminCode(e.target.value)}
-          required
-        />
-
-        <input
-          style={styles.input}
-          type="password"
-          placeholder="Password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        {error && <p style={styles.error}>{error}</p>}
-
-        <button style={styles.button} type="submit" disabled={submitting}>
-          {submitting ? "Signing in…" : "Sign in"}
+    <main className="super-login-page">
+      <div className="super-login-glow super-login-glow-one" />
+      <div className="super-login-glow super-login-glow-two" />
+      <header className="super-login-topbar">
+        <button className="super-login-back" type="button" onClick={() => navigate("/")}>
+          <ArrowLeft size={16} /> <span>Back to ecosystem</span>
         </button>
-      </form>
-    </div>
+        <div className="super-login-top-brand">
+          <span className="super-login-top-mark">G</span>
+          <span>GRADLY <small>ECOSYSTEM</small></span>
+        </div>
+        <div className="super-login-secure"><span /> SECURE ACCESS</div>
+      </header>
+
+      <section className="super-login-layout">
+        <div className="super-login-story">
+          <div className="super-login-kicker"><Sparkles size={14} /> CENTRAL ADMINISTRATION</div>
+          <h1>One ecosystem.<br /><span>Complete control.</span></h1>
+          <p className="super-login-story-copy">
+            Manage institutions, administrators, academic data and platform activity from one secure command centre.
+          </p>
+          <div className="super-login-feature-list">
+            <div className="super-login-feature">
+              <span className="super-login-feature-icon"><ShieldCheck size={19} /></span>
+              <div><strong>Protected by design</strong><p>Secure access for authorised super administrators.</p></div>
+            </div>
+            <div className="super-login-feature">
+              <span className="super-login-feature-icon"><Fingerprint size={19} /></span>
+              <div><strong>System-wide oversight</strong><p>One place to oversee your Gradly ecosystem.</p></div>
+            </div>
+          </div>
+          <div className="super-login-decoration" aria-hidden="true">
+            <div className="super-login-orbit super-login-orbit-a" />
+            <div className="super-login-orbit super-login-orbit-b" />
+            <div className="super-login-orbit-core"><ShieldCheck size={34} /></div>
+            <span className="super-login-orbit-node node-a" />
+            <span className="super-login-orbit-node node-b" />
+            <span className="super-login-orbit-node node-c" />
+          </div>
+        </div>
+
+        <div className="super-login-card-wrap">
+          <form className="super-login-card" onSubmit={handleSubmit}>
+            <div className="super-login-card-symbol"><LockKeyhole size={22} /></div>
+            <div className="super-login-card-eyebrow">ADMINISTRATOR PORTAL</div>
+            <h2>Welcome back</h2>
+            <p className="super-login-card-subtitle">Sign in to continue to your control centre.</p>
+
+            <label className="super-login-field">
+              <span>Super Admin code</span>
+              <input
+                type="text"
+                placeholder="Enter your admin code"
+                autoComplete="username"
+                value={adminCode}
+                onChange={(event) => setAdminCode(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className="super-login-field">
+              <span>Password</span>
+              <div className="super-login-password-wrap">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  className="super-login-password-toggle"
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </label>
+
+            {error && <p className="super-login-error" role="alert">{error}</p>}
+
+            <button className="super-login-submit" type="submit" disabled={submitting}>
+              {submitting ? <><span className="super-login-button-spinner" /> Verifying access…</> : <>Sign in securely <ArrowLeft className="super-login-submit-arrow" size={17} /></>}
+            </button>
+
+            <div className="super-login-card-note"><ShieldCheck size={15} /> Your session is verified before access is granted.</div>
+          </form>
+          <p className="super-login-legal">Authorised personnel only. All access is subject to system security controls.</p>
+        </div>
+      </section>
+
+      <footer className="super-login-footer">
+        <span>© Gradly Ecosystem</span>
+        <span><span className="super-login-footer-dot" /> SYSTEM ACCESS GATEWAY</span>
+      </footer>
+    </main>
   );
 }
-
