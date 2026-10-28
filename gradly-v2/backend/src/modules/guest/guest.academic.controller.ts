@@ -213,7 +213,16 @@ export async function getGuestSemesterCoursesController(
       });
     }
 
-    const { guestSemesterId } = req.params;
+    const guestSemesterId =
+      typeof req.params.guestSemesterId === "string"
+        ? req.params.guestSemesterId
+        : "";
+
+    if (!guestSemesterId) {
+      return res.status(400).json({
+        message: "Guest semester ID is required.",
+      });
+    }
 
     const courses = await getGuestCourses(session.id, guestSemesterId);
 
