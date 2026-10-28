@@ -260,3 +260,39 @@ export async function permanentlyDeleteGuest(
     client.release();
   }
 }
+
+
+/** Super Admin can temporarily suspend or restore a student account. */
+export async function updateStudentAccountStatus(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
+  const userId = String(req.params.userId || "").trim();
+  const active = req.body?.active;
+  if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  if (!userId || typeof active !== "boolean") return res.status(400).json({ success: false, message: "Provide a user ID and active=true/false." });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query("SELECT id, role, active FROM public.users WHERE id::text = $1 FOR UPDATE", [userId]);
+    if (!found.rowCount || String(found.rows[0].role).toUpperCase() !== "STUDENT") {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ success: false, message: "Student account not found." });
+    }
+    if (Boolean(found.rows[0].active) === active) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ success: false, message: active ? "Account is already active." : "Account is already suspended." });
+    }
+    const updated = await client.query("UPDATE public.users SET active = $2, updated_at = NOW() WHERE id = $1 RETURNING id, active", [found.rows[0].id, active]);
+    await client.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', $2, 'users', $3, $4::jsonb)",
+      [superAdminId, active ? "SUPER_ADMIN_RESTORED_STUDENT_ACCOUNT" : "SUPER_ADMIN_TEMPORARILY_SUSPENDED_STUDENT_ACCOUNT", userId, JSON.stringify({ active, temporary: true })]
+    );
+    await client.query("COMMIT");
+    return res.json({ success: true, message: active ? "Student account restored." : "Student account suspended. Restore it here when the suspension should end.", user: updated.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    console.error("Student account status update failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to update this student account." });
+  } finally {
+    client.release();
+  }
+}
