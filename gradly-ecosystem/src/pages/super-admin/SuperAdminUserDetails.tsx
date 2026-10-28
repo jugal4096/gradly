@@ -17,6 +17,7 @@ import {
   } from "react-router-dom";
   
   import "./SuperAdminUserDetails.css";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
   
   
   const API_BASE_URL =
@@ -128,9 +129,13 @@ import {
             return;
           }
   
+          if (!isApiConfigured) {
+            throw new Error(API_CONFIGURATION_ERROR);
+          }
+
           const response =
             await fetch(
-              `${API_BASE_URL}/super-admin/users/${userId}`,
+              `${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(userId)}`,
               {
                 headers: {
                   Authorization:
