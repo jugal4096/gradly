@@ -113,3 +113,23 @@
  .sa-admin-row-actions { justify-content:flex-start; }
  .sa-admin-row-actions .sa-admin-view,.sa-admin-row-actions .sa-admin-edit { min-height:35px; }
 }
+
+
+/* Administrator directory layout fixes: filters stay usable and profile never gets squeezed. */
+.sa-admin-filters { display:grid;grid-template-columns:minmax(220px,1.7fr) repeat(4,minmax(135px,1fr));align-items:end; }
+.sa-admin-filters>label { min-width:0; }
+.sa-admin-filters .sa-admin-search { min-width:0;width:100%; }
+.sa-admin-workspace { grid-template-columns:minmax(0,1.6fr) minmax(320px,.9fr); }
+.sa-admin-detail-panel { width:100%; }
+.sa-admin-panel-head { flex-wrap:wrap; }
+.sa-admin-table-wrap .sc-table { min-width:790px; }
+@media(max-width:1280px) {
+ .sa-admin-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .sa-admin-filters .sa-admin-search { grid-column:1/-1; }
+ .sa-admin-workspace { grid-template-columns:minmax(0,1fr); }
+ .sa-admin-detail-panel { max-width:none; }
+}
+@media(max-width:560px) {
+ .sa-admin-filters { grid-template-columns:minmax(0,1fr); }
+ .sa-admin-filters .sa-admin-search { grid-column:auto; }
+}
