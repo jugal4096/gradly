@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent, type CSSProperties } from "react";
 import { useAuth } from "../auth/AuthContext";
 
 type Subject = { id: string; name: string; code: string; credits: number; gradePoint: number };
@@ -95,7 +95,7 @@ export default function DashboardPage() {
     store("profile", next);
     setNotice("Academic profile saved.");
   }
-  function addSubject(event: React.FormEvent<HTMLFormElement>) {
+  function addSubject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!subjectName.trim()) return;
     const next = [...subjects, {
@@ -111,7 +111,7 @@ export default function DashboardPage() {
     setSubjectCredits("3");
     setSubjectGrade("8");
   }
-  function addSemester(event: React.FormEvent<HTMLFormElement>) {
+  function addSemester(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!semesterName.trim() || semesterSgpa === "") return;
     const next = [...semesters, {
@@ -208,7 +208,7 @@ export default function DashboardPage() {
         {section === "sgpa" && <section className="page-content">
           <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> GRADE CALCULATOR</div><h1>SGPA calculator</h1><p>See how each subject contributes to your semester performance.</p></div><span className="count-chip">10-point grading scale</span></div>
           <div className="calculator-layout"><section className="panel calculator-panel"><div className="panel-heading"><div><span className="panel-overline">YOUR INPUTS</span><h2>Subject grades</h2></div><span className="metric-pill">{subjects.length} entries</span></div><p className="panel-intro">Edit credits and grade points in My subjects. Your result updates instantly.</p><div className="calc-subject-list">{subjects.map((subject) => <div className="calc-subject-row" key={subject.id}><div className="calc-subject-name"><strong>{subject.name}</strong><small>{subject.code}</small></div><span>{subject.credits} cr</span><strong>{subject.gradePoint.toFixed(1)}</strong><span className="calc-weight">{(subject.credits * subject.gradePoint).toFixed(1)} pts</span></div>)}</div><button type="button" className="wide-outline-button" onClick={() => setSection("subjects")}>Edit subjects and grades <span>→</span></button></section>
-            <section className="result-card"><span className="result-kicker">YOUR ESTIMATED RESULT</span><div className="result-ring" style={{ "--progress": (current.value * 10) + "%" } as React.CSSProperties}><div><strong>{formatGrade(current.value)}</strong><small>SGPA / 10</small></div></div><div className="result-summary"><div><span>Total credits</span><strong>{current.credits}</strong></div><div><span>Weighted points</span><strong>{(current.value * current.credits).toFixed(1)}</strong></div><div><span>Subjects included</span><strong>{subjects.length}</strong></div></div><p className="result-disclaimer">Estimate only. Your official result and institution grading rules take precedence.</p></section></div>
+            <section className="result-card"><span className="result-kicker">YOUR ESTIMATED RESULT</span><div className="result-ring" style={{ "--progress": (current.value * 10) + "%" } as CSSProperties}><div><strong>{formatGrade(current.value)}</strong><small>SGPA / 10</small></div></div><div className="result-summary"><div><span>Total credits</span><strong>{current.credits}</strong></div><div><span>Weighted points</span><strong>{(current.value * current.credits).toFixed(1)}</strong></div><div><span>Subjects included</span><strong>{subjects.length}</strong></div></div><p className="result-disclaimer">Estimate only. Your official result and institution grading rules take precedence.</p></section></div>
         </section>}
 
         {section === "cgpa" && <section className="page-content">
