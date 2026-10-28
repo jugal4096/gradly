@@ -243,7 +243,10 @@ export async function saveApplicationConfigurationController(
       });
     }
 
-    const applicationId = req.params.applicationId?.trim();
+    const applicationId =
+      typeof req.params.applicationId === "string"
+        ? req.params.applicationId.trim()
+        : "";
 
     if (!isUuid(applicationId)) {
       return res.status(400).json({
@@ -341,7 +344,10 @@ export async function reviewApplication(
       });
     }
 
-    const applicationId = req.params.applicationId?.trim();
+    const applicationId =
+      typeof req.params.applicationId === "string"
+        ? req.params.applicationId.trim()
+        : "";
 
     if (!isUuid(applicationId)) {
       return res.status(400).json({
