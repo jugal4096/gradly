@@ -2538,3 +2538,68 @@
 @media(prefers-reduced-motion:reduce) {
  .super-dashboard .sd-metric-card,.super-dashboard .sd-queue-card,.super-dashboard .sd-hero { transition:none!important; }
 }
+
+
+/* Final dashboard polish: reclaim vertical space, use the full canvas, restore a confident purple identity. */
+.super-admin-content { padding-top:0 !important; }
+.content-system-strip { margin-bottom:12px !important; min-height:48px !important; }
+.super-admin-page { width:100%; max-width:none !important; margin:0 !important; padding:0 !important; }
+.super-dashboard {
+  width:100%;
+  min-height:calc(100vh - 170px);
+  max-width:none;
+  padding:clamp(12px,1.7vw,24px) clamp(14px,2vw,30px) 28px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(119,91,218,.12), transparent 35%),
+    linear-gradient(180deg,#f7f5ff 0%,#f8f9fc 42%,#f4f5fa 100%);
+}
+.super-dashboard .sd-shell { max-width:none; width:100%; }
+.super-dashboard .sd-header {
+  max-width:none;
+  margin:0 0 17px;
+  padding:0 0 17px;
+  border-bottom:1px solid #e3ddf5;
+}
+.super-dashboard .sd-eyebrow { color:#6752b2; }
+.super-dashboard .sd-header h1 { color:#241744; font-size:clamp(28px,3vw,38px); }
+.super-dashboard .sd-header p { max-width:760px; color:#667085; }
+.super-dashboard .sd-hero {
+  max-width:none;
+  margin:0 0 22px;
+  border:1px solid #d9d0f5;
+  border-radius:14px;
+  background:linear-gradient(110deg,#eee9ff 0%,#fff 72%);
+  box-shadow:0 8px 18px rgba(60,42,125,.07),inset 0 1px 0 #fff;
+}
+.super-dashboard .sd-hero-symbol {
+  background:linear-gradient(145deg,#fff,#e8e0ff);
+  color:#5b43b0;
+  box-shadow:0 4px 9px rgba(65,45,133,.1),inset 0 1px 0 #fff;
+}
+.super-dashboard .sd-hero-label { color:#6045b5; }
+.super-dashboard .sd-section { max-width:none; margin-bottom:24px; }
+.super-dashboard .sd-metrics-grid,.super-dashboard .sd-queues-grid { gap:14px; }
+.super-dashboard .sd-metric-card,.super-dashboard .sd-queue-card {
+  border-color:#e2def0;
+  box-shadow:0 5px 0 #e9e4f5,0 8px 16px rgba(38,29,79,.045);
+}
+.super-dashboard .sd-metric-card:hover,.super-dashboard .sd-queue-card:hover {
+  border-color:#c9b9f3;
+  background:#fff;
+  box-shadow:0 7px 0 #e3dbf7,0 13px 22px rgba(53,37,115,.09);
+}
+.super-dashboard .sd-metric-icon,.super-dashboard .sd-queue-icon {
+  border:1px solid #e0d8f8;
+  background:linear-gradient(145deg,#fff,#eee9ff);
+  box-shadow:0 3px 7px rgba(65,45,133,.06);
+}
+.super-dashboard .sd-panel { max-width:none; }
+.super-dashboard .sd-footer { max-width:none; }
+@media(min-width:1500px) {
+  .super-dashboard { padding-left:32px; padding-right:32px; }
+}
+@media(max-width:760px) {
+  .super-admin-content { padding-left:0!important; padding-right:0!important; }
+  .super-dashboard { padding:12px 12px 22px; }
+  .super-dashboard .sd-header { margin-bottom:14px; padding-bottom:14px; }
+}
