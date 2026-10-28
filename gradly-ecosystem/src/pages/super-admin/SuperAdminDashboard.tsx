@@ -638,7 +638,7 @@ export default function SuperAdminDashboard() {
             <button
               type="button"
               className="sd-side-link"
-              onClick={() => navigate("/super-admin/administrators")}
+              onClick={() => navigate("/super-admin/admins")}
             >
               <UserCog size={18} />
               <span>Admins</span>
@@ -840,7 +840,7 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/administrators")}
+                    onClick={() => navigate("/super-admin/admins")}
                   >
                     <UserCog size={18} />
                     <span>Admins</span>
