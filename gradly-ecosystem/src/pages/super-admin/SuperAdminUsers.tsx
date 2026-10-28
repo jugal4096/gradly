@@ -11,8 +11,8 @@ import {
   import { useEffect, useState } from "react";
   import { useNavigate } from "react-router-dom";
   
+  import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
   import "../../styles/super-admin-dashboard.css";
-import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
   
   interface Student {
     id: string;
