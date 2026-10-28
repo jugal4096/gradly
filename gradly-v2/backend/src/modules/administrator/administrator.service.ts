@@ -345,27 +345,13 @@ import {
     }
   
     /*
-     * Adminship expires at the END of
-     * the graduation month.
-     *
-     * Example:
-     * 2028-06-15
-     *       ↓
-     * 2028-06-30 23:59:59.999
+     * Adminship expires 10 calendar days after graduation completion.
+     * This is enforced on the backend for all clients.
+     * Example: 2028-06-15 -> 2028-06-25 23:59:59.999 UTC.
      */
-  
-    const expiresAt =
-      new Date(
-        Date.UTC(
-          graduationDate.getUTCFullYear(),
-          graduationDate.getUTCMonth() + 1,
-          0,
-          23,
-          59,
-          59,
-          999
-        )
-      );
+    const expiresAt = new Date(graduationDate);
+    expiresAt.setUTCDate(expiresAt.getUTCDate() + 10);
+    expiresAt.setUTCHours(23, 59, 59, 999);
   
     const updated =
       await updateAdminGraduationDate(
