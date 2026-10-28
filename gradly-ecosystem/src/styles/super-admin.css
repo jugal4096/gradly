@@ -119,3 +119,38 @@
 @keyframes sa-workspace-fade { from { opacity:0; } to { opacity:1; } }
 @media(max-width:650px) { .content-system-strip { min-height:54px;padding:0 12px; }.sa-shell-role { display:none; }.sa-workspace-toggle { min-height:42px;padding:0 12px; }.super-admin-content { min-height:calc(100vh - 62px); } }
 @media(prefers-reduced-motion:reduce) { .sa-workspace-backdrop,.sa-workspace-drawer { animation:none!important; }.sa-workspace-toggle,.sa-workspace-link,.sa-workspace-close { transition:none!important; } }
+
+
+/* Unified dimensional visual system across every Super Admin route. */
+.super-admin-page { position:relative; isolation:isolate; }
+.super-admin-page > * { animation: sa-page-arrive .38s cubic-bezier(.2,.7,.2,1) both; }
+.super-admin-page h1,.super-admin-page h2,.super-admin-page h3 { letter-spacing:-.035em; }
+.super-admin-page h1 { color:#241640; font-family:Manrope,sans-serif; font-weight:850; }
+.super-admin-page button:not(.sa-workspace-toggle):not(.sa-workspace-close):not(.sidebar-logout) {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.super-admin-page button:not(:disabled):hover { transform:translateY(-2px); }
+.super-admin-page button:not(:disabled):active { transform:translateY(1px); }
+.super-admin-page input,.super-admin-page select,.super-admin-page textarea {
+  border-radius:12px;
+  border-color:#e3daf8;
+  background:linear-gradient(145deg,#fff,#fcfaff);
+  box-shadow:inset 0 1px 2px rgba(52,31,102,.025);
+}
+.super-admin-page input:focus,.super-admin-page select:focus,.super-admin-page textarea:focus {
+  border-color:#ad96ff;
+  outline:3px solid rgba(126,89,235,.12);
+}
+.super-admin-page table { border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid #e7def8;border-radius:16px;background:rgba(255,255,255,.9);box-shadow:0 12px 30px rgba(48,27,103,.055); }
+.super-admin-page th { background:linear-gradient(110deg,#f0eaff,#faf8ff);color:#6c56a0;font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase; }
+.super-admin-page td,.super-admin-page th { border-bottom:1px solid #eee8fa; }
+.super-admin-page tbody tr { transition:background .16s ease; }
+.super-admin-page tbody tr:hover { background:#faf7ff; }
+.super-admin-page [class*="card"],.super-admin-page [class*="panel"],.super-admin-page [class*="Card"],.super-admin-page [class*="Panel"] {
+  box-shadow:0 12px 28px rgba(52,31,105,.065),0 3px 8px rgba(52,31,105,.03),inset 0 1px 0 rgba(255,255,255,.92);
+}
+.super-admin-page button:focus-visible,.super-admin-page a:focus-visible {
+  outline:3px solid rgba(126,89,235,.5);outline-offset:3px;
+}
+@keyframes sa-page-arrive { from { opacity:.45;transform:translateY(7px); } to { opacity:1;transform:translateY(0); } }
+@media(prefers-reduced-motion:reduce) { .super-admin-page > * { animation:none!important; }.super-admin-page button { transition:none!important; } }
