@@ -15,6 +15,7 @@ import {
 } from "firebase/auth";
 
 import { auth } from "../../config/firebase";
+import { apiUrl } from "../../lib/api";
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -54,7 +55,7 @@ export function AuthProvider({
 
     // Send the token to our backend.
     const response = await fetch(
-      "http://localhost:5000/api/auth/sync",
+      apiUrl("/auth/sync"),
       {
         method: "POST",
         headers: {
