@@ -38,6 +38,7 @@ const isAllowedFrontendOrigin = (origin: string) =>
   /^https?:\/\/(localhost|127\.0\.0\.1):(5173|5174|4173)$/.test(origin) ||
   origin === "https://gradly.vercel.app" ||
   origin === "https://gradly-peach.vercel.app" ||
+  origin === "https://gradly-reach.vercel.app" ||
   /^https:\/\/gradly(?:-[a-z0-9-]+)?-jugal4096s-projects\.vercel\.app$/.test(origin);
 
 app.use(
