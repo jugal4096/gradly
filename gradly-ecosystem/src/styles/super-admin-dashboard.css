@@ -2425,3 +2425,9 @@
   .super-dashboard .sd-menu-backdrop,
   .super-dashboard .sd-navigation-drawer { animation: none !important; }
 }
+
+
+/* The global shell owns navigation. Hide the dashboard's duplicate header/menu. */
+.super-dashboard .sd-navigation-bar { display: none !important; }
+.super-dashboard .sd-menu-backdrop,
+.super-dashboard .sd-navigation-drawer { display: none !important; }
