@@ -184,7 +184,7 @@ router.patch("/:requestId/review", superAdminAuth, async (req: Request, res: Res
     if (!result.rowCount) {
       return res.status(409).json({ success: false, message: "Request not found or already reviewed." });
     }
-    return res.json({ success: true, message: decision === "APPROVED" ? "Password request approved. Super Admin must complete the password reset." : "Password change request rejected.", request: result.rows[0] });
+    return res.json({ success: true, message: decision === "APPROVED" ? "Password request approved. The Admin can now complete the reset after verifying the linked Google account." : "Password change request rejected.", request: result.rows[0] });
   } catch (error) {
     return fail(res, error);
   }
