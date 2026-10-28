@@ -195,7 +195,10 @@ export async function getInstitutionBranches(
       });
     }
 
-    const institutionId = req.params.institutionId?.trim();
+    const institutionId =
+      typeof req.params.institutionId === "string"
+        ? req.params.institutionId.trim()
+        : "";
 
     if (!isUuid(institutionId)) {
       return res.status(400).json({
