@@ -123,7 +123,7 @@ export default function SuperAdminUsers() {
   }, [branch, institution, navigate, page, program, search]);
 
   useEffect(() => {
-    void loadUsers();
+    void Promise.resolve().then(() => loadUsers());
   }, [loadUsers]);
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
