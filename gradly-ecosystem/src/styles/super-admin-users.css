@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+.sa-users-page {
+  min-height: 100%;
+  padding: clamp(20px, 3vw, 38px);
+  color: #192239;
+  background: radial-gradient(ellipse at 95% 0%, #ece7ff 0, transparent 31%), #f7f8fc;
+  font-family: "DM Sans", Inter, system-ui, sans-serif;
+}
+.sa-users-page * { box-sizing: border-box; }
+.sa-users-page button, .sa-users-page input, .sa-users-page select { font: inherit; }
+.sa-users-header { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; max-width:1600px; margin:0 auto 25px; }
+.sa-users-eyebrow { display:flex; align-items:center; gap:9px; color:#858ba1; font-size:10px; font-weight:800; letter-spacing:.15em; }
+.sa-users-eyebrow span { width:7px;height:7px;border-radius:50%;background:#7657e8;box-shadow:0 0 0 4px #e9e3ff; }
+.sa-users-header h1 { margin:12px 0 8px;font-family:Manrope,sans-serif;font-size:clamp(28px,3vw,38px);font-weight:800;letter-spacing:-.055em;line-height:1.15; }
+.sa-users-header h1 span { color:#7657e8; }
+.sa-users-header p,.sa-users-panel-heading p,.sa-users-results-heading p { margin:0;color:#778198;font-size:13px;line-height:1.6; }
+.sa-users-refresh,.sa-users-clear,.sa-users-state button { display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #e3e5ef;border-radius:12px;background:#fff;color:#414b63;padding:11px 15px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap; }
+.sa-users-refresh:disabled { opacity:.65;cursor:wait; }
+.sa-users-spin { animation:sa-users-spin 1s linear infinite; }
+@keyframes sa-users-spin { to { transform:rotate(360deg); } }
+.sa-users-stat-row { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:1600px;margin:0 auto 18px; }
+.sa-users-stat-card { display:flex;align-items:center;gap:13px;padding:18px 20px;border:1px solid #ececf4;border-radius:17px;background:rgba(255,255,255,.86);box-shadow:0 7px 22px rgba(37,31,82,.035); }
+.sa-users-stat-icon { display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:13px;background:#f0edff;color:#7657e8; }
+.sa-users-stat-card small { display:block;margin-bottom:4px;color:#858ba1;font-size:9px;font-weight:800;letter-spacing:.12em; }
+.sa-users-stat-card strong { font-family:Manrope,sans-serif;font-size:25px;letter-spacing:-.04em; }
+.sa-users-panel,.sa-users-results { max-width:1600px;margin:0 auto 18px;border:1px solid #e9eaf2;border-radius:19px;background:rgba(255,255,255,.92);box-shadow:0 8px 26px rgba(37,31,82,.035);overflow:hidden; }
+.sa-users-panel { padding:23px; }
+.sa-users-panel-heading,.sa-users-results-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:15px; }
+.sa-users-kicker { color:#8a8fa2;font-size:9px;font-weight:800;letter-spacing:.15em;margin-bottom:7px; }
+.sa-users-panel h2,.sa-users-results h2 { margin:0 0 5px;font-family:Manrope,sans-serif;font-size:18px;font-weight:800;letter-spacing:-.035em; }
+.sa-users-filter-count,.sa-users-results-badge { border:1px solid #e4defe;background:#f4f1ff;color:#7051db;border-radius:99px;padding:7px 10px;font-size:10px;font-weight:800;white-space:nowrap; }
+.sa-users-filter-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-top:21px; }
+.sa-users-field { display:flex;flex-direction:column;gap:8px;min-width:0; }
+.sa-users-field>span { color:#4d5870;font-size:11px;font-weight:700; }
+.sa-users-select-wrap { position:relative; }
+.sa-users-select-wrap select,.sa-users-sort select { width:100%;min-width:0;appearance:none;border:1px solid #e4e6ef;border-radius:11px;background:#fff;color:#343e55;padding:12px 34px 12px 12px;font-size:12px;outline:none; }
+.sa-users-select-wrap select:focus,.sa-users-search:focus-within,.sa-users-sort select:focus { border-color:#9b87f4;box-shadow:0 0 0 3px #f0edff; }
+.sa-users-select-wrap>svg { position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:#8a90a3; }
+.sa-users-toolbar { display:flex;align-items:center;gap:12px;margin-top:19px;padding-top:18px;border-top:1px solid #f0f0f5; }
+.sa-users-search { display:flex;align-items:center;gap:9px;flex:1;min-width:160px;border:1px solid #e4e6ef;border-radius:11px;background:#fff;padding:0 11px;color:#8a90a3; }
+.sa-users-search input { width:100%;min-width:0;border:0;outline:0;background:transparent;padding:12px 0;color:#343e55;font-size:12px; }
+.sa-users-search button,.sa-users-sort-direction { display:grid;place-items:center;border:0;background:transparent;color:#7a8297;cursor:pointer;padding:5px; }
+.sa-users-sort { display:flex;align-items:center;gap:8px;color:#7d8497; }
+.sa-users-sort>label { font-size:11px;font-weight:700;white-space:nowrap; }
+.sa-users-sort select { width:auto;max-width:175px;padding:11px 28px 11px 10px; }
+.sa-users-sort-direction { border:1px solid #e4e6ef;border-radius:9px;width:36px;height:36px;background:#fff;color:#7657e8; }
+.sa-users-clear:disabled { opacity:.45;cursor:not-allowed; }
+.sa-users-results-heading { align-items:center;padding:21px 23px;border-bottom:1px solid #eff0f6; }
+.sa-users-results-heading p { font-size:11px; }
+.sa-users-table-scroll { overflow-x:auto; }
+.sa-users-table { width:100%;border-collapse:collapse;text-align:left;white-space:nowrap; }
+.sa-users-table th { padding:12px 15px;background:#fafaff;color:#858ba1;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase; }
+.sa-users-table td { padding:14px 15px;border-top:1px solid #f0f1f6;color:#4e5870;font-size:11px; }
+.sa-users-table tbody tr:hover { background:#fbfaff; }
+.sa-users-person { display:flex;align-items:center;gap:10px;min-width:220px; }
+.sa-users-avatar { display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border-radius:11px;background:linear-gradient(135deg,#eee9ff,#dcd4ff);color:#6849d4;font-weight:800;font-size:13px; }
+.sa-users-person strong,.sa-users-person small,.sa-users-academic strong,.sa-users-academic small { display:block; }
+.sa-users-person strong { color:#252e45;font-size:11px; }
+.sa-users-person small { max-width:260px;overflow:hidden;text-overflow:ellipsis;color:#8a90a2;font-size:10px;margin-top:4px; }
+.sa-users-table em { color:#a2a7b5;font-style:normal; }
+.sa-users-status { display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:6px 8px;font-size:10px;font-weight:700; }
+.sa-users-status>span { width:6px;height:6px;border-radius:50%;background:currentColor; }
+.sa-users-status.is-active { background:#e9f8f0;color:#21865b; }
+.sa-users-status.is-inactive { background:#f1f2f6;color:#7f8798; }
+.sa-users-academic strong { color:#303a52;font-size:12px; }
+.sa-users-academic small { margin-top:3px;color:#8a90a2;font-size:10px; }
+.sa-users-view { border:0;background:transparent;color:#7152dc;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap; }
+.sa-users-view span { margin-left:3px; }
+.sa-users-state { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:190px;padding:28px;text-align:center;color:#858ba1;font-size:12px; }
+.sa-users-state strong { color:#303a52;font-size:14px; }
+.sa-users-state p { margin:0;max-width:440px;line-height:1.6; }
+.sa-users-error strong { color:#b44756; }
+.sa-users-footnote { max-width:1600px;margin:0 auto;color:#9298a9;font-size:10px;line-height:1.6; }
+@media (max-width:900px) { .sa-users-filter-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.sa-users-toolbar { flex-wrap:wrap; }.sa-users-search { flex-basis:100%; }.sa-users-sort { flex:1; } }
+@media (max-width:560px) { .sa-users-page { padding:17px 12px; }.sa-users-header { align-items:flex-start; }.sa-users-header p { max-width:270px; }.sa-users-refresh { padding:10px; }.sa-users-stat-row { gap:8px; }.sa-users-stat-card { gap:8px;padding:12px 9px; }.sa-users-stat-icon { width:32px;height:32px;flex-basis:32px; }.sa-users-stat-card small { font-size:8px;letter-spacing:.04em; }.sa-users-stat-card strong { font-size:19px; }.sa-users-panel { padding:16px; }.sa-users-filter-grid { gap:11px; }.sa-users-select-wrap select { font-size:11px;padding-left:9px; }.sa-users-sort { flex-wrap:wrap; }.sa-users-sort select { max-width:145px; }.sa-users-clear { margin-left:auto; } }
