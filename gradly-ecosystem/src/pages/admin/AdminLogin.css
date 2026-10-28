@@ -12,12 +12,12 @@
     background:
       linear-gradient(
         135deg,
-        #eef3f8 0%,
-        #f7f9fb 48%,
-        #e9eef4 100%
+        #f2eef8 0%,
+        #f9f7fb 48%,
+        #eee9f4 100%
       );
   
-    color: #1d2733;
+    color: #271c34;
   
     font-family:
       "Segoe UI",
@@ -44,10 +44,10 @@
       linear-gradient(
         180deg,
         #ffffff 0%,
-        #f3f6f9 100%
+        #f6f3f9 100%
       );
   
-    border-bottom: 1px solid #b8c4d0;
+    border-bottom: 1px solid #c3b7d1;
   
     box-shadow:
       0 1px 0 #ffffff inset,
@@ -72,12 +72,12 @@
       linear-gradient(
         180deg,
         #ffffff 0%,
-        #e9eef3 100%
+        #ede9f3 100%
       );
   
-    border: 1px solid #9aa8b5;
+    border: 1px solid #a699b6;
   
-    color: #293746;
+    color: #362847;
   
     font-family: inherit;
   
@@ -88,7 +88,7 @@
     cursor: pointer;
   
     box-shadow:
-      1px 1px 0 #c5cdd5;
+      1px 1px 0 #ccc5d5;
   
     transition:
       background 120ms ease,
@@ -100,10 +100,10 @@
       linear-gradient(
         180deg,
         #ffffff 0%,
-        #dce8f4 100%
+        #e7dbf5 100%
       );
   
-    color: #155a91;
+    color: #4d198d;
   }
   
   .admin-login-back:active {
@@ -122,7 +122,7 @@
   
     letter-spacing: 1.6px;
   
-    color: #34495e;
+    color: #47335f;
   }
   
   
@@ -143,7 +143,7 @@
   
     letter-spacing: 1px;
   
-    color: #52708b;
+    color: #6c518c;
   }
   
   .admin-login-status-dot {
@@ -223,13 +223,13 @@
       linear-gradient(
         180deg,
         #ffffff 0%,
-        #f9fbfd 100%
+        #fbf9fd 100%
       );
   
-    border: 1px solid #aebdca;
+    border: 1px solid #bbadcb;
   
     box-shadow:
-      5px 5px 0 #c5d0da,
+      5px 5px 0 #cec4db,
       0 10px 28px rgba(38, 62, 84, 0.10);
   }
   
@@ -250,9 +250,9 @@
     background:
       linear-gradient(
         90deg,
-        #1c6da8,
-        #3c91ca,
-        #72b4dc
+        #5b1da7,
+        #7c38ce,
+        #a16fdf
       );
   }
   
@@ -284,20 +284,20 @@
       linear-gradient(
         145deg,
         #ffffff 0%,
-        #e4edf5 100%
+        #ece4f5 100%
       );
   
-    border: 1px solid #7f94a6;
+    border: 1px solid #907ea7;
   
     box-shadow:
-      3px 3px 0 #b5c1cb,
+      3px 3px 0 #bfb4cc,
       inset 0 1px 0 #ffffff;
   
     font-size: 28px;
   
     font-weight: 900;
   
-    color: #155a8b;
+    color: #4a1888;
   }
   
   .admin-login-brand h1 {
@@ -309,7 +309,7 @@
   
     letter-spacing: -0.3px;
   
-    color: #1e2d3c;
+    color: #2b1d3d;
   }
   
   .admin-login-brand p {
@@ -317,7 +317,7 @@
   
     font-size: 12px;
   
-    color: #6c7d8d;
+    color: #7b6b8e;
   }
   
   
@@ -338,11 +338,11 @@
     background:
       linear-gradient(
         90deg,
-        #edf6fc 0%,
-        #f6fafd 100%
+        #f4edfc 0%,
+        #f9f6fd 100%
       );
   
-    border: 1px solid #b6d1e3;
+    border: 1px solid #cab5e4;
   
     box-shadow:
       inset 0 1px 0 #ffffff;
@@ -360,12 +360,12 @@
   
     background: #ffffff;
   
-    border: 1px solid #9eb8cb;
+    border: 1px solid #b29dcc;
   
-    color: #1b6d9f;
+    color: #561c9e;
   
     box-shadow:
-      1px 1px 0 #cad6df;
+      1px 1px 0 #d3c9e0;
   }
   
   .admin-login-security strong {
@@ -377,7 +377,7 @@
   
     font-weight: 700;
   
-    color: #285a78;
+    color: #4c267a;
   }
   
   .admin-login-security span {
@@ -385,7 +385,7 @@
   
     font-size: 11px;
   
-    color: #63788a;
+    color: #74628b;
   
     line-height: 1.45;
   }
@@ -474,7 +474,7 @@
   
     font-weight: 700;
   
-    color: #344655;
+    color: #433356;
   }
   
   
@@ -497,10 +497,10 @@
       linear-gradient(
         180deg,
         #ffffff 0%,
-        #f7f9fb 100%
+        #f9f7fb 100%
       );
   
-    border: 1px solid #9baab7;
+    border: 1px solid #a89ab8;
   
     box-shadow:
       inset 1px 1px 3px rgba(30, 55, 75, 0.08);
@@ -511,11 +511,11 @@
   }
   
   .admin-login-input-wrapper:hover {
-    border-color: #71879a;
+    border-color: #83709b;
   }
   
   .admin-login-input-wrapper:focus-within {
-    border-color: #2777ad;
+    border-color: #6324b0;
   
     box-shadow:
       inset 1px 1px 3px rgba(30, 55, 75, 0.08),
@@ -525,7 +525,7 @@
   .admin-login-input-wrapper > svg {
     flex-shrink: 0;
   
-    color: #628097;
+    color: #7a6198;
   }
   
   .admin-login-input-wrapper input {
@@ -539,7 +539,7 @@
   
     background: transparent;
   
-    color: #1f2e3c;
+    color: #2c1e3d;
   
     font-family: inherit;
   
@@ -547,7 +547,7 @@
   }
   
   .admin-login-input-wrapper input::placeholder {
-    color: #9aa8b4;
+    color: #a699b5;
   }
   
   .admin-login-input-wrapper input:disabled {
@@ -575,7 +575,7 @@
   
     background: transparent;
   
-    color: #587287;
+    color: #6d5788;
   
     cursor: pointer;
   
@@ -585,11 +585,11 @@
   }
   
   .admin-login-password-toggle:hover {
-    background: #e7f0f7;
+    background: #eee7f7;
   
-    border-color: #c0d0dc;
+    border-color: #cdbfdd;
   
-    color: #1c6697;
+    color: #531b98;
   }
   
   .admin-login-password-toggle:disabled {
@@ -613,11 +613,11 @@
     background:
       linear-gradient(
         180deg,
-        #287eb5 0%,
-        #176494 100%
+        #6724b9 0%,
+        #501a91 100%
       );
   
-    border: 1px solid #12547c;
+    border: 1px solid #421579;
   
     color: #ffffff;
   
@@ -632,7 +632,7 @@
     cursor: pointer;
   
     box-shadow:
-      2px 2px 0 #aebbc5,
+      2px 2px 0 #b8adc6,
       inset 0 1px 0 rgba(255, 255, 255, 0.25);
   
     transition:
@@ -644,8 +644,8 @@
     background:
       linear-gradient(
         180deg,
-        #348dc4 0%,
-        #1a6d9e 100%
+        #7430c8 0%,
+        #561c9c 100%
       );
   }
   
@@ -660,11 +660,11 @@
     background:
       linear-gradient(
         180deg,
-        #8ca6b7 0%,
-        #718b9d 100%
+        #9f8bb8 0%,
+        #85709e 100%
       );
   
-    border-color: #718897;
+    border-color: #827098;
   
     cursor: wait;
   
@@ -689,7 +689,7 @@
   
     gap: 7px;
   
-    border-top: 1px solid #d3dce3;
+    border-top: 1px solid #dad3e3;
   
     text-align: center;
   }
@@ -707,7 +707,7 @@
   
     background: transparent;
   
-    color: #176494;
+    color: #501a91;
   
     font-family: inherit;
   
@@ -721,7 +721,7 @@
   }
   
   .admin-login-apply button:hover {
-    color: #0d4568;
+    color: #361263;
   }
   
   
@@ -741,13 +741,13 @@
     background:
       linear-gradient(
         180deg,
-        #edf1f4 0%,
-        #dfe5ea 100%
+        #f0edf4 0%,
+        #e4dfea 100%
       );
   
-    border-top: 1px solid #b9c5cf;
+    border-top: 1px solid #c3b8d0;
   
-    color: #657582;
+    color: #726483;
   
     font-size: 10px;
   }
@@ -826,7 +826,7 @@
   border: none;
   background: transparent;
 
-  color: #176494;
+  color: #501a91;
   font-family: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -836,13 +836,13 @@
 }
 
 .admin-login-text-link:hover {
-  color: #0d4568;
+  color: #361263;
   text-decoration: underline;
 }
 
 .admin-login-text-link:focus-visible,
 .admin-login-status-link:focus-visible {
-  outline: 2px solid #2777ad;
+  outline: 2px solid #6324b0;
   outline-offset: 3px;
 }
 
@@ -853,7 +853,7 @@
 .admin-login-divider-text {
   margin-top: 8px;
   padding-top: 14px;
-  border-top: 1px solid #d3dce3;
+  border-top: 1px solid #dad3e3;
 
   font-size: 11px;
   color: #70808e;
@@ -867,14 +867,14 @@
 
   padding: 7px 12px;
 
-  border: 1px solid #b6c9d8;
+  border: 1px solid #c5b5d9;
   background: linear-gradient(
     180deg,
     #ffffff 0%,
-    #edf4f9 100%
+    #f2edf9 100%
   );
 
-  color: #176494;
+  color: #501a91;
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -891,11 +891,11 @@
   background: linear-gradient(
     180deg,
     #ffffff 0%,
-    #dceaf5 100%
+    #e7dbf6 100%
   );
 
-  border-color: #7fa9c7;
-  color: #0d4568;
+  border-color: #9f7dc9;
+  color: #361263;
 }
 
 .admin-login-apply button:disabled {
