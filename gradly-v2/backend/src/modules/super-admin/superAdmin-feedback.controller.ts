@@ -72,3 +72,32 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
     return res.status(500).json({ message: "Failed to load feedback requests." });
   }
 }
+
+
+export async function updateFeedbackStatus(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
+  const id = String(req.params.feedbackId || "").trim();
+  const status = typeof req.body?.status === "string" ? req.body.status.trim().toUpperCase() : "";
+  if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  if (!id || !["RESOLVED", "REJECTED", "OPEN"].includes(status)) return res.status(400).json({ success: false, message: "Choose a valid feedback status." });
+  try {
+    const metadata = await pool.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='feedback_requests'"
+    );
+    const columns = new Set<string>(metadata.rows.map((row: { column_name: string }) => row.column_name));
+    if (!columns.has("status")) return res.status(409).json({ success: false, message: "This feedback source does not support status updates." });
+    const result = await pool.query(
+      "UPDATE public.feedback_requests SET status = $2 WHERE id::text = $1 RETURNING to_jsonb(feedback_requests) AS record",
+      [id, status]
+    );
+    if (!result.rowCount) return res.status(404).json({ success: false, message: "Feedback record not found." });
+    await pool.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', 'SUPER_ADMIN_UPDATED_FEEDBACK_STATUS', 'feedback_requests', $2, $3::jsonb)",
+      [superAdminId, id, JSON.stringify({ status })]
+    );
+    return res.json({ success: true, message: "Feedback status updated.", feedback: result.rows[0].record });
+  } catch (error) {
+    console.error("Feedback status update failed:", error);
+    return res.status(500).json({ success: false, message: "Could not update feedback status." });
+  }
+}
