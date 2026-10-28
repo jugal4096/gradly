@@ -12,7 +12,7 @@ import {
 
 import userManagementRoutes from "./user-management.routes";
 import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
-import { listFeedbackRequests } from "./superAdmin-feedback.controller";
+import { listFeedbackRequests, updateFeedbackStatus } from "./superAdmin-feedback.controller";
 import { listInstitutionDirectory, listInstitutionAdditionRequests, updateInstitutionAdditionRequest } from "./superAdmin-institutions.controller";
 import { createInstitutionManually, createSyllabusManually } from "./superAdmin-institution-create.controller";
 import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum.controller";
@@ -64,6 +64,7 @@ router.post(
  * FEEDBACK INBOX
  */
 router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
+router.patch("/feedback/:feedbackId/status", authenticateSuperAdminToken, updateFeedbackStatus);
 router.get("/institutions", authenticateSuperAdminToken, listInstitutionDirectory);
 router.get("/institutions/requests", authenticateSuperAdminToken, listInstitutionAdditionRequests);
 router.patch("/institutions/requests/:requestId", authenticateSuperAdminToken, updateInstitutionAdditionRequest);
