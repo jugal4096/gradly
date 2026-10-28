@@ -34,6 +34,7 @@ export function clearToken(): void {
 export type SessionStatus = "valid" | "invalid" | "unreachable";
 
 export async function verifySession(): Promise<SessionStatus> {
+  if (!isApiConfigured) return "unreachable";
   const token = getToken();
   if (!token) return "invalid";
 
