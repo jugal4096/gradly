@@ -2431,3 +2431,110 @@
 .super-dashboard .sd-navigation-bar { display: none !important; }
 .super-dashboard .sd-menu-backdrop,
 .super-dashboard .sd-navigation-drawer { display: none !important; }
+
+
+/* Dashboard visual redesign: restrained, high-clarity admin workspace. */
+.super-dashboard {
+  --sd-ink:#172033; --sd-muted:#667085; --sd-border:#e4e7ec; --sd-purple:#5542a8;
+  padding:clamp(16px,2.4vw,30px);
+  color:#172033;
+  background:#f5f6f8;
+  font-family:"DM Sans",Inter,system-ui,sans-serif;
+}
+.super-dashboard .sd-background-orb { display:none; }
+.super-dashboard .sd-shell {
+  display:block; width:100%; max-width:1500px; margin:0 auto; overflow:visible;
+  border:0; border-radius:0; background:transparent; box-shadow:none; backdrop-filter:none;
+}
+.super-dashboard .sd-sidebar { display:none!important; }
+.super-dashboard .sd-main-column { width:100%; min-width:0; }
+.super-dashboard .sd-navigation-bar { display:none!important; }
+.super-dashboard .sd-header {
+  align-items:center; gap:18px; margin:0 auto 22px; padding:0 0 20px;
+  border-bottom:1px solid #e4e7ec;
+}
+.super-dashboard .sd-eyebrow,.super-dashboard .sd-section-kicker {
+  color:#667085; font-size:10px; font-weight:800; letter-spacing:.09em;
+}
+.super-dashboard .sd-eyebrow-dot { background:#16805d; box-shadow:none; }
+.super-dashboard .sd-header h1 {
+  margin:9px 0 6px; color:#172033; font-size:clamp(25px,3vw,34px);
+  font-weight:750; letter-spacing:-.04em;
+}
+.super-dashboard .sd-header p { color:#667085; font-size:13px; line-height:1.65; }
+.super-dashboard .sd-refresh-button {
+  min-height:39px; padding:0 13px; border:1px solid #d0d5dd; border-radius:8px;
+  background:#fff; color:#344054; box-shadow:none; font-size:12px!important;
+}
+.super-dashboard .sd-refresh-button:hover:not(:disabled) {
+  transform:none; border-color:#98a2b3; background:#f9fafb; box-shadow:none;
+}
+.super-dashboard .sd-hero {
+  align-items:center; gap:16px; margin:0 auto 26px; padding:21px 22px;
+  border:1px solid #e4e7ec; border-radius:12px;
+  background:#fff; box-shadow:none; transform:none;
+}
+.super-dashboard .sd-hero:hover { transform:none; box-shadow:none; }
+.super-dashboard .sd-hero::after { display:none; }
+.super-dashboard .sd-hero-symbol {
+  width:46px; height:46px; border:1px solid #e5e0f7; border-radius:10px;
+  background:#f3f0fb; color:#5542a8; box-shadow:none;
+}
+.super-dashboard .sd-hero-label { color:#5542a8; font-size:9px; letter-spacing:.1em; }
+.super-dashboard .sd-hero-copy h2 { margin:5px 0; color:#172033; font-size:20px; font-weight:750; }
+.super-dashboard .sd-hero-copy p { color:#667085; font-size:12px; }
+.super-dashboard .sd-hero-summary { border-left:1px solid #eaecf0; }
+.super-dashboard .sd-summary-label { color:#667085; letter-spacing:.06em; }
+.super-dashboard .sd-hero-summary strong { color:#172033; font-size:28px; }
+.super-dashboard .sd-summary-caption { color:#667085; }
+.super-dashboard .sd-metrics-grid,.super-dashboard .sd-queues-grid { gap:14px; }
+.super-dashboard .sd-metric-card,.super-dashboard .sd-queue-card,.super-dashboard .sd-panel {
+  border:1px solid #e4e7ec; border-radius:12px; background:#fff;
+  box-shadow:none; transition:border-color .15s,background .15s;
+}
+.super-dashboard .sd-metric-card:hover,.super-dashboard .sd-queue-card:hover {
+  transform:none; border-color:#c9c1e5; box-shadow:none; background:#fdfcff;
+}
+.super-dashboard .sd-metric-card.is-selected,.super-dashboard .sd-queue-card.is-selected {
+  border-color:#a99bd5; background:#faf9fe;
+}
+.super-dashboard .sd-metric-icon,.super-dashboard .sd-queue-icon {
+  border:1px solid #e5e0f7; border-radius:10px; background:#f3f0fb;
+  color:#5542a8; box-shadow:none;
+}
+.super-dashboard .sd-metric-arrow { color:#667085; }
+.super-dashboard .sd-metric-label,.super-dashboard .sd-queue-label { color:#475467; font-weight:650; }
+.super-dashboard .sd-metric-value { color:#172033; font-weight:750; }
+.super-dashboard .sd-section-heading { margin-bottom:13px; }
+.super-dashboard .sd-section-heading h2 { margin-top:6px; color:#172033; font-size:19px; font-weight:750; letter-spacing:-.025em; }
+.super-dashboard .sd-data-status { color:#667085; }
+.super-dashboard .sd-status-dot { box-shadow:none; }
+.super-dashboard .sd-panel { margin-top:22px; }
+.super-dashboard .sd-panel-heading { padding:18px 20px; border-bottom:1px solid #eaecf0; }
+.super-dashboard .sd-panel-heading h2 { color:#172033; font-size:15px; font-weight:750; }
+.super-dashboard .sd-activity-list { padding:0 20px 8px; }
+.super-dashboard .sd-activity-item { padding:14px 0; border-bottom:1px solid #eaecf0; animation:none; }
+.super-dashboard .sd-activity-icon { border:1px solid #e5e0f7; border-radius:9px; background:#f3f0fb; color:#5542a8; }
+.super-dashboard .sd-activity-copy strong { color:#344054; }
+.super-dashboard .sd-activity-copy p,.super-dashboard .sd-activity-copy>span { color:#667085; }
+.super-dashboard .sd-system-strip { border:1px solid #e4e7ec; border-radius:10px; background:#fff; box-shadow:none; }
+.super-dashboard .sd-system-icon { border:1px solid #e5e0f7; border-radius:9px; background:#f3f0fb; color:#5542a8; }
+.super-dashboard .sd-error { border:1px solid #fecdca; border-radius:10px; box-shadow:none; }
+.super-dashboard .sd-footer { border-top:1px solid #e4e7ec; color:#667085; }
+.super-dashboard .sd-metric-card,.super-dashboard .sd-queue-card,.super-dashboard .sd-panel,.super-dashboard .sd-hero { animation:none!important; }
+.super-dashboard .sd-navigation-drawer { display:none!important; }
+@media(max-width:760px) {
+ .super-dashboard { padding:16px 12px; }
+ .super-dashboard .sd-header { align-items:flex-start; }
+ .super-dashboard .sd-hero { align-items:flex-start; flex-wrap:wrap; }
+ .super-dashboard .sd-hero-summary { width:100%; padding:12px 0 0; border-top:1px solid #eaecf0; border-left:0; }
+}
+@media(max-width:480px) {
+ .super-dashboard .sd-header { flex-direction:column; }
+ .super-dashboard .sd-refresh-button { align-self:flex-start; }
+ .super-dashboard .sd-metrics-grid,.super-dashboard .sd-queues-grid { grid-template-columns:1fr; }
+ .super-dashboard .sd-hero { padding:17px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .super-dashboard .sd-metric-card,.super-dashboard .sd-queue-card,.super-dashboard .sd-hero { transition:none!important; }
+}
