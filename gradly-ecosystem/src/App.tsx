@@ -27,15 +27,11 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
-import RequireSuperAdmin from "./components/RequireSuperAdmin";
 
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
-import SuperAdminAdminEdit from "./pages/super-admin/SuperAdminAdminEdit";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
-import SuperAdminUserActivity from "./pages/super-admin/SuperAdminUserActivity";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
-import SuperAdminControlCenter from "./pages/super-admin/SuperAdminControlCenter";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -115,7 +111,7 @@ function App() {
 
         <Route
           path="/super-admin"
-          element={<RequireSuperAdmin><SuperAdminLayout /></RequireSuperAdmin>}
+          element={<SuperAdminLayout />}
         >
           <Route
             index
@@ -128,11 +124,6 @@ function App() {
           />
 
           <Route
-            path="users/:userId/activity"
-            element={<SuperAdminUserActivity />}
-          />
-
-          <Route
             path="users/:userId"
             element={<SuperAdminUserDetails />}
           />
@@ -141,18 +132,6 @@ function App() {
             path="applications"
             element={<SuperAdminApplications />}
           />
-
-          <Route path="admins" element={<SuperAdminControlCenter />} />
-          <Route path="admins/:adminId/edit" element={<SuperAdminAdminEdit />} />
-          <Route path="institutions" element={<SuperAdminControlCenter />} />\n          <Route path="institution-requests" element={<SuperAdminControlCenter />} />
-          <Route path="courses" element={<SuperAdminControlCenter />} />
-          <Route path="curriculum" element={<SuperAdminControlCenter />} />
-          <Route path="feedback" element={<SuperAdminControlCenter />} />\n          <Route path="student-feedback" element={<SuperAdminControlCenter />} />
-          <Route path="audit" element={<SuperAdminControlCenter />} />
-          <Route path="audit-logs" element={<SuperAdminControlCenter />} />
-          <Route path="settings" element={<SuperAdminControlCenter />} />\n          <Route path="security-notifications" element={<SuperAdminControlCenter />} />\n          <Route path="guest-sessions" element={<SuperAdminControlCenter />} />
-          <Route path="admin-requests" element={<SuperAdminControlCenter />} />
-          <Route path="password-requests" element={<SuperAdminControlCenter />} />
         </Route>
 
         {/* =============================================

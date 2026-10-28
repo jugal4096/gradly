@@ -638,7 +638,7 @@ export default function SuperAdminDashboard() {
             <button
               type="button"
               className="sd-side-link"
-              onClick={() => navigate("/super-admin/admins")}
+              onClick={() => navigate("/super-admin/administrators")}
             >
               <UserCog size={18} />
               <span>Admins</span>
@@ -773,7 +773,7 @@ export default function SuperAdminDashboard() {
                 onClick={() => setMenuOpen((open) => !open)}
               >
                 {menuOpen ? <X size={19} /> : <Menu size={19} />}
-                <span className="sd-menu-label">{menuOpen ? "Close" : "Workspace"}</span>
+                <span>{menuOpen ? "Close menu" : "Menu"}</span>
               </button>
             </div>
           </div>
@@ -800,7 +800,7 @@ export default function SuperAdminDashboard() {
                     <span className="sd-section-kicker">
                       GRADLY / CONTROL CENTER
                     </span>
-                    <h2 id="sd-drawer-title">Workspace</h2>
+                    <h2 id="sd-drawer-title">Navigation</h2>
                   </div>
 
                   <button
@@ -840,7 +840,7 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/admins")}
+                    onClick={() => navigate("/super-admin/administrators")}
                   >
                     <UserCog size={18} />
                     <span>Admins</span>

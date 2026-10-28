@@ -1,183 +1,1511 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { signInWithGoogle, auth } from "../../config/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import "./AdminLogin.css";
+import {
+  Activity,
+  AlertCircle,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  FileText,
+  LayoutDashboard,
+  Landmark,
+  GraduationCap,
+  Settings,
+  ScrollText,
+  UserCog,
+  MessageSquare,
+  Menu,
+  LogOut,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-type PasswordRequest = {
-  id: string;
-  admin_code: string;
-  status: string;
-  review_note?: string | null;
-  created_at?: string;
+import { useNavigate } from "react-router-dom";
+
+import "../../styles/super-admin-dashboard.css";
+
+const configuredApiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
+).trim().replace(/\/+$/, "");
+
+const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
+
+const STATS_ENDPOINT =
+  `${API_BASE_URL}/api/super-admin/dashboard/stats`;
+
+type Stats = {
+  totalUsers: number | null;
+  totalAdmins: number;
+  totalInstitutions: number;
+  totalCourses: number;
+  pendingApplications: number;
+  pendingCurriculumRequests: number;
+  pendingAdminRequests: number;
+  openFeedback: number;
 };
 
-export default function AdminLogin() {
+type ActivityItem = {
+  id: string;
+  title: string;
+  description?: string;
+  actorName?: string;
+  createdAt?: string;
+  category?: string;
+};
+
+type OverviewKey =
+  | "totalUsers"
+  | "totalAdmins"
+  | "totalInstitutions"
+  | "totalCourses";
+
+type QueueKey =
+  | "pendingApplications"
+  | "pendingCurriculumRequests"
+  | "pendingAdminRequests"
+  | "openFeedback";
+
+type ActivityFilter =
+  | "all"
+  | "users"
+  | "admins"
+  | "curriculum";
+
+const EMPTY_STATS: Stats = {
+  totalUsers: null,
+  totalAdmins: 0,
+  totalInstitutions: 0,
+  totalCourses: 0,
+  pendingApplications: 0,
+  pendingCurriculumRequests: 0,
+  pendingAdminRequests: 0,
+  openFeedback: 0,
+};
+
+const overviewCards: {
+  key: OverviewKey;
+  label: string;
+  description: string;
+  icon: typeof Users;
+  tone: string;
+  detail: string;
+}[] = [
+  {
+    key: "totalUsers",
+    label: "Total users",
+    description: "Registered platform users",
+    icon: Users,
+    tone: "violet",
+    detail: "Monitor registered users and their account status.",
+  },
+  {
+    key: "totalAdmins",
+    label: "Administrators",
+    description: "Administrative accounts",
+    icon: ShieldCheck,
+    tone: "blue",
+    detail: "Review administrator accounts, assignments and permissions.",
+  },
+  {
+    key: "totalInstitutions",
+    label: "Institutions",
+    description: "Connected institutions",
+    icon: Building2,
+    tone: "green",
+    detail: "Inspect registered institutions and their branches.",
+  },
+  {
+    key: "totalCourses",
+    label: "Courses",
+    description: "Academic course catalogue",
+    icon: BookOpen,
+    tone: "amber",
+    detail: "Review courses and their associated academic curriculum.",
+  },
+];
+
+const queueCards: {
+  key: QueueKey;
+  label: string;
+  description: string;
+  icon: typeof ClipboardList;
+  tone: string;
+}[] = [
+  {
+    key: "pendingApplications",
+    label: "Admin applications",
+    description: "Administrator applications awaiting review",
+    icon: ClipboardList,
+    tone: "violet",
+  },
+  {
+    key: "pendingCurriculumRequests",
+    label: "Curriculum requests",
+    description: "Proposed academic curriculum changes",
+    icon: BookOpen,
+    tone: "blue",
+  },
+  {
+    key: "pendingAdminRequests",
+    label: "Admin requests",
+    description: "Requests submitted by administrators",
+    icon: FileText,
+    tone: "amber",
+  },
+  {
+    key: "openFeedback",
+    label: "Feedback",
+    description: "Open feedback items",
+    icon: MessageSquare,
+    tone: "green",
+  },
+];
+
+const quickActions: {
+  label: string;
+  description: string;
+  icon: typeof Users;
+  target: OverviewKey;
+}[] = [
+  {
+    label: "Manage users",
+    description: "Review platform accounts",
+    icon: Users,
+    target: "totalUsers",
+  },
+  {
+    label: "Manage administrators",
+    description: "Review access and permissions",
+    icon: ShieldCheck,
+    target: "totalAdmins",
+  },
+  {
+    label: "Manage institutions",
+    description: "Inspect institutions and branches",
+    icon: Building2,
+    target: "totalInstitutions",
+  },
+  {
+    label: "Manage courses",
+    description: "Inspect academic courses",
+    icon: BookOpen,
+    target: "totalCourses",
+  },
+];
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en-IN").format(value);
+}
+
+function safeCount(value: unknown): number {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function nullableCount(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+function formatCount(value: number | null): string {
+  return value === null ? "—" : formatNumber(value);
+}
+
+function formatDate(value?: string) {
+  if (!value) return "Date unavailable";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : "Unable to load dashboard data.";
+}
+
+function normalizeActivity(
+  item: Record<string, unknown>,
+  index: number
+): ActivityItem {
+  const action = String(
+    item.action ?? item.title ?? "Administrative activity"
+  );
+
+  const actorRole = item.actorRole
+    ? String(item.actorRole)
+    : item.actor_role
+      ? String(item.actor_role)
+      : "";
+
+  const entityTable = item.entityTable
+    ? String(item.entityTable)
+    : item.entity_table
+      ? String(item.entity_table)
+      : "";
+
+  const explicitDescription = item.description
+    ? String(item.description)
+    : "";
+
+  const description =
+    explicitDescription ||
+    ([actorRole, entityTable].filter(Boolean).join(" · ") ||
+      "Administrative event");
+
+  const categoryText = [
+    action,
+    actorRole,
+    entityTable,
+    item.category ? String(item.category) : "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  let category = "other";
+
+  if (
+    categoryText.includes("curriculum") ||
+    categoryText.includes("course") ||
+    categoryText.includes("subject")
+  ) {
+    category = "curriculum";
+  } else if (
+    categoryText.includes("admin") ||
+    categoryText.includes("permission") ||
+    categoryText.includes("role")
+  ) {
+    category = "admins";
+  } else if (
+    categoryText.includes("user") ||
+    categoryText.includes("account") ||
+    categoryText.includes("login")
+  ) {
+    category = "users";
+  }
+
+  return {
+    id: String(item.id ?? index),
+    title: action,
+    description,
+    actorName: actorRole || undefined,
+    createdAt: item.createdAt
+      ? String(item.createdAt)
+      : item.created_at
+        ? String(item.created_at)
+        : undefined,
+    category,
+  };
+}
+
+export default function SuperAdminDashboard() {
   const navigate = useNavigate();
-  const [adminCode, setAdminCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [busy, setBusy] = useState(false);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
+
+  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [mode, setMode] = useState<"login" | "forgot">("login");
-  const [googleReady, setGoogleReady] = useState(false);
-  const [requests, setRequests] = useState<PasswordRequest[]>([]);
-  const [requestBusy, setRequestBusy] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  useEffect(() => onAuthStateChanged(auth, (user) => setGoogleReady(Boolean(user))), []);
+  const [selectedOverview, setSelectedOverview] =
+    useState<OverviewKey | null>(null);
 
-  async function submitLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true); setError(""); setNotice("");
+  const [selectedQueue, setSelectedQueue] =
+    useState<QueueKey | null>(null);
+
+  const [selectedAction, setSelectedAction] =
+    useState<OverviewKey | null>(null);
+
+  const [activitySearch, setActivitySearch] = useState("");
+  const [activityFilter, setActivityFilter] =
+    useState<ActivityFilter>("all");
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
     try {
-      const response = await fetch(`${API_BASE}/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminCode: adminCode.trim(), password }),
+      const token = localStorage.getItem("gradly_super_admin_token");
+
+      const response = await fetch(STATS_ENDPOINT, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || typeof data.token !== "string") throw new Error(data.message || "Unable to sign in.");
-      localStorage.setItem("gradly_admin_token", data.token);
-      setPassword("");
-      navigate("/admin/dashboard", { replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not reach the Gradly server.");
-    } finally { setBusy(false); }
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          throw new Error("Your session expired. Please sign in again.");
+        }
+
+        if (response.status === 403) {
+          throw new Error(
+            "This account does not have permission to access the dashboard."
+          );
+        }
+
+        if (response.status === 404) {
+          throw new Error(
+            "The dashboard statistics endpoint was not found. Check the backend route."
+          );
+        }
+
+        throw new Error(`Dashboard request failed (${response.status}).`);
+      }
+
+      const result = await response.json();
+
+      if (result?.success === false) {
+        throw new Error(
+          result.message ??
+            "The server could not return dashboard statistics."
+        );
+      }
+
+      const data = result?.data ?? result;
+
+      setStats({
+        totalUsers: nullableCount(data.totalUsers),
+        totalAdmins: safeCount(data.totalAdmins),
+        totalInstitutions: safeCount(data.totalInstitutions),
+        totalCourses: safeCount(data.totalCourses),
+        pendingApplications: safeCount(data.pendingApplications),
+        pendingCurriculumRequests: safeCount(
+          data.pendingCurriculumRequests
+        ),
+        pendingAdminRequests: safeCount(data.pendingAdminRequests),
+        openFeedback: safeCount(data.openFeedback),
+      });
+
+      setActivities(
+        Array.isArray(data.recentActivity)
+          ? data.recentActivity.map(
+              (
+                item: Record<string, unknown>,
+                index: number
+              ) => normalizeActivity(item, index)
+            )
+          : []
+      );
+    } catch (caught) {
+      setError(getErrorMessage(caught));
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const drawer = drawerRef.current;
+
+    const getFocusableElements = () =>
+      drawer?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) ?? [];
+
+    getFocusableElements()[0]?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(getFocusableElements());
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === last
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      menuButtonRef.current?.focus();
+    };
+  }, [menuOpen]);
+
+  function goToSection(sectionId: string) {
+    setMenuOpen(false);
+
+    window.setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+    }, 50);
   }
 
-  async function withGoogle() {
-    setRequestBusy(true); setError(""); setNotice("");
-    try {
-      await signInWithGoogle();
-      setGoogleReady(true);
-      const user = auth.currentUser;
-      if (!user) throw new Error("Google sign-in did not return a user.");
-      const token = await user.getIdToken();
-      const response = await fetch(`${API_BASE}/admin-password-requests/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || "Unable to load password requests.");
-      setRequests(Array.isArray(data.requests) ? data.requests : []);
-      setNotice("Google account verified. You can submit a request or continue an approved request below.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed.");
-    } finally { setRequestBusy(false); }
+  function openApplications() {
+    setMenuOpen(false);
+    navigate("/super-admin/applications");
   }
 
-  async function completeApprovedPasswordReset() {
-    setRequestBusy(true); setError(""); setNotice("");
-    try {
-      if (newPassword.length < 12 || newPassword.length > 128) throw new Error("Choose a password between 12 and 128 characters.");
-      if (newPassword !== confirmNewPassword) throw new Error("The new passwords do not match.");
-      const user = auth.currentUser;
-      if (!user) throw new Error("Verify the Google account first.");
-      const token = await user.getIdToken();
-      const response = await fetch(`${API_BASE}/admin-password-requests/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ admin_code: adminCode.trim(), new_password: newPassword }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || "Could not complete the approved reset.");
-      setNewPassword(""); setConfirmNewPassword("");
-      setNotice(data.message || "Password reset completed. Sign in with the new password.");
-      const mine = await fetch(`${API_BASE}/admin-password-requests/mine`, { headers: { Authorization: `Bearer ${token}` } });
-      const mineData = await mine.json().catch(() => ({}));
-      setRequests(Array.isArray(mineData.requests) ? mineData.requests : []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not complete the password reset.");
-    } finally { setRequestBusy(false); }
+  function signOut() {
+    localStorage.removeItem("gradly_super_admin_token");
+    setMenuOpen(false);
+    navigate("/super-admin/login", { replace: true });
   }
 
-  async function submitPasswordRequest() {
-    setRequestBusy(true); setError(""); setNotice("");
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Sign in with Google first.");
-      const token = await user.getIdToken();
-      const response = await fetch(`${API_BASE}/admin-password-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ admin_code: adminCode.trim() }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || "Could not submit the request.");
-      setNotice(data.message || "Password request submitted for Super Admin review.");
-      const mine = await fetch(`${API_BASE}/admin-password-requests/mine`, { headers: { Authorization: `Bearer ${token}` } });
-      const mineData = await mine.json().catch(() => ({}));
-      setRequests(Array.isArray(mineData.requests) ? mineData.requests : []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not submit the request.");
-    } finally { setRequestBusy(false); }
+  const filteredActivities = useMemo(() => {
+    const query = activitySearch.trim().toLowerCase();
+
+    return activities.filter((item) => {
+      const searchableText = [
+        item.title,
+        item.description,
+        item.actorName,
+        item.category,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch =
+        !query || searchableText.includes(query);
+
+      const category = (item.category ?? "").toLowerCase();
+
+      const matchesFilter =
+        activityFilter === "all" ||
+        (activityFilter === "users" &&
+          (category.includes("user") ||
+            searchableText.includes("user"))) ||
+        (activityFilter === "admins" &&
+          (category.includes("admin") ||
+            searchableText.includes("admin"))) ||
+        (activityFilter === "curriculum" &&
+          (category.includes("curriculum") ||
+            searchableText.includes("curriculum")));
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [activities, activitySearch, activityFilter]);
+
+  const pendingTotal =
+    stats.pendingApplications +
+    stats.pendingCurriculumRequests +
+    stats.pendingAdminRequests +
+    stats.openFeedback;
+
+  const selectedOverviewCard = overviewCards.find(
+    (card) => card.key === selectedOverview
+  );
+
+  const selectedQueueCard = queueCards.find(
+    (card) => card.key === selectedQueue
+  );
+
+  const selectedActionCard = quickActions.find(
+    (action) => action.target === selectedAction
+  );
+
+  function closeDetails() {
+    setSelectedOverview(null);
+    setSelectedQueue(null);
+    setSelectedAction(null);
   }
 
+  function openOverview(key: OverviewKey) {
+    setSelectedOverview(key);
+    setSelectedQueue(null);
+    setSelectedAction(null);
+  }
 
+  function openQueue(key: QueueKey) {
+    setSelectedQueue(key);
+    setSelectedOverview(null);
+    setSelectedAction(null);
+  }
+
+  function openAction(target: OverviewKey) {
+    setSelectedAction(target);
+    setSelectedOverview(null);
+    setSelectedQueue(null);
+  }
+
+  const selectedCount: number | null =
+    selectedOverviewCard
+      ? stats[selectedOverviewCard.key]
+      : selectedQueueCard
+        ? stats[selectedQueueCard.key]
+        : selectedActionCard
+          ? stats[selectedActionCard.target]
+          : null;
 
   return (
-    <main className="admin-login-page">
-      <header className="admin-login-topbar">
-        <Link className="admin-login-back" to="/admin"><ArrowLeft size={16} /> Back</Link>
-        <span className="admin-login-topbar-title">GRADLY ECOSYSTEM</span>
-        <span className="admin-login-topbar-status"><i className="admin-login-status-dot" /> ADMIN ACCESS</span>
-      </header>
-      <div className="admin-login-layout">
-        <section className="admin-login-story">
-          <div className="admin-login-story-mark"><ShieldCheck size={25} /></div>
-          <p className="admin-login-eyebrow">ACADEMIC OPERATIONS</p>
-          <h1>Your work.<br /><span>Your institution.</span></h1>
-          <p className="admin-login-story-copy">A dedicated workspace for approved administrators to manage academic workflows, curriculum requests, and student support.</p>
-          <div className="admin-login-trust"><LockKeyhole size={17} /><span>Protected by role-based access and server-side authorization.</span></div>
-        </section>
-        <section className="admin-login-card">
-          <div className="admin-login-brand">
-            <div className="admin-login-logo">G</div>
-            <div><h2>Admin sign in</h2><p>Use the credentials issued after approval.</p></div>
+    <main className="super-dashboard">
+      <div className="sd-background-orb sd-orb-one" aria-hidden="true" />
+      <div className="sd-background-orb sd-orb-two" aria-hidden="true" />
+
+      <div className="sd-shell">
+        <aside className="sd-sidebar" aria-label="Super Admin sidebar">
+          <div className="sd-sidebar-brand">
+            <span className="sd-brand-mark">G</span>
+            <span className="sd-brand-name">
+              GRADLY <small>ECOSYSTEM</small>
+            </span>
           </div>
-          <div className="admin-login-tabs">
-            <button type="button" className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }}>Sign in</button>
-            <button type="button" className={mode === "forgot" ? "active" : ""} onClick={() => { setMode("forgot"); setError(""); setNotice(""); }}>Forgot password?</button>
-          </div>
-          {error && <div className="admin-login-alert error" role="alert">{error}</div>}
-          {notice && <div className="admin-login-alert success" role="status">{notice}</div>}
-          {mode === "login" ? (
-            <form className="admin-login-form" onSubmit={submitLogin}>
-              <label htmlFor="admin-code">Admin ID</label>
-              <input id="admin-code" value={adminCode} onChange={e => setAdminCode(e.target.value)} placeholder="Enter your Admin ID" autoComplete="username" required />
-              <label htmlFor="admin-password">Password</label>
-              <div className="admin-login-password">
-                <input id="admin-password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" autoComplete="current-password" required />
-                <button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(v => !v)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
-              </div>
-              <button className="admin-login-submit" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in to Admin"}</button>
-            </form>
-          ) : (
-            <div className="admin-login-form">
-              <p className="admin-login-help">Password recovery is reviewed by Super Admin. Verify the Google account linked to your active Admin account, then submit a request. Super Admin must approve the request first. After approval, verify your Google account here to set a new password.</p>
-              <label htmlFor="recovery-admin-code">Admin ID</label>
-              <input id="recovery-admin-code" value={adminCode} onChange={e => setAdminCode(e.target.value)} placeholder="Enter your Admin ID" autoComplete="username" required />
-              <button className="admin-login-google" type="button" onClick={withGoogle} disabled={requestBusy}><KeyRound size={17} /> {requestBusy ? "Please wait…" : googleReady ? "Verify / refresh Google session" : "Continue with Google"}</button>
-              {googleReady && <button className="admin-login-submit" type="button" onClick={submitPasswordRequest} disabled={requestBusy || !adminCode.trim()}>{requestBusy ? "Submitting…" : "Submit password request"}</button>}
-              {requests.some(request => request.status === "APPROVED") && <form className="admin-login-form admin-login-reset-form" onSubmit={event => { event.preventDefault(); void completeApprovedPasswordReset(); }}><div className="admin-login-request"><div><strong>Approved password reset</strong><span className="request-status approved">APPROVED</span></div><p>Set a new password for the Admin ID shown above. This form is available only after Super Admin approval.</p></div><label htmlFor="new-admin-password">New password</label><input id="new-admin-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 12 characters" required/><label htmlFor="confirm-admin-password">Confirm new password</label><input id="confirm-admin-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} placeholder="Re-enter new password" required/><button className="admin-login-submit" type="submit" disabled={requestBusy || !adminCode.trim()}>{requestBusy ? "Resetting…" : "Complete password reset"}</button></form>}
-              {requests.map(request => <div className="admin-login-request" key={request.id}>
-                <div><strong>{request.admin_code}</strong><span className={`request-status ${request.status.toLowerCase()}`}>{request.status.replaceAll("_", " ")}</span></div>
-                {request.review_note && <p>{request.review_note}</p>}
-                {request.status === "APPROVED" && <p>Approved. You can now set a new password below using this verified Google account.</p>}
-              </div>)}
+
+          <div className="sd-sidebar-caption">WORKSPACE</div>
+
+          <nav className="sd-sidebar-nav" aria-label="Main administration">
+            <button
+              type="button"
+              className="sd-side-link is-active"
+              onClick={() => goToSection("sd-dashboard-top")}
+            >
+              <LayoutDashboard size={18} />
+              <span>Dashboard</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/users")}
+            >
+              <Users size={18} />
+              <span>Users</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/administrators")}
+            >
+              <UserCog size={18} />
+              <span>Admins</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/institutions")}
+            >
+              <Landmark size={18} />
+              <span>Institutions</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/courses")}
+            >
+              <GraduationCap size={18} />
+              <span>Courses</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={openApplications}
+            >
+              <ClipboardList size={18} />
+              <span>Applications</span>
+              {stats.pendingApplications > 0 && (
+                <span className="sd-side-count">
+                  {stats.pendingApplications}
+                </span>
+              )}
+            </button>
+
+            <div className="sd-sidebar-caption sd-sidebar-caption-spaced">
+              ACADEMIC &amp; SUPPORT
             </div>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/curriculum")}
+            >
+              <BookOpen size={18} />
+              <span>Curriculum</span>
+              {stats.pendingCurriculumRequests > 0 && (
+                <span className="sd-side-count">
+                  {stats.pendingCurriculumRequests}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/feedback")}
+            >
+              <MessageSquare size={18} />
+              <span>Feedback</span>
+              {stats.openFeedback > 0 && (
+                <span className="sd-side-count">
+                  {stats.openFeedback}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/audit-logs")}
+            >
+              <ScrollText size={18} />
+              <span>Audit logs</span>
+            </button>
+
+            <button
+              type="button"
+              className="sd-side-link"
+              onClick={() => navigate("/super-admin/settings")}
+            >
+              <Settings size={18} />
+              <span>Settings</span>
+            </button>
+          </nav>
+
+          <div className="sd-sidebar-bottom">
+            <div className="sd-sidebar-secure">
+              <ShieldCheck size={16} />
+              <span>
+                <strong>Secure workspace</strong>
+                <small>Super Admin access</small>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="sd-sidebar-signout"
+              onClick={signOut}
+            >
+              <LogOut size={17} />
+              Sign out
+            </button>
+          </div>
+        </aside>
+
+        <div className="sd-main-column">
+          <div className="sd-navigation-bar">
+            <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
+              <span className="sd-brand-mark">G</span>
+              <span className="sd-brand-name">
+                GRADLY <small>ECOSYSTEM</small>
+              </span>
+            </div>
+
+            <div className="sd-navigation-actions">
+              <span className="sd-access-chip">
+                <ShieldCheck size={14} /> Super Admin
+              </span>
+
+              <button
+                type="button"
+                className="sd-menu-toggle"
+                aria-label={
+                  menuOpen ? "Close navigation menu" : "Open navigation menu"
+                }
+                aria-expanded={menuOpen}
+                aria-controls="sd-navigation-drawer"
+                ref={menuButtonRef}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                {menuOpen ? <X size={19} /> : <Menu size={19} />}
+                <span>{menuOpen ? "Close menu" : "Menu"}</span>
+              </button>
+            </div>
+          </div>
+
+          {menuOpen && (
+            <>
+              <button
+                type="button"
+                className="sd-menu-backdrop"
+                aria-label="Close navigation menu"
+                onClick={() => setMenuOpen(false)}
+              />
+
+              <aside
+                id="sd-navigation-drawer"
+                ref={drawerRef}
+                className="sd-navigation-drawer"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="sd-drawer-title"
+              >
+                <div className="sd-drawer-heading">
+                  <div>
+                    <span className="sd-section-kicker">
+                      GRADLY / CONTROL CENTER
+                    </span>
+                    <h2 id="sd-drawer-title">Navigation</h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="sd-icon-button"
+                    aria-label="Close navigation menu"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <nav
+                  className="sd-drawer-nav"
+                  aria-label="Super Admin navigation"
+                >
+                  <button
+                    type="button"
+                    className="sd-drawer-link is-current"
+                    onClick={() => goToSection("sd-dashboard-top")}
+                  >
+                    <LayoutDashboard size={18} />
+                    <span>Dashboard</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/users")}
+                  >
+                    <Users size={18} />
+                    <span>Users</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/administrators")}
+                  >
+                    <UserCog size={18} />
+                    <span>Admins</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/institutions")}
+                  >
+                    <Landmark size={18} />
+                    <span>Institutions</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/courses")}
+                  >
+                    <GraduationCap size={18} />
+                    <span>Courses</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={openApplications}
+                  >
+                    <ClipboardList size={18} />
+                    <span>Applications</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <div className="sd-drawer-divider" />
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/curriculum")}
+                  >
+                    <BookOpen size={18} />
+                    <span>Curriculum</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/feedback")}
+                  >
+                    <MessageSquare size={18} />
+                    <span>Feedback</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/audit-logs")}
+                  >
+                    <ScrollText size={18} />
+                    <span>Audit logs</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => navigate("/super-admin/settings")}
+                  >
+                    <Settings size={18} />
+                    <span>Settings</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <div className="sd-drawer-divider" />
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-platform-metrics")}
+                  >
+                    <Users size={18} />
+                    <span>Platform metrics</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-work-queues")}
+                  >
+                    <ClipboardList size={18} />
+                    <span>Work queues</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-quick-actions")}
+                  >
+                    <ShieldCheck size={18} />
+                    <span>Quick actions</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-recent-activity")}
+                  >
+                    <Activity size={18} />
+                    <span>Recent activity</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-system-information")}
+                  >
+                    <Building2 size={18} />
+                    <span>System information</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </nav>
+
+                <div className="sd-drawer-footer">
+                  <div className="sd-drawer-secure-note">
+                    <ShieldCheck size={16} />
+                    <span>Protected administrative workspace</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="sd-signout-button"
+                    onClick={signOut}
+                  >
+                    <LogOut size={17} />
+                    Sign out
+                  </button>
+                </div>
+              </aside>
+            </>
           )}
-          <div className="admin-login-divider"><span>NEW TO GRADLY ADMIN?</span></div>
-          <Link className="admin-login-apply-link" to="/admin/apply">Apply for administrator access <span>→</span></Link>
-          <p className="admin-login-footnote">Authorized personnel only · Your role is verified by Gradly's backend.</p>
-        </section>
+
+          <div id="sd-dashboard-top" />
+
+          <header className="sd-header">
+            <div className="sd-header-copy">
+              <div className="sd-eyebrow">
+                <span className="sd-eyebrow-dot" />
+                GRADLY <span className="sd-slash">/</span> SYSTEM CONTROL
+              </div>
+
+              <h1>Super Admin Dashboard</h1>
+
+              <p>
+                Your command centre for users, administrators,
+                institutions and academic governance.
+              </p>
+            </div>
+
+            <button
+              className="sd-refresh-button"
+              type="button"
+              onClick={() => void loadDashboard()}
+              disabled={loading}
+            >
+              <RefreshCw
+                size={16}
+                className={loading ? "sd-spin" : ""}
+              />
+              {loading ? "Refreshing…" : "Refresh data"}
+            </button>
+          </header>
+
+          <section className="sd-hero">
+            <div className="sd-hero-symbol">
+              <LayoutDashboard size={23} />
+            </div>
+
+            <div className="sd-hero-copy">
+              <span className="sd-hero-label">ECOSYSTEM OVERVIEW</span>
+              <h2>Everything under control.</h2>
+              <p>
+                Review platform activity and keep important
+                administrative work moving.
+              </p>
+            </div>
+
+            <div className="sd-hero-summary">
+              <span className="sd-summary-label">OPEN WORK QUEUE</span>
+              <strong>{loading ? "—" : formatNumber(pendingTotal)}</strong>
+              <span className="sd-summary-caption">
+                Items across dashboard queues
+              </span>
+            </div>
+          </section>
+
+          {error && (
+            <section className="sd-error" role="alert">
+              <div className="sd-error-icon">
+                <AlertCircle size={19} />
+              </div>
+
+              <div className="sd-error-copy">
+                <strong>Live data couldn't be loaded</strong>
+                <p>{error}</p>
+                <span>
+                  Expected endpoint:{" "}
+                  <code>/api/super-admin/dashboard/stats</code>
+                </span>
+              </div>
+
+              <button
+                className="sd-error-retry"
+                type="button"
+                onClick={() => void loadDashboard()}
+              >
+                Retry
+              </button>
+            </section>
+          )}
+
+          <section
+            id="sd-platform-metrics"
+            className="sd-section sd-anchor-section"
+          >
+            <div className="sd-section-heading">
+              <div>
+                <span className="sd-section-kicker">PLATFORM METRICS</span>
+                <h2>At a glance</h2>
+              </div>
+
+              <span className="sd-data-status">
+                <span
+                  className={
+                    error ? "sd-status-dot sd-dot-error" : "sd-status-dot"
+                  }
+                />
+                {loading
+                  ? "Updating data"
+                  : error
+                    ? "API unavailable"
+                    : "Dashboard overview"}
+              </span>
+            </div>
+
+            <div className="sd-metrics-grid">
+              {overviewCards.map((card) => {
+                const Icon = card.icon;
+                const active = selectedOverview === card.key;
+                const value = stats[card.key];
+
+                return (
+                  <button
+                    type="button"
+                    key={card.key}
+                    className={`sd-metric-card sd-tone-${card.tone} ${
+                      active ? "is-selected" : ""
+                    }`}
+                    onClick={() => openOverview(card.key)}
+                    aria-pressed={active}
+                  >
+                    <span className="sd-metric-top">
+                      <span className="sd-metric-icon">
+                        <Icon size={21} strokeWidth={1.8} />
+                      </span>
+
+                      <span className="sd-metric-arrow">
+                        <ArrowUpRight size={17} />
+                      </span>
+                    </span>
+
+                    <span className="sd-metric-label">{card.label}</span>
+
+                    <span className="sd-metric-value">
+                      {loading ? (
+                        <span className="sd-skeleton" />
+                      ) : (
+                        formatCount(value)
+                      )}
+                    </span>
+
+                    <span className="sd-metric-bottom">
+                      <span>{card.description}</span>
+                      <ArrowRight size={14} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section
+            id="sd-work-queues"
+            className="sd-section sd-anchor-section"
+          >
+            <div className="sd-section-heading">
+              <div>
+                <span className="sd-section-kicker">ADMINISTRATION</span>
+                <h2>Work queues</h2>
+              </div>
+
+              <span className="sd-muted-note">
+                Select a card to inspect
+              </span>
+            </div>
+
+            <div className="sd-queues-grid">
+              {queueCards.map((card) => {
+                const Icon = card.icon;
+                const count = stats[card.key];
+                const active = selectedQueue === card.key;
+
+                return (
+                  <button
+                    type="button"
+                    key={card.key}
+                    className={`sd-queue-card sd-queue-${card.tone} ${
+                      active ? "is-selected" : ""
+                    }`}
+                    onClick={() => openQueue(card.key)}
+                    aria-pressed={active}
+                  >
+                    <span className="sd-queue-top">
+                      <span className="sd-queue-icon">
+                        <Icon size={19} />
+                      </span>
+
+                      <span
+                        className={`sd-queue-count ${
+                          count > 0 ? "has-pending" : ""
+                        }`}
+                      >
+                        {loading ? "—" : formatNumber(count)}
+                      </span>
+                    </span>
+
+                    <span className="sd-queue-title">{card.label}</span>
+
+                    <span className="sd-queue-description">
+                      {card.description}
+                    </span>
+
+                    <span className="sd-queue-footer">
+                      <span
+                        className={`sd-queue-status ${
+                          count > 0 ? "is-pending" : ""
+                        }`}
+                      />
+
+                      {loading
+                        ? "Checking queue…"
+                        : count > 0
+                          ? "Awaiting attention"
+                          : "No pending items"}
+
+                      <ArrowRight size={14} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {(selectedOverviewCard ||
+            selectedQueueCard ||
+            selectedActionCard) && (
+            <section className="sd-detail-panel" aria-live="polite">
+              <div className="sd-detail-heading">
+                <div className="sd-detail-heading-icon">
+                  <Activity size={19} />
+                </div>
+
+                <div>
+                  <span className="sd-section-kicker">QUICK INSPECT</span>
+                  <h2>
+                    {selectedOverviewCard?.label ??
+                      selectedQueueCard?.label ??
+                      selectedActionCard?.label}
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  className="sd-icon-button"
+                  onClick={closeDetails}
+                  aria-label="Close details"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <p className="sd-detail-description">
+                {selectedOverviewCard?.detail ??
+                  selectedQueueCard?.description ??
+                  selectedActionCard?.description}
+              </p>
+
+              <div className="sd-detail-bottom">
+                <div className="sd-detail-count">
+                  <span>Current count</span>
+                  <strong>
+                    {loading ? "—" : formatCount(selectedCount)}
+                  </strong>
+                </div>
+
+                <span className="sd-detail-hint">
+                  <AlertCircle size={15} />
+                  Management actions must be connected to their
+                  authorized backend modules.
+                </span>
+              </div>
+            </section>
+          )}
+
+          <div
+            className="sd-content-grid sd-anchor-section"
+            id="sd-quick-actions"
+          >
+            <section className="sd-panel sd-quick-actions">
+              <div className="sd-panel-heading">
+                <div>
+                  <span className="sd-section-kicker">SHORTCUTS</span>
+                  <h2>Quick actions</h2>
+                </div>
+
+                <span className="sd-panel-badge">MANAGE</span>
+              </div>
+
+              <div className="sd-action-list">
+                {quickActions.map((action) => {
+                  const Icon = action.icon;
+                  const active = selectedAction === action.target;
+
+                  return (
+                    <button
+                      type="button"
+                      key={action.target}
+                      className={`sd-action-item ${
+                        active ? "is-selected" : ""
+                      }`}
+                      onClick={() => openAction(action.target)}
+                    >
+                      <span className="sd-action-icon">
+                        <Icon size={18} />
+                      </span>
+
+                      <span className="sd-action-copy">
+                        <strong>{action.label}</strong>
+                        <span>{action.description}</span>
+                      </span>
+
+                      <ArrowRight
+                        size={16}
+                        className="sd-action-arrow"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="sd-panel-note">
+                <ShieldCheck size={15} />
+                Access is enforced by the backend.
+              </div>
+            </section>
+
+            <section
+              className="sd-panel sd-activity-panel"
+              id="sd-recent-activity"
+            >
+              <div className="sd-panel-heading">
+                <div>
+                  <span className="sd-section-kicker">AUDIT TRAIL</span>
+                  <h2>Recent activity</h2>
+                </div>
+
+                <span className="sd-panel-badge">
+                  {activities.length} EVENTS
+                </span>
+              </div>
+
+              <div className="sd-activity-controls">
+                <label className="sd-search">
+                  <Search size={16} />
+
+                  <input
+                    type="search"
+                    placeholder="Search activity…"
+                    value={activitySearch}
+                    onChange={(event) =>
+                      setActivitySearch(event.target.value)
+                    }
+                    aria-label="Search administrative activity"
+                  />
+
+                  {activitySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setActivitySearch("")}
+                      aria-label="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </label>
+
+                <div
+                  className="sd-filter-tabs"
+                  aria-label="Activity category"
+                >
+                  {(
+                    [
+                      ["all", "All"],
+                      ["users", "Users"],
+                      ["admins", "Admins"],
+                      ["curriculum", "Curriculum"],
+                    ] as [ActivityFilter, string][]
+                  ).map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      className={
+                        activityFilter === value ? "is-active" : ""
+                      }
+                      onClick={() => setActivityFilter(value)}
+                      aria-pressed={activityFilter === value}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="sd-activity-empty">
+                  <RefreshCw size={20} className="sd-spin" />
+                  <strong>Loading activity…</strong>
+                  <span>
+                    Fetching recent events from the dashboard API.
+                  </span>
+                </div>
+              ) : filteredActivities.length > 0 ? (
+                <div className="sd-activity-list">
+                  {filteredActivities.slice(0, 8).map((item) => (
+                    <article
+                      className="sd-activity-item"
+                      key={item.id}
+                    >
+                      <div className="sd-activity-icon">
+                        <Clock3 size={16} />
+                      </div>
+
+                      <div className="sd-activity-copy">
+                        <strong>{item.title}</strong>
+                        <p>
+                          {item.description ||
+                            item.actorName ||
+                            "Administrative event"}
+                        </p>
+                        <span>{formatDate(item.createdAt)}</span>
+                      </div>
+
+                      <ArrowDownRight
+                        size={15}
+                        className="sd-activity-trail"
+                      />
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="sd-activity-empty">
+                  <div className="sd-empty-icon">
+                    <Activity size={22} />
+                  </div>
+
+                  <strong>
+                    {error
+                      ? "Activity unavailable"
+                      : activities.length === 0
+                        ? "No activity loaded yet"
+                        : "No matching events"}
+                  </strong>
+
+                  <span>
+                    {error
+                      ? "Check the dashboard API and audit log source."
+                      : activities.length === 0
+                        ? "The API should return a recentActivity array to populate this feed."
+                        : "Try another search term or activity filter."}
+                  </span>
+
+                  {(activitySearch || activityFilter !== "all") && (
+                    <button
+                      type="button"
+                      className="sd-clear-filters"
+                      onClick={() => {
+                        setActivitySearch("");
+                        setActivityFilter("all");
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <section
+            className="sd-system-strip sd-anchor-section"
+            id="sd-system-information"
+          >
+            <div className="sd-system-title">
+              <span className="sd-system-icon">
+                <ShieldCheck size={18} />
+              </span>
+
+              <div>
+                <strong>System information</strong>
+                <span>Gradly ecosystem · Version 2</span>
+              </div>
+            </div>
+
+            <div className="sd-system-item">
+              <span>Database</span>
+              <strong>
+                <CheckCircle2 size={14} />
+                PostgreSQL
+              </strong>
+            </div>
+
+            <div className="sd-system-item">
+              <span>Environment</span>
+              <strong>
+                <span className="sd-env-dot" />
+                Development
+              </strong>
+            </div>
+
+            <div className="sd-system-item">
+              <span>Dashboard API</span>
+              <strong className={error ? "sd-api-error" : ""}>
+                {error
+                  ? "Unavailable"
+                  : loading
+                    ? "Connecting…"
+                    : "Responded"}
+              </strong>
+            </div>
+          </section>
+
+          <footer className="sd-footer">
+            <span>GRADLY ECOSYSTEM</span>
+            <span>Central administration · Protected workspace</span>
+          </footer>
+        </div>
       </div>
-      <footer className="admin-login-footer">GRADLY · DEVELOPMENT & ADMINISTRATION SYSTEM</footer>
     </main>
   );
 }
