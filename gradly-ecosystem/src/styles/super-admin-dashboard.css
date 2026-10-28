@@ -2638,3 +2638,41 @@
 .sua-empty strong { color:#344054;font-size:13px; }
 @media(max-width:800px) { .sua-detail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:540px) { .sua-profile { align-items:flex-start;flex-wrap:wrap;padding:16px; }.sua-profile-main { width:calc(100% - 70px);flex:auto; }.sua-status { margin-left:67px; }.sua-section { padding:16px; }.sua-detail-grid { grid-template-columns:1fr; } }
+
+
+/* Dedicated administrator profile editor */
+.sa-admin-edit-page { max-width:none; padding-top:8px; }
+.sa-admin-edit-identity { display:flex;align-items:center;gap:16px;padding:22px 24px;margin:0 0 20px;border:1px solid #ded6f5;border-radius:14px;background:linear-gradient(110deg,#f4f0ff,#fff 68%); }
+.sa-admin-edit-avatar { display:grid;place-items:center;width:54px;height:54px;flex:0 0 auto;border-radius:13px;background:#e9e2ff;color:#5941a5; }
+.sa-admin-edit-identity h2 { margin:5px 0;color:#20263a;font-size:19px;font-weight:750; }
+.sa-admin-edit-identity p { margin:0;color:#667085;font-size:12px; }
+.sa-admin-edit-status { margin-left:auto;padding:7px 11px;border:1px solid #d1fadf;border-radius:99px;background:#ecfdf3;color:#067647;font-size:10px;font-weight:800; }
+.sa-admin-edit-status.suspended,.sa-admin-edit-status.disabled { border-color:#fecdca;background:#fff1f0;color:#b42318; }
+.sa-admin-edit-form { display:grid;gap:18px; }
+.sa-admin-edit-section { padding:24px;border:1px solid #e4e7ec;border-radius:13px;background:#fff; }
+.sa-admin-edit-section-heading { display:flex;align-items:flex-start;gap:13px;margin-bottom:22px; }
+.sa-admin-edit-section-heading>span { display:grid;place-items:center;width:32px;height:32px;flex:0 0 auto;border-radius:9px;background:#f0ebff;color:#5941a5;font-size:11px;font-weight:850; }
+.sa-admin-edit-section-heading h2 { margin:1px 0 5px;color:#20263a;font-size:16px;font-weight:750; }
+.sa-admin-edit-section-heading p { margin:0;color:#667085;font-size:12px;line-height:1.6; }
+.sa-admin-edit-fields { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px; }
+.sa-admin-edit-fields label { display:grid;gap:7px;color:#344054;font-size:11px;font-weight:750; }
+.sa-admin-edit-fields input,.sa-admin-edit-fields select { width:100%;min-height:42px;padding:0 11px;border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:#172033;font-size:12px; }
+.sa-admin-permissions { margin-top:22px;padding-top:19px;border-top:1px solid #eaecf0; }
+.sa-admin-permissions h3 { display:flex;align-items:center;gap:8px;margin:0 0 14px;color:#344054;font-size:13px;font-weight:800; }
+.sa-admin-permission-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
+.sa-admin-permission-grid label { display:flex;align-items:flex-start;gap:10px;padding:13px;border:1px solid #e4e7ec;border-radius:9px;background:#fff;cursor:pointer; }
+.sa-admin-permission-grid label:has(input:checked) { border-color:#c6b8f2;background:#f8f6ff; }
+.sa-admin-permission-grid input { width:15px;height:15px;margin-top:2px;accent-color:#5941a5; }
+.sa-admin-permission-grid label span { display:grid;gap:4px; }
+.sa-admin-permission-grid strong { color:#344054;font-size:11px; }
+.sa-admin-permission-grid small { color:#667085;font-size:9px;letter-spacing:.02em; }
+.sa-admin-edit-actions { display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:15px 0 28px; }
+.sa-admin-edit-spacer { flex:1; }
+.sa-admin-delete-button,.sa-admin-save-button { display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 15px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer; }
+.sa-admin-delete-button { border:1px solid #fecdca;background:#fff;color:#b42318; }
+.sa-admin-delete-button:hover { background:#fff1f0; }
+.sa-admin-save-button { border:1px solid #5542a8;background:#5542a8;color:#fff; }
+.sa-admin-save-button:hover { background:#49378f; }
+.sa-admin-delete-button:disabled,.sa-admin-save-button:disabled { opacity:.6;cursor:wait; }
+@media(max-width:800px) { .sa-admin-edit-fields,.sa-admin-permission-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.sa-admin-edit-section { padding:18px; } }
+@media(max-width:520px) { .sa-admin-edit-identity { align-items:flex-start;flex-wrap:wrap;padding:16px; }.sa-admin-edit-status { margin-left:0; }.sa-admin-edit-fields,.sa-admin-permission-grid { grid-template-columns:1fr; }.sa-admin-edit-actions>* { width:100%; }.sa-admin-edit-spacer { display:none; } }
