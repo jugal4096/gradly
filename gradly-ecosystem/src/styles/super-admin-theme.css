@@ -244,3 +244,47 @@
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Standalone Super Admin sign-in gateway */
+.super-login-page {
+  background:
+    radial-gradient(ellipse at 16% 35%, rgba(132,102,231,.22), transparent 38%),
+    radial-gradient(ellipse at 84% 78%, rgba(186,163,255,.24), transparent 34%),
+    linear-gradient(145deg,#fcfbff,#f3effc 58%,#fbfaff);
+  color: #281d45;
+}
+.super-login-topbar { border-bottom-color: #e8e0f8; background: rgba(255,255,255,.78); backdrop-filter: blur(18px); }
+.super-login-top-mark { border-radius: 13px; background: linear-gradient(145deg,#a28aff,#7654df 55%,#5234b7); box-shadow: 0 9px 18px rgba(100,67,203,.24),inset 0 1px 0 rgba(255,255,255,.5); }
+.super-login-secure { border: 1px solid #d9f0e5; border-radius: 999px; background: #effaf5; color: #287d63; }
+.super-login-story h1,
+.super-login-story-copy { color: #2b2048; }
+.super-login-feature { border-color: rgba(228,220,248,.9); border-radius: 15px; background: rgba(255,255,255,.72); box-shadow: 0 9px 22px rgba(63,41,121,.055); backdrop-filter: blur(12px); }
+.super-login-feature-icon { border: 1px solid #e2d8ff; border-radius: 12px; background: linear-gradient(145deg,#f3efff,#e5dcff); color: #6e4ed0; }
+.super-login-card {
+  border: 1px solid rgba(228,219,248,.95);
+  border-radius: 25px;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 28px 75px rgba(59,36,113,.14),0 5px 16px rgba(59,36,113,.055),inset 0 1px 0 #fff;
+  backdrop-filter: blur(18px);
+}
+.super-login-card-symbol { border-radius: 17px; background: linear-gradient(145deg,#9c83f4,#6949d1); box-shadow: 0 10px 22px rgba(100,67,203,.23),inset 0 1px 0 rgba(255,255,255,.4); }
+.super-login-card h1 { color: #2a2045; font-family: "Manrope",sans-serif; letter-spacing: -.04em; }
+.super-login-field input { border-color: #e4dcf5; border-radius: 12px; background: #fff; transition: border-color .16s ease,box-shadow .16s ease; }
+.super-login-field input:focus { border-color: #a994f4; box-shadow: 0 0 0 4px rgba(118,84,223,.11); outline: 0; }
+.super-login-submit { border: 1px solid #6745ce; border-radius: 12px; background: linear-gradient(135deg,#8b70f2,#6544d0); box-shadow: 0 9px 20px rgba(101,68,208,.24),inset 0 1px 0 rgba(255,255,255,.24); transition: transform .18s ease,box-shadow .18s ease,filter .18s ease; }
+.super-login-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 26px rgba(101,68,208,.3); filter: saturate(1.08); }
+.super-login-error { border-color: #f0d2da; border-radius: 12px; background: #fff3f5; }
+.super-login-footer { border-top-color: #e9e2f7; color: #9a91b1; }
+.super-login-page button:focus-visible,
+.super-login-page a:focus-visible,
+.super-login-page input:focus-visible { outline: 3px solid rgba(118,84,223,.42); outline-offset: 3px; }
+@media (max-width: 650px) {
+  .super-login-card { border-radius: 20px; }
+  .super-login-feature { box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .super-login-page *,
+  .super-login-page *::before,
+  .super-login-page *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
