@@ -8,6 +8,7 @@ import {
 import EcosystemEntry from "../pages/entry/EcosystemEntry";
 
 import AdminLogin from "../pages/admin/AdminLogin";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 
 import SuperAdminLogin from "../pages/super-admin/SuperAdminLogin";
 import SuperAdminLayout from "../layouts/SuperAdminLayout";
@@ -39,6 +40,11 @@ function App() {
         <Route
           path="/admin/login"
           element={<AdminLogin />}
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={<AdminDashboard />}
         />
 
 
