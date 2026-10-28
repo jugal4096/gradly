@@ -19,6 +19,10 @@ export default function AdminLogin() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
