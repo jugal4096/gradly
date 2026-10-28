@@ -7,10 +7,10 @@ type QueryFunction = (query: string, values?: unknown[]) => Promise<QueryResult>
 test("guest academic writes and reads are scoped to the owning session", async () => {
   // The repository module validates required configuration at import time.
   // These test-only values avoid requiring real credentials or a live DB.
-  process.env.DATABASE_URL ??= "postgres://test:test@127.0.0.1:5432/gradly_test";
-  process.env.FIREBASE_PROJECT_ID ??= "gradly-test";
-  process.env.FIREBASE_CLIENT_EMAIL ??= "gradly-test@example.invalid";
-  process.env.FIREBASE_PRIVATE_KEY ??= "test-only-key";
+  process.env.DATABASE_URL = "postgres://test:test@127.0.0.1:5432/gradly_test";
+  process.env.FIREBASE_PROJECT_ID = "gradly-test";
+  process.env.FIREBASE_CLIENT_EMAIL = "gradly-test@example.invalid";
+  process.env.FIREBASE_PRIVATE_KEY = "test-only-key";
 
   const { pool } = await import("../../config/database");
   const { addGuestCourse, getGuestCourses } = await import("./guest.academic.service");
