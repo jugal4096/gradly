@@ -1,346 +1,267 @@
 import {
-    Activity,
-    BookOpen,
-    ClipboardList,
-    MessageSquare,
-    RefreshCw,
-    ShieldCheck,
-    Users,
-  } from "lucide-react";
-  
-  import { useEffect, useState } from "react";
-  import { useNavigate } from "react-router-dom";
-  
-  import "../../styles/super-admin-dashboard.css";
-  
-  interface Student {
-    id: string;
-    email: string | null;
-    display_name: string | null;
-    role: string;
-    active: boolean;
-    last_login_at: string | null;
-    created_at: string;
-    student_identifier: string | null;
-    current_semester_number: number | null;
-    current_cgpa: number | null;
-    branch_name: string | null;
-  }
-  
-  interface UsersResponse {
-    students: Student[];
-    count: number;
-  }
-  
-  const modules = [
-    {
-      label: "Administrators",
-      description: "Registered administrative accounts",
-      icon: ShieldCheck,
-      path: "/super-admin/admins",
-    },
-    {
-      label: "Applications",
-      description: "Pending administrator applications",
-      icon: ClipboardList,
-      path: "/super-admin/applications",
-    },
-    {
-      label: "Feedback",
-      description: "Open feedback requests",
-      icon: MessageSquare,
-      path: "/super-admin/feedback",
-    },
-    {
-      label: "Curriculum",
-      description: "Pending curriculum changes",
-      icon: BookOpen,
-      path: "/super-admin/curriculum",
-    },
-  ];
-  
-  export default function SuperAdminDashboard() {
-    const navigate = useNavigate();
-  
-    const [activeUsers, setActiveUsers] = useState<number | null>(null);
-    const [usersLoading, setUsersLoading] = useState(true);
-    const [usersError, setUsersError] = useState(false);
-  
-    async function loadActiveUsers() {
-      const token = localStorage.getItem("gradly_super_admin_token");
-  
-      if (!token) {
-        setUsersLoading(false);
-        setUsersError(true);
-        return;
-      }
-  
-      try {
-        setUsersLoading(true);
-        setUsersError(false);
-  
-        const apiBaseUrl =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-  
-        const response = await fetch(`${apiBaseUrl}/super-admin/users`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to load users.");
-        }
-  
-        const data: UsersResponse = await response.json();
-  
-        const activeCount = Array.isArray(data.students)
-          ? data.students.filter((student) => student.active === true).length
-          : 0;
-  
-        setActiveUsers(activeCount);
-      } catch (error) {
-        console.error("Failed to load active users:", error);
-        setUsersError(true);
-        setActiveUsers(null);
-      } finally {
-        setUsersLoading(false);
-      }
+  ArrowDownAZ,
+  ArrowUpAZ,
+  Building2,
+  ChevronDown,
+  GraduationCap,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  Users,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../../styles/super-admin-users.css";
+
+const configuredApiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api"
+).trim().replace(/\/+$/, "");
+const API_BASE_URL = /\/api$/i.test(configuredApiBaseUrl)
+  ? configuredApiBaseUrl
+  : `${configuredApiBaseUrl}/api`;
+
+interface Student {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  role: string;
+  active: boolean;
+  last_login_at: string | null;
+  created_at: string;
+  student_identifier: string | null;
+  current_semester_number: number | null;
+  current_cgpa: number | null;
+  institution_name: string | null;
+  program_name: string | null;
+  scheme_name: string | null;
+  branch_name: string | null;
+}
+
+interface UsersResponse {
+  students: Student[];
+  count: number;
+}
+
+type AcademicField = "institution_name" | "program_name" | "scheme_name" | "branch_name";
+type SortField = "display_name" | "institution_name" | "program_name" | "scheme_name" | "branch_name" | "created_at";
+type SortDirection = "asc" | "desc";
+
+const ACADEMIC_FILTERS: { key: AcademicField; label: string }[] = [
+  { key: "institution_name", label: "Institution" },
+  { key: "program_name", label: "Program" },
+  { key: "scheme_name", label: "Scheme" },
+  { key: "branch_name", label: "Branch" },
+];
+
+const SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: "display_name", label: "Name" },
+  { value: "institution_name", label: "Institution" },
+  { value: "program_name", label: "Program" },
+  { value: "scheme_name", label: "Scheme" },
+  { value: "branch_name", label: "Branch" },
+  { value: "created_at", label: "Recently added" },
+];
+
+export default function SuperAdminUsers() {
+  const navigate = useNavigate();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Record<AcademicField, string>>({
+    institution_name: "",
+    program_name: "",
+    scheme_name: "",
+    branch_name: "",
+  });
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  async function loadUsers() {
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) {
+      setError("Super Admin authentication token not found. Please sign in again.");
+      setLoading(false);
+      return;
     }
-  
-    useEffect(() => {
-      loadActiveUsers();
-    }, []);
-  
-    function handleUsersClick() {
-      navigate("/super-admin/users");
+
+    try {
+      setLoading(true);
+      setError("");
+      const response = await fetch(`${API_BASE_URL}/super-admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data: UsersResponse & { message?: string } = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to load user records.");
+      setStudents(Array.isArray(data.students) ? data.students : []);
+    } catch (err) {
+      console.error("Failed to load users:", err);
+      setError(err instanceof Error ? err.message : "Unable to connect to the Gradly server.");
+    } finally {
+      setLoading(false);
     }
-  
-    return (
-      <div className="super-dashboard">
-        {/* =====================================================
-            HEADER
-            ===================================================== */}
-  
-        <div className="super-dashboard-heading">
-          <div>
-            <div className="super-dashboard-kicker">
-              GRADLY / SYSTEM CONTROL
-            </div>
-  
-            <h1>Super Admin Dashboard</h1>
-  
-            <p>
-              Central administration and governance console for the Gradly
-              ecosystem.
-            </p>
-          </div>
-  
-          <div className="dashboard-status">
-            <Activity size={15} strokeWidth={1.8} />
-  
-            <span>SYSTEM READY</span>
-          </div>
+  }
+
+  useEffect(() => {
+    void loadUsers();
+  }, []);
+
+  const options = useMemo(() => {
+    const result = {} as Record<AcademicField, string[]>;
+    for (const { key } of ACADEMIC_FILTERS) {
+      result[key] = [...new Set(students.map((student) => student[key]?.trim()).filter((value): value is string => Boolean(value)))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+    return result;
+  }, [students]);
+
+  const visibleStudents = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase();
+    const filtered = students.filter((student) => {
+      const matchesSearch = !needle || [
+        student.display_name,
+        student.email,
+        student.student_identifier,
+        student.institution_name,
+        student.program_name,
+        student.scheme_name,
+        student.branch_name,
+      ].some((value) => value?.toLocaleLowerCase().includes(needle));
+      return matchesSearch && ACADEMIC_FILTERS.every(({ key }) =>
+        !filters[key] || student[key] === filters[key]
+      );
+    });
+
+    const compare = (a: Student, b: Student) => {
+      if (sortField === "created_at") {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      return (a[sortField] ?? "").localeCompare(b[sortField] ?? "", undefined, { sensitivity: "base" });
+    };
+    return filtered.sort((a, b) => compare(a, b) * (sortDirection === "asc" ? 1 : -1));
+  }, [students, search, filters, sortField, sortDirection]);
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
+  function updateFilter(key: AcademicField, value: string) {
+    setFilters((current) => ({ ...current, [key]: value }));
+  }
+
+  function clearFilters() {
+    setSearch("");
+    setFilters({ institution_name: "", program_name: "", scheme_name: "", branch_name: "" });
+  }
+
+  return (
+    <main className="sa-users-page">
+      <header className="sa-users-header">
+        <div>
+          <div className="sa-users-eyebrow"><span /> GRADLY / USER DIRECTORY</div>
+          <h1>Users <span>Directory</span></h1>
+          <p>Find and organize student accounts by institution and academic structure.</p>
         </div>
-  
-        {/* =====================================================
-            MODULES
-            ===================================================== */}
-  
-        <section className="dashboard-module-grid">
-          {/* USERS */}
-  
-          <button
-            type="button"
-            className="dashboard-module dashboard-module-clickable"
-            onClick={handleUsersClick}
-            title="Open user management"
-          >
-            <div className="module-icon module-icon-users">
-              <Users size={19} strokeWidth={1.8} />
-            </div>
-  
-            <div className="module-info">
-              <div className="module-label">Users</div>
-  
-              <div className="module-value module-value-with-refresh">
-                {usersLoading ? (
-                  <span className="module-loading">...</span>
-                ) : usersError ? (
-                  <span className="module-error">ERR</span>
-                ) : (
-                  activeUsers ?? 0
-                )}
-  
-                <span
-                  className="module-refresh-button"
-                  role="button"
-                  tabIndex={0}
-                  title="Refresh active users"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    loadActiveUsers();
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      loadActiveUsers();
-                    }
-                  }}
-                >
-                  <RefreshCw
-                    size={13}
-                    strokeWidth={1.8}
-                    className={usersLoading ? "refresh-spinning" : ""}
-                  />
-                </span>
+        <button className="sa-users-refresh" type="button" onClick={() => void loadUsers()} disabled={loading}>
+          <RefreshCw size={16} className={loading ? "sa-users-spin" : ""} />
+          Refresh
+        </button>
+      </header>
+
+      <section className="sa-users-stat-row" aria-label="User summary">
+        <div className="sa-users-stat-card">
+          <span className="sa-users-stat-icon"><Users size={18} /></span>
+          <div><small>ALL STUDENTS</small><strong>{loading ? "—" : students.length.toLocaleString()}</strong></div>
+        </div>
+        <div className="sa-users-stat-card">
+          <span className="sa-users-stat-icon"><Building2 size={18} /></span>
+          <div><small>INSTITUTIONS</small><strong>{options.institution_name.length.toLocaleString()}</strong></div>
+        </div>
+        <div className="sa-users-stat-card">
+          <span className="sa-users-stat-icon"><GraduationCap size={18} /></span>
+          <div><small>MATCHING USERS</small><strong>{loading ? "—" : visibleStudents.length.toLocaleString()}</strong></div>
+        </div>
+      </section>
+
+      <section className="sa-users-panel">
+        <div className="sa-users-panel-heading">
+          <div>
+            <div className="sa-users-kicker">ACADEMIC SEGMENTATION</div>
+            <h2>Filter users</h2>
+            <p>Combine institution, program, scheme, and branch filters to narrow the directory.</p>
+          </div>
+          {activeFilterCount > 0 && <span className="sa-users-filter-count">{activeFilterCount} active</span>}
+        </div>
+
+        <div className="sa-users-filter-grid">
+          {ACADEMIC_FILTERS.map(({ key, label }) => (
+            <label className="sa-users-field" key={key}>
+              <span>{label}</span>
+              <div className="sa-users-select-wrap">
+                <select value={filters[key]} onChange={(event) => updateFilter(key, event.target.value)}>
+                  <option value="">All {label.toLowerCase()}s</option>
+                  {options[key].map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+                <ChevronDown size={15} />
               </div>
-  
-              <div className="module-description">
-                Currently active student accounts
-              </div>
-            </div>
-          </button>
-  
-          {/* EXISTING MODULES */}
-  
-          {modules.map((module) => {
-            const Icon = module.icon;
-  
-            return (
-              <button
-                type="button"
-                className="dashboard-module dashboard-module-clickable"
-                key={module.label}
-                onClick={() => navigate(module.path)}
-                title={`Open ${module.label}`}
-              >
-                <div className="module-icon">
-                  <Icon size={19} strokeWidth={1.8} />
-                </div>
-  
-                <div className="module-info">
-                  <div className="module-label">{module.label}</div>
-  
-                  <div className="module-value">—</div>
-  
-                  <div className="module-description">
-                    {module.description}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </section>
-  
-        {/* =====================================================
-            SYSTEM INFORMATION
-            ===================================================== */}
-  
-        <section className="dashboard-panel">
-          <div className="dashboard-panel-header">
-            <div>SYSTEM INFORMATION</div>
-  
-            <span>V2</span>
-          </div>
-  
-          <div className="dashboard-information">
-            <div>
-              <span>Environment</span>
-  
-              <strong>Development</strong>
-            </div>
-  
-            <div>
-              <span>Administration Mode</span>
-  
-              <strong>Super Admin</strong>
-            </div>
-  
-            <div>
-              <span>Database</span>
-  
-              <strong>PostgreSQL</strong>
-            </div>
-  
-            <div>
-              <span>Authentication</span>
-  
-              <strong>Protected</strong>
-            </div>
-          </div>
-        </section>
-  
-        {/* =====================================================
-            ACTIVE USERS INFORMATION
-            ===================================================== */}
-  
-        <section className="dashboard-panel">
-          <div className="dashboard-panel-header">
-            <div>USER ACTIVITY</div>
-  
-            <span>LIVE DATA</span>
-          </div>
-  
-          <div className="dashboard-user-summary">
-            <div className="dashboard-user-summary-icon">
-              <Users size={20} strokeWidth={1.8} />
-            </div>
-  
-            <div className="dashboard-user-summary-content">
-              <span className="dashboard-user-summary-label">
-                ACTIVE STUDENT ACCOUNTS
-              </span>
-  
-              <strong>
-                {usersLoading
-                  ? "Loading..."
-                  : usersError
-                    ? "Unavailable"
-                    : activeUsers ?? 0}
-              </strong>
-  
-              <p>
-                Number of student accounts currently marked as active in the
-                Gradly system.
-              </p>
-            </div>
-  
-            <button
-              type="button"
-              className="dashboard-user-summary-button"
-              onClick={handleUsersClick}
-            >
-              OPEN USERS
+            </label>
+          ))}
+        </div>
+
+        <div className="sa-users-toolbar">
+          <label className="sa-users-search">
+            <Search size={17} />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, enrollment no..." />
+            {search && <button type="button" aria-label="Clear search" onClick={() => setSearch("")}><X size={15} /></button>}
+          </label>
+          <div className="sa-users-sort">
+            <SlidersHorizontal size={16} />
+            <label htmlFor="sa-users-sort-field">Sort by</label>
+            <select id="sa-users-sort-field" value={sortField} onChange={(event) => setSortField(event.target.value as SortField)}>
+              {SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <button type="button" className="sa-users-sort-direction" title={sortDirection === "asc" ? "Switch to descending" : "Switch to ascending"} aria-label="Change sort direction" onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}>
+              {sortDirection === "asc" ? <ArrowUpAZ size={17} /> : <ArrowDownAZ size={17} />}
             </button>
           </div>
-        </section>
-  
-        {/* =====================================================
-            ADMINISTRATIVE ACTIVITY
-            ===================================================== */}
-  
-        <section className="dashboard-panel">
-          <div className="dashboard-panel-header">
-            <div>ADMINISTRATIVE ACTIVITY</div>
-  
-            <span>LIVE DATA</span>
+          <button type="button" className="sa-users-clear" onClick={clearFilters} disabled={!search && activeFilterCount === 0}>Clear all</button>
+        </div>
+      </section>
+
+      <section className="sa-users-results">
+        <div className="sa-users-results-heading">
+          <div><h2>Student accounts</h2><p>{loading ? "Loading records…" : `Showing ${visibleStudents.length} of ${students.length} users`}</p></div>
+          <span className="sa-users-results-badge">LIVE DIRECTORY</span>
+        </div>
+
+        {error ? (
+          <div className="sa-users-state sa-users-error"><strong>Could not load users</strong><p>{error}</p><button type="button" onClick={() => void loadUsers()}>Try again</button></div>
+        ) : loading ? (
+          <div className="sa-users-state">Loading student records…</div>
+        ) : visibleStudents.length === 0 ? (
+          <div className="sa-users-state"><strong>No matching users</strong><p>Try changing your filters or search terms.</p><button type="button" onClick={clearFilters}>Clear filters</button></div>
+        ) : (
+          <div className="sa-users-table-scroll">
+            <table className="sa-users-table">
+              <thead><tr><th>User</th><th>Institution</th><th>Program</th><th>Scheme</th><th>Branch</th><th>Status</th><th>Academic</th><th /></tr></thead>
+              <tbody>
+                {visibleStudents.map((student) => (
+                  <tr key={student.id}>
+                    <td><div className="sa-users-person"><span className="sa-users-avatar">{(student.display_name || student.email || "U").trim().charAt(0).toUpperCase()}</span><div><strong>{student.display_name || "Unnamed student"}</strong><small>{student.email || "No email"}{student.student_identifier ? ` · ${student.student_identifier}` : ""}</small></div></div></td>
+                    <td>{student.institution_name || <em>Not assigned</em>}</td>
+                    <td>{student.program_name || <em>Not assigned</em>}</td>
+                    <td>{student.scheme_name || <em>Not assigned</em>}</td>
+                    <td>{student.branch_name || <em>Not assigned</em>}</td>
+                    <td><span className={`sa-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Inactive"}</span></td>
+                    <td><div className="sa-users-academic"><strong>{student.current_cgpa !== null ? Number(student.current_cgpa).toFixed(2) : "—"}</strong><small>{student.current_semester_number ? `Semester ${student.current_semester_number}` : "No semester"}</small></div></td>
+                    <td><button className="sa-users-view" type="button" onClick={() => navigate(`/super-admin/users/${student.id}`)}>View record <span>↗</span></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-  
-          <div className="dashboard-empty">
-            <Activity size={20} strokeWidth={1.8} />
-  
-            <strong>No activity loaded</strong>
-  
-            <p>
-              Administrative activity will appear here once the audit API is
-              connected.
-            </p>
-          </div>
-        </section>
-      </div>
-    );
-  }
+        )}
+      </section>
+      <p className="sa-users-footnote">Filters use the academic profile linked to each student account. Missing profile values are shown as “Not assigned”.</p>
+    </main>
+  );
+}
