@@ -3,10 +3,10 @@ import { ArrowLeft, Eye, EyeOff, Fingerprint, LockKeyhole, ShieldCheck, Sparkles
 import { useLocation, useNavigate } from "react-router-dom";
 
 import {
-  API_BASE_URL,
   setToken,
   verifySession,
 } from "../../lib/superAdminSession";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "./SuperAdminLogin.css";
 
 export default function SuperAdminLogin() {
@@ -37,6 +37,10 @@ export default function SuperAdminLogin() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/super-admin/login`, {
