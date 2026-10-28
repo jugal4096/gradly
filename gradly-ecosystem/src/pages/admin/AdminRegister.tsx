@@ -2,8 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../config/firebase";
-import "./AdminRegister.css";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import "./AdminRegister.css";
 
 export default function AdminRegister() {
   const navigate = useNavigate();
