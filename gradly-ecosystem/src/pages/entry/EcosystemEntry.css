@@ -76,7 +76,7 @@
    
      border-radius: 50%;
    
-     background: #00b894;
+     background: #4d1a9e;
    
      box-shadow:
        0 0 10px rgba(0, 184, 148, 0.55);
@@ -100,7 +100,7 @@
    }
    
    .ready-text {
-     color: #00a884;
+     color: #461890;
    }
    
    
@@ -446,7 +446,7 @@
    }
    
    .admin-module {
-     --accent: #00a878;
+     --accent: #461890;
    }
    
    .super-module {
@@ -685,7 +685,7 @@
    }
    
    .connection {
-     color: #00a878 !important;
+     color: #461890 !important;
    
      animation:
        connectionPulse 2s ease-in-out infinite;
