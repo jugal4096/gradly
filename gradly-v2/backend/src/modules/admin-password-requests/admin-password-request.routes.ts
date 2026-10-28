@@ -1,4 +1,5 @@
 import { Router, type Request, type Response, type RequestHandler } from "express";
+import bcrypt from "bcrypt";
 import { pool } from "../../config/database";
 import { authenticateFirebaseToken, type AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { authenticateSuperAdminToken, type SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
@@ -74,6 +75,57 @@ router.post("/", authenticateFirebaseToken, async (req, res) => {
     return res.status(201).json({ success: true, message: "Password-change request sent to Super Admin for review.", request: inserted.rows[0] });
   } catch (error) {
     return fail(res, error);
+  }
+});
+
+
+router.post("/complete", authenticateFirebaseToken, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const identity = firebaseIdentity(req);
+    const adminCode = typeof req.body?.admin_code === "string" ? req.body.admin_code.trim() : "";
+    const newPassword = typeof req.body?.new_password === "string" ? req.body.new_password : "";
+    if (!/^[A-Za-z0-9_-]{4,32}$/.test(adminCode)) return res.status(400).json({ success: false, message: "Enter the Admin ID linked to your account." });
+    if (newPassword.length < 12 || newPassword.length > 128) return res.status(400).json({ success: false, message: "New password must be 12–128 characters." });
+    await client.query("BEGIN");
+    const request = await client.query(
+      `SELECT r.id, r.admin_id, a.status, a.password_hash
+       FROM public.admin_password_change_requests r
+       JOIN public.admins a ON a.id = r.admin_id
+       WHERE UPPER(r.admin_code) = UPPER($1) AND LOWER(r.admin_email) = $2
+         AND r.firebase_uid = $3 AND r.status = 'APPROVED'
+         AND a.status = 'ACTIVE'
+       ORDER BY r.reviewed_at DESC NULLS LAST LIMIT 1 FOR UPDATE OF r`,
+      [adminCode, identity.email, identity.uid]
+    );
+    if (!request.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ success: false, message: "No approved password-change request matches this verified Google account and Admin ID." });
+    }
+    if (await bcrypt.compare(newPassword, request.rows[0].password_hash)) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ success: false, message: "Choose a password different from the previous password." });
+    }
+    const hash = await bcrypt.hash(newPassword, 12);
+    await client.query(
+      "UPDATE public.admins SET password_hash = $2, password_changed_at = NOW(), password_expires_at = NOW() + INTERVAL '1 month', updated_at = NOW() WHERE id = $1",
+      [request.rows[0].admin_id, hash]
+    );
+    const completed = await client.query(
+      "UPDATE public.admin_password_change_requests SET status = 'COMPLETED', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND status = 'APPROVED' RETURNING id, admin_code, admin_email, status, completed_at",
+      [request.rows[0].id]
+    );
+    await client.query(
+      "INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata) VALUES ('ADMIN', $1, 'ADMIN', 'ADMIN_PASSWORD_RESET_COMPLETED_AFTER_SUPER_ADMIN_APPROVAL', 'admins', $1, $2::jsonb)",
+      [request.rows[0].admin_id, JSON.stringify({ requestId: request.rows[0].id, completedByVerifiedFirebaseUid: identity.uid })]
+    );
+    await client.query("COMMIT");
+    return res.json({ success: true, message: "Password reset completed. You can now sign in with your new password.", request: completed.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    return fail(res, error);
+  } finally {
+    client.release();
   }
 });
 
