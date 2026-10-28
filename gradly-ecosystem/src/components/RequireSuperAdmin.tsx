@@ -16,11 +16,15 @@ export default function RequireSuperAdmin({
 
   useEffect(() => {
     let cancelled = false;
-    setState("checking");
 
-    verifySession().then((status) => {
-      if (!cancelled) setState(status);
-    });
+    void Promise.resolve()
+      .then(() => verifySession())
+      .then((status) => {
+        if (!cancelled) setState(status);
+      })
+      .catch(() => {
+        if (!cancelled) setState("unreachable");
+      });
 
     return () => {
       cancelled = true;
@@ -45,7 +49,10 @@ export default function RequireSuperAdmin({
     return (
       <div style={{ padding: 24 }}>
         <p>Could not reach the server to verify your session.</p>
-        <button type="button" onClick={() => setAttempt((n) => n + 1)}>
+        <button type="button" onClick={() => {
+            setState("checking");
+            setAttempt((n) => n + 1);
+          }}>
           Retry
         </button>
       </div>
