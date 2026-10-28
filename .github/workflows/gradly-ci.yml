@@ -30,12 +30,12 @@ jobs:
       - name: Install backend dependencies
         working-directory: gradly-v2/backend
         run: npm ci --no-audit --no-fund
-      - name: Audit backend dependencies
-        working-directory: gradly-v2/backend
-        run: npm audit --audit-level=high
       - name: Run guest ownership regression test
         working-directory: gradly-v2/backend
         run: npm test
+      - name: Audit backend dependencies
+        working-directory: gradly-v2/backend
+        run: npm audit --audit-level=high
 
   student-app:
     name: Student app quality gates
@@ -50,9 +50,6 @@ jobs:
       - name: Install dependencies
         working-directory: gradly-v2
         run: npm ci --no-audit --no-fund
-      - name: Audit student app dependencies
-        working-directory: gradly-v2
-        run: npm audit --audit-level=high
       - name: Test academic calculations
         working-directory: gradly-v2
         run: npm test
@@ -62,6 +59,9 @@ jobs:
       - name: Lint student app
         working-directory: gradly-v2
         run: npm run lint
+      - name: Audit student app dependencies
+        working-directory: gradly-v2
+        run: npm audit --audit-level=high
 
   admin-ecosystem:
     name: Admin ecosystem quality gates
@@ -76,12 +76,12 @@ jobs:
       - name: Install dependencies
         working-directory: gradly-ecosystem
         run: npm ci --no-audit --no-fund
-      - name: Audit admin ecosystem dependencies
-        working-directory: gradly-ecosystem
-        run: npm audit --audit-level=high
       - name: Build admin ecosystem
         working-directory: gradly-ecosystem
         run: npm run build
       - name: Lint admin ecosystem
         working-directory: gradly-ecosystem
         run: npm run lint
+      - name: Audit admin ecosystem dependencies
+        working-directory: gradly-ecosystem
+        run: npm audit --audit-level=high
