@@ -105,7 +105,7 @@ function countRecords(value: unknown): number {
   }).length;
   if (!value || typeof value !== "object") return 0;
   const record = value as Record<string, unknown>;
-  for (const key of ["data", "items", "requests", "feedback", "events", "activity", "notifications", "rows"]) {
+  for (const key of ["data", "items", "requests", "applications", "feedback", "events", "activity", "notifications", "rows"]) {
     if (Array.isArray(record[key])) return countRecords(record[key]);
   }
   if (record.data && typeof record.data === "object") return countRecords(record.data);
