@@ -1,11 +1,7 @@
 const TOKEN_KEY = "gradly_super_admin_token";
 
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
-)
-  .trim()
-  .replace(/\/+$/, "")
-  .replace(/\/api$/i, "");
+import { API_BASE_URL, isApiConfigured } from "./api";
+export { API_BASE_URL } from "./api";
 
 export function getToken(): string | null {
   try {
