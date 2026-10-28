@@ -104,26 +104,71 @@ export async function addGuestSemesterCourse(
       });
     }
 
+    const numericCredits = Number(credits);
+    const numericGradePoint =
+      gradePoint === undefined || gradePoint === null
+        ? null
+        : Number(gradePoint);
+    const numericMarks =
+      marks === undefined || marks === null
+        ? null
+        : Number(marks);
+    const numericMaximumMarks =
+      maximumMarks === undefined || maximumMarks === null
+        ? null
+        : Number(maximumMarks);
+
+    if (!Number.isFinite(numericCredits) || numericCredits <= 0) {
+      return res.status(400).json({
+        message: "Credits must be a finite number greater than zero.",
+      });
+    }
+
+    if (
+      numericGradePoint !== null &&
+      (!Number.isFinite(numericGradePoint) || numericGradePoint < 0)
+    ) {
+      return res.status(400).json({
+        message: "Grade point must be a finite, non-negative number.",
+      });
+    }
+
+    if (numericMarks !== null && (!Number.isFinite(numericMarks) || numericMarks < 0)) {
+      return res.status(400).json({
+        message: "Marks must be a finite, non-negative number.",
+      });
+    }
+
+    if (
+      numericMaximumMarks !== null &&
+      (!Number.isFinite(numericMaximumMarks) || numericMaximumMarks <= 0)
+    ) {
+      return res.status(400).json({
+        message: "Maximum marks must be a finite number greater than zero.",
+      });
+    }
+
+    if (
+      numericMarks !== null &&
+      numericMaximumMarks !== null &&
+      numericMarks > numericMaximumMarks
+    ) {
+      return res.status(400).json({
+        message: "Marks cannot exceed maximum marks.",
+      });
+    }
+
     const course = await addGuestCourse({
       guestSemesterId,
       curriculumSubjectId: curriculumSubjectId ?? null,
       courseCodeSnapshot,
       courseNameSnapshot,
-      credits: Number(credits),
+      credits: numericCredits,
       registrationStatus,
       gradeSymbol,
-      gradePoint:
-        gradePoint !== undefined
-          ? Number(gradePoint)
-          : null,
-      marks:
-        marks !== undefined
-          ? Number(marks)
-          : null,
-      maximumMarks:
-        maximumMarks !== undefined
-          ? Number(maximumMarks)
-          : null,
+      gradePoint: numericGradePoint,
+      marks: numericMarks,
+      maximumMarks: numericMaximumMarks,
       resultStatus,
       resultSource,
     }, session.id);
