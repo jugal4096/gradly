@@ -14,7 +14,7 @@ import {
   
   import { auth } from "./firebase";
   import { apiUrl } from "../lib/api";
-  import { AuthContext, type AuthContextType } from "./AuthContextCore";
+  import { AuthContext } from "./AuthContextCore";
   
 
   export function AuthProvider({
