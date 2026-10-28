@@ -1,32 +1,32 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 
 .admin-dashboard {
-  --ad-forest: #123f32;
-  --ad-forest-deep: #0c3027;
-  --ad-green: #167653;
-  --ad-green-bright: #1b9568;
-  --ad-mint: #d9f7e8;
-  --ad-ink: #172a23;
-  --ad-muted: #708078;
-  --ad-border: #e2ebe5;
+  --ad-forest: #35245f;
+  --ad-forest-deep: #241842;
+  --ad-green: #7654df;
+  --ad-green-bright: #9878f4;
+  --ad-mint: #eee8ff;
+  --ad-ink: #28213f;
+  --ad-muted: #7e7696;
+  --ad-border: #e6e0f2;
   --ad-surface: #ffffff;
   min-height: 100vh;
   display: flex;
   color: var(--ad-ink);
-  background: #f5f8f5;
+  background: #f8f7fc;
   font-family: "DM Sans", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 .admin-dashboard * { box-sizing: border-box; }
 .admin-dashboard button, .admin-dashboard input { font: inherit; }
 .admin-dashboard button { -webkit-tap-highlight-color: transparent; }
-.ad-sidebar { width: 254px; min-width: 254px; min-height: 100vh; padding: 26px 17px 18px; display: flex; flex-direction: column; color: #e9f8f0; background: linear-gradient(180deg,#123f32 0%,#0e352a 65%,#0a2b23 100%); position: sticky; top: 0; height: 100vh; z-index: 30; }
+.ad-sidebar { width: 254px; min-width: 254px; min-height: 100vh; padding: 26px 17px 18px; display: flex; flex-direction: column; color: #f5f0ff; background: linear-gradient(180deg,#35245f 0%,#2b1d4c 65%,#21163b 100%); position: sticky; top: 0; height: 100vh; z-index: 30; }
 .ad-brand { display: flex; align-items: center; gap: 11px; padding: 3px 9px 29px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
-.ad-brand-mark, .ad-footer-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: #0e4a35; background: linear-gradient(145deg,#e0fff0,#8de2b8); font: 800 25px "Manrope",sans-serif; box-shadow: 0 7px 20px #071f192e; }
+.ad-brand-mark, .ad-footer-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: #4c329f; background: linear-gradient(145deg,#f1eaff,#bca8ff); font: 800 25px "Manrope",sans-serif; box-shadow: 0 7px 20px #071f192e; }
 .ad-brand-copy { display: flex; flex-direction: column; gap: 3px; }
 .ad-brand-copy strong { font: 800 16px "Manrope",sans-serif; letter-spacing: 2px; }
-.ad-brand-copy small { color: #a9d4be; font-size: 9px; font-weight: 700; letter-spacing: 1.7px; }
-.ad-sidebar-label { padding: 0 12px 10px; color: #83b7a0; font-size: 10px; font-weight: 700; letter-spacing: 1.6px; }
+.ad-brand-copy small { color: #c7b8f4; font-size: 9px; font-weight: 700; letter-spacing: 1.7px; }
+.ad-sidebar-label { padding: 0 12px 10px; color: #b3a1e8; font-size: 10px; font-weight: 700; letter-spacing: 1.6px; }
 .ad-sidebar-nav { display: grid; gap: 6px; }
 .ad-nav-link { min-height: 45px; display: flex; align-items: center; gap: 12px; padding: 0 13px; border-radius: 12px; color: #b8d6c7; text-decoration: none; font-size: 13px; font-weight: 600; transition: background .2s,color .2s,transform .2s; }
 .ad-nav-link:hover { color: #fff; background: #ffffff12; transform: translateX(2px); }
