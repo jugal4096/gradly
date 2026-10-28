@@ -24,6 +24,9 @@ export async function getSuperAdminDashboardStats(
     // Fetch actual counts from PostgreSQL.
     const statsResult = await pool.query(`
       SELECT
+        (SELECT COUNT(*) FROM public.users)::int
+          AS "totalUsers",
+
         (SELECT COUNT(*) FROM admins)::int
           AS "totalAdmins",
 
@@ -46,15 +49,15 @@ export async function getSuperAdminDashboardStats(
         )::int AS "pendingApplications",
 
         (
-          SELECT COUNT(*)
-          FROM curriculum_change_requests
-          WHERE LOWER(TRIM(COALESCE(status, '')))
-            IN (
-              'pending',
-              'submitted',
-              'under_review',
-              'under review'
-            )
+          (SELECT COUNT(*)
+           FROM curriculum_change_requests
+           WHERE LOWER(TRIM(COALESCE(status, '')))
+             IN ('pending', 'submitted', 'under_review', 'under review'))
+          +
+          (SELECT COUNT(*)
+           FROM public.admin_subject_change_requests
+           WHERE LOWER(TRIM(COALESCE(status, '')))
+             IN ('pending', 'submitted', 'under_review', 'under review'))
         )::int AS "pendingCurriculumRequests",
 
         (
@@ -122,8 +125,6 @@ export async function getSuperAdminDashboardStats(
       success: true,
       data: {
         ...stats,
-        // Do not invent a user count before identifying its table.
-        totalUsers: null,
         recentActivity,
       },
     });

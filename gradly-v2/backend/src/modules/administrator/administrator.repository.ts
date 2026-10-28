@@ -7,6 +7,7 @@ import { pool } from "../../config/database";
 export type AdministratorListFilters = {
   institutionId?: string;
   branchId?: string;
+  programId?: string;
   status?: string;
   registrationStatus?: string;
   search?: string;
@@ -60,6 +61,11 @@ export async function findAdministrators(
     values.push(filters.institutionId);
   }
 
+  if (filters.programId) {
+    conditions.push(`p.id = ${parameterIndex++}`);
+    values.push(filters.programId);
+  }
+
   if (filters.branchId) {
     conditions.push(
       `a.branch_id = $${parameterIndex++}`
@@ -96,7 +102,6 @@ export async function findAdministrators(
     `);
 
     values.push(`%${filters.search.trim()}%`);
-    parameterIndex++;
   }
 
   const whereClause =
@@ -155,6 +160,9 @@ export async function findAdministrators(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN programs p
+      ON p.id = b.program_id
 
     ${whereClause}
 

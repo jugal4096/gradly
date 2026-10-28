@@ -16,6 +16,8 @@ import {
 
 import { auth } from "../../config/firebase";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
@@ -54,7 +56,7 @@ export function AuthProvider({
 
     // Send the token to our backend.
     const response = await fetch(
-      "http://localhost:5000/api/auth/sync",
+      `${API_BASE_URL}/api/auth/sync`,
       {
         method: "POST",
         headers: {
@@ -96,6 +98,8 @@ export function AuthProvider({
   );
 }
 
+// The context hook intentionally lives beside its provider for this feature.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
 

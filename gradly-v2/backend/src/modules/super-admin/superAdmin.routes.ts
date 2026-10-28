@@ -11,6 +11,15 @@ import {
 } from "../../middleware/super-admin-auth.middleware";
 
 import userManagementRoutes from "./user-management.routes";
+import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
+import { listFeedbackRequests, updateFeedbackStatus } from "./superAdmin-feedback.controller";
+import { listInstitutionDirectory, listInstitutionAdditionRequests, updateInstitutionAdditionRequest } from "./superAdmin-institutions.controller";
+import { createInstitutionManually, createSyllabusManually } from "./superAdmin-institution-create.controller";
+import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum.controller";
+import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
+import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
+import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
+import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
 
 const router = Router();
 
@@ -50,6 +59,38 @@ router.post(
   authenticateSuperAdminToken,
   createAdmin
 );
+
+/*
+ * FEEDBACK INBOX
+ */
+router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
+router.patch("/feedback/:feedbackId/status", authenticateSuperAdminToken, updateFeedbackStatus);
+router.get("/institutions", authenticateSuperAdminToken, listInstitutionDirectory);
+router.get("/institutions/requests", authenticateSuperAdminToken, listInstitutionAdditionRequests);
+router.patch("/institutions/requests/:requestId", authenticateSuperAdminToken, updateInstitutionAdditionRequest);
+router.post("/institutions", authenticateSuperAdminToken, createInstitutionManually);
+router.post("/institutions/syllabus", authenticateSuperAdminToken, createSyllabusManually);
+router.get("/student-syllabus-feedback", authenticateSuperAdminToken, listForwardedStudentSyllabusFeedback);
+router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
+router.patch("/curriculum/:id", authenticateSuperAdminToken, updateCurriculumSubject);
+router.get("/security-notifications", authenticateSuperAdminToken, listSecurityNotifications);
+router.post("/admin-workspace-notifications", authenticateSuperAdminToken, createAdminWorkspaceNotification);
+router.get("/admin-subject-change-requests", authenticateSuperAdminToken, listAdminSubjectChangeRequestsForSuperAdmin);
+router.patch("/admin-subject-change-requests/:requestId/review", authenticateSuperAdminToken, reviewAdminSubjectChangeRequest);
+router.patch("/security-notifications/:notificationId/acknowledge", authenticateSuperAdminToken, acknowledgeSecurityNotification);
+router.patch("/security-notifications/:notificationId/revoke-lockout", authenticateSuperAdminToken, revokeAccountLockout);
+
+/*
+ * ADMIN AUDIT HISTORY
+ */
+router.get("/audit/admin-activity", authenticateSuperAdminToken, getAdminAuditEvents);
+router.get("/audit/admin-actions", authenticateSuperAdminToken, getAdminAuditActions);
+
+/*
+ * GUEST SESSION REVIEW — Super Admin only
+ */
+router.get("/guest-sessions", authenticateSuperAdminToken, listGuestSessionsForSuperAdmin);
+router.get("/guest-sessions/:guestSessionId", authenticateSuperAdminToken, getGuestSessionForSuperAdmin);
 
 /*
  * USER MANAGEMENT

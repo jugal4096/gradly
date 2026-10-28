@@ -11,6 +11,7 @@ export type AdminTokenPayload = {
   adminCode: string;
   role: "DEPARTMENT_ADMIN" | "INSTITUTION_ADMIN";
   institutionId: string;
+  programId: string | null;
   branchId: string | null;
 };
 

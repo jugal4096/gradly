@@ -27,7 +27,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
-import RequireSuperAdmin from "./components/RequireSuperAdmin";
 
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
@@ -112,7 +111,7 @@ function App() {
 
         <Route
           path="/super-admin"
-          element={<RequireSuperAdmin><SuperAdminLayout /></RequireSuperAdmin>}
+          element={<SuperAdminLayout />}
         >
           <Route
             index

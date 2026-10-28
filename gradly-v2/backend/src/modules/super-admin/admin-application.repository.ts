@@ -15,6 +15,7 @@ export interface ReviewApplicationInput {
 export interface SaveApplicationConfigurationInput {
   applicationId: string;
   superAdminId: string;
+  programId: string;
   branchId: string;
   approvedPermissions: string[];
 }
@@ -65,6 +66,7 @@ export async function listApplications(status?: string) {
        aa.id,
        aa.user_id,
        aa.institution_id,
+       aa.program_id,
        aa.branch_id,
        aa.full_name,
        aa.enrollment_number,
@@ -83,10 +85,13 @@ export async function listApplications(status?: string) {
        aa.created_at,
        aa.updated_at,
        i.name AS institution_name,
+       p.name AS program_name,
        b.name AS branch_name
      FROM public.admin_applications aa
      LEFT JOIN public.institutions i
        ON i.id = aa.institution_id
+     LEFT JOIN public.programs p
+       ON p.id = aa.program_id
      LEFT JOIN public.branches b
        ON b.id = aa.branch_id
      ${statusClause}
@@ -107,6 +112,7 @@ export async function listInstitutionBranches(
     `SELECT
        b.id,
        b.name,
+       p.id AS program_id,
        b.code,
        b.active,
        p.name AS program_name
@@ -178,10 +184,11 @@ export async function saveApplicationConfiguration(
          ON p.id = b.program_id
        WHERE b.id = $1
          AND p.institution_id = $2
+         AND p.id = $3
          AND b.active = TRUE
          AND p.active = TRUE
        LIMIT 1`,
-      [input.branchId, application.institution_id]
+      [input.branchId, application.institution_id, input.programId]
     );
 
     if (branchResult.rowCount !== 1) {
@@ -194,6 +201,7 @@ export async function saveApplicationConfiguration(
     const updatedResult = await client.query(
       `UPDATE public.admin_applications
        SET branch_id = $2,
+           program_id = (SELECT program_id FROM public.branches WHERE id = $2),
            approved_permissions = $3::jsonb,
            updated_at = NOW()
        WHERE id = $1
@@ -339,6 +347,10 @@ export async function reviewApplication(
            branch_id = CASE
              WHEN $2 = 'ACCEPTED' THEN $3::uuid
              ELSE branch_id
+           END,
+           program_id = CASE
+             WHEN $2 = 'ACCEPTED' THEN (SELECT program_id FROM public.branches WHERE id = $3::uuid)
+             ELSE program_id
            END,
            reviewed_by_super_admin_id = $4,
            reviewed_at = NOW(),

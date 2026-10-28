@@ -175,6 +175,7 @@ export async function registerApprovedAdmin(
          admin_code,
          admin_username,
          institution_id,
+         program_id,
          branch_id,
          full_name,
          email,
@@ -189,20 +190,24 @@ export async function registerApprovedAdmin(
          application_id,
          enrollment_number,
          normalized_enrollment_number,
+         password_changed_at,
+         password_expires_at,
          created_at,
          updated_at
        )
        VALUES (
-         $1, $1, $2, $3, $4, $5, $6, $7,
+         $1, $1, $2, $3, $4, $5, $6, $7, $8,
          'DEPARTMENT_ADMIN',
          'ACTIVE',
          'REGISTERED',
          NOW(),
          NOW(),
-         $8,
          $9,
          $10,
          $11,
+         $12,
+         NOW(),
+         NOW() + INTERVAL '1 month',
          NOW(),
          NOW()
        )
@@ -221,6 +226,7 @@ export async function registerApprovedAdmin(
       [
         adminId,
         application.institution_id,
+        application.program_id,
         application.branch_id,
         application.full_name,
         application.email,

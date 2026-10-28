@@ -21,7 +21,7 @@ export async function syncUser(data: SyncUserData) {
     ON CONFLICT (firebase_uid)
     DO UPDATE SET
       email = EXCLUDED.email,
-      display_name = EXCLUDED.display_name,
+      display_name = COALESCE(users.display_name, EXCLUDED.display_name),
       last_login_at = NOW(),
       updated_at = NOW()
 
