@@ -4,10 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import "./AdminLogin.css";
 
-const configuredApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
-).trim().replace(/\/+$/, "");
-const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
