@@ -28,9 +28,23 @@ const app = express();
    CORS
    ========================================================= */
 
+const configuredFrontendOrigins = (process.env.FRONTEND_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+const isAllowedFrontendOrigin = (origin: string) =>
+  configuredFrontendOrigins.includes(origin) ||
+  /^https?:\/\/(localhost|127\.0\.0\.1):(5173|5174|4173)$/.test(origin) ||
+  origin === "https://gradly.vercel.app" ||
+  /^https:\/\/gradly(?:-[a-z0-9-]+)?-jugal4096s-projects\.vercel\.app$/.test(origin);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin(origin, callback) {
+      // Allow non-browser health checks and server-to-server requests.
+      callback(null, !origin || isAllowedFrontendOrigin(origin));
+    },
     credentials: true,
   })
 );
