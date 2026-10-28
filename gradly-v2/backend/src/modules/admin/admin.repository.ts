@@ -74,3 +74,18 @@ export async function getAdminPermissions(adminId: string) {
 
   return result.rows;
 }
+
+export async function isAdminActive(adminId: string): Promise<boolean> {
+  const result = await pool.query(
+    `
+      SELECT 1
+      FROM admins
+      WHERE id = $1
+        AND status = 'ACTIVE'
+      LIMIT 1;
+    `,
+    [adminId]
+  );
+
+  return result.rowCount !== null && result.rowCount > 0;
+}

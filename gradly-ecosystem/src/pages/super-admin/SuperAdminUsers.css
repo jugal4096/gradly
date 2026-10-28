@@ -296,7 +296,7 @@
     color: #7654df;
   }
   
-  .super-user-main div:last-child {
+  .super-user-main .super-user-identity {
     min-width: 0;
   
     display: flex;
@@ -412,3 +412,166 @@
     }
   
   }
+
+/* FILTERS AND PAGINATION */
+.super-users-filter-form {
+  margin-bottom: 14px;
+}
+
+.super-users-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.super-users-filter-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #697079;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.super-users-filter-grid input {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #e5def5;
+  border-radius: 5px;
+  background: #fff;
+  color: #292e34;
+  font: inherit;
+}
+
+.super-users-filter-grid input:focus-visible,
+.super-users-search:focus-within {
+  outline: 2px solid #7654df;
+  outline-offset: 2px;
+}
+
+.super-users-apply,
+.super-users-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #7654df;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.super-users-apply {
+  background: #7654df;
+  color: #fff;
+}
+
+.super-users-clear {
+  border-color: #e5def5;
+  background: #fff;
+  color: #555c64;
+}
+
+.super-users-apply:hover {
+  background: #6544c7;
+}
+
+.super-users-clear:hover {
+  border-color: #b8a9e8;
+  color: #6544c7;
+}
+
+.super-user-cell,
+.super-user-cgpa {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.super-user-cgpa {
+  font-weight: 700;
+  color: #3f354f;
+}
+
+.super-user-row-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #8a7ab9;
+}
+
+.super-users-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  color: #697079;
+  font-size: 11px;
+}
+
+.super-users-pagination > div {
+  display: flex;
+  gap: 8px;
+}
+
+.super-users-pagination button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #e5def5;
+  border-radius: 5px;
+  background: #fff;
+  color: #4f465f;
+  cursor: pointer;
+}
+
+.super-users-pagination button:disabled,
+.super-users-apply:disabled,
+.super-users-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.super-users-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 650px) {
+  .super-users-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .super-users-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .super-users-search {
+    flex-basis: 100%;
+    min-height: 40px;
+  }
+
+  .super-users-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .super-users-pagination > div {
+    width: 100%;
+  }
+
+  .super-users-pagination button {
+    flex: 1;
+    justify-content: center;
+  }
+}

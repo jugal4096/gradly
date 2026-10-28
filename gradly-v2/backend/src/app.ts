@@ -160,6 +160,7 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
+    void _next;
     console.error("Unhandled API error:", error);
 
     res.status(500).json({

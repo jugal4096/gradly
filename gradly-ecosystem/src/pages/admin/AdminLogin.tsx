@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "./AdminLogin.css";
 
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import { clearAdminSession } from "../../lib/adminSession";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function AdminLogin() {
           : result?.message ?? "Unable to sign in with those credentials.");
         return;
       }
+      clearAdminSession();
       localStorage.setItem("gradly_admin_token", result.token);
       if (result.admin) localStorage.setItem("gradly_admin_profile", JSON.stringify(result.admin));
       if (result.permissions) localStorage.setItem("gradly_admin_permissions", JSON.stringify(result.permissions));

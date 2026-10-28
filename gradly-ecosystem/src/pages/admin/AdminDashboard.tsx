@@ -20,6 +20,7 @@ import {
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
+import { clearAdminSession } from "../../lib/adminSession";
 
 type ModuleItem = {
   id: string;
@@ -129,7 +130,7 @@ function AdminDashboard() {
   }, [search, filter]);
 
   const handleLogout = () => {
-    localStorage.removeItem("gradly_admin_token");
+    clearAdminSession();
     navigate("/admin", { replace: true });
   };
 

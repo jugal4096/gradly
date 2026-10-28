@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import {
   GoogleAuthProvider,
@@ -15,15 +9,8 @@ import {
 } from "firebase/auth";
 
 import { auth } from "../../config/firebase";
-
-interface AuthContextType {
-  user: FirebaseUser | null;
-  loading: boolean;
-  loginWithGoogle: () => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { apiUrl } from "../../lib/api";
+import { AuthContext } from "./AuthContextCore";
 
 export function AuthProvider({
   children,
@@ -54,7 +41,7 @@ export function AuthProvider({
 
     // Send the token to our backend.
     const response = await fetch(
-      "http://localhost:5000/api/auth/sync",
+      apiUrl("/auth/sync"),
       {
         method: "POST",
         headers: {
@@ -73,9 +60,6 @@ export function AuthProvider({
       );
     }
 
-    const data = await response.json();
-
-    console.log("✅ Gradly user synchronized:", data.user);
   }
 
   async function logout() {
@@ -94,16 +78,4 @@ export function AuthProvider({
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider."
-    );
-  }
-
-  return context;
 }

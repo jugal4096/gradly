@@ -2,11 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../config/firebase";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "./AdminRegister.css";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:5000/api";
 
 export default function AdminRegister() {
   const navigate = useNavigate();
@@ -76,13 +73,18 @@ export default function AdminRegister() {
       return;
     }
 
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const idToken = await user.getIdToken();
 
       const response = await fetch(
-        `${API_BASE_URL}/admin-registration/complete`,
+        `${API_BASE_URL}/api/admin-registration/complete`,
         {
           method: "POST",
           headers: {

@@ -36,16 +36,13 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+
 import "../../styles/super-admin-dashboard.css";
 
-const configuredApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
-).trim().replace(/\/+$/, "");
-
-const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
-
-const STATS_ENDPOINT =
-  `${API_BASE_URL}/api/super-admin/dashboard/stats`;
+const STATS_ENDPOINT = API_BASE_URL
+  ? `${API_BASE_URL}/api/super-admin/dashboard/stats`
+  : "";
 
 type Stats = {
   totalUsers: number | null;
@@ -360,6 +357,10 @@ export default function SuperAdminDashboard() {
     setError("");
 
     try {
+      if (!isApiConfigured) {
+        throw new Error(API_CONFIGURATION_ERROR);
+      }
+
       const token = localStorage.getItem("gradly_super_admin_token");
 
       const response = await fetch(STATS_ENDPOINT, {
@@ -435,7 +436,7 @@ export default function SuperAdminDashboard() {
   }, [navigate]);
 
   useEffect(() => {
-    void loadDashboard();
+    void Promise.resolve().then(() => loadDashboard());
   }, [loadDashboard]);
 
   useEffect(() => {

@@ -4,6 +4,7 @@ export const env = {
   port: Number(process.env.PORT || 5000),
 
   databaseUrl: process.env.DATABASE_URL,
+  databaseSslCa: process.env.DATABASE_SSL_CA?.replace(/\\n/g, "\n"),
 
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
   firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL,

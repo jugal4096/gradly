@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 
 export default function LoginPage() {
   const { loginWithGoogle } = useAuth();

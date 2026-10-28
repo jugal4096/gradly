@@ -46,3 +46,18 @@ export async function updateSuperAdminLastLogin(
 
   return result.rows[0] ?? null;
 }
+
+export async function isSuperAdminActive(superAdminId: string): Promise<boolean> {
+  const result = await pool.query(
+    `
+      SELECT 1
+      FROM super_admins
+      WHERE id = $1
+        AND status = 'ACTIVE'
+      LIMIT 1;
+    `,
+    [superAdminId]
+  );
+
+  return result.rowCount !== null && result.rowCount > 0;
+}

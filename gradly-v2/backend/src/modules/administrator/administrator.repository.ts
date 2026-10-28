@@ -96,7 +96,6 @@ export async function findAdministrators(
     `);
 
     values.push(`%${filters.search.trim()}%`);
-    parameterIndex++;
   }
 
   const whereClause =

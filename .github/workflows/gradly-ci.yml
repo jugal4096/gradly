@@ -1,0 +1,91 @@
+name: Gradly CI
+# Validation only: this workflow never deploys, promotes, or changes production settings.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - fix/production-readiness-2026-10-28
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gradly-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install backend dependencies
+        working-directory: gradly-v2/backend
+        run: npm ci --no-audit --no-fund
+      - name: Run guest ownership regression test
+        working-directory: gradly-v2/backend
+        run: npm test
+      - name: Typecheck backend
+        working-directory: gradly-v2/backend
+        run: npm run typecheck
+      - name: Audit backend dependencies
+        working-directory: gradly-v2/backend
+        run: npm audit --audit-level=high
+
+  student-app:
+    name: Student app quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: gradly-v2
+        run: npm ci --no-audit --no-fund
+      - name: Test academic calculations
+        working-directory: gradly-v2
+        run: npm test
+      - name: Build student app
+        working-directory: gradly-v2
+        run: npm run build
+      - name: Lint student app
+        working-directory: gradly-v2
+        run: npm run lint
+      - name: Audit student app dependencies
+        working-directory: gradly-v2
+        run: npm audit --audit-level=high
+
+  admin-ecosystem:
+    name: Admin ecosystem quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: gradly-ecosystem
+        run: npm ci --no-audit --no-fund
+      - name: Build admin ecosystem
+        working-directory: gradly-ecosystem
+        run: npm run build
+      - name: Lint admin ecosystem
+        working-directory: gradly-ecosystem
+        run: npm run lint
+      - name: Audit admin ecosystem dependencies
+        working-directory: gradly-ecosystem
+        run: npm audit --audit-level=high

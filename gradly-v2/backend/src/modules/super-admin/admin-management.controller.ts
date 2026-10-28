@@ -29,6 +29,12 @@ export async function createAdmin(req: Request, res: Response) {
       });
     }
 
+    if (role !== "DEPARTMENT_ADMIN" && role !== "INSTITUTION_ADMIN") {
+      return res.status(400).json({
+        message: "Role must be DEPARTMENT_ADMIN or INSTITUTION_ADMIN.",
+      });
+    }
+
     const result = await provisionAdmin({
       adminCode: adminCode.trim(),
       institutionId: institutionId.trim(),

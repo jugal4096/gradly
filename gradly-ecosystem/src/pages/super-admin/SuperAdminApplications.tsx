@@ -402,11 +402,11 @@ export default function SuperAdminApplications() {
   }, []);
 
   useEffect(() => {
-    void loadApplications();
+    void Promise.resolve().then(() => loadApplications());
   }, [loadApplications]);
 
   useEffect(() => {
-    void loadInstitutions();
+    void Promise.resolve().then(() => loadInstitutions());
   }, [loadInstitutions]);
 
   // Select an application to review.

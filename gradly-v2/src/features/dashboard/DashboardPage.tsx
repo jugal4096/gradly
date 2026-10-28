@@ -1,7 +1,7 @@
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/useAuth";
 
 export default function DashboardPage() {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <main>
@@ -15,7 +15,7 @@ export default function DashboardPage() {
 
       <button
         type="button"
-        onClick={() => void signOut()}
+        onClick={() => void logout()}
       >
         Sign Out
       </button>
