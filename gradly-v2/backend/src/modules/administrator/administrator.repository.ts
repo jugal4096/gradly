@@ -60,6 +60,11 @@ export async function findAdministrators(
     values.push(filters.institutionId);
   }
 
+  if (filters.programId) {
+    conditions.push(`p.id = ${parameterIndex++}`);
+    values.push(filters.programId);
+  }
+
   if (filters.branchId) {
     conditions.push(
       `a.branch_id = $${parameterIndex++}`
