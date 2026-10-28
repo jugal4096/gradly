@@ -48,7 +48,10 @@ export function verifyAdminToken(token: string) {
 
   if (
     typeof decoded === "string" ||
-    decoded.role === undefined ||
+    typeof decoded.adminId !== "string" ||
+    typeof decoded.adminCode !== "string" ||
+    typeof decoded.institutionId !== "string" ||
+    !(decoded.branchId === null || typeof decoded.branchId === "string") ||
     !["DEPARTMENT_ADMIN", "INSTITUTION_ADMIN"].includes(
       String(decoded.role)
     )
