@@ -33,6 +33,9 @@ jobs:
       - name: Run guest ownership regression test
         working-directory: gradly-v2/backend
         run: npm test
+      - name: Typecheck backend
+        working-directory: gradly-v2/backend
+        run: npm run typecheck
       - name: Audit backend dependencies
         working-directory: gradly-v2/backend
         run: npm audit --audit-level=high
