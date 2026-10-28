@@ -37,6 +37,8 @@ function AdminDirectory(){
  const [error,setError]=useState("");
  const [notice,setNotice]=useState("");
  const [busy,setBusy]=useState(false);
+ const [graduationDraft,setGraduationDraft]=useState("");
+ const [expiryDraft,setExpiryDraft]=useState("");
  const value=(...keys:string[])=>{for(const k of keys){const v=selected?.[k];if(v!==undefined&&v!==null&&String(v).trim())return String(v)}return "—"};
  const get=(row:Row,...keys:string[])=>{for(const k of keys){const v=row[k];if(v!==undefined&&v!==null&&String(v).trim())return String(v)}return "—"};
  const load=useCallback(async()=>{
@@ -64,12 +66,22 @@ function AdminDirectory(){
  const activeCount=filtered.filter(r=>get(r,"status","admin_status").toUpperCase()==="ACTIVE").length;
  const availableCount=filtered.filter(r=>["ACTIVE","AVAILABLE","REGISTERED","PENDING_SETUP"].includes(get(r,"status","admin_status","registration_status").toUpperCase())).length;
  async function viewActivity(row:Row){
-  setSelected(row);setActivities([]);setActivityLoading(true);setError("");
+  setSelected(row);setGraduationDraft(String(row.graduation_date??"").slice(0,10));setExpiryDraft(String(row.adminship_expires_at??"").slice(0,10));setActivities([]);setActivityLoading(true);setError("");
   try{const token=getToken();const url=new URL(API_BASE_URL+"/api/super-admin/audit/admin-activity");url.searchParams.set("adminId",String(row.id));url.searchParams.set("limit","100");
    const response=await fetch(url.toString(),{headers:{Accept:"application/json",Authorization:"Bearer "+(token||"")}});
    const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Could not load this administrator's activity.");
    setActivities(Array.isArray(data.events)?data.events:[]);
   }catch(e){setError(e instanceof Error?e.message:"Could not load activity.")}finally{setActivityLoading(false)}
+ }
+ async function saveGraduationDate(){
+  if(!selected)return;const id=get(selected,"id");if(id==="—"||!graduationDraft){setError("Choose a valid graduation completion date.");return}
+  setBusy(true);setError("");setNotice("");
+  try{const response=await fetch(API_BASE_URL+"/api/super-admin/administrators/"+encodeURIComponent(id)+"/graduation-date",{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(getToken()||"")},body:JSON.stringify({graduationDate:graduationDraft})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Could not update graduation date.");setNotice("Graduation date saved. Adminship expiry is calculated as 10 days afterwards.");await load();const refreshed=(Array.isArray(data.administrator)?data.administrator:data.administrator);if(refreshed&&typeof refreshed==="object")setSelected((prev)=>prev?({...prev,...refreshed}):refreshed);setExpiryDraft(String(refreshed?.adminship_expires_at??"").slice(0,10))}catch(e){setError(e instanceof Error?e.message:"Graduation date update failed.")}finally{setBusy(false)}
+ }
+ async function saveExpiryDate(){
+  if(!selected)return;const id=get(selected,"id");if(id==="—"||!expiryDraft){setError("Choose an adminship expiry date.");return}
+  setBusy(true);setError("");setNotice("");
+  try{const response=await fetch(API_BASE_URL+"/api/super-admin/administrators/"+encodeURIComponent(id)+"/adminship",{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(getToken()||"")},body:JSON.stringify({expiresAt:new Date(expiryDraft+"T23:59:59.999Z").toISOString()})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Could not update adminship expiry.");setNotice(data.message||"Adminship expiry updated.");await load();if(data.administrator)setSelected((prev)=>prev?({...prev,...data.administrator}):data.administrator)}catch(e){setError(e instanceof Error?e.message:"Expiry update failed.")}finally{setBusy(false)}
  }
  async function updateStatus(row:Row,next:string){
   const id=get(row,"id");if(id==="—")return;
@@ -104,6 +116,14 @@ function AdminDirectory(){
     {!selected?<div className="sc-empty"><UserCog size={26}/><strong>Select an administrator</strong><span>Their profile and latest recorded actions will appear here.</span></div>:<>
      <div className="sa-admin-profile"><span className="sa-admin-avatar large"><ShieldCheck size={22}/></span><h3>{value("full_name","fullName","name")}</h3><p>{value("email")}</p><span className={"sa-admin-status "+value("status","admin_status").toLowerCase()}>{value("status","admin_status","registration_status")}</span></div>
      <dl className="sa-admin-facts">{[["Admin code",value("admin_code","adminCode")],["Institution",value("institution_name","institutionName")],["Program",value("program_name","programName","program")],["Branch",value("branch_name","branchName","department_name")],["Role",value("role","admin_role")],["Last active",value("last_active_at","last_login_at","last_seen_at")],["Registration",value("registration_status","registrationStatus","setup_status")]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+     <section className="sa-admin-date-editor">
+      <h3>Graduation &amp; adminship</h3>
+      <label>Graduation completion date<input type="date" value={graduationDraft} onChange={e=>setGraduationDraft(e.target.value)}/></label>
+      <button type="button" disabled={busy||!graduationDraft} onClick={()=>void saveGraduationDate()}>Save graduation date (+10 days expiry)</button>
+      <label>Adminship expiry override<input type="date" value={expiryDraft} onChange={e=>setExpiryDraft(e.target.value)}/></label>
+      <button type="button" className="sa-admin-secondary" disabled={busy||!expiryDraft} onClick={()=>void saveExpiryDate()}>Save custom expiry</button>
+      <p>Default expiry is 10 calendar days after graduation completion. A Super Admin can set a custom expiry.</p>
+     </section>
      <div className="sa-admin-actions"><button disabled={busy||value("status","admin_status")==="SUSPENDED"} onClick={()=>void updateStatus(selected,"SUSPENDED")}>Suspend access</button><button disabled={busy||value("status","admin_status")==="ACTIVE"} onClick={()=>void updateStatus(selected,"ACTIVE")}>Set active</button></div>
      <div className="sa-admin-activity-head"><h3>Recorded activity</h3><span>{activities.length}</span></div>
      {activityLoading?<div className="sc-empty">Loading activity…</div>:activities.length===0?<div className="sa-admin-no-activity">No activity events were returned for this administrator.</div>:<div className="sa-admin-timeline">{activities.map((a,i)=><article key={get(a,"id")=== "—"?i:get(a,"id")}><span className="sa-admin-timeline-dot"/><div><strong>{get(a,"action","title")}</strong><p>{[get(a,"entity_table","entityTable"),get(a,"entity_id","entityId")].filter(v=>v!=="—").join(" · ")||get(a,"metadata")}</p><small>{get(a,"created_at","createdAt")}</small></div></article>)}</div>}
