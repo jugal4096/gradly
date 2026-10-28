@@ -117,11 +117,12 @@ const badgeEndpoints: Record<string, string> = {
   "/super-admin/institutions": "/api/super-admin/institutions/requests?status=OPEN",
   "/super-admin/feedback": "/api/super-admin/feedback?status=OPEN",
   "/super-admin/admin-requests": "/api/super-admin/admin-subject-change-requests?status=PENDING",
+  "/super-admin/curriculum": "/api/super-admin/admin-subject-change-requests?status=PENDING",
   "/super-admin/password-requests": "/api/admin-password-requests/review",
   "/super-admin/institution-requests": "/api/super-admin/institutions/requests?status=OPEN",
   "/super-admin/guest-sessions": "/api/super-admin/security-notifications",
   "/super-admin/security-notifications": "/api/super-admin/security-notifications",
-  "/super-admin/student-feedback": "/api/super-admin/student-syllabus-feedback",
+
 };
 
 export default function SuperAdminLayout() {
