@@ -9,6 +9,7 @@ import {
   listStudentActivity,
   listGuestActivity,
   permanentlyDeleteGuest,
+  updateStudentAccountStatus,
 } from "./user-management.controller";
 
 const router = Router();
@@ -21,6 +22,7 @@ router.get("/guests", listGuests);
 router.get("/guests/:guestId/activity", listGuestActivity);
 router.delete("/guests/:guestId", permanentlyDeleteGuest);
 router.get("/branches", listBranches);
+router.patch("/:userId/status", updateStudentAccountStatus);
 router.get("/:userId/activity", listStudentActivity);
 router.get("/", listStudents);
 router.get("/:userId", getStudent);
