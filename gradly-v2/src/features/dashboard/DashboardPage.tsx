@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent, type CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 type Subject = { id: string; name: string; code: string; credits: number; gradePoint: number };
@@ -19,9 +20,12 @@ const defaultSemesters: Semester[] = [
 ];
 const storageKey = "gradly_student_workspace_v1";
 
+function getWorkspaceStorage(): Storage {
+  return sessionStorage.getItem("gradly_guest_mode") === "true" ? sessionStorage : localStorage;
+}
 function readStored<T>(key: string, fallback: T): T {
   try {
-    const value = localStorage.getItem(storageKey + "_" + key);
+    const value = getWorkspaceStorage().getItem(storageKey + "_" + key);
     return value ? (JSON.parse(value) as T) : fallback;
   } catch {
     return fallback;
@@ -29,7 +33,7 @@ function readStored<T>(key: string, fallback: T): T {
 }
 function store<T>(key: string, value: T) {
   try {
-    localStorage.setItem(storageKey + "_" + key, JSON.stringify(value));
+    getWorkspaceStorage().setItem(storageKey + "_" + key, JSON.stringify(value));
   } catch {
     // The workspace remains usable when browser storage is unavailable.
   }
@@ -54,6 +58,7 @@ type Section = (typeof navItems)[number]["id"];
 
 export default function DashboardPage() {
   const { user, isGuest, logout } = useAuth();
+  const navigate = useNavigate();
   const [section, setSection] = useState<Section>("overview");
   const [subjects, setSubjects] = useState<Subject[]>(() => readStored("subjects", defaultSubjects));
   const [semesters, setSemesters] = useState<Semester[]>(() => readStored("semesters", defaultSemesters));
@@ -169,7 +174,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {isGuest && <div className="guest-banner"><span>✦</span><div><strong>You're exploring Gradly as a guest.</strong><small>Your edits are stored only in this browser. Sign in when you're ready to sync your academic space.</small></div><button type="button" onClick={() => { setSection("profile"); setNotice("Sign in is available from the account entry page."); }}>Set up profile <span>→</span></button></div>}
+        {isGuest && <div className="guest-banner"><span>✦</span><div><strong>You're exploring Gradly as a guest.</strong><small>Your edits are stored only in this browser. Sign in when you're ready to sync your academic space.</small></div><button type="button" onClick={() => navigate("/login")}>Sign in to sync <span>→</span></button></div>}
         {notice && <div className="notice-banner" role="status"><span>✓</span>{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
 
         {section === "overview" && (
