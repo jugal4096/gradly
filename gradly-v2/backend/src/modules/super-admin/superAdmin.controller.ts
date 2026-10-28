@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { authenticateSuperAdmin } from "./superAdmin.service";
+import { LoginLockedError } from "../auth-security/login-security.service";
 
 export async function loginSuperAdmin(
   req: Request,
@@ -21,7 +22,11 @@ export async function loginSuperAdmin(
 
     const result = await authenticateSuperAdmin(
       adminCode.trim(),
-      password
+      password,
+      {
+        ipAddress: req.ip || req.socket.remoteAddress || null,
+        userAgent: req.get("user-agent") || null,
+      }
     );
 
     return res.status(200).json({
@@ -34,10 +39,14 @@ export async function loginSuperAdmin(
         ? error.message
         : "Super Admin login failed.";
 
-    if (
-      message === "Invalid Super Admin credentials." ||
-      message === "Super Admin account is not active."
-    ) {
+    if (error instanceof LoginLockedError) {
+      return res.status(423).json({
+        message: "Too many unsuccessful login attempts. Your Super Admin account is temporarily locked.",
+        lockedUntil: error.lockedUntil?.toISOString() ?? null,
+      });
+    }
+
+    if (message === "Invalid Super Admin credentials.") {
       return res.status(401).json({ message });
     }
 
