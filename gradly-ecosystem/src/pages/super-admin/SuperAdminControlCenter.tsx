@@ -63,11 +63,11 @@ function AdminDirectory(){
  useEffect(()=>{let active=true;(async()=>{try{const token=getToken();if(!token)return;const response=await fetch(API_BASE_URL+"/api/super-admin/institutions",{headers:{Accept:"application/json",Authorization:"Bearer "+token}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Unable to load institution academic catalogue.");const list=Array.isArray(data.institutions)?data.institutions:[];if(active)setCatalogInstitutions(list)}catch(e){if(active)setError(e instanceof Error?e.message:"Unable to load institution academic catalogue.")}})();return()=>{active=false}},[]);
  const institutions=Array.from(new Map(catalogInstitutions.map(i=>[get(i,"id"),get(i,"name")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
  const selectedInstitutionRecord=catalogInstitutions.find(i=>get(i,"id")===institution);
- const institutionPrograms=(Array.isArray(selectedInstitutionRecord?.programs)?selectedInstitutionRecord.programs as Row[]:[]);
- const programs=Array.from(new Set(institutionPrograms.map(p=>get(p,"name")).filter(v=>v!=="—")));
- const selectedProgramRecord=institutionPrograms.find(p=>get(p,"name")===program);
+ const institutionPrograms:Row[]=Array.isArray(selectedInstitutionRecord?.programs)?(selectedInstitutionRecord.programs as Row[]):[];
+ const programOptions=Array.from(new Map(institutionPrograms.map(p=>[get(p,"id","program_id","programId","name","code"),get(p,"name","program_name","programName","code")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
+ const selectedProgramRecord=institutionPrograms.find(p=>get(p,"id","program_id","programId","name","code")===program);
  const availableBranchRecords=program==="all"?institutionPrograms.flatMap(p=>Array.isArray(p.branches)?p.branches as Row[]:[]):(Array.isArray(selectedProgramRecord?.branches)?selectedProgramRecord.branches as Row[]:[]);
- const branches=Array.from(new Map(availableBranchRecords.map(b=>[get(b,"id"),get(b,"name")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
+ const branches=Array.from(new Map(availableBranchRecords.map(b=>[get(b,"id","branch_id","branchId","name"),get(b,"name","branch_name","branchName")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
  const filtered=rows.filter(r=>(institution==="all"||get(r,"institution_id","institutionId")===institution)&&(program==="all"||get(r,"program_name","programName","program")===program)&&(branch==="all"||get(r,"branch_id","branchId")===branch));
  const activeCount=filtered.filter(r=>get(r,"status","admin_status").toUpperCase()==="ACTIVE").length;
  const availableCount=filtered.filter(r=>["ACTIVE","AVAILABLE","REGISTERED","PENDING_SETUP"].includes(get(r,"status","admin_status","registration_status").toUpperCase())).length;
@@ -110,7 +110,7 @@ function AdminDirectory(){
   <div className="sa-admin-filters">
    <label className="sa-admin-search"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, admin code, email…"/></label>
    <label>Institution<select value={institution} onChange={e=>{setInstitution(e.target.value);setProgram("all");setBranch("all")}}><option value="all">All institutions</option>{institutions.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
-   <label>Program<select value={program} onChange={e=>{setProgram(e.target.value);setBranch("all")}}><option value="all">All programs</option>{programs.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+   <label>Program<select value={program} onChange={e=>{setProgram(e.target.value);setBranch("all")}}><option value="all">All programs</option>{programOptions.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
    <label>Branch<select value={branch} onChange={e=>setBranch(e.target.value)}><option value="all">All branches</option>{branches.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
    <label>Status<select value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All statuses</option><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option><option value="DISABLED">Disabled</option></select></label>
   </div>
