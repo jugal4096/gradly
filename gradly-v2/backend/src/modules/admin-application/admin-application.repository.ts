@@ -133,3 +133,58 @@ export async function createApplication(input: CreateApplicationInput) {
 
   return result.rows[0];
 }
+
+export interface AdminAuditLogInput {
+  superAdminId: string;
+  action: string;
+  entityTable: string;
+  entityId: string;
+  ipAddress?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export async function createAdminAuditLog(input: AdminAuditLogInput) {
+  const metadata = {
+    ...(input.metadata ?? {}),
+    ipAddress: input.ipAddress ?? null,
+  };
+
+  const result = await pool.query(
+    `
+      INSERT INTO public.audit_logs (
+        actor_role,
+        action,
+        entity_table,
+        entity_id,
+        before_data,
+        after_data,
+        metadata,
+        actor_type,
+        actor_id,
+        created_at
+      )
+      VALUES (
+        'SUPER_ADMIN',
+        $1,
+        $2,
+        $3,
+        NULL,
+        NULL,
+        $4::jsonb,
+        'SUPER_ADMIN',
+        $5,
+        NOW()
+      )
+      RETURNING id;
+    `,
+    [
+      input.action,
+      input.entityTable,
+      input.entityId,
+      JSON.stringify(metadata),
+      input.superAdminId,
+    ]
+  );
+
+  return result.rows[0] ?? null;
+}
