@@ -773,7 +773,7 @@ export default function SuperAdminDashboard() {
                 onClick={() => setMenuOpen((open) => !open)}
               >
                 {menuOpen ? <X size={19} /> : <Menu size={19} />}
-                <span>{menuOpen ? "Close menu" : "Menu"}</span>
+                <span className="sd-menu-label">{menuOpen ? "Close" : "Workspace"}</span>
               </button>
             </div>
           </div>
@@ -800,7 +800,7 @@ export default function SuperAdminDashboard() {
                     <span className="sd-section-kicker">
                       GRADLY / CONTROL CENTER
                     </span>
-                    <h2 id="sd-drawer-title">Navigation</h2>
+                    <h2 id="sd-drawer-title">Workspace</h2>
                   </div>
 
                   <button
