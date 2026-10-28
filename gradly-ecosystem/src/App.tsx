@@ -32,6 +32,7 @@ import RequireSuperAdmin from "./components/RequireSuperAdmin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
+import SuperAdminUserActivity from "./pages/super-admin/SuperAdminUserActivity";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminControlCenter from "./pages/super-admin/SuperAdminControlCenter";
 
@@ -123,6 +124,11 @@ function App() {
           <Route
             path="users"
             element={<SuperAdminUsers />}
+          />
+
+          <Route
+            path="users/:userId/activity"
+            element={<SuperAdminUserActivity />}
           />
 
           <Route
