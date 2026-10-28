@@ -91,3 +91,25 @@
 .sa-admin-date-editor button.sa-admin-secondary { border-color:#d0d5dd;background:#fff;color:#344054; }
 .sa-admin-date-editor button:disabled { cursor:not-allowed;opacity:.55; }
 .sa-admin-date-editor p { margin:0;color:#667085;font-size:10px;line-height:1.55; }
+
+
+/* Administrator directory: clear View/Edit affordances and professional profile panel. */
+.sa-admin-row-actions { display:flex;align-items:center;justify-content:flex-end;gap:7px;white-space:nowrap; }
+.sa-admin-row-actions .sa-admin-view,.sa-admin-row-actions .sa-admin-edit {
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 10px;
+  border:1px solid #d0d5dd;border-radius:7px;background:#fff;color:#344054;font-size:10px;font-weight:750;cursor:pointer;
+}
+.sa-admin-row-actions .sa-admin-view:hover { border-color:#c7bce9;background:#f8f6ff;color:#49358f; }
+.sa-admin-row-actions .sa-admin-edit { border-color:#d9d2ef;background:#f4f1fb;color:#49358f; }
+.sa-admin-row-actions .sa-admin-edit:hover { border-color:#a99bd5;background:#ebe5fa; }
+.sa-admin-detail-actions { display:flex;align-items:center;gap:5px;padding:3px;border:1px solid #e4e7ec;border-radius:9px;background:#f9fafb; }
+.sa-admin-detail-actions button { min-height:29px;padding:0 9px;border:0;border-radius:6px;background:transparent;color:#667085;font-size:10px;font-weight:750;cursor:pointer; }
+.sa-admin-detail-actions button.active { background:#fff;color:#49358f;box-shadow:0 1px 3px rgba(16,24,40,.1); }
+.sa-admin-edit-heading { display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.sa-admin-edit-heading span { padding:4px 7px;border-radius:5px;background:#eee9fb;color:#5542a8;font-size:8px;font-weight:850;letter-spacing:.08em; }
+.sa-admin-date-editor.is-editing { border-color:#cfc4ee;background:#fbfaff; }
+.sa-admin-date-editor input:disabled { background:#f2f4f7;color:#667085;cursor:not-allowed; }
+@media(max-width:650px) {
+ .sa-admin-row-actions { justify-content:flex-start; }
+ .sa-admin-row-actions .sa-admin-view,.sa-admin-row-actions .sa-admin-edit { min-height:35px; }
+}
