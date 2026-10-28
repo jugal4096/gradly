@@ -57,10 +57,10 @@ function AdminDirectory(){
  },[search,institution,branch,status]);
  useEffect(()=>{void load()},[load]);
  const unique=(keys:string[])=>Array.from(new Set(rows.map(r=>get(r,...keys)).filter(v=>v!=="—")));
- const institutions=unique(["institution_name","institutionName"]);
+ const institutions=Array.from(new Map(rows.map(r=>[get(r,"institution_id","institutionId"),get(r,"institution_name","institutionName")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
  const programs=unique(["program_name","programName","program"]);
- const branches=unique(["branch_name","branchName","department_name"]);
- const filtered=rows.filter(r=>(program==="all"||get(r,"program_name","programName","program")===program)&&(branch==="all"||get(r,"branch_name","branchName","department_name")===branch));
+ const branches=Array.from(new Map(rows.map(r=>[get(r,"branch_id","branchId"),get(r,"branch_name","branchName","department_name")]).filter(([id,name])=>id!=="—"&&name!=="—")).entries()).map(([id,name])=>({id,name}));
+ const filtered=rows.filter(r=>(institution==="all"||get(r,"institution_id","institutionId")===institution)&&(program==="all"||get(r,"program_name","programName","program")===program)&&(branch==="all"||get(r,"branch_id","branchId")===branch));
  const activeCount=filtered.filter(r=>get(r,"status","admin_status").toUpperCase()==="ACTIVE").length;
  const availableCount=filtered.filter(r=>["ACTIVE","AVAILABLE","REGISTERED","PENDING_SETUP"].includes(get(r,"status","admin_status","registration_status").toUpperCase())).length;
  async function viewActivity(row:Row){
@@ -91,9 +91,9 @@ function AdminDirectory(){
   </div>
   <div className="sa-admin-filters">
    <label className="sa-admin-search"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, admin code, email…"/></label>
-   <label>Institution<select value={institution} onChange={e=>setInstitution(e.target.value)}><option value="all">All institutions</option>{institutions.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+   <label>Institution<select value={institution} onChange={e=>setInstitution(e.target.value)}><option value="all">All institutions</option>{institutions.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
    <label>Program<select value={program} onChange={e=>setProgram(e.target.value)}><option value="all">All programs</option>{programs.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
-   <label>Branch<select value={branch} onChange={e=>setBranch(e.target.value)}><option value="all">All branches</option>{branches.map(v=><option key={v} value={v}>{v}</option>)}</select></label>
+   <label>Branch<select value={branch} onChange={e=>setBranch(e.target.value)}><option value="all">All branches</option>{branches.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
    <label>Status<select value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All statuses</option><option value="ACTIVE">Active</option><option value="SUSPENDED">Suspended</option><option value="DISABLED">Disabled</option></select></label>
   </div>
   <div className="sa-admin-workspace">
