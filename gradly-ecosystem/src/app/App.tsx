@@ -5,17 +5,17 @@ import {
   Routes,
 } from "react-router-dom";
 
-import EcosystemEntry from "./pages/entry/EcosystemEntry";
+import EcosystemEntry from "../pages/entry/EcosystemEntry";
 
-import AdminLogin from "./pages/admin/AdminLogin";
+import AdminLogin from "../pages/admin/AdminLogin";
 
-import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
-import SuperAdminLayout from "./layouts/SuperAdminLayout";
+import SuperAdminLogin from "../pages/super-admin/SuperAdminLogin";
+import SuperAdminLayout from "../layouts/SuperAdminLayout";
 
-import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
-import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
-import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
+import SuperAdminDashboard from "../pages/super-admin/SuperAdminDashboard";
+import SuperAdminUsers from "../pages/super-admin/SuperAdminUsers";
+import SuperAdminUserDetails from "../pages/super-admin/SuperAdminUserDetails";
+import SuperAdminApplications from "../pages/super-admin/SuperAdminApplications";
 
 function App() {
   return (
