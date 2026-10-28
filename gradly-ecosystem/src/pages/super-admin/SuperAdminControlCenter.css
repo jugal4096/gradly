@@ -81,3 +81,13 @@
 .sa-admin-no-activity { padding:16px 18px 20px;color:#667085;font-size:11px;line-height:1.6; }
 @media(max-width:1080px) { .sa-admin-workspace { grid-template-columns:minmax(0,1fr); }.sa-admin-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:560px) { .sa-admin-summary { grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }.sa-admin-summary article { padding:13px; }.sa-admin-filters { align-items:stretch; }.sa-admin-filters>label { flex:1 1 140px; }.sa-admin-filters .sa-admin-search { min-width:100%; }.sa-admin-panel-head { padding:14px; } }
+
+
+.sa-admin-date-editor { display:grid;gap:10px;margin:18px 0;padding:15px;border:1px solid #e4e7ec;border-radius:10px;background:#f9fafb; }
+.sa-admin-date-editor h3 { margin:0 0 2px;color:#344054;font-size:13px;font-weight:750; }
+.sa-admin-date-editor label { display:grid;gap:6px;color:#475467;font-size:11px;font-weight:700; }
+.sa-admin-date-editor input { width:100%;min-height:38px;padding:8px 10px;border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:#172033;font:inherit; }
+.sa-admin-date-editor button { min-height:37px;padding:0 11px;border:1px solid #5542a8;border-radius:8px;background:#5542a8;color:#fff;font-size:11px;font-weight:750;cursor:pointer; }
+.sa-admin-date-editor button.sa-admin-secondary { border-color:#d0d5dd;background:#fff;color:#344054; }
+.sa-admin-date-editor button:disabled { cursor:not-allowed;opacity:.55; }
+.sa-admin-date-editor p { margin:0;color:#667085;font-size:10px;line-height:1.55; }
