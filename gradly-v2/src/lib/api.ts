@@ -13,10 +13,10 @@ export function apiUrl(path: string): string {
     );
   }
 
-  const normalizedPath = path.startsWith("/") ? path : \`/\${path}\`;
+  const normalizedPath = path.startsWith("/") ? path : "/" + path;
   const apiPath = normalizedPath.toLowerCase().startsWith("/api/")
     ? normalizedPath
-    : \`/api\${normalizedPath}\`;
+    : "/api" + normalizedPath;
 
-  return \`\${API_BASE_URL}\${apiPath}\`;
+  return API_BASE_URL + apiPath;
 }
