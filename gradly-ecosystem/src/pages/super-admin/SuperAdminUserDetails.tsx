@@ -16,8 +16,8 @@ import {
     useParams,
   } from "react-router-dom";
   
-  import "./SuperAdminUserDetails.css";
-import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+  import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import "./SuperAdminUserDetails.css";
   
   
 interface Student {
