@@ -3,7 +3,7 @@
   
     min-height: 100%;
   
-    background: #f4f5f7;
+    background: #f8f7fc;
   
     color: #292e34;
   }
@@ -40,7 +40,7 @@
   }
   
   .super-user-back:hover {
-    color: #6546d7;
+    color: #7654df;
   
     border-color: #a9a2c5;
   }
@@ -87,11 +87,11 @@
     align-items: center;
     justify-content: center;
   
-    background: #eeeafb;
+    background: #eee8ff;
   
     border: 1px solid #d6cfee;
   
-    color: #6546d7;
+    color: #7654df;
   }
   
   .student-profile-main {
