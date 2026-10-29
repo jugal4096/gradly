@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --test src/modules/guest/guest.academic.repository.test.ts src/modules/super-admin/audit.controller.test.ts",
+    "test": "tsx --test src/modules/guest/guest.academic.repository.test.ts src/modules/super-admin/audit.controller.test.ts src/modules/super-admin/security.controller.test.ts",
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit"
