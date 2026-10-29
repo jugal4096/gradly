@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { RefreshCw, Search, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/super-admin-dashboard.css";
@@ -81,7 +81,7 @@ export default function SuperAdminUsers() {
     return () => controller.abort();
   }, [loadUsers]);
 
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setQuery(search);
   }
