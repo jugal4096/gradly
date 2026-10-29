@@ -3606,3 +3606,72 @@ html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-divider,
 html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-divider { background:#e7dff0; }
 html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-secure-note,
 html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-secure-note { color:#6345a5; }
+
+
+/* Gradly premium 3D purple polish v1 */
+
+/* Premium 3D purple dashboard surfaces; visual-only enhancements */
+.super-dashboard {
+  --sd-purple: #7443df;
+  --sd-ink: #24163f;
+  --sd-muted: #716582;
+}
+.super-dashboard .sd-stat-card,
+.super-dashboard .sd-metric-card,
+.super-dashboard .sd-panel,
+.super-dashboard .sd-chart-card,
+.super-dashboard .sd-activity-card,
+.super-dashboard .sd-content-card {
+  border: 1px solid rgba(124, 86, 198, .16);
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgba(47, 25, 83, .075), inset 0 1px 0 rgba(255,255,255,.8);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.super-dashboard .sd-stat-card:hover,
+.super-dashboard .sd-metric-card:hover,
+.super-dashboard .sd-panel:hover,
+.super-dashboard .sd-chart-card:hover,
+.super-dashboard .sd-activity-card:hover,
+.super-dashboard .sd-content-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 58, 237, .35);
+  box-shadow: 0 18px 38px rgba(65, 35, 110, .13), inset 0 1px 0 rgba(255,255,255,.9);
+}
+.super-dashboard button, .super-dashboard input, .super-dashboard select {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.super-dashboard button:focus-visible,
+.super-dashboard input:focus-visible,
+.super-dashboard select:focus-visible {
+  outline: 3px solid rgba(139, 92, 246, .35);
+  outline-offset: 2px;
+}
+html[data-super-admin-theme="dark"] .super-dashboard .sd-stat-card,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-metric-card,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-panel,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-chart-card,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-activity-card,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-content-card {
+  background: linear-gradient(145deg, rgba(34,25,54,.98), rgba(19,14,32,.98));
+  border-color: rgba(167,139,250,.18);
+  color: #f5f0ff;
+  box-shadow: 0 14px 32px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.035);
+}
+html[data-super-admin-theme="dark"] .super-dashboard .sd-stat-card:hover,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-metric-card:hover,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-panel:hover,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-chart-card:hover,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-activity-card:hover,
+html[data-super-admin-theme="dark"] .super-dashboard .sd-content-card:hover {
+  box-shadow: 0 20px 42px rgba(0,0,0,.3), 0 0 0 1px rgba(167,139,250,.08);
+}
+@media (prefers-reduced-motion: reduce) {
+  .super-dashboard .sd-stat-card, .super-dashboard .sd-metric-card, .super-dashboard .sd-panel,
+  .super-dashboard .sd-chart-card, .super-dashboard .sd-activity-card, .super-dashboard .sd-content-card {
+    transition: none;
+  }
+  .super-dashboard .sd-stat-card:hover, .super-dashboard .sd-metric-card:hover, .super-dashboard .sd-panel:hover,
+  .super-dashboard .sd-chart-card:hover, .super-dashboard .sd-activity-card:hover, .super-dashboard .sd-content-card:hover {
+    transform: none;
+  }
+}
