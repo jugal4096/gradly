@@ -33,6 +33,7 @@ import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
+import SuperAdminAdministrators from "./pages/super-admin/SuperAdminAdministrators";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -132,6 +133,11 @@ function App() {
           <Route
             path="applications"
             element={<SuperAdminApplications />}
+          />
+
+          <Route
+            path="admins"
+            element={<SuperAdminAdministrators />}
           />
         </Route>
 
