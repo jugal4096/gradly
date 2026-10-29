@@ -106,8 +106,10 @@ export async function findAdministrators(
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
 
-  const limit = Math.min(100, Math.max(1, Math.trunc(filters.limit ?? 25)));
-  const offset = Math.min(1000000, Math.max(0, Math.trunc(filters.offset ?? 0)));
+  const requestedLimit = Number.isFinite(filters.limit) ? Math.trunc(filters.limit as number) : 25;
+  const requestedOffset = Number.isFinite(filters.offset) ? Math.trunc(filters.offset as number) : 0;
+  const limit = Math.min(100, Math.max(1, requestedLimit));
+  const offset = Math.min(1000000, Math.max(0, requestedOffset));
 
   const countResult = await pool.query(`
     SELECT COUNT(*)::int AS total
