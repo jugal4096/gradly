@@ -5,7 +5,7 @@ import { loginSuperAdmin } from "./superAdmin.controller";
 import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
 import { getSuperAdminWorkspace } from "./super-admin-workspace.controller";
-import { listInstitutions, listInstitutionPrograms, createInstitution, createInstitutionProgram, createInstitutionBranch } from "./institution-management.controller";
+import { listInstitutions, listInstitutionPrograms, createInstitution, createInstitutionProgram, createInstitutionBranch, createInstitutionSemester } from "./institution-management.controller";
 import { listCurriculumCatalog } from "./curriculum-catalog.controller";
 
 import {
@@ -63,6 +63,7 @@ router.post("/institutions", authenticateSuperAdminToken, createInstitution);
 router.get("/institutions/:institutionId/programs", authenticateSuperAdminToken, listInstitutionPrograms);
 router.post("/institutions/:institutionId/programs", authenticateSuperAdminToken, createInstitutionProgram);
 router.post("/institutions/:institutionId/programs/:programId/branches", authenticateSuperAdminToken, createInstitutionBranch);
+router.post("/institutions/:institutionId/programs/:programId/semesters", authenticateSuperAdminToken, createInstitutionSemester);
 router.get("/workspace/:module", authenticateSuperAdminToken, getSuperAdminWorkspace);
 
 router.use("/users", userManagementRoutes);
