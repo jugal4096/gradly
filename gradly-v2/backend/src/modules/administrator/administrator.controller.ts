@@ -495,3 +495,32 @@ export async function sendAdministratorNotice(req: SuperAdminAuthenticatedReques
     return res.status(500).json({ message: "Notice could not be saved. Ensure the admin_notices migration has been applied." });
   }
 }
+
+
+/** Return real institution/program/branch records for Super Admin filter dropdowns. */
+export async function getAdministratorFilterCatalog(_req: SuperAdminAuthenticatedRequest, res: Response) {
+  try {
+    const [institutions, programs, branches] = await Promise.all([
+      pool.query(
+        `SELECT id, name FROM public.institutions ORDER BY LOWER(name), id`
+      ),
+      pool.query(
+        `SELECT id, name, institution_id FROM public.programs ORDER BY LOWER(name), id`
+      ),
+      pool.query(
+        `SELECT b.id, b.name, b.program_id, p.institution_id
+         FROM public.branches b
+         JOIN public.programs p ON p.id = b.program_id
+         ORDER BY LOWER(b.name), b.id`
+      ),
+    ]);
+    return res.status(200).json({
+      institutions: institutions.rows,
+      programs: programs.rows,
+      branches: branches.rows,
+    });
+  } catch (error) {
+    console.error("Failed to load administrator filter catalog:", error);
+    return res.status(500).json({ message: "Unable to load institutions, programs and branches from the database." });
+  }
+}
