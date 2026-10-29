@@ -561,3 +561,42 @@
     }
   
   }
+
+/* Shared Gradly Super Admin student detail styling */
+.super-user-details-page {
+  background: radial-gradient(ellipse at 95% 0%, rgba(118,83,190,.09), transparent 34rem), #f7f6fb;
+  color: #27213a;
+}
+.student-profile-card,
+.student-summary-card,
+.student-information,
+.student-academic,
+.semester-card {
+  border-color: #e7e0f0;
+  border-radius: 14px;
+  box-shadow: 0 3px 0 rgba(49,33,79,.02), 0 9px 24px rgba(49,33,79,.045);
+}
+.semester-header {
+  background: linear-gradient(110deg, #f5f0ff, #fcfbff);
+  border-bottom-color: #e7dff2;
+}
+.super-user-back {
+  border-color: #e4dcef;
+  border-radius: 10px;
+  color: #6245a5;
+  font-weight: 700;
+  transition: background .16s ease, transform .16s ease;
+}
+.super-user-back:hover {
+  background: #f5f0ff;
+  transform: translateY(-1px);
+}
+.student-summary-card span,
+.student-section-kicker,
+.student-info-item span { letter-spacing: .04em; }
+@media (max-width: 720px) {
+  .super-user-details-page { padding: 14px; }
+  .student-summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .student-information-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .student-profile-card { align-items: flex-start; flex-wrap: wrap; }
+}
