@@ -272,3 +272,16 @@ html[data-super-admin-theme="dark"] .sam-page :is(input,select,textarea) { color
 html[data-super-admin-theme="dark"] .sam-page :is(input,select,textarea)::placeholder { color:#b5a5cb; }
 .sam-page .sam-theme-option { box-shadow:0 8px 22px rgba(47,25,83,.07),inset 0 1px 0 rgba(255,255,255,.8); }
 html[data-super-admin-theme="dark"] .sam-page .sam-theme-option { box-shadow:0 12px 26px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.04); }
+
+
+
+/* All module icons inherit a readable foreground; selected controls stay distinct */
+.sam-page svg { flex-shrink:0; opacity:1 !important; visibility:visible; }
+html[data-super-admin-theme="light"] .sam-page :is(button,a) { color:#56308e; }
+html[data-super-admin-theme="light"] .sam-page :is(button,a) svg { color:currentColor !important; }
+html[data-super-admin-theme="dark"] .sam-page :is(button,a) { color:#d9c5ff; }
+html[data-super-admin-theme="dark"] .sam-page :is(button,a) svg { color:currentColor !important; }
+.sam-page :is(button,a) { box-shadow:0 4px 12px rgba(70,37,115,.07); }
+.sam-page :is(button,a):focus-visible { outline:3px solid #a78bfa; outline-offset:3px; }
+html[data-super-admin-theme="light"] .sam-page :is(.sam-data-panel,.sam-table-wrap,.sam-settings-card,.sam-status-card,.sam-capability) { background:linear-gradient(145deg,#fff,#faf7ff); }
+html[data-super-admin-theme="dark"] .sam-page :is(.sam-data-panel,.sam-table-wrap,.sam-settings-card,.sam-status-card,.sam-capability) { background:linear-gradient(145deg,#211732,#151020); }
