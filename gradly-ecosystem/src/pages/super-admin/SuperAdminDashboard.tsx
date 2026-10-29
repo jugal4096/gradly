@@ -1216,7 +1216,7 @@ export default function SuperAdminDashboard() {
                 </div>
 
                 <span className="sd-panel-badge">
-                  {activities.length} EVENTS
+                  {error ? "—" : `${activities.length} EVENTS`}
                 </span>
               </div>
 
