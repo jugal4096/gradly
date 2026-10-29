@@ -446,6 +446,7 @@ export default function SuperAdminDashboard() {
     if (!menuOpen) return;
 
     const drawer = drawerRef.current;
+    const menuButton = menuButtonRef.current;
 
     const getFocusableElements = () =>
       drawer?.querySelectorAll<HTMLElement>(
@@ -488,7 +489,7 @@ export default function SuperAdminDashboard() {
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      menuButtonRef.current?.focus();
+      menuButton?.focus();
     };
   }, [menuOpen]);
 
