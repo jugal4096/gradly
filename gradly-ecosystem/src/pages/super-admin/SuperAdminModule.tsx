@@ -127,6 +127,43 @@ export default function SuperAdminModule() {
   const columns = rows.length ? Object.keys(rows[0]) : [];
   const live = Boolean(info.apiKey);
 
+  if (key === "settings") {
+    return (
+      <main className="sam-page sam-settings-page">
+        <header className="sam-header">
+          <div>
+            <span className="sam-eyebrow">PERSONALIZATION</span>
+            <h1>Settings</h1>
+            <p>Make the Gradly Super Admin workspace comfortable for you. Your appearance preference is saved in this browser and applies across the admin sections.</p>
+          </div>
+          <div className="sam-header-icon"><Settings size={27} /></div>
+        </header>
+        <section className="sam-settings-card" aria-labelledby="appearance-heading">
+          <div className="sam-settings-section-icon"><Sun size={20} /></div>
+          <div className="sam-settings-copy">
+            <span className="sam-eyebrow">DISPLAY & ACCESSIBILITY</span>
+            <h2 id="appearance-heading">Appearance</h2>
+            <p>Choose a white workspace or a dark midnight workspace. White mode is the default for new browsers.</p>
+            <div className="sam-theme-options" role="group" aria-label="Choose appearance theme">
+              <button type="button" className={`sam-theme-option ${theme === "light" ? "is-selected" : ""}`} aria-pressed={theme === "light"} onClick={() => chooseTheme("light")}>
+                <span className="sam-theme-preview sam-theme-preview-light"><Sun size={22} /><span /><span /></span>
+                <span className="sam-theme-option-text"><strong>White mode</strong><small>Bright, clean and easy to read</small></span>
+                {theme === "light" && <Check className="sam-theme-check" size={18} />}
+              </button>
+              <button type="button" className={`sam-theme-option ${theme === "dark" ? "is-selected" : ""}`} aria-pressed={theme === "dark"} onClick={() => chooseTheme("dark")}>
+                <span className="sam-theme-preview sam-theme-preview-dark"><Moon size={22} /><span /><span /></span>
+                <span className="sam-theme-option-text"><strong>Dark mode</strong><small>Low-glare midnight purple surfaces</small></span>
+                {theme === "dark" && <Check className="sam-theme-check" size={18} />}
+              </button>
+            </div>
+            <p className="sam-settings-saved"><Check size={14} /> Preference saves automatically on this browser.</p>
+          </div>
+        </section>
+        <footer className="sam-footer"><span><LockKeyhole size={14} /> Protected Super Admin workspace</span><span>Gradly Ecosystem · Settings</span></footer>
+      </main>
+    );
+  }
+
   return (
     <main className="sam-page">
       <header className="sam-header">
