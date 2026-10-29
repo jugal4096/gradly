@@ -10,7 +10,7 @@ import { pool } from "../../config/database";
  * This module is read-only administrative inspection.
  */
 
-export async function findAllStudents(search?: string) {
+export async function findAllStudents(filters: { search?: string; institution?: string; program?: string; branch?: string; active?: boolean } = {}) {
   const query = `
     SELECT
       u.id,
@@ -63,14 +63,25 @@ export async function findAllStudents(search?: string) {
         OR u.email ILIKE '%' || $1 || '%'
         OR sp.student_identifier ILIKE '%' || $1 || '%'
         OR b.name ILIKE '%' || $1 || '%'
+        OR i.name ILIKE '%' || $1 || '%'
+        OR p.name ILIKE '%' || $1 || '%'
       )
+
+    AND ($2::text IS NULL OR i.name = $2)
+    AND ($3::text IS NULL OR p.name = $3)
+    AND ($4::text IS NULL OR b.name = $4)
+    AND ($5::boolean IS NULL OR u.active = $5)
 
     ORDER BY
       u.created_at DESC;
   `;
 
   const result = await pool.query(query, [
-    search?.trim() || null,
+    filters.search?.trim() || null,
+    filters.institution?.trim() || null,
+    filters.program?.trim() || null,
+    filters.branch?.trim() || null,
+    typeof filters.active === "boolean" ? filters.active : null,
   ]);
 
   return result.rows;
@@ -283,4 +294,27 @@ export async function createAuditLog(params: {
       params.metadata ?? {},
     ]
   );
+}
+
+export async function updateStudentActive(userId: string, active: boolean) {
+  const result = await pool.query(
+    `UPDATE users SET active = $2, updated_at = NOW()
+     WHERE id = $1 AND role = 'STUDENT'
+     RETURNING id, active, display_name, email`,
+    [userId, active]
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function findUserActivity(userId: string, limit = 100) {
+  const result = await pool.query(
+    `SELECT id, actor_type, actor_id, actor_role, action, entity_table, entity_id,
+            created_at, metadata
+     FROM audit_logs
+     WHERE entity_table = 'users' AND entity_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
 }
