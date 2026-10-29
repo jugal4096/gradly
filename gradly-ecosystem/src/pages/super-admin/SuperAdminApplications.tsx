@@ -10,11 +10,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { API_BASE_URL as API_ORIGIN, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import { clearToken, getToken } from "../../lib/superAdminSession";
 import "./SuperAdminApplications.css";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
-).replace(/\/+$/, "");
+const API_BASE_URL = API_ORIGIN ? `${API_ORIGIN}/api` : "";
 
 const ADMIN_PERMISSION_OPTIONS = [
   {
@@ -102,10 +102,6 @@ interface ApiResponse<T> {
   applications?: T;
   institutions?: T;
   data?: T;
-}
-
-function getToken(): string | null {
-  return localStorage.getItem("gradly_super_admin_token");
 }
 
 function getErrorMessage(
@@ -263,6 +259,11 @@ export default function SuperAdminApplications() {
   // Load applications from the backend.
   const loadApplications = useCallback(
     async (showLoading = true) => {
+      if (!isApiConfigured) {
+        setError(API_CONFIGURATION_ERROR);
+        setLoading(false);
+        return;
+      }
       const token = getToken();
 
       if (!token) {
@@ -289,6 +290,12 @@ export default function SuperAdminApplications() {
 
         const response = await fetch(
           `${API_BASE_URL}/super-admin/applications${query}`,
+        if (response.status === 401 || response.status === 403) {
+          clearToken();
+          window.location.assign("/super-admin/login");
+          return;
+        }
+
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -347,6 +354,11 @@ export default function SuperAdminApplications() {
 
   // Load institutions and their departments.
   const loadInstitutions = useCallback(async () => {
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      setConfigurationLoading(false);
+      return;
+    }
     const token = getToken();
 
     if (!token) return;
@@ -356,6 +368,12 @@ export default function SuperAdminApplications() {
     try {
       const response = await fetch(
         `${API_BASE_URL}/academic/institutions`,
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return;
+      }
+
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -432,6 +450,10 @@ export default function SuperAdminApplications() {
   // Save the selected department and permissions.
   async function saveConfiguration(): Promise<boolean> {
     if (!selected) return false;
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      return false;
+    }
 
     const token = getToken();
 
@@ -475,6 +497,12 @@ export default function SuperAdminApplications() {
         `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/configuration`,
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return false;
+      }
+
         {
           method: "PATCH",
           headers: {
@@ -529,6 +557,10 @@ export default function SuperAdminApplications() {
     action: "accept" | "reject" | "block"
   ) {
     if (!selected) return;
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      return;
+    }
 
     const token = getToken();
 
@@ -621,6 +653,12 @@ export default function SuperAdminApplications() {
         `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/review`,
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return;
+      }
+
         {
           method: "PATCH",
           headers: {
