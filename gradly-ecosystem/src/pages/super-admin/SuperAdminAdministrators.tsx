@@ -22,7 +22,7 @@ type Administrator = {
 
 type ListResponse = { administrators?: Administrator[]; message?: string };
 
-const statusOptions = ["ALL", "ACTIVE", "SUSPENDED", "DISABLED"];
+const statusOptions = ["ALL", "ACTIVE", "SUSPENDED", "DISABLED", "DELETED"];
 
 function displayDate(value: string | null) {
   if (!value) return "—";
@@ -89,9 +89,9 @@ export default function SuperAdminAdministrators() {
     disabled: records.filter((record) => record.status === "DISABLED").length,
   }), [records]);
 
-  async function changeStatus(record: Administrator, nextStatus: "ACTIVE" | "SUSPENDED" | "DISABLED") {
+  async function changeStatus(record: Administrator, nextStatus: "ACTIVE" | "SUSPENDED" | "DISABLED" | "DELETED") {
     const action = nextStatus.toLowerCase();
-    if (!window.confirm(`Are you sure you want to ${action} ${record.full_name}?`)) return;
+    if (!window.confirm(`Are you sure you want to ${action} ${record.full_name}? ${nextStatus === "DELETED" ? "This account cannot be reactivated." : ""}`)) return;
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
     setSavingId(record.id);
@@ -177,8 +177,8 @@ export default function SuperAdminAdministrators() {
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{displayDate(record.last_login_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{displayDate(record.adminship_expires_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>
-                  <select aria-label={`Change status for ${record.full_name}`} value={record.status} disabled={savingId === record.id} onChange={(event) => { const value = event.target.value; if (value === "ACTIVE" || value === "SUSPENDED" || value === "DISABLED") void changeStatus(record, value); }} style={{ minHeight: 36, maxWidth: 140, border: "1px solid #e0e3ef", borderRadius: 8, padding: "6px 8px", background: "#fff" }}>
-                    {["ACTIVE","SUSPENDED","DISABLED"].map((value) => <option key={value} value={value}>{value}</option>)}
+                  <select aria-label={`Change status for ${record.full_name}`} value={record.status} disabled={savingId === record.id} onChange={(event) => { const value = event.target.value; if (value === "ACTIVE" || value === "SUSPENDED" || value === "DISABLED" || value === "DELETED") void changeStatus(record, value); }} style={{ minHeight: 36, maxWidth: 140, border: "1px solid #e0e3ef", borderRadius: 8, padding: "6px 8px", background: "#fff" }}>
+                    {["ACTIVE","SUSPENDED","DISABLED","DELETED"].map((value) => <option key={value} value={value}>{value}</option>)}
                   </select>
                 </td>
               </tr>)}
