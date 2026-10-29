@@ -9,6 +9,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./SuperAdminApplications.css";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
@@ -186,6 +187,7 @@ function StatusIcon({
 }
 
 export default function SuperAdminApplications() {
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [status, setStatus] =
     useState<ApplicationFilter>("PENDING");
@@ -273,6 +275,7 @@ export default function SuperAdminApplications() {
         if (!response.ok) {
           if (response.status === 401) {
             localStorage.removeItem("gradly_super_admin_token");
+            navigate("/super-admin/login", { replace: true });
             setError("Your session expired. Please sign in again.");
           }
           throw new Error(
@@ -317,7 +320,7 @@ export default function SuperAdminApplications() {
         setLoading(false);
       }
     },
-    [status]
+    [status, navigate]
   );
 
   // Institution master data is public; no Super Admin token is required.
@@ -463,6 +466,7 @@ export default function SuperAdminApplications() {
       if (!response.ok) {
         if (response.status === 401) {
           localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
           setError("Your session expired. Please sign in again.");
         }
         throw new Error(
