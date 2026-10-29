@@ -108,7 +108,8 @@ export default function SuperAdminAdministrators() {
       setNotice(`${record.full_name} is now ${nextStatus.toLowerCase()}.`);
       setError("");
       await loadAdministrators();
-      if (error) setNotice(`${record.full_name} status was updated, but the list could not be refreshed.`);
+      // loadAdministrators handles its own failures and updates the error state.
+      // Do not erase a successful mutation notice if the follow-up GET fails.
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to update administrator status.");
     } finally {
