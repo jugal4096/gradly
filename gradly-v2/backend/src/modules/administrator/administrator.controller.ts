@@ -28,9 +28,11 @@ export async function getAdministrators(
       status,
       registrationStatus,
       search,
+      limit,
+      offset,
     } = req.query;
 
-    const administrators =
+    const result =
       await listAdministrators({
         institutionId:
           typeof institutionId === "string"
@@ -56,11 +58,27 @@ export async function getAdministrators(
           typeof search === "string"
             ? search
             : undefined,
+
+        limit:
+          typeof limit === "string" && /^\\d+$/.test(limit)
+            ? Number(limit)
+            : undefined,
+
+        offset:
+          typeof offset === "string" && /^\\d+$/.test(offset)
+            ? Number(offset)
+            : undefined,
       });
 
     return res.status(200).json({
-      administrators,
-      count: administrators.length,
+      administrators: result.administrators,
+      count: result.administrators.length,
+      total: result.total,
+      page: {
+        limit: result.limit,
+        offset: result.offset,
+        hasMore: result.offset + result.administrators.length < result.total,
+      },
     });
   } catch (error) {
     console.error(
