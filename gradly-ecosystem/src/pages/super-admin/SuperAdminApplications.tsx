@@ -49,7 +49,8 @@ const ADMIN_PERMISSION_OPTIONS = [
 type ApplicationStatus =
   | "PENDING"
   | "ACCEPTED"
-  | "REJECTED";
+  | "REJECTED"
+  | "REGISTRATION_SUCCESSFUL";
 
 type ApplicationFilter = "PENDING" | "ACCEPTED" | "REJECTED" | "ALL";
 type ReviewDecision = "ACCEPTED" | "REJECTED";
@@ -149,13 +150,14 @@ function statusLabel(status: ApplicationStatus): string {
     PENDING: "Pending",
     ACCEPTED: "Accepted",
     REJECTED: "Rejected",
+    REGISTRATION_SUCCESSFUL: "Registration Successful",
   };
 
   return labels[status] || status;
 }
 
 function statusClass(status: ApplicationStatus): string {
-  if (status === "ACCEPTED") {
+  if (status === "ACCEPTED" || status === "REGISTRATION_SUCCESSFUL") {
     return "accepted";
   }
 
