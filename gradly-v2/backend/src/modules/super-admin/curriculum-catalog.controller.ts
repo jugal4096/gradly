@@ -35,11 +35,20 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
           CASE WHEN LOWER(p.name) LIKE '%b.tech%' OR LOWER(p.name) LIKE '%btech%' OR LOWER(p.name) LIKE '%bachelor of technology%' THEN 8
                WHEN LOWER(p.name) LIKE '%mca%' OR LOWER(p.name) LIKE '%m.tech%' OR LOWER(p.name) LIKE '%mtech%' OR LOWER(p.name) LIKE '%master of technology%' THEN 4
                ELSE 0 END) AS total_semesters,
-        NULL::int AS semester_number, NULL::text AS semester_name
+        NULLIF(COALESCE(to_jsonb(cs)->>'semester_number', to_jsonb(sem)->>'semester_number'), '')::int AS semester_number,
+        COALESCE(to_jsonb(cs)->>'semester_name', to_jsonb(sem)->>'name') AS semester_name,
+        cs.id::text AS curriculum_subject_id,
+        COALESCE(to_jsonb(cs)->>'subject_name', to_jsonb(cs)->>'course_name', to_jsonb(cs)->>'name', to_jsonb(cs)->>'title', 'Unnamed subject') AS subject_name,
+        COALESCE(to_jsonb(cs)->>'subject_code', to_jsonb(cs)->>'course_code', to_jsonb(cs)->>'code') AS subject_code,
+        NULLIF(COALESCE(to_jsonb(cs)->>'credits', to_jsonb(cs)->>'credit'), '')::numeric AS subject_credits
       FROM public.curricula c
       JOIN public.programs p ON p.id = c.program_id
       JOIN public.institutions i ON i.id = p.institution_id
-      LEFT JOIN public.branches b ON b.program_id = p.id
+      LEFT JOIN public.branches b ON b.id = c.branch_id
+      LEFT JOIN public.curriculum_subjects cs
+        ON COALESCE(to_jsonb(cs)->>'curriculum_id', to_jsonb(cs)->>'curricula_id') = c.id::text
+      LEFT JOIN public.semesters sem
+        ON to_jsonb(cs)->>'semester_id' = sem.id::text
       WHERE ($1 = '' OR i.id::text = $1)
         AND ($2 = '' OR p.id::text = $2)
         AND ($3 = '' OR b.id::text = $3)
@@ -49,8 +58,14 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
           COALESCE(b.name, '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(c)->>'name', '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(c)->>'title', '') ILIKE '%' || $4 || '%' OR
+          COALESCE(to_jsonb(cs)->>'subject_name', '') ILIKE '%' || $4 || '%' OR
+          COALESCE(to_jsonb(cs)->>'course_name', '') ILIKE '%' || $4 || '%' OR
+          COALESCE(to_jsonb(cs)->>'name', '') ILIKE '%' || $4 || '%' OR
+          COALESCE(to_jsonb(cs)->>'title', '') ILIKE '%' || $4 || '%' OR
+          COALESCE(to_jsonb(cs)->>'subject_code', '') ILIKE '%' || $4 || '%' OR
+          COALESCE(to_jsonb(cs)->>'course_code', '') ILIKE '%' || $4 || '%' OR
           c.id::text ILIKE '%' || $4 || '%')
-      ORDER BY i.name, p.name, b.name NULLS FIRST, curriculum_name
+      ORDER BY i.name, p.name, b.name NULLS FIRST, curriculum_name, semester_number NULLS FIRST, subject_name
       LIMIT $5
     `, [institutionId, programId, branchId, search, limit]);
 
