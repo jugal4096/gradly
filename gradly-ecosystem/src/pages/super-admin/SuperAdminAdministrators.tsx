@@ -96,8 +96,8 @@ export default function SuperAdminAdministrators() {
   }, [registrationFilter, search, statusFilter]);
 
   // This effect starts an asynchronous API request; state updates happen after it settles.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadAdministrators();
   }, [loadAdministrators]);
 
