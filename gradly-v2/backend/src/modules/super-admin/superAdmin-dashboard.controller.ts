@@ -8,22 +8,13 @@ export async function getSuperAdminDashboardStats(
   res: Response
 ) {
   try {
-    // Verify which PostgreSQL database the backend is using.
-    const databaseResult = await pool.query(`
-      SELECT
-        current_database() AS database_name,
-        current_schema() AS schema_name,
-        NOW() AS database_time
-    `);
-
-    console.log(
-      "✅ Dashboard PostgreSQL connection:",
-      databaseResult.rows[0]
-    );
-
-    // Fetch actual counts from PostgreSQL.
+    // Keep the dashboard aggregation in one database round-trip. Counts are
+    // derived from persisted records; unavailable metrics must never be faked.
     const statsResult = await pool.query(`
       SELECT
+        (SELECT COUNT(*) FROM public.users)::int
+          AS "totalUsers",
+
         (SELECT COUNT(*) FROM admins)::int
           AS "totalAdmins",
 
@@ -86,9 +77,8 @@ export async function getSuperAdminDashboardStats(
 
     const stats = statsResult.rows[0];
 
-    console.log("📊 Actual dashboard statistics:", stats);
-
-    // Activity is optional: its failure must not hide valid counts.
+    // Activity is supplementary. Report its availability explicitly so the
+    // client can distinguish an empty feed from an unavailable audit source.
     let recentActivity: Array<{
       id: string;
       action: string;
@@ -96,6 +86,7 @@ export async function getSuperAdminDashboardStats(
       entityTable: string;
       createdAt: string;
     }> = [];
+    let activityAvailable = true;
 
     try {
       const activityResult = await pool.query(`
@@ -111,28 +102,20 @@ export async function getSuperAdminDashboardStats(
       `);
 
       recentActivity = activityResult.rows;
-    } catch (activityError) {
-      console.error(
-        "⚠️ Could not load recent activity:",
-        activityError
-      );
+    } catch {
+      activityAvailable = false;
     }
 
     return res.status(200).json({
       success: true,
       data: {
         ...stats,
-        // Do not invent a user count before identifying its table.
-        totalUsers: null,
         recentActivity,
+        activityAvailable,
       },
     });
-  } catch (error) {
-    console.error(
-      "❌ Error loading Super Admin dashboard statistics:",
-      error
-    );
-
+  } catch {
+    // Avoid leaking database details or query information to the client.
     return res.status(500).json({
       success: false,
       message: "Failed to load dashboard statistics.",
