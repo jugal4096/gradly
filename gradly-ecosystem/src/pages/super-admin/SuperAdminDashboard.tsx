@@ -97,7 +97,7 @@ const overviewCards: {
   {
     key: "totalUsers",
     label: "Total users",
-    description: "Registered platform users",
+    description: "Global user count unavailable",
     icon: Users,
     tone: "violet",
     detail: "Monitor registered users and their account status.",
@@ -932,7 +932,7 @@ export default function SuperAdminDashboard() {
 
             <div className="sd-hero-summary">
               <span className="sd-summary-label">OPEN WORK QUEUE</span>
-              <strong>{loading ? "—" : formatNumber(pendingTotal)}</strong>
+              <strong>{loading || error ? "—" : formatNumber(pendingTotal)}</strong>
               <span className="sd-summary-caption">
                 Items across dashboard queues
               </span>
@@ -975,16 +975,8 @@ export default function SuperAdminDashboard() {
               </div>
 
               <span className="sd-data-status">
-                <span
-                  className={
-                    error ? "sd-status-dot sd-dot-error" : "sd-status-dot"
-                  }
-                />
-                {loading
-                  ? "Updating data"
-                  : error
-                    ? "API unavailable"
-                    : "Dashboard overview"}
+                <span className={error ? "sd-status-dot sd-dot-error" : "sd-status-dot"} />
+                {loading ? "Updating data" : error ? "API unavailable" : "Live dashboard data"}
               </span>
             </div>
 
