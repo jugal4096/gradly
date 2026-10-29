@@ -311,7 +311,7 @@ export async function findUserActivity(userId: string, limit = 100) {
     `SELECT id, actor_type, actor_id, actor_role, action, entity_table, entity_id,
             created_at, metadata
      FROM audit_logs
-     WHERE entity_table = 'users' AND entity_id = $1
+     WHERE (entity_table = 'users' AND entity_id = $1) OR actor_id = $1
      ORDER BY created_at DESC
      LIMIT $2`,
     [userId, limit]
