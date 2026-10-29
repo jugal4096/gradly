@@ -1,16 +1,14 @@
 import {
   Activity,
-  BookOpen,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
-  ScrollText,
-  Settings,
   ShieldCheck,
   Users,
 } from "lucide-react";
+
+import { useLocation } from "react-router-dom";
 
 import {
   NavLink,
@@ -43,36 +41,23 @@ const controlNavigation = [
     path: "/super-admin/applications",
     icon: ClipboardList,
   },
-  {
-    label: "Feedback",
-    path: "/super-admin/feedback",
-    icon: MessageSquare,
-  },
-  {
-    label: "Curriculum",
-    path: "/super-admin/curriculum",
-    icon: BookOpen,
-  },
-  {
-    label: "Audit Logs",
-    path: "/super-admin/audit",
-    icon: ScrollText,
-  },
 ];
 
 
 const systemNavigation = [
   {
     label: "Settings",
-    path: "/super-admin/settings",
-    icon: Settings,
-  },
-];
+    ];
 
 
 export default function SuperAdminLayout() {
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  if (location.pathname === "/super-admin") {
+    return <Outlet />;
+  }
 
 
   function handleLogout() {
@@ -134,7 +119,7 @@ export default function SuperAdminLayout() {
           <span className="status-light" />
 
           <span>
-            ONLINE
+            AUTHENTICATED
           </span>
 
         </div>
@@ -334,7 +319,7 @@ export default function SuperAdminLayout() {
               </span>
 
               <span className="system-status-value">
-                NORMAL
+                SESSION VERIFIED
               </span>
 
             </div>
