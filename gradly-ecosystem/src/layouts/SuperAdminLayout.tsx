@@ -1,4 +1,5 @@
 import {
+  Activity,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
