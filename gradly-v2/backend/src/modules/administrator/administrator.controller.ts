@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { pool } from "../../config/database";
 
 import {
@@ -402,8 +402,8 @@ export async function getAdministratorActivity(req: SuperAdminAuthenticatedReque
   try {
     const adminId = req.params.adminId;
     const result = await pool.query(
-      `SELECT id, actor_role, actor_type, actor_id, action, entity_table, entity_id,
-              before_data, after_data, metadata, ip_address, created_at
+      `SELECT id, actor_role, action, entity_table, entity_id,
+              metadata, created_at
        FROM public.audit_logs
        WHERE entity_table = 'admins' AND entity_id::text = $1
        ORDER BY created_at DESC
