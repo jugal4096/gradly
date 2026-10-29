@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, Bell, CalendarDays, Eye, RefreshCw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { Activity, Bell, CalendarDays, Eye, MoreVertical, RefreshCw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "../../styles/super-admin-dashboard.css";
 
@@ -40,6 +40,7 @@ export default function SuperAdminAdministrators() {
   const [branch, setBranch] = useState("ALL");
   const [sortBy, setSortBy] = useState("name");
   const [selected, setSelected] = useState<Administrator | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [permissions, setPermissions] = useState("");
   const [noticeTitle, setNoticeTitle] = useState("");
@@ -257,10 +258,7 @@ export default function SuperAdminAdministrators() {
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.last_login_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.adminship_expires_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6", whiteSpace: "nowrap" }}>
-                  <button type="button" onClick={() => void openProfile(admin)} aria-label={`View ${admin.full_name} profile`} title="View profile, activity and controls" style={{ padding: 8, borderRadius: 8, marginRight: 6 }}><Eye size={15}/></button>
-                  <select aria-label={`Change status for ${admin.full_name}`} value={admin.status} disabled={savingId === admin.id || admin.status === "DELETED"} onChange={e => { const value = e.target.value; if (statuses.includes(value as typeof statuses[number])) void changeStatus(admin, value as typeof statuses[number]); }} style={{ minHeight: 36, maxWidth: 140, border: "1px solid #e0e3ef", borderRadius: 8, padding: "6px 8px", background: "#fff" }}>
-                    {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <div style={{position:"relative",display:"inline-block"}}><button type="button" onClick={() => setOpenMenuId(current => current === admin.id ? null : admin.id)} aria-label={"More actions for " + admin.full_name} aria-expanded={openMenuId===admin.id} title="More administrator actions" style={{padding:9,borderRadius:9,border:"1px solid #ded7f5",background:"#f8f5ff",color:"#5b21b6"}}><MoreVertical size={18}/></button>{openMenuId===admin.id && <div role="menu" style={{position:"absolute",right:0,top:"calc(100% + 6px)",zIndex:30,minWidth:220,padding:6,borderRadius:12,background:"#fff",border:"1px solid #e4def4",boxShadow:"0 14px 36px #24124b24"}}>{["View profile","Manage permissions","View activity","Send notice","Access & account status"].map(label=><button key={label} type="button" role="menuitem" onClick={()=>{setOpenMenuId(null);void openProfile(admin);}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 9px",border:0,borderRadius:8,background:"transparent",color:"#28203f"}}>{label}</button>)}</div>}</div>
                 </td>
               </tr>)}
             </tbody>
