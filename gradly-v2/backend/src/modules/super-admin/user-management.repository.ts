@@ -10,7 +10,39 @@ import { pool } from "../../config/database";
  * This module is read-only administrative inspection.
  */
 
-export async function findAllStudents(search?: string) {
+export interface StudentListFilters {
+  search?: string;
+  institution?: string;
+  program?: string;
+  branch?: string;
+  page: number;
+  pageSize: number;
+}
+
+function studentFilterValues(filters: StudentListFilters) {
+  return [
+    filters.search?.trim() || null,
+    filters.institution?.trim() || null,
+    filters.program?.trim() || null,
+    filters.branch?.trim() || null,
+  ];
+}
+
+const studentFiltersSql = `
+  u.role = 'STUDENT'
+  AND (
+    $1::text IS NULL
+    OR u.display_name ILIKE '%' || $1 || '%'
+    OR u.email ILIKE '%' || $1 || '%'
+    OR sp.student_identifier ILIKE '%' || $1 || '%'
+    OR b.name ILIKE '%' || $1 || '%'
+  )
+  AND ($2::text IS NULL OR i.name ILIKE '%' || $2 || '%')
+  AND ($3::text IS NULL OR p.name ILIKE '%' || $3 || '%')
+  AND ($4::text IS NULL OR b.name ILIKE '%' || $4 || '%')
+`;
+
+export async function findAllStudents(filters: StudentListFilters) {
   const query = `
     SELECT
       u.id,
@@ -20,7 +52,6 @@ export async function findAllStudents(search?: string) {
       u.active,
       u.last_login_at,
       u.created_at,
-
       sp.id AS student_profile_id,
       sp.student_identifier,
       sp.admission_year,
@@ -29,51 +60,45 @@ export async function findAllStudents(search?: string) {
       sp.target_cgpa,
       sp.current_cgpa,
       sp.current_earned_credits,
-
       i.name AS institution_name,
       p.name AS program_name,
       b.name AS branch_name,
       s.name AS scheme_name
-
     FROM users u
-
-    LEFT JOIN student_profiles sp
-      ON sp.user_id = u.id
-
-    LEFT JOIN institutions i
-      ON i.id = sp.institution_id
-
-    LEFT JOIN curricula c
-      ON c.id = sp.curriculum_id
-
-    LEFT JOIN programs p
-      ON p.id = c.program_id
-
-    LEFT JOIN branches b
-      ON b.id = c.branch_id
-
-    LEFT JOIN schemes s
-      ON s.id = c.scheme_id
-
-    WHERE u.role = 'STUDENT'
-
-      AND (
-        $1::text IS NULL
-        OR u.display_name ILIKE '%' || $1 || '%'
-        OR u.email ILIKE '%' || $1 || '%'
-        OR sp.student_identifier ILIKE '%' || $1 || '%'
-        OR b.name ILIKE '%' || $1 || '%'
-      )
-
-    ORDER BY
-      u.created_at DESC;
+    LEFT JOIN student_profiles sp ON sp.user_id = u.id
+    LEFT JOIN institutions i ON i.id = sp.institution_id
+    LEFT JOIN curricula c ON c.id = sp.curriculum_id
+    LEFT JOIN programs p ON p.id = c.program_id
+    LEFT JOIN branches b ON b.id = c.branch_id
+    LEFT JOIN schemes s ON s.id = c.scheme_id
+    WHERE ${studentFiltersSql}
+    ORDER BY u.created_at DESC
+    LIMIT $5 OFFSET $6;
   `;
 
   const result = await pool.query(query, [
-    search?.trim() || null,
+    ...studentFilterValues(filters),
+    filters.pageSize,
+    (filters.page - 1) * filters.pageSize,
   ]);
 
   return result.rows;
+}
+
+export async function countAllStudents(filters: StudentListFilters) {
+  const query = `
+    SELECT COUNT(DISTINCT u.id)::int AS count
+    FROM users u
+    LEFT JOIN student_profiles sp ON sp.user_id = u.id
+    LEFT JOIN institutions i ON i.id = sp.institution_id
+    LEFT JOIN curricula c ON c.id = sp.curriculum_id
+    LEFT JOIN programs p ON p.id = c.program_id
+    LEFT JOIN branches b ON b.id = c.branch_id
+    WHERE ${studentFiltersSql};
+  `;
+
+  const result = await pool.query(query, studentFilterValues(filters));
+  return Number(result.rows[0]?.count ?? 0);
 }
 
 
