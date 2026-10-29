@@ -899,3 +899,31 @@ html[data-super-admin-theme="dark"] .sidebar-link-active { color:#fff;background
 html[data-super-admin-theme="dark"] .sidebar-logout { color:#ffd0dc;background:#321b29;border-color:#67364a; }
 html[data-super-admin-theme="dark"] .super-admin-content { background:transparent; }
 html[data-super-admin-theme="dark"] .super-admin-page { color:#f3efff; }
+
+
+/* Gradly premium 3D purple polish v1 */
+
+/* Premium purple control-room polish — layout and navigation behavior unchanged */
+.super-admin-shell {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(124, 58, 237, .12), transparent 38rem),
+    linear-gradient(145deg, #f8f6ff 0%, #f5f3fc 52%, #fbfaff 100%);
+}
+.super-admin-topbar, .super-admin-sidebar, .content-system-strip, .super-admin-footer {
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 30px rgba(50, 29, 92, .055);
+}
+.brand-mark, .sidebar-link-active, .sidebar-link:hover {
+  box-shadow: 0 8px 20px rgba(109, 40, 217, .13);
+}
+.sidebar-link { transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+.sidebar-link:hover { transform: translateX(3px); }
+.super-admin-content { min-width: 0; }
+html[data-super-admin-theme="dark"] .super-admin-shell {
+  background: radial-gradient(ellipse at 10% 0%, rgba(124,58,237,.22), transparent 34rem), linear-gradient(145deg,#0b0816,#120b22 58%,#0c0a18);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-link { transition: none !important; }
+  .sidebar-link:hover { transform: none; }
+}
