@@ -1069,7 +1069,7 @@ export default function SuperAdminDashboard() {
                           count > 0 ? "has-pending" : ""
                         }`}
                       >
-                        {loading ? "—" : formatNumber(count)}
+                        {loading || error ? "—" : formatNumber(count)}
                       </span>
                     </span>
 
@@ -1088,9 +1088,11 @@ export default function SuperAdminDashboard() {
 
                       {loading
                         ? "Checking queue…"
-                        : count > 0
-                          ? "Awaiting attention"
-                          : "No pending items"}
+                        : error
+                          ? "Data unavailable"
+                          : count > 0
+                            ? "Awaiting attention"
+                            : "No pending items"}
 
                       <ArrowRight size={14} />
                     </span>
