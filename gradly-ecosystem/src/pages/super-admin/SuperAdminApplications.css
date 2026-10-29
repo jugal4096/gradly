@@ -1064,3 +1064,55 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+/* Shared Gradly Super Admin polish */
+.super-applications {
+  --sa-primary: #6746c8;
+  --sa-primary-dark: #5034a6;
+  --sa-primary-soft: #f3efff;
+  --sa-border: #e8e2f1;
+  background: radial-gradient(ellipse at 92% 0%, rgba(118,83,190,.09), transparent 34rem), #f7f6fb;
+  color: #27213a;
+}
+.application-list-panel,
+.application-details-panel {
+  border-color: #e7e0f0;
+  border-radius: 16px;
+  box-shadow: 0 3px 0 rgba(49,33,79,.025), 0 12px 28px rgba(49,33,79,.055);
+}
+.application-list-panel > header,
+.application-details-panel > header,
+.details-header {
+  background: linear-gradient(110deg, #fff, #fbf9ff);
+  border-bottom-color: #eee8f5;
+}
+.application-list-item,
+.application-record,
+.application-row {
+  transition: background .16s ease, border-color .16s ease;
+}
+.application-list-item:hover,
+.application-record:hover,
+.application-row:hover {
+  background: #faf7ff;
+}
+.application-tab.active {
+  background: linear-gradient(110deg, #f0eaff, #fbf9ff);
+  border-color: #dfd3f4;
+  color: #5034a6;
+}
+.hardware-button,
+.action-button {
+  border-radius: 11px;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.hardware-button:hover:not(:disabled),
+.action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(64,43,105,.09);
+}
+@media (max-width: 700px) {
+  .super-applications { padding: 14px; }
+  .super-applications-header { flex-wrap: wrap; gap: 14px; }
+  .applications-workspace { grid-template-columns: minmax(0,1fr); }
+}
