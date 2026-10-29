@@ -32,23 +32,23 @@ export async function getSuperAdminWorkspace(
     let result;
     if (moduleName === "institutions") {
       result = await pool.query(
-        `SELECT i.id, i.name, i.active,
+        `SELECT i.id, i.name,
                 COUNT(DISTINCT p.id)::int AS program_count,
                 COUNT(DISTINCT b.id)::int AS branch_count
          FROM public.institutions i
          LEFT JOIN public.programs p ON p.institution_id = i.id
          LEFT JOIN public.branches b ON b.program_id = p.id
          WHERE ($1 = '' OR i.name ILIKE '%' || $1 || '%')
-         GROUP BY i.id, i.name, i.active
+         GROUP BY i.id, i.name
          ORDER BY i.name ASC LIMIT $2`,
         [search, limit]
       );
     } else if (moduleName === "curriculum") {
       result = await pool.query(
-        `SELECT id, institution_id, branch_id, status, created_at
+        `SELECT id, status, created_at
          FROM public.curriculum_change_requests
          WHERE ($1 = '' OR COALESCE(status, '') ILIKE '%' || $1 || '%'
-                OR COALESCE(institution_id::text, '') ILIKE '%' || $1 || '%')
+                OR COALESCE(id::text, '') ILIKE '%' || $1 || '%')
          ORDER BY created_at DESC NULLS LAST LIMIT $2`,
         [search, limit]
       );
