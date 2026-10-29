@@ -8,6 +8,7 @@ import {
     getStudents,
     setStudentActive,
     getStudentActivity,
+    findGuestSessions,
   } from "./user-management.service";
   
   import {
@@ -139,5 +140,20 @@ export async function getStudentActivityLog(req: SuperAdminAuthenticatedRequest,
   } catch (error) {
     console.error("Failed to load user activity:", error);
     return res.status(500).json({ message: "Failed to load user activity." });
+  }
+}
+
+
+export async function listGuestSessions(req: SuperAdminAuthenticatedRequest, res: Response) {
+  try {
+    if (!req.superAdmin) return res.status(401).json({ message: "Super Admin authentication required." });
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const institution = typeof req.query.institution === "string" ? req.query.institution : undefined;
+    const active = req.query.active === "true" ? true : req.query.active === "false" ? false : undefined;
+    const guests = await findGuestSessions({ search, institution, active });
+    return res.status(200).json({ guests, count: guests.length });
+  } catch (error) {
+    console.error("Failed to load guest sessions:", error);
+    return res.status(500).json({ message: "Failed to load guest sessions." });
   }
 }
