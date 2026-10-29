@@ -30,7 +30,12 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
         b.name AS branch_name,
         to_jsonb(c)->>'status' AS status,
         to_jsonb(c)->>'academic_year' AS academic_year,
-        to_jsonb(c)->>'version' AS version
+        to_jsonb(c)->>'version' AS version,
+        COALESCE(NULLIF(to_jsonb(c)->>'total_semesters','')::int,
+          CASE WHEN LOWER(p.name) LIKE '%b.tech%' OR LOWER(p.name) LIKE '%btech%' OR LOWER(p.name) LIKE '%bachelor of technology%' THEN 8
+               WHEN LOWER(p.name) LIKE '%mca%' OR LOWER(p.name) LIKE '%m.tech%' OR LOWER(p.name) LIKE '%mtech%' OR LOWER(p.name) LIKE '%master of technology%' THEN 4
+               ELSE 0 END) AS total_semesters,
+        ps.semester_number, ps.name AS semester_name
       FROM public.curricula c
       JOIN public.programs p ON p.id = c.program_id
       JOIN public.institutions i ON i.id = p.institution_id
@@ -45,7 +50,7 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
           COALESCE(to_jsonb(c)->>'name', '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(c)->>'title', '') ILIKE '%' || $4 || '%' OR
           c.id::text ILIKE '%' || $4 || '%')
-      ORDER BY i.name, p.name, b.name NULLS FIRST, curriculum_name
+      ORDER BY i.name, p.name, b.name NULLS FIRST, ps.semester_number NULLS FIRST, curriculum_name
       LIMIT $5
     `, [institutionId, programId, branchId, search, limit]);
 
