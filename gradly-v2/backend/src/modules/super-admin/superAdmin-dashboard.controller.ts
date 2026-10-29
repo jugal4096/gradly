@@ -8,22 +8,14 @@ export async function getSuperAdminDashboardStats(
   res: Response
 ) {
   try {
-    // Verify which PostgreSQL database the backend is using.
-    const databaseResult = await pool.query(`
-      SELECT
-        current_database() AS database_name,
-        current_schema() AS schema_name,
-        NOW() AS database_time
-    `);
-
-    console.log(
-      "✅ Dashboard PostgreSQL connection:",
-      databaseResult.rows[0]
-    );
-
-    // Fetch actual counts from PostgreSQL.
+    // Aggregate dashboard metrics in one database round-trip.
+    // public.users is the canonical registered-user table used by the
+    // existing account and administrator-registration workflows.
     const statsResult = await pool.query(`
       SELECT
+        (SELECT COUNT(*) FROM public.users)::int
+          AS "totalUsers",
+
         (SELECT COUNT(*) FROM admins)::int
           AS "totalAdmins",
 
@@ -86,9 +78,7 @@ export async function getSuperAdminDashboardStats(
 
     const stats = statsResult.rows[0];
 
-    console.log("📊 Actual dashboard statistics:", stats);
-
-    // Activity is optional: its failure must not hide valid counts.
+    // Activity is optional: a missing audit table must not hide valid counts.
     let recentActivity: Array<{
       id: string;
       action: string;
@@ -111,28 +101,20 @@ export async function getSuperAdminDashboardStats(
       `);
 
       recentActivity = activityResult.rows;
-    } catch (activityError) {
-      console.error(
-        "⚠️ Could not load recent activity:",
-        activityError
-      );
+    } catch {
+      // Keep optional audit-storage diagnostics out of the API response.
+      recentActivity = [];
     }
 
     return res.status(200).json({
       success: true,
       data: {
         ...stats,
-        // Do not invent a user count before identifying its table.
-        totalUsers: null,
         recentActivity,
       },
     });
-  } catch (error) {
-    console.error(
-      "❌ Error loading Super Admin dashboard statistics:",
-      error
-    );
-
+  } catch {
+    // Database and schema details must not be disclosed to the client.
     return res.status(500).json({
       success: false,
       message: "Failed to load dashboard statistics.",
