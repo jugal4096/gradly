@@ -99,10 +99,7 @@ import {
         );
       }
   
-      const data =
-        await response.json();
-  
-      void data;
+      await response.json().catch(() => null);
     }
   
     async function logout() {
