@@ -47,7 +47,6 @@ const ADMIN_PERMISSION_OPTIONS = [
 
 type ApplicationStatus =
   | "PENDING"
-  | "UNDER_REVIEW"
   | "ACCEPTED"
   | "REJECTED"
   | "REGISTRATION_SUCCESSFUL";
@@ -148,7 +147,6 @@ function formatDateTime(value?: string | null): string {
 function statusLabel(status: ApplicationStatus): string {
   const labels: Record<ApplicationStatus, string> = {
     PENDING: "Pending",
-    UNDER_REVIEW: "Under Review",
     ACCEPTED: "Accepted",
     REJECTED: "Rejected",
     REGISTRATION_SUCCESSFUL: "Registration Successful",
@@ -208,6 +206,7 @@ export default function SuperAdminApplications() {
   const [reason, setReason] = useState("");
 
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [institutionsError, setInstitutionsError] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [approvedPermissions, setApprovedPermissions] =
     useState<string[]>([]);
@@ -367,10 +366,11 @@ export default function SuperAdminApplications() {
       }
 
       setInstitutions(records);
+      setInstitutionsError("");
     } catch (err) {
       console.error("Unable to load institutions:", err);
 
-      setError(
+      setInstitutionsError(
         err instanceof Error
           ? err.message
           : "Unable to load institutions."
@@ -943,6 +943,8 @@ export default function SuperAdminApplications() {
                           Loading institution departments…
                         </small>
                       )}
+
+                      {institutionsError && <small className="field-warning" role="alert">{institutionsError}</small>}
 
                       {!configurationLoading &&
                         selected.institution_id &&
