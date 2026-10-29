@@ -46,6 +46,11 @@ const controlNavigation = [
     path: "/super-admin/audit",
     icon: ScrollText,
   },
+  {
+    label: "Security Center",
+    path: "/super-admin/security",
+    icon: Activity,
+  },
 ];
 
 
