@@ -3323,3 +3323,195 @@
 @media (prefers-reduced-motion: reduce) {
   .super-dashboard .sd-navigation-drawer { animation: none !important; }
 }
+
+
+/* ============================================================
+   GRADLY SUPER ADMIN — PREMIUM VIOLET COMMAND CENTRE
+   Shared design language: deep ink, violet glass, crisp contrast.
+   ============================================================ */
+.super-dashboard {
+  --sd-ink: #f4f0ff;
+  --sd-muted: #aaa4c7;
+  --sd-border: rgba(190, 171, 255, .16);
+  --sd-purple: #a78bfa;
+  --sd-premium-violet: #8b5cf6;
+  --sd-premium-pink: #d946ef;
+  color: var(--sd-ink);
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(124, 58, 237, .22), transparent 38%),
+    radial-gradient(ellipse at 92% 18%, rgba(168, 85, 247, .13), transparent 32%),
+    linear-gradient(145deg, #0b0816 0%, #100b21 48%, #0b0a17 100%);
+  border-radius: 26px;
+  overflow: clip;
+}
+.super-dashboard .sd-shell { background: transparent; }
+.super-dashboard .sd-navigation-bar,
+.super-dashboard .sd-hero,
+.super-dashboard .sd-panel,
+.super-dashboard .sd-detail-panel,
+.super-dashboard .sd-system-strip,
+.super-dashboard .sd-metric-card,
+.super-dashboard .sd-queue-card {
+  border-color: var(--sd-border);
+}
+.super-dashboard .sd-navigation-bar {
+  background: rgba(17, 12, 34, .82);
+  border: 1px solid var(--sd-border);
+  border-radius: 20px;
+  box-shadow: 0 14px 45px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(18px);
+}
+.super-dashboard .sd-brand-name,
+.super-dashboard .sd-header h1,
+.super-dashboard .sd-hero h2,
+.super-dashboard .sd-section-heading h2,
+.super-dashboard .sd-panel-heading h2,
+.super-dashboard .sd-detail-heading h2,
+.super-dashboard .sd-system-title strong { color: #faf7ff; }
+.super-dashboard .sd-eyebrow,
+.super-dashboard .sd-section-kicker,
+.super-dashboard .sd-hero-label,
+.super-dashboard .sd-summary-label { color: #c4b5fd; }
+.super-dashboard .sd-header p,
+.super-dashboard .sd-hero p,
+.super-dashboard .sd-section-heading .sd-muted-note,
+.super-dashboard .sd-detail-description { color: var(--sd-muted); }
+.super-dashboard .sd-access-chip,
+.super-dashboard .sd-data-status,
+.super-dashboard .sd-panel-badge,
+.super-dashboard .sd-summary-caption {
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, .13);
+  border: 1px solid rgba(167, 139, 250, .22);
+}
+.super-dashboard .sd-refresh-button,
+.super-dashboard .sd-error-retry,
+.super-dashboard .sd-clear-filters {
+  color: #fff;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  border: 1px solid rgba(221, 214, 254, .2);
+  box-shadow: 0 8px 22px rgba(109, 40, 217, .25);
+}
+.super-dashboard .sd-hero {
+  background:
+    radial-gradient(circle at 86% 22%, rgba(192, 132, 252, .2), transparent 28%),
+    linear-gradient(120deg, rgba(48, 28, 83, .94), rgba(23, 17, 45, .95));
+  box-shadow: 0 22px 55px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.06);
+}
+.super-dashboard .sd-hero-symbol,
+.super-dashboard .sd-metric-icon,
+.super-dashboard .sd-queue-icon,
+.super-dashboard .sd-action-icon,
+.super-dashboard .sd-detail-heading-icon,
+.super-dashboard .sd-activity-icon,
+.super-dashboard .sd-system-icon {
+  color: #e9ddff;
+  background: linear-gradient(145deg, rgba(167,139,250,.28), rgba(124,58,237,.13));
+  border: 1px solid rgba(196,181,253,.24);
+  box-shadow: inset 0 1px rgba(255,255,255,.1), 0 8px 20px rgba(0,0,0,.12);
+}
+.super-dashboard .sd-metric-card,
+.super-dashboard .sd-queue-card,
+.super-dashboard .sd-panel,
+.super-dashboard .sd-detail-panel,
+.super-dashboard .sd-system-strip {
+  color: #f5f3ff;
+  background: linear-gradient(145deg, rgba(30, 22, 52, .94), rgba(17, 14, 32, .96));
+  border: 1px solid var(--sd-border);
+  border-radius: 20px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.16), inset 0 1px rgba(255,255,255,.035);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+.super-dashboard .sd-metric-card:hover,
+.super-dashboard .sd-queue-card:hover,
+.super-dashboard .sd-action-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(196,181,253,.48);
+  box-shadow: 0 18px 38px rgba(0,0,0,.28), 0 0 0 1px rgba(139,92,246,.08);
+}
+.super-dashboard .sd-metric-card.is-selected,
+.super-dashboard .sd-queue-card.is-selected {
+  border-color: rgba(196,181,253,.75);
+  box-shadow: 0 0 0 2px rgba(139,92,246,.17), 0 16px 36px rgba(0,0,0,.25);
+}
+.super-dashboard .sd-metric-label,
+.super-dashboard .sd-queue-title,
+.super-dashboard .sd-action-copy strong,
+.super-dashboard .sd-activity-copy strong,
+.super-dashboard .sd-system-item strong { color: #f5f3ff; }
+.super-dashboard .sd-metric-value { color: #c4b5fd; text-shadow: 0 0 28px rgba(167,139,250,.15); }
+.super-dashboard .sd-metric-bottom,
+.super-dashboard .sd-queue-description,
+.super-dashboard .sd-queue-footer,
+.super-dashboard .sd-action-copy span,
+.super-dashboard .sd-activity-copy p,
+.super-dashboard .sd-activity-copy span,
+.super-dashboard .sd-system-item span { color: #aaa4c7; }
+.super-dashboard .sd-action-item {
+  color: #f5f3ff;
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(190,171,255,.1);
+  border-radius: 15px;
+  transition: transform .2s ease, background .2s ease, border-color .2s ease;
+}
+.super-dashboard .sd-activity-item { border-bottom-color: rgba(190,171,255,.1); }
+.super-dashboard .sd-search {
+  background: rgba(8,6,18,.55);
+  border: 1px solid rgba(190,171,255,.17);
+  color: #c4b5fd;
+}
+.super-dashboard .sd-search input { color: #f5f3ff; }
+.super-dashboard .sd-search input::placeholder { color: #82799f; }
+.super-dashboard .sd-filter-tabs { background: rgba(7,5,16,.48); border-color: rgba(190,171,255,.12); }
+.super-dashboard .sd-filter-tabs button { color: #aaa4c7; }
+.super-dashboard .sd-filter-tabs button.is-active { color: #fff; background: #6d28d9; }
+.super-dashboard .sd-detail-hint,
+.super-dashboard .sd-panel-note { color: #b7acd8; }
+.super-dashboard .sd-error { color: #fecaca; background: rgba(127,29,29,.18); border-color: rgba(248,113,113,.25); }
+.super-dashboard .sd-error-copy strong { color: #fee2e2; }
+.super-dashboard .sd-skeleton { background: linear-gradient(90deg, rgba(167,139,250,.12), rgba(167,139,250,.3), rgba(167,139,250,.12)); }
+.super-dashboard .sd-footer { color: #8c83a8; }
+.super-dashboard .sd-navigation-drawer {
+  color: #f5f3ff;
+  background: linear-gradient(165deg, #17102b 0%, #100b20 65%, #0b0915 100%);
+  border: 1px solid rgba(190,171,255,.2);
+  box-shadow: 28px 0 80px rgba(0,0,0,.48);
+}
+.super-dashboard .sd-drawer-brand,
+.super-dashboard .sd-drawer-heading { border-color: rgba(190,171,255,.12); }
+.super-dashboard .sd-drawer-brand strong,
+.super-dashboard .sd-drawer-heading h2 { color: #faf7ff; }
+.super-dashboard .sd-drawer-brand small,
+.super-dashboard .sd-drawer-group-label { color: #a99bcf; }
+.super-dashboard .sd-drawer-link {
+  color: #d9d2ee;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.super-dashboard .sd-drawer-link:hover,
+.super-dashboard .sd-drawer-link:focus-visible {
+  color: #fff;
+  background: linear-gradient(100deg, rgba(139,92,246,.22), rgba(168,85,247,.08));
+  border-color: rgba(196,181,253,.22);
+  transform: translateX(2px);
+}
+.super-dashboard .sd-drawer-link.is-current {
+  color: #fff;
+  background: linear-gradient(100deg, rgba(139,92,246,.32), rgba(109,40,217,.16));
+  border-color: rgba(196,181,253,.28);
+}
+.super-dashboard .sd-drawer-link svg { color: #c4b5fd; flex-shrink: 0; }
+.super-dashboard .sd-drawer-divider { background: rgba(190,171,255,.13); }
+.super-dashboard .sd-icon-button { color: #e9ddff; background: rgba(139,92,246,.12); border-color: rgba(190,171,255,.18); }
+.super-dashboard .sd-drawer-secure-note { color: #c4b5fd; }
+.super-dashboard .sd-signout-button { border-color: rgba(248,113,113,.25); background: rgba(127,29,29,.15); color: #fecaca; }
+.super-dashboard .sd-menu-backdrop { background: rgba(4,2,12,.7); backdrop-filter: blur(5px); }
+@media (max-width: 700px) {
+  .super-dashboard { border-radius: 16px; }
+  .super-dashboard .sd-metric-card, .super-dashboard .sd-queue-card, .super-dashboard .sd-panel { border-radius: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .super-dashboard .sd-metric-card, .super-dashboard .sd-queue-card, .super-dashboard .sd-action-item, .super-dashboard .sd-drawer-link { transition: none; }
+}
