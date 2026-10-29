@@ -27,7 +27,7 @@ export function clearToken(): void {
   }
 }
 
-export type SessionStatus = "valid" | "invalid" | "unreachable";
+export type SessionStatus = "valid" | "invalid" | "forbidden" | "unreachable";
 
 export async function verifySession(): Promise<SessionStatus> {
   if (!isApiConfigured) return "unreachable";
@@ -41,10 +41,12 @@ export async function verifySession(): Promise<SessionStatus> {
 
     if (response.ok) return "valid";
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       clearToken();
       return "invalid";
     }
+
+    if (response.status === 403) return "forbidden";
 
     return "unreachable";
   } catch {
