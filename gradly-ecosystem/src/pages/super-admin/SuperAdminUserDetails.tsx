@@ -95,7 +95,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
   
         if (!userId) {
           setError(
-            "Student ID is missing."
+            "User ID is missing."
           );
   
           setLoading(false);
@@ -170,7 +170,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
     if (loading) {
       return (
         <div className="super-user-details-loading">
-          Loading student record...
+          Loading user profile and academic records...
         </div>
       );
     }
@@ -227,12 +227,24 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
           </button>
   
           <div className="super-user-details-code">
-            USER / ACADEMIC RECORD
+            USER / PROFILE & ACADEMICS
           </div>
   
         </div>
   
   
+        <nav className="super-user-detail-tabs" aria-label="User management sections">
+          <button type="button" className="is-active" aria-current="page" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(userId || "")}`)}>
+            <UserRound size={15} /> Profile
+          </button>
+          <button type="button" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(userId || "")}/activity`)}>
+            <BookOpen size={15} /> Activity
+          </button>
+          <button type="button" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(userId || "")}/actions`)}>
+            <ShieldCheck size={15} /> Actions
+          </button>
+        </nav>
+
         {/* PROFILE */}
   
         <section className="student-profile-card">
@@ -245,7 +257,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
   
             <h1>
               {student.display_name ||
-                "Unnamed Student"}
+                "Unnamed User"}
             </h1>
   
             <div className="student-profile-meta">
