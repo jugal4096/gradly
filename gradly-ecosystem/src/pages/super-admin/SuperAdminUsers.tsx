@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Activity, Building2, CheckCircle2, Eye, Filter, GraduationCap, Power, RefreshCw, Search, ShieldCheck, Users, X } from "lucide-react";
+import { Activity, Building2, CheckCircle2, Eye, Filter, GraduationCap, Power, RefreshCw, Search, ShieldCheck, Users, X, UserRound, Ghost } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/super-admin-dashboard.css";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
@@ -38,6 +38,7 @@ function unique(values: Array<string | null | undefined>) {
 
 export default function SuperAdminUsers() {
   const navigate = useNavigate();
+  const [accountView, setAccountView] = useState<"registered" | "guest">("registered");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
@@ -174,6 +175,12 @@ export default function SuperAdminUsers() {
           ].map((item) => <div key={item.label} style={{ border: "1px solid #e4dcf8", borderRadius: 15, padding: 16, background: "linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,239,255,.92))", boxShadow: "0 9px 24px rgba(78,48,145,.07)" }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#6f638b", fontSize: 12 }}>{item.label}<item.icon size={18} color="#7548d6" /></div><div style={{ fontSize: 27, fontWeight: 750, color: "#2f2050", marginTop: 8 }}>{item.value}</div></div>)}
         </div>
 
+        <div role="tablist" aria-label="Choose account type" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, padding: 7, border: "1px solid #e3daf6", borderRadius: 16, background: "linear-gradient(135deg,#fff,#f5f0ff)", boxShadow: "0 10px 28px rgba(61,38,105,.07)" }}>
+          <button type="button" role="tab" aria-selected={accountView === "registered"} onClick={() => setAccountView("registered")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, minHeight: 52, border: accountView === "registered" ? "1px solid #6942bd" : "1px solid transparent", borderRadius: 11, background: accountView === "registered" ? "linear-gradient(135deg,#7954d7,#50318f)" : "transparent", color: accountView === "registered" ? "#fff" : "#625477", fontWeight: 800, cursor: "pointer", boxShadow: accountView === "registered" ? "0 6px 16px rgba(91,54,165,.22)" : "none" }}><UserRound size={18} /> Registered users <span style={{ opacity: .85 }}>({students.length})</span></button>
+          <button type="button" role="tab" aria-selected={accountView === "guest"} onClick={() => setAccountView("guest")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, minHeight: 52, border: accountView === "guest" ? "1px solid #6942bd" : "1px solid transparent", borderRadius: 11, background: accountView === "guest" ? "linear-gradient(135deg,#7954d7,#50318f)" : "transparent", color: accountView === "guest" ? "#fff" : "#625477", fontWeight: 800, cursor: "pointer", boxShadow: accountView === "guest" ? "0 6px 16px rgba(91,54,165,.22)" : "none" }}><Ghost size={18} /> Guest sessions <span style={{ opacity: .85 }}>({guests.length})</span></button>
+        </div>
+
+        {accountView === "registered" && (<>
         <form onSubmit={submitSearch} style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 260px", ...fieldStyle }}><Search size={17} aria-hidden="true" /><span className="sr-only">Search users</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or student ID" style={{ width: "100%", border: 0, outline: 0, background: "transparent", color: "inherit" }} /></label>
           <button className="sd-refresh-button" type="submit" disabled={loading}>Search</button>
@@ -218,6 +225,9 @@ export default function SuperAdminUsers() {
         <p style={{ color: "#776d89", fontSize: 12, margin: 0 }}>{loading ? "Loading results…" : `Showing ${filtered.length} of ${students.length} loaded users${count == null ? "" : ` · API count: ${count}`}.`}</p>
       </section>
 
+        </>)}
+
+        {accountView === "guest" && (<>
       <section className="sd-section" style={{ display: "grid", gap: 16 }}>
         <div className="sd-section-heading"><div><div className="sd-section-kicker">ANONYMOUS ACCESS</div><h2>Guest sessions</h2></div><button className="sd-refresh-button" type="button" onClick={() => void loadGuests()} disabled={guestsLoading}><RefreshCw size={15} className={guestsLoading ? "sd-spin" : ""} /> {guestsLoading ? "Loading…" : "Refresh guests"}</button></div>
         <p style={{ margin: 0, color: "#776d89", fontSize: 13 }}>Guest sessions have no registered account profile. Gradly displays only their Guest ID, institution metadata when available, and recorded session timestamps.</p>
@@ -235,6 +245,9 @@ export default function SuperAdminUsers() {
             </tr>)}</tbody>
           </table>
         </div>
+      </section>
+
+        {/if}
       </section>
 
       {activityUser && <div role="presentation" onClick={() => setActivityUser(null)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(21,12,39,.56)", display: "grid", placeItems: "center", padding: 18 }}>
