@@ -125,8 +125,11 @@ export async function findAdministrators(
 
       a.branch_id,
       b.name AS branch_name,
+      p.id AS program_id,
+      p.name AS program_name,
 
       a.enrollment_number,
+      a.graduation_date,
 
       a.adminship_started_at,
       a.adminship_expires_at,
@@ -159,6 +162,9 @@ export async function findAdministrators(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN programs p
+      ON p.id = b.program_id
 
     ${whereClause}
 
@@ -205,8 +211,11 @@ export async function findAdministratorById(
 
       a.branch_id,
       b.name AS branch_name,
+      p.id AS program_id,
+      p.name AS program_name,
 
       a.enrollment_number,
+      a.graduation_date,
 
       a.adminship_started_at,
       a.adminship_expires_at,
@@ -244,6 +253,9 @@ export async function findAdministratorById(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN programs p
+      ON p.id = b.program_id
 
     WHERE a.id = $1
 
