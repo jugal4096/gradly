@@ -43,7 +43,7 @@ export default function SuperAdminAudit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const load = useCallback(async (nextOffset = offset) => {
+  const load = useCallback(async (nextOffset: number) => {
     if (!isApiConfigured) {
       setError(API_CONFIGURATION_ERROR);
       setLoading(false);
@@ -81,9 +81,9 @@ export default function SuperAdminAudit() {
     } finally {
       setLoading(false);
     }
-  }, [actorRole, offset, search]);
+  }, [actorRole, search]);
 
-  useEffect(() => { void load(0); }, [search, actorRole]); // filters reset pagination
+  useEffect(() => { void load(0); }, [load]);
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSearch(searchDraft.trim());
