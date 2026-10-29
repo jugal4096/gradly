@@ -69,19 +69,25 @@ export default function SuperAdminHierarchy() {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return institutions;
-    return institutions.map((institution) => ({
-      ...institution,
-      programs: institution.programs
-        .map((program) => ({
-          ...program,
-          branches: program.branches.filter((branch) => branch.name.toLowerCase().includes(query)),
-        }))
+    return institutions.map((institution) => {
+      const institutionMatches = institution.name.toLowerCase().includes(query);
+      const programs = institution.programs
+        .map((program) => {
+          const programMatches = program.name.toLowerCase().includes(query);
+          return {
+            ...program,
+            branches: institutionMatches || programMatches
+              ? program.branches
+              : program.branches.filter((branch) => branch.name.toLowerCase().includes(query)),
+          };
+        })
         .filter((program) =>
-          institution.name.toLowerCase().includes(query) ||
+          institutionMatches ||
           program.name.toLowerCase().includes(query) ||
           program.branches.length > 0
-        ),
-    })).filter((institution) =>
+        );
+      return { ...institution, programs };
+    }).filter((institution) =>
       institution.name.toLowerCase().includes(query) ||
       institution.programs.length > 0
     );
