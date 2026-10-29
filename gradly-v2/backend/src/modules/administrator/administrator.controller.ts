@@ -26,6 +26,7 @@ export async function getAdministrators(
     const {
       institutionId,
       branchId,
+      programId,
       status,
       registrationStatus,
       search,
@@ -42,6 +43,8 @@ export async function getAdministrators(
           typeof branchId === "string"
             ? branchId
             : undefined,
+
+        programId: typeof programId === "string" ? programId : undefined,
 
         status:
           typeof status === "string"
@@ -146,7 +149,8 @@ export async function updateAdministratorStatus(
     if (
       status !== "ACTIVE" &&
       status !== "SUSPENDED" &&
-      status !== "DISABLED" &&\n      status !== "DELETED"
+      status !== "DISABLED" &&
+      status !== "DELETED"
     ) {
       return res.status(400).json({
         message:
