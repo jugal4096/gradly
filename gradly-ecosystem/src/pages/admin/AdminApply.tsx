@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { ArrowRight, CheckCircle2, ClipboardList, GraduationCap, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth, signInWithGoogle, signOutUser } from "../../config/firebase";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
