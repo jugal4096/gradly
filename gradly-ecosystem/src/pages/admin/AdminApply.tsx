@@ -33,6 +33,7 @@ export default function AdminApply() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [institutionsError, setInstitutionsError] = useState("");
   const [institutionId, setInstitutionId] = useState("");
   const [branchId, setBranchId] = useState("");
   const [form, setForm] = useState({
@@ -114,9 +115,15 @@ export default function AdminApply() {
         if (!response.ok || !Array.isArray(result?.data)) {
           throw new Error(result?.message || "Unable to load institutions and branches.");
         }
-        if (!cancelled) setInstitutions(result.data);
+        if (!cancelled) {
+          setInstitutions(result.data);
+          setInstitutionsError("");
+        }
       } catch (caught) {
-        if (!cancelled) setError(caught instanceof Error ? caught.message : "Unable to load institutions.");
+        if (!cancelled) {
+          const message = caught instanceof Error ? caught.message : "Unable to load institutions.";
+          setInstitutionsError(message);
+        }
       }
     }
     void loadInstitutions();
@@ -156,8 +163,12 @@ export default function AdminApply() {
         throw new Error(result?.message || `Unable to submit your application (HTTP ${response.status}).`);
       }
       setNotice(result.message || "Your administrator application was submitted.");
-      await loadApplications(user);
       setForm((previous) => ({ ...previous, enrollment_number: "", mobile_number: "", graduation_date: "", qualification: "", reason: "", additional_note: "" }));
+      try {
+        await loadApplications(user);
+      } catch (refreshError) {
+        setError(refreshError instanceof Error ? `Application was submitted, but the status list could not be refreshed: ${refreshError.message}` : "Application was submitted, but the status list could not be refreshed.");
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to submit your application.");
     } finally {
@@ -218,7 +229,7 @@ export default function AdminApply() {
                     <div className="form-field"><label htmlFor="enrollment-number">Enrollment number *</label><input id="enrollment-number" value={form.enrollment_number} onChange={(event) => setForm({ ...form, enrollment_number: event.target.value })} required /></div>
                     <div className="form-field"><label htmlFor="mobile-number">Mobile number *</label><input id="mobile-number" type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" maxLength={10} placeholder="10-digit Indian mobile number" value={form.mobile_number} onChange={(event) => setForm({ ...form, mobile_number: event.target.value })} required /></div>
                     <div className="form-field"><label htmlFor="graduation-date">Graduation date *</label><input id="graduation-date" type="date" min={new Date().toISOString().slice(0, 10)} value={form.graduation_date} onChange={(event) => setForm({ ...form, graduation_date: event.target.value })} required /></div>
-                    <div className="form-field"><label htmlFor="institution">Institution *</label><select id="institution" value={institutionId} onChange={(event) => { setInstitutionId(event.target.value); setBranchId(""); }} required><option value="">Choose institution</option>{institutions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+                    <div className="form-field"><label htmlFor="institution">Institution *</label>{institutionsError && <span role="alert" className="field-warning">{institutionsError}</span>}<select id="institution" value={institutionId} onChange={(event) => { setInstitutionId(event.target.value); setBranchId(""); }} required><option value="">Choose institution</option>{institutions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
                     <div className="form-field"><label htmlFor="branch">Branch / department *</label><select id="branch" value={branchId} onChange={(event) => setBranchId(event.target.value)} required disabled={!institutionId}><option value="">Choose branch</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></div>
                     <div className="form-field"><label htmlFor="qualification">Qualification</label><input id="qualification" value={form.qualification} onChange={(event) => setForm({ ...form, qualification: event.target.value })} placeholder="e.g. B.Tech, M.Tech" /></div>
                     <div className="form-field"><label htmlFor="reason">Why are you applying?</label><textarea id="reason" rows={3} value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} placeholder="Briefly describe your experience or motivation." /></div>
