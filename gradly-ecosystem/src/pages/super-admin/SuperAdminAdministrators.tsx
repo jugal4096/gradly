@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { RefreshCw, Search, ShieldCheck, Eye, Activity, Bell, SlidersHorizontal, CalendarDays } from "lucide-react";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "../../styles/super-admin-dashboard.css";
 
@@ -34,7 +34,7 @@ export default function SuperAdminAdministrators() {
   const navigate = useNavigate();
   const [records, setRecords] = useState<Administrator[]>([]);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("ALL");
+  const [status, setStatus] = useState("ALL");\n  const [institution, setInstitution] = useState("ALL");\n  const [program, setProgram] = useState("ALL");\n  const [branch, setBranch] = useState("ALL");\n  const [sortBy, setSortBy] = useState("name");\n  const [selected, setSelected] = useState<Administrator | null>(null);\n  const [activity, setActivity] = useState<any[]>([]);\n  const [permissions, setPermissions] = useState<string[]>([]);\n  const [noticeTitle, setNoticeTitle] = useState("");\n  const [noticeBody, setNoticeBody] = useState("");\n  const [expiryDate, setExpiryDate] = useState("");\n  const [graduationDate, setGraduationDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [error, setError] = useState("");
@@ -50,7 +50,7 @@ export default function SuperAdminAdministrators() {
       if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
       const query = new URLSearchParams();
       if (search.trim()) query.set("search", search.trim());
-      if (status !== "ALL") query.set("status", status);
+      if (status !== "ALL") query.set("status", status);\n      if (institution !== "ALL") query.set("institutionId", institution);\n      if (program !== "ALL") query.set("programId", program);\n      if (branch !== "ALL") query.set("branchId", branch);
       const encodedQuery = query.toString();
       const suffix = encodedQuery ? `?${encodedQuery}` : "";
       const response = await fetch(`${API_BASE_URL}/api/super-admin/administrators${suffix}`, {
@@ -77,13 +77,13 @@ export default function SuperAdminAdministrators() {
     } finally {
       setLoading(false);
     }
-  }, [navigate, search, status]);
+  }, [navigate, search, status, institution, program, branch]);
 
   useEffect(() => {
     void Promise.resolve().then(() => loadAdministrators());
   }, [loadAdministrators]);
 
-  const summary = useMemo(() => ({
+  const institutions = useMemo(() => [...new Map(records.map(r => [r.institution_id || r.institution_name, { id: r.institution_id || r.institution_name, name: r.institution_name }])).values()], [records]);\n  const programs = useMemo(() => [...new Map(records.filter(r => r.program_id || r.program_name).map(r => [r.program_id || r.program_name, { id: r.program_id || r.program_name || "", name: r.program_name || "Unknown program" }])).values()], [records]);\n  const branches = useMemo(() => [...new Map(records.filter(r => r.branch_id || r.branch_name).map(r => [r.branch_id || r.branch_name, { id: r.branch_id || r.branch_name || "", name: r.branch_name || "Unknown branch" }])).values()], [records]);\n  const sortedRecords = useMemo(() => [...records].sort((a,b) => sortBy === "graduation" ? (a.graduation_date || "9999").localeCompare(b.graduation_date || "9999") : sortBy === "institution" ? (a.institution_name || "").localeCompare(b.institution_name || "") : sortBy === "program" ? (a.program_name || "").localeCompare(b.program_name || "") : sortBy === "branch" ? (a.branch_name || "").localeCompare(b.branch_name || "") : (a.full_name || "").localeCompare(b.full_name || "")), [records, sortBy]);\n\n  async function adminAction(path: string, method = "GET", body?: unknown) {\n    const token = localStorage.getItem("gradly_super_admin_token");\n    if (!token || !selected) throw new Error("Select an administrator and sign in again if needed.");\n    const response = await fetch(`${API_BASE_URL}/api/super-admin/administrators/${encodeURIComponent(selected.id)}/${path}`, { method, headers: { Authorization: `Bearer ${token}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });\n    const data = await response.json().catch(() => ({}));\n    if (!response.ok) throw new Error(data.message || `Request failed (${response.status})`);\n    return data;\n  }\n  async function openAdmin(record: Administrator) {\n    setSelected(record); setExpiryDate(record.adminship_expires_at?.slice(0,10) || ""); setGraduationDate(record.graduation_date?.slice(0,10) || ""); setActivity([]); setPermissions([]);\n    try { const [a,p] = await Promise.all([adminAction("activity"), adminAction("permissions")]); setActivity(a.activity || []); setPermissions((p.permissions || []).filter((x: any) => x.granted).map((x: any) => x.permission_code)); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load administrator data."); }\n  }\n  const summary = useMemo(() => ({
     active: records.filter((record) => record.status === "ACTIVE").length,
     suspended: records.filter((record) => record.status === "SUSPENDED").length,
     disabled: records.filter((record) => record.status === "DISABLED").length,
@@ -170,9 +170,9 @@ export default function SuperAdminAdministrators() {
             <tbody>
               {loading ? <tr><td colSpan={6} style={{ padding: 24, textAlign: "center" }}>Loading administrator records…</td></tr>
               : records.length === 0 ? <tr><td colSpan={6} style={{ padding: 24, textAlign: "center" }}>No administrators match these filters.</td></tr>
-              : records.map((record) => <tr key={record.id}>
+              : sortedRecords.map((record) => <tr key={record.id}>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}><strong>{record.full_name || "Unnamed administrator"}</strong><div style={{ color: "#737d91", fontSize: 12, marginTop: 4 }}>{record.email || "No email"} · {record.admin_code}</div></td>
-                <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{record.institution_name || "Unassigned"}<div style={{ color: "#737d91", fontSize: 12, marginTop: 4 }}>{record.branch_name || "No branch assigned"}</div></td>
+                <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{record.institution_name || "Unassigned"}<div style={{ color: "#737d91", fontSize: 12, marginTop: 4 }}>{record.program_name || "No program"} · {record.branch_name || "No branch"}</div><div style={{ color: "#737d91", fontSize: 12 }}>Graduation: {displayDate(record.graduation_date || null)}</div></td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}><span>{record.status || "Unknown"}</span><div style={{ color: "#737d91", fontSize: 12, marginTop: 4 }}>{record.registration_status || "Registration status unavailable"}</div></td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{displayDate(record.last_login_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{displayDate(record.adminship_expires_at)}</td>
