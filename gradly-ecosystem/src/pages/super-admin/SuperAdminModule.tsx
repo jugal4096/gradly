@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
-  Activity, ArrowLeft, ArrowUpRight, BookOpen, Building2, ClipboardList,
-  FileText, LockKeyhole, Megaphone, MessageSquare, RefreshCw, Search,
-  Settings, ShieldAlert, ShieldCheck, Users
+  Activity, ArrowLeft, ArrowUpRight, BookOpen, Building2, Check, ClipboardList,
+  FileText, LockKeyhole, Megaphone, MessageSquare, Moon, RefreshCw, Search,
+  Settings, ShieldAlert, ShieldCheck, Sun, Users
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
@@ -73,6 +73,13 @@ export default function SuperAdminModule() {
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [loadedAt, setLoadedAt] = useState("");
+  const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("gradly_super_admin_theme") === "dark" ? "dark" : "light");
+
+  function chooseTheme(nextTheme: "light" | "dark") {
+    setTheme(nextTheme);
+    localStorage.setItem("gradly_super_admin_theme", nextTheme);
+    window.dispatchEvent(new CustomEvent("gradly-super-admin-theme-change", { detail: nextTheme }));
+  }
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
     if (!info.apiKey) { setRows([]); setLoading(false); setError(""); return; }
