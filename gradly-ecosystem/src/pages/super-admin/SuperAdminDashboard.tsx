@@ -602,7 +602,13 @@ export default function SuperAdminDashboard() {
         <div className="sd-main-column">
           <div className="sd-navigation-bar">
             <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
-              <span className="sd-brand-mark">G</span>
+              <img
+                className="sd-brand-logo"
+                src="/gradly-ecosystem-logo.png"
+                alt="Gradly"
+                width={36}
+                height={36}
+              />
               <span className="sd-brand-name">
                 GRADLY <small>ECOSYSTEM</small>
               </span>
@@ -647,12 +653,25 @@ export default function SuperAdminDashboard() {
                 aria-modal="true"
                 aria-labelledby="sd-drawer-title"
               >
+                <div className="sd-drawer-brand">
+                  <img
+                    src="/gradly-ecosystem-logo.png"
+                    alt=""
+                    width={42}
+                    height={42}
+                  />
+                  <span>
+                    <strong>Gradly Ecosystem</strong>
+                    <small>SUPER ADMIN WORKSPACE</small>
+                  </span>
+                </div>
+
                 <div className="sd-drawer-heading">
                   <div>
                     <span className="sd-section-kicker">
-                      GRADLY / WORKSPACE
+                      WORKSPACE MENU
                     </span>
-                    <h2 id="sd-drawer-title">Workspace</h2>
+                    <h2 id="sd-drawer-title">Navigation</h2>
                   </div>
 
                   <button
@@ -669,6 +688,7 @@ export default function SuperAdminDashboard() {
                   className="sd-drawer-nav"
                   aria-label="Super Admin workspace navigation"
                 >
+                  <span className="sd-drawer-group-label">CORE WORKSPACE</span>
                   <button
                     type="button"
                     className="sd-drawer-link is-current"
@@ -682,7 +702,10 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/users")}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/super-admin/users");
+                    }}
                   >
                     <Users size={18} />
                     <span>Users</span>
@@ -692,7 +715,10 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/admins")}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/super-admin/admins");
+                    }}
                   >
                     <UserCog size={18} />
                     <span>Admins</span>
@@ -714,6 +740,7 @@ export default function SuperAdminDashboard() {
                   </button>
 
                   <div className="sd-drawer-divider" />
+                  <span className="sd-drawer-group-label">DASHBOARD TOOLS</span>
 
                   <button
                     type="button"
