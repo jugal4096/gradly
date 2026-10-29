@@ -13,6 +13,8 @@ type Administrator = {
   enrollment_number?: string | null; created_at?: string;
 };
 type ApiResult = { administrators?: Administrator[]; message?: string };
+type CatalogItem = { id: string; name: string; institution_id?: string; program_id?: string };
+type CatalogResult = { institutions?: CatalogItem[]; programs?: CatalogItem[]; branches?: CatalogItem[]; message?: string };
 type ActivityItem = { id: string; action: string; actor_role?: string; actor_type?: string; created_at: string; metadata?: unknown };
 
 const statuses = ["ACTIVE", "SUSPENDED", "DISABLED", "DELETED"] as const;
@@ -26,6 +28,11 @@ function dateInput(value: string | null | undefined) { return value ? value.slic
 export default function SuperAdminAdministrators() {
   const navigate = useNavigate();
   const [records, setRecords] = useState<Administrator[]>([]);
+  const [institutionOptions, setInstitutionOptions] = useState<CatalogItem[]>([]);
+  const [programOptions, setProgramOptions] = useState<CatalogItem[]>([]);
+  const [branchOptions, setBranchOptions] = useState<CatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
   const [institution, setInstitution] = useState("ALL");
@@ -70,9 +77,42 @@ export default function SuperAdminAdministrators() {
 
   useEffect(() => { void Promise.resolve().then(loadAdministrators); }, [loadAdministrators]);
 
-  const institutions = useMemo(() => [...new Map(records.map(r => [r.institution_id || r.institution_name, { id: r.institution_id || r.institution_name, name: r.institution_name }])).values()], [records]);
-  const programs = useMemo(() => [...new Map(records.filter(r => r.program_id || r.program_name).map(r => [r.program_id || r.program_name, { id: r.program_id || r.program_name || "", name: r.program_name || "Unassigned program" }])).values()], [records]);
-  const branches = useMemo(() => [...new Map(records.filter(r => r.branch_id || r.branch_name).map(r => [r.branch_id || r.branch_name, { id: r.branch_id || r.branch_name || "", name: r.branch_name || "Unassigned branch" }])).values()], [records]);
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCatalog() {
+      setCatalogLoading(true);
+      setCatalogError("");
+      try {
+        const token = localStorage.getItem("gradly_super_admin_token");
+        if (!token) throw new Error("Sign in to load institution and program options.");
+        const response = await fetch(`${API_BASE_URL}/api/super-admin/administrators/catalog`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }
+        });
+        const result = await response.json().catch(() => null) as CatalogResult | null;
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          throw new Error("Session expired. Please sign in again.");
+        }
+        if (!response.ok) throw new Error(result?.message || `Could not load database filters (HTTP ${response.status}).`);
+        if (!Array.isArray(result?.institutions) || !Array.isArray(result?.programs) || !Array.isArray(result?.branches)) {
+          throw new Error("The database filter catalog response was incomplete.");
+        }
+        if (!cancelled) {
+          setInstitutionOptions(result.institutions);
+          setProgramOptions(result.programs);
+          setBranchOptions(result.branches);
+        }
+      } catch (caught) {
+        if (!cancelled) setCatalogError(caught instanceof Error ? caught.message : "Could not load database filters.");
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
+      }
+    }
+    void loadCatalog();
+    return () => { cancelled = true; };
+  }, [navigate]);
+
 
   const visibleRecords = useMemo(() => {
     const filtered = records.filter(r =>
@@ -189,13 +229,14 @@ export default function SuperAdminAdministrators() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 16 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 240px" }}><Search size={17} aria-hidden="true" /><span className="sr-only">Search administrators</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, code, username or email" style={{ width: "100%", minHeight: 42, border: "1px solid #e0e3ef", borderRadius: 10, padding: "8px 12px", background: "#fff" }} /></label>
           <label>Status <select value={status} onChange={e => setStatus(e.target.value)}>{["ALL", ...statuses].map(s => <option key={s} value={s}>{s === "ALL" ? "All statuses" : s}</option>)}</select></label>
-          <label>Institution <select value={institution} onChange={e => setInstitution(e.target.value)}><option value="ALL">All institutions</option>{institutions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Program <select value={program} onChange={e => setProgram(e.target.value)}><option value="ALL">All programs</option>{programs.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Branch <select value={branch} onChange={e => setBranch(e.target.value)}><option value="ALL">All branches</option>{branches.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Institution <select value={institution} onChange={e => setInstitution(e.target.value)}><option value="ALL">{catalogLoading ? "Loading institutions…" : "All institutions"}</option>{institutionOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Program <select value={program} onChange={e => setProgram(e.target.value)}><option value="ALL">{catalogLoading ? "Loading programs…" : "All programs"}</option>{programOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Branch <select value={branch} onChange={e => setBranch(e.target.value)}><option value="ALL">{catalogLoading ? "Loading branches…" : "All branches"}</option>{branchOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           <label>Sort by <select value={sortBy} onChange={e => setSortBy(e.target.value)}>{[["name","Name"],["institution","Institution"],["program","Program"],["branch","Branch"],["expiry","Adminship expiry"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
           <button type="button" onClick={() => { setInstitution("ALL"); setProgram("ALL"); setBranch("ALL"); setSortBy("name"); setStatus("ALL"); setSearch(""); }}>Reset filters</button>
         </div>
 
+        {catalogError && <div role="alert" className="sd-error"><div className="sd-error-copy"><strong>Database filter options unavailable</strong><p>{catalogError}</p></div><button className="sd-error-retry" type="button" onClick={() => { setCatalogError(""); setCatalogLoading(true); const token = localStorage.getItem("gradly_super_admin_token"); void fetch(`${API_BASE_URL}/api/super-admin/administrators/catalog`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } }).then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.message || "Could not load database filters."); setInstitutionOptions(data.institutions || []); setProgramOptions(data.programs || []); setBranchOptions(data.branches || []); }).catch(caught => setCatalogError(caught instanceof Error ? caught.message : "Could not load database filters.")).finally(() => setCatalogLoading(false)); }}>Retry options</button></div>}
         {error && <div role="alert" className="sd-error"><div className="sd-error-copy"><strong>Administrator management error</strong><p>{error}</p></div><button className="sd-error-retry" type="button" onClick={() => void loadAdministrators()}>Retry</button></div>}
         {success && <p role="status" style={{ padding: 12, borderRadius: 10, background: "#edf9f2", color: "#17643b" }}>{success}</p>}
         <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #e8eaf3", borderRadius: 14 }}>
