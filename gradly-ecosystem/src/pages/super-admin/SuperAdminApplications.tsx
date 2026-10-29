@@ -58,7 +58,7 @@ type ApplicationStatus =
   | "BLOCKED";
 
 type ApplicationFilter = "PENDING" | "ACCEPTED" | "REJECTED" | "ALL";
-type ReviewDecision = "ACCEPTED" | "REJECTED" | "BLOCKED";
+type ReviewDecision = "ACCEPTED" | "REJECTED";
 
 interface Branch {
   id: string;
@@ -186,7 +186,7 @@ function statusClass(status: ApplicationStatus): string {
 }
 
 function isReviewable(status: ApplicationStatus): boolean {
-  return status === "PENDING" || status === "UNDER_REVIEW";
+  return status === "PENDING";
 }
 
 function StatusIcon({
@@ -347,24 +347,18 @@ export default function SuperAdminApplications() {
   const loadInstitutions = useCallback(async () => {
     const token = getToken();
 
-    if (!token) return;
     if (!isApiConfigured) {
       setError(API_CONFIGURATION_ERROR);
+      setConfigurationLoading(false);
       return;
     }
 
     setConfigurationLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/academic/institutions`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/academic/institutions`, {
+        headers: { Accept: "application/json" },
+      });
 
       const data = await readResponse<Institution[]>(response);
 
@@ -501,9 +495,11 @@ export default function SuperAdminApplications() {
 
       setConfigurationSaved(true);
       setNotice("Department and permissions saved.");
-
-      await loadApplications(false);
-
+      try {
+        await loadApplications(false);
+      } catch (refreshError) {
+        setError(refreshError instanceof Error ? `Configuration was saved, but the list could not be refreshed: ${refreshError.message}` : "Configuration was saved, but the list could not be refreshed.");
+      }
       return true;
     } catch (err) {
       console.error(
@@ -642,19 +638,19 @@ export default function SuperAdminApplications() {
         );
       }
 
+      const completedApplication = selected;
       setSelected(null);
       setReason("");
       setDepartmentId("");
       setApprovedPermissions([]);
       setConfigurationSaved(false);
-
-      setNotice(
-        action === "accept"
-          ? "Application accepted."
-          : "Application rejected."
-      );
-
-      await loadApplications(false);
+      setNotice(action === "accept" ? "Application accepted." : "Application rejected.");
+      try {
+        await loadApplications(false);
+      } catch (refreshError) {
+        setNotice(action === "accept" ? "Application accepted." : "Application rejected.");
+        setError(refreshError instanceof Error ? `Decision saved for ${completedApplication.full_name}, but the list could not be refreshed: ${refreshError.message}` : "Decision saved, but the application list could not be refreshed.");
+      }
     } catch (err) {
       console.error("Application review failed:", err);
 
