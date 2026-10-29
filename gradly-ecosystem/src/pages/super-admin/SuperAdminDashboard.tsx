@@ -725,7 +725,6 @@ export default function SuperAdminDashboard() {
                     <ArrowRight size={15} />
                   </button>
 
-                  
 
                   
 
