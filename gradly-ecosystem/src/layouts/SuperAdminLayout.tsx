@@ -16,7 +16,8 @@ import {
   Users,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";\nimport { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import "../styles/super-admin.css";
 
