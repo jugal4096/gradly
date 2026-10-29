@@ -7,6 +7,8 @@ import {
 import {
   listStudents,
   getStudent,
+  updateStudentStatus,
+  getStudentActivityLog,
 } from "./user-management.controller";
 
 
@@ -23,10 +25,9 @@ router.get(
 );
 
 
-router.get(
-  "/:userId",
-  getStudent
-);
+router.patch("/:userId/status", updateStudentStatus);
+router.get("/:userId/activity", getStudentActivityLog);
+router.get("/:userId", getStudent);
 
 
 export default router;
