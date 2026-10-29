@@ -8,13 +8,14 @@ import {
   verifySuperAdminToken,
   SuperAdminTokenPayload,
 } from "../config/jwt";
+import { isSuperAdminActive } from "../modules/super-admin/superAdmin.repository";
 
 export interface SuperAdminAuthenticatedRequest
   extends Request {
   superAdmin?: SuperAdminTokenPayload;
 }
 
-export function authenticateSuperAdminToken(
+export async function authenticateSuperAdminToken(
   req: SuperAdminAuthenticatedRequest,
   res: Response,
   next: NextFunction
@@ -35,9 +36,10 @@ export function authenticateSuperAdminToken(
     });
   }
 
+  let decoded: SuperAdminTokenPayload;
+
   try {
-    req.superAdmin = verifySuperAdminToken(token);
-    return next();
+    decoded = verifySuperAdminToken(token);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -49,11 +51,26 @@ export function authenticateSuperAdminToken(
       });
     }
 
-    console.error("Super Admin token verification failed:", error);
-
     return res.status(401).json({
       message: "Invalid Super Admin authentication token.",
       code: "INVALID_TOKEN",
+    });
+  }
+
+  try {
+    if (!(await isSuperAdminActive(decoded.superAdminId))) {
+      return res.status(401).json({
+        message: "Super Admin session is no longer active. Please sign in again.",
+        code: "SUPER_ADMIN_INACTIVE",
+      });
+    }
+
+    req.superAdmin = decoded;
+    return next();
+  } catch {
+    // Fail closed if persisted account status cannot be verified.
+    return res.status(503).json({
+      message: "Unable to verify Super Admin account status.",
     });
   }
 }
