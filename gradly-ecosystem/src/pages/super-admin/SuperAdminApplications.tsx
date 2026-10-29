@@ -5,7 +5,6 @@ import {
   Clock3,
   RefreshCw,
   Save,
-  ShieldBan,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -188,14 +187,7 @@ function StatusIcon({
     return <Clock3 size={15} />;
   }
 
-  if (
-    [
-      "ACCEPTED",
-      "APPROVED",
-      "ACTIVE",
-      "REGISTRATION_SUCCESSFUL",
-    ].includes(status)
-  ) {
+  if (["ACCEPTED", "REGISTRATION_SUCCESSFUL"].includes(status)) {
     return <CheckCircle2 size={15} />;
   }
 
