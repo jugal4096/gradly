@@ -84,8 +84,10 @@ export default function SuperAdminAudit() {
   }, [actorRole, search]);
 
   // This effect starts an asynchronous API request; state updates happen after it settles.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void load(0); }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load(0);
+  }, [load]);
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSearch(searchDraft.trim());
