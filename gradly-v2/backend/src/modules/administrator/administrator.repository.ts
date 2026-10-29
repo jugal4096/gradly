@@ -7,6 +7,7 @@ import { pool } from "../../config/database";
 export type AdministratorListFilters = {
   institutionId?: string;
   branchId?: string;
+  programId?: string;
   status?: string;
   registrationStatus?: string;
   search?: string;
@@ -15,7 +16,8 @@ export type AdministratorListFilters = {
 export type UpdateAdminStatus =
   | "ACTIVE"
   | "SUSPENDED"
-  | "DISABLED";
+  | "DISABLED"
+  | "DELETED";
 
 export type AdministratorUpdateResult = {
   id: string;
@@ -59,6 +61,8 @@ export async function findAdministrators(
 
     values.push(filters.institutionId);
   }
+
+  if (filters.programId) { conditions.push(`p.id = ${parameterIndex++}`); values.push(filters.programId); }
 
   if (filters.branchId) {
     conditions.push(
