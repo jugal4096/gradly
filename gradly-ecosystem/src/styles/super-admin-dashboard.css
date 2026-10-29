@@ -2536,3 +2536,43 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* Final layout guard: dashboard is a single full-width canvas.
+   Suppress legacy workspace/sidebar columns from older shell styles. */
+.super-dashboard {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+.super-dashboard .sd-shell {
+  display: block !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  width: 100% !important;
+  max-width: 1800px !important;
+  margin-inline: auto !important;
+}
+.super-dashboard .sd-main-column {
+  display: block;
+  grid-column: 1 / -1;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+}
+.super-dashboard .sd-sidebar,
+.super-dashboard .super-admin-sidebar,
+.super-dashboard .workspace-column,
+.super-dashboard .workspace-sidebar {
+  display: none !important;
+}
+.super-dashboard .sd-navigation-bar,
+.super-dashboard .sd-header,
+.super-dashboard .sd-hero,
+.super-dashboard .sd-section,
+.super-dashboard .sd-content-grid,
+.super-dashboard .sd-system-strip,
+.super-dashboard .sd-footer {
+  width: 100%;
+  max-width: none;
+}
