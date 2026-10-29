@@ -11,10 +11,6 @@ import {
   Clock3,
   FileText,
   LayoutDashboard,
-  Landmark,
-  GraduationCap,
-  Settings,
-  ScrollText,
   UserCog,
   MessageSquare,
   Menu,
@@ -37,15 +33,9 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import "../../styles/super-admin-dashboard.css";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
-const configuredApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
-).trim().replace(/\/+$/, "");
-
-const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
-
-const STATS_ENDPOINT =
-  `${API_BASE_URL}/api/super-admin/dashboard/stats`;
+const STATS_ENDPOINT = `${API_BASE_URL}/api/super-admin/dashboard/stats`;
 
 type Stats = {
   totalUsers: number | null;
@@ -360,6 +350,10 @@ export default function SuperAdminDashboard() {
     setError("");
 
     try {
+      if (!isApiConfigured) {
+        throw new Error(API_CONFIGURATION_ERROR);
+      }
+
       const token = localStorage.getItem("gradly_super_admin_token");
 
       const response = await fetch(STATS_ENDPOINT, {
@@ -638,29 +632,15 @@ export default function SuperAdminDashboard() {
             <button
               type="button"
               className="sd-side-link"
-              onClick={() => navigate("/super-admin/administrators")}
+              onClick={() => navigate("/super-admin/admins")}
             >
               <UserCog size={18} />
               <span>Admins</span>
             </button>
 
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/institutions")}
-            >
-              <Landmark size={18} />
-              <span>Institutions</span>
-            </button>
+            
 
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/courses")}
-            >
-              <GraduationCap size={18} />
-              <span>Courses</span>
-            </button>
+            
 
             <button
               type="button"
@@ -680,51 +660,13 @@ export default function SuperAdminDashboard() {
               ACADEMIC &amp; SUPPORT
             </div>
 
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/curriculum")}
-            >
-              <BookOpen size={18} />
-              <span>Curriculum</span>
-              {stats.pendingCurriculumRequests > 0 && (
-                <span className="sd-side-count">
-                  {stats.pendingCurriculumRequests}
-                </span>
-              )}
-            </button>
+            
 
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/feedback")}
-            >
-              <MessageSquare size={18} />
-              <span>Feedback</span>
-              {stats.openFeedback > 0 && (
-                <span className="sd-side-count">
-                  {stats.openFeedback}
-                </span>
-              )}
-            </button>
+            
 
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/audit-logs")}
-            >
-              <ScrollText size={18} />
-              <span>Audit logs</span>
-            </button>
+            
 
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/settings")}
-            >
-              <Settings size={18} />
-              <span>Settings</span>
-            </button>
+            
           </nav>
 
           <div className="sd-sidebar-bottom">
@@ -840,32 +782,16 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/administrators")}
+                    onClick={() => navigate("/super-admin/admins")}
                   >
                     <UserCog size={18} />
                     <span>Admins</span>
                     <ArrowRight size={15} />
                   </button>
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/institutions")}
-                  >
-                    <Landmark size={18} />
-                    <span>Institutions</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/courses")}
-                  >
-                    <GraduationCap size={18} />
-                    <span>Courses</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  
 
                   <button
                     type="button"
@@ -879,45 +805,13 @@ export default function SuperAdminDashboard() {
 
                   <div className="sd-drawer-divider" />
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/curriculum")}
-                  >
-                    <BookOpen size={18} />
-                    <span>Curriculum</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/feedback")}
-                  >
-                    <MessageSquare size={18} />
-                    <span>Feedback</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/audit-logs")}
-                  >
-                    <ScrollText size={18} />
-                    <span>Audit logs</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/settings")}
-                  >
-                    <Settings size={18} />
-                    <span>Settings</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  
 
                   <div className="sd-drawer-divider" />
 
