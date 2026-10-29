@@ -78,7 +78,9 @@ export default function SuperAdminAdministrators() {
     }
   }, [navigate, search, status]);
 
-  useEffect(() => { void loadAdministrators(); }, [loadAdministrators]);
+  useEffect(() => {
+    void Promise.resolve().then(() => loadAdministrators());
+  }, [loadAdministrators]);
 
   const summary = useMemo(() => ({
     active: records.filter((record) => record.status === "ACTIVE").length,
