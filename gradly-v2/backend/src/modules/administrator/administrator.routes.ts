@@ -6,6 +6,7 @@ import {
 
 import {
   getAdministrators,
+  getAdministratorFilterCatalog,
   getAdministratorDetails,
   updateAdministratorStatus,
   updateAdministratorDepartment,
@@ -43,6 +44,8 @@ Optional query params:
 &registrationStatus=
 &search=
 */
+
+router.get("/catalog", getAdministratorFilterCatalog);
 
 router.get(
   "/",
