@@ -15,6 +15,7 @@ import {
   } from "firebase/auth";
   
   import { auth } from "./firebase";
+  import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../lib/api";
   
   interface AuthContextType {
     user: FirebaseUser | null;
@@ -53,6 +54,8 @@ import {
     }, []);
   
     async function loginWithGoogle() {
+      if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
+
       const provider =
         new GoogleAuthProvider();
   
@@ -70,7 +73,7 @@ import {
   
       const response =
         await fetch(
-          "http://localhost:5000/api/auth/sync",
+          `${API_BASE_URL}/api/auth/sync`,
           {
             method: "POST",
   
@@ -99,10 +102,7 @@ import {
       const data =
         await response.json();
   
-      console.log(
-        "✅ Gradly user synchronized:",
-        data.user
-      );
+      void data;
     }
   
     async function logout() {
