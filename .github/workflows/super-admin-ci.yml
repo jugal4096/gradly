@@ -37,3 +37,25 @@ jobs:
       - name: Lint
         working-directory: gradly-ecosystem
         run: npm run lint
+
+  backend:
+    name: Backend tests and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gradly-v2/backend/package-lock.json
+      - name: Install locked dependencies
+        working-directory: gradly-v2/backend
+        run: npm ci --no-audit --no-fund
+      - name: Run Super Admin audit tests
+        working-directory: gradly-v2/backend
+        run: npm test
+      - name: Typecheck backend
+        working-directory: gradly-v2/backend
+        run: npm run typecheck
