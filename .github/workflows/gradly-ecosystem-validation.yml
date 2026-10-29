@@ -10,12 +10,12 @@ on:
       - "gradly-v2/backend/src/modules/administrator/**"
       - "gradly-v2/backend/src/modules/academic/**"
       - ".github/workflows/gradly-ecosystem-validation.yml"
-  push:
-    branches:
-      - "fix/gradly-ecosystem-admin-audit-2026-10-29"
-
 permissions:
   contents: read
+
+concurrency:
+  group: gradly-ecosystem-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -23,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
