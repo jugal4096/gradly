@@ -13,7 +13,7 @@ type Administrator = {
   enrollment_number?: string | null; created_at?: string;
 };
 type ApiResult = { administrators?: Administrator[]; message?: string };
-type CatalogItem = { id: string; name: string; institution_id?: string; program_id?: string };
+type CatalogItem = { id: string; name: string; institution_id?: string; institution_name?: string; program_id?: string; program_name?: string };
 type CatalogResult = { institutions?: CatalogItem[]; programs?: CatalogItem[]; branches?: CatalogItem[]; message?: string };
 type ActivityItem = { id: string; action: string; actor_role?: string; actor_type?: string; created_at: string; metadata?: unknown };
 
@@ -113,6 +113,11 @@ export default function SuperAdminAdministrators() {
     return () => { cancelled = true; };
   }, [navigate]);
 
+
+  const visibleBranches = useMemo(() => branchOptions.filter(item =>
+    (institution === "ALL" || item.institution_id === institution) &&
+    (program === "ALL" || item.program_id === program)
+  ), [branchOptions, institution, program]);
 
   const visibleRecords = useMemo(() => {
     const filtered = records.filter(r =>
@@ -229,9 +234,9 @@ export default function SuperAdminAdministrators() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 16 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 240px" }}><Search size={17} aria-hidden="true" /><span className="sr-only">Search administrators</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, code, username or email" style={{ width: "100%", minHeight: 42, border: "1px solid #e0e3ef", borderRadius: 10, padding: "8px 12px", background: "#fff" }} /></label>
           <label>Status <select value={status} onChange={e => setStatus(e.target.value)}>{["ALL", ...statuses].map(s => <option key={s} value={s}>{s === "ALL" ? "All statuses" : s}</option>)}</select></label>
-          <label>Institution <select value={institution} onChange={e => setInstitution(e.target.value)}><option value="ALL">{catalogLoading ? "Loading institutions…" : "All institutions"}</option>{institutionOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Program <select value={program} onChange={e => setProgram(e.target.value)}><option value="ALL">{catalogLoading ? "Loading programs…" : "All programs"}</option>{programOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Branch <select value={branch} onChange={e => setBranch(e.target.value)}><option value="ALL">{catalogLoading ? "Loading branches…" : "All branches"}</option>{branchOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Institution <select value={institution} onChange={e => { setInstitution(e.target.value); setProgram("ALL"); setBranch("ALL"); }}><option value="ALL">{catalogLoading ? "Loading institutions…" : "All institutions"}</option>{institutionOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Program <select value={program} onChange={e => { setProgram(e.target.value); setBranch("ALL"); }}><option value="ALL">{catalogLoading ? "Loading programs…" : "All programs"}</option>{programOptions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+          <label>Branch <select value={branch} onChange={e => setBranch(e.target.value)}><option value="ALL">{catalogLoading ? "Loading branches…" : "All matching branches"}</option>{visibleBranches.map(x => <option key={x.id} value={x.id}>{x.name} · {x.program_name || "Program"} · {x.institution_name || "Institution"}</option>)}</select></label>
           <label>Sort by <select value={sortBy} onChange={e => setSortBy(e.target.value)}>{[["name","Name"],["institution","Institution"],["program","Program"],["branch","Branch"],["expiry","Adminship expiry"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
           <button type="button" onClick={() => { setInstitution("ALL"); setProgram("ALL"); setBranch("ALL"); setSortBy("name"); setStatus("ALL"); setSearch(""); }}>Reset filters</button>
         </div>
