@@ -34,7 +34,7 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
       FROM public.curricula c
       JOIN public.programs p ON p.id = c.program_id
       JOIN public.institutions i ON i.id = p.institution_id
-      LEFT JOIN public.branches b ON b.program_id = p.id
+      LEFT JOIN public.branches b ON b.program_id = p.id\n      LEFT JOIN public.program_semesters ps ON ps.program_id = p.id
       WHERE ($1 = '' OR i.id::text = $1)
         AND ($2 = '' OR p.id::text = $2)
         AND ($3 = '' OR b.id::text = $3)
@@ -57,5 +57,29 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
       code: "CURRICULUM_CATALOG_UNAVAILABLE",
       message: "The curriculum catalogue could not be loaded. Check that the curricula table and academic relationships are available; no sample data was substituted."
     });
+  }
+}
+
+export async function updateCurriculumSettings(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  const id = clean(req.params.curriculumId, 100);
+  const status = clean(req.body?.status, 20).toUpperCase();
+  const version = Number(req.body?.version);
+  const totalSemesters = Number(req.body?.totalSemesters);
+  if (!id || !["DRAFT", "REVIEW", "PUBLISHED", "RETIRED"].includes(status) ||
+      !Number.isInteger(version) || version < 1 || version > 999 ||
+      !Number.isInteger(totalSemesters) || totalSemesters < 1 || totalSemesters > 20) {
+    return res.status(400).json({ success: false, message: "Provide a valid status, version (1–999), and semester count (1–20)." });
+  }
+  try {
+    const result = await pool.query(
+      "UPDATE public.curricula SET status = $2, version = $3, total_semesters = $4, updated_at = NOW() WHERE id::text = $1 RETURNING id::text AS id, status, version, total_semesters",
+      [id, status, version, totalSemesters]
+    );
+    if (!result.rowCount) return res.status(404).json({ success: false, message: "Curriculum record not found." });
+    return res.status(200).json({ success: true, data: result.rows[0], message: "Curriculum settings updated." });
+  } catch (error) {
+    console.error("Super Admin curriculum update failed:", error);
+    return res.status(503).json({ success: false, message: "Curriculum settings could not be saved. Verify the curricula schema and database migration state." });
   }
 }
