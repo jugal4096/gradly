@@ -45,6 +45,27 @@ export async function createInstitution(req: SuperAdminAuthenticatedRequest, res
   }
 }
 
+export async function listInstitutionPrograms(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  const institutionId = text(req.params.institutionId, 100);
+  try {
+    const result = await pool.query(`
+      SELECT p.id, p.name, p.institution_id, COUNT(DISTINCT b.id)::int AS branch_count,
+        COALESCE(json_agg(json_build_object('id', b.id, 'name', b.name) ORDER BY b.name)
+          FILTER (WHERE b.id IS NOT NULL), '[]'::json) AS branches
+      FROM public.programs p
+      LEFT JOIN public.branches b ON b.program_id = p.id
+      WHERE p.institution_id = $1
+      GROUP BY p.id, p.name, p.institution_id
+      ORDER BY p.name
+    `, [institutionId]);
+    return res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error("Super Admin program listing failed:", error);
+    return res.status(503).json({ success: false, message: "Programs could not be loaded." });
+  }
+}
+
 export async function createInstitutionProgram(req: SuperAdminAuthenticatedRequest, res: Response) {
   if (!req.superAdmin) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
   const institutionId = text(req.params.institutionId, 100);
