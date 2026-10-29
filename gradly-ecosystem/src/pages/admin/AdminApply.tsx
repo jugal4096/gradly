@@ -434,6 +434,8 @@ export default function SuperAdminDashboard() {
     }
   }, [navigate]);
 
+  // This effect starts the asynchronous dashboard request; state changes follow its promise.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
