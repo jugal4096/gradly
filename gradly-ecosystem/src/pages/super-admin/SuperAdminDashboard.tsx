@@ -720,6 +720,9 @@ export default function SuperAdminDashboard() {
                   <button type="button" className="sd-drawer-link" onClick={openApplications}>
                     <ClipboardList size={18} /><span>Applications</span><ArrowRight size={15} />
                   </button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/requests"); }}>
+                    <Activity size={18} /><span>Request Centre</span><ArrowRight size={15} />
+                  </button>
 
                   <div className="sd-drawer-divider" />
                   <span className="sd-drawer-group-label">GOVERNANCE &amp; SECURITY</span>
