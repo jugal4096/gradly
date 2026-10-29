@@ -11,10 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./SuperAdminApplications.css";
-
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
-).replace(/\/+$/, "");
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
 const ADMIN_PERMISSION_OPTIONS = [
   {
@@ -276,6 +273,7 @@ export default function SuperAdminApplications() {
       }
 
       try {
+        if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
         if (showLoading) {
           setLoading(true);
         }
@@ -288,7 +286,7 @@ export default function SuperAdminApplications() {
             : `?status=${encodeURIComponent(status)}`;
 
         const response = await fetch(
-          `${API_BASE_URL}/super-admin/applications${query}`,
+          `${API_BASE_URL}/api/super-admin/applications${query}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -350,12 +348,16 @@ export default function SuperAdminApplications() {
     const token = getToken();
 
     if (!token) return;
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      return;
+    }
 
     setConfigurationLoading(true);
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/academic/institutions`,
+        `${API_BASE_URL}/api/academic/institutions`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -469,7 +471,7 @@ export default function SuperAdminApplications() {
       setNotice("");
 
       const response = await fetch(
-        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
+        `${API_BASE_URL}/api/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/configuration`,
         {
@@ -615,7 +617,7 @@ export default function SuperAdminApplications() {
             };
 
       const response = await fetch(
-        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
+        `${API_BASE_URL}/api/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/review`,
         {
