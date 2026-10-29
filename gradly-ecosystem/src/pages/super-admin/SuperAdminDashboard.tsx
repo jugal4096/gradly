@@ -694,7 +694,7 @@ export default function SuperAdminDashboard() {
                   className="sd-drawer-nav"
                   aria-label="Super Admin workspace navigation"
                 >
-                  <span className="sd-drawer-group-label">CORE WORKSPACE</span>
+                  <span className="sd-drawer-group-label">COMMAND CENTRE</span>
                   <button
                     type="button"
                     className="sd-drawer-link is-current"
@@ -705,136 +705,39 @@ export default function SuperAdminDashboard() {
                     <ArrowRight size={15} />
                   </button>
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate("/super-admin/users");
-                    }}
-                  >
-                    <Users size={18} />
-                    <span>Users</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/users"); }}>
+                    <Users size={18} /><span>Users</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate("/super-admin/admins");
-                    }}
-                  >
-                    <UserCog size={18} />
-                    <span>Admins</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/admins"); }}>
+                    <UserCog size={18} /><span>Administrators</span><ArrowRight size={15} />
                   </button>
-
-
-                  
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={openApplications}
-                  >
-                    <ClipboardList size={18} />
-                    <span>Applications</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/institutions"); }}>
+                    <Building2 size={18} /><span>Institutions</span><ArrowRight size={15} />
+                  </button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/curriculum"); }}>
+                    <BookOpen size={18} /><span>Curriculum</span><ArrowRight size={15} />
+                  </button>
+                  <button type="button" className="sd-drawer-link" onClick={openApplications}>
+                    <ClipboardList size={18} /><span>Applications</span><ArrowRight size={15} />
                   </button>
 
                   <div className="sd-drawer-divider" />
-                  <span className="sd-drawer-group-label">DASHBOARD TOOLS</span>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-platform-metrics")}
-                  >
-                    <Users size={18} />
-                    <span>Platform metrics</span>
-                    <ArrowRight size={15} />
+                  <span className="sd-drawer-group-label">GOVERNANCE &amp; SECURITY</span>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/audit"); }}>
+                    <FileText size={18} /><span>Quick Logs</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => { setMenuOpen(false); navigate("/super-admin/institutions"); }}
-                  >
-                    <Building2 size={18} />
-                    <span>Institutions</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/password-resets"); }}>
+                    <LockKeyhole size={18} /><span>Password Requests</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => { setMenuOpen(false); navigate("/super-admin/curriculum"); }}
-                  >
-                    <BookOpen size={18} />
-                    <span>Curriculum &amp; courses</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/safety"); }}>
+                    <ShieldAlert size={18} /><span>Security Alarm</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-work-queues")}
-                  >
-                    <ClipboardList size={18} />
-                    <span>Work queues</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/announcements"); }}>
+                    <Megaphone size={18} /><span>Super Admin Announcements</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-quick-actions")}
-                  >
-                    <ShieldCheck size={18} />
-                    <span>Quick actions</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/settings"); }}>
+                    <Settings size={18} /><span>Settings</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-recent-activity")}
-                  >
-                    <Activity size={18} />
-                    <span>Recent activity</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => { setMenuOpen(false); navigate("/super-admin/audit"); }}
-                  >
-                    <FileText size={18} />
-                    <span>Audit logs</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-system-information")}
-                  >
-                    <Building2 size={18} />
-                    <span>System information</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <div className="sd-drawer-divider" />
-                  <span className="sd-drawer-group-label">PLATFORM CONTROL</span>
-                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/requests"); }}><ClipboardList size={18} /><span>Request centre</span><ArrowRight size={15} /></button>
-                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/feedback"); }}><MessageSquare size={18} /><span>Feedback &amp; support</span><ArrowRight size={15} /></button>
-                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/password-resets"); }}><LockKeyhole size={18} /><span>Password reset requests</span><ArrowRight size={15} /></button>
-                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/safety"); }}><ShieldAlert size={18} /><span>Safety &amp; security</span><ArrowRight size={15} /></button>
-                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/announcements"); }}><Megaphone size={18} /><span>Announcements</span><ArrowRight size={15} /></button>
-                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/settings"); }}><Settings size={18} /><span>System settings</span><ArrowRight size={15} /></button>
                 </nav>
 
                 <div className="sd-drawer-footer">
