@@ -50,7 +50,7 @@ export async function listInstitutionPrograms(req: SuperAdminAuthenticatedReques
   const institutionId = text(req.params.institutionId, 100);
   try {
     const result = await pool.query(`
-      SELECT p.id, p.name, p.institution_id, COUNT(DISTINCT b.id)::int AS branch_count,
+      SELECT p.id, p.name, p.institution_id, COUNT(DISTINCT b.id)::int AS branch_count,\n        COALESCE((SELECT json_agg(json_build_object('id', ps.id, 'semester_number', ps.semester_number, 'name', ps.name) ORDER BY ps.semester_number) FROM public.program_semesters ps WHERE ps.program_id = p.id), '[]'::json) AS semesters,
         COALESCE(json_agg(json_build_object('id', b.id, 'name', b.name) ORDER BY b.name)
           FILTER (WHERE b.id IS NOT NULL), '[]'::json) AS branches
       FROM public.programs p
@@ -79,6 +79,29 @@ export async function createInstitutionProgram(req: SuperAdminAuthenticatedReque
   } catch (error) {
     console.error("Super Admin program creation failed:", error);
     return res.status(409).json({ success: false, message: "Could not create this program. Check the database constraints." });
+  }
+}
+
+export async function createInstitutionSemester(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  const institutionId = text(req.params.institutionId, 100);
+  const programId = text(req.params.programId, 100);
+  const name = text(req.body?.name, 100);
+  const rawNumber = Number(req.body?.semesterNumber);
+  if (!institutionId || !programId || name.length < 1 || !Number.isInteger(rawNumber) || rawNumber < 1 || rawNumber > 20) {
+    return res.status(400).json({ success: false, message: "Provide a semester name and a semester number between 1 and 20." });
+  }
+  try {
+    const program = await pool.query("SELECT id FROM public.programs WHERE id = $1 AND institution_id = $2 LIMIT 1", [programId, institutionId]);
+    if (!program.rowCount) return res.status(404).json({ success: false, message: "That program does not belong to the selected institution." });
+    const result = await pool.query(
+      "INSERT INTO public.program_semesters (program_id, semester_number, name) VALUES ($1, $2, $3) RETURNING id, program_id, semester_number, name",
+      [programId, rawNumber, name]
+    );
+    return res.status(201).json({ success: true, data: result.rows[0], message: "Semester added to the selected program." });
+  } catch (error) {
+    console.error("Super Admin semester creation failed:", error);
+    return res.status(409).json({ success: false, message: "Could not create this semester. Ensure the program_semesters migration has been applied and the semester number is unique for this program." });
   }
 }
 
