@@ -241,9 +241,8 @@ export default function SuperAdminApplications() {
         setApplications([]);
         setSelected(null);
         setLoading(false);
-        setError(
-          "Your Super Admin session is missing. Please sign in again."
-        );
+        setError("Your Super Admin session is missing. Please sign in again.");
+        navigate("/super-admin/login", { replace: true });
         return;
       }
 
