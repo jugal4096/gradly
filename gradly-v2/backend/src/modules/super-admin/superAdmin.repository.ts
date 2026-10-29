@@ -46,3 +46,14 @@ export async function updateSuperAdminLastLogin(
 
   return result.rows[0] ?? null;
 }
+
+/** Re-check the persisted account status on every privileged request so
+ * suspending a Super Admin takes effect without waiting for JWT expiry. */
+export async function isSuperAdminActive(superAdminId: string): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT status FROM super_admins WHERE id = $1 LIMIT 1`,
+    [superAdminId]
+  );
+
+  return result.rows[0]?.status === "ACTIVE";
+}
