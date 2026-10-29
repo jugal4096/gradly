@@ -3675,3 +3675,20 @@ html[data-super-admin-theme="dark"] .super-dashboard .sd-content-card:hover {
     transform: none;
   }
 }
+
+
+/* VISIBILITY PATCH — high contrast purple UI v2 */
+html[data-super-admin-theme="light"] .super-dashboard { color:#25143f !important; }
+html[data-super-admin-theme="light"] .super-dashboard :is(.sd-header-copy h1,.sd-hero-copy h1,.sd-section-heading h2,.sd-panel-heading h2,.sd-metric-value,.sd-queue-title,.sd-detail-heading h3,.sd-system-title) { color:#281344 !important; }
+html[data-super-admin-theme="light"] .super-dashboard :is(.sd-eyebrow,.sd-hero-label,.sd-summary-label,.sd-metric-label,.sd-queue-description,.sd-detail-description,.sd-muted-note,.sd-panel-note,.sd-activity-trail,.sd-drawer-group-label) { color:#6d5b86 !important; }
+html[data-super-admin-theme="light"] .super-dashboard :is(.sd-metric-icon,.sd-queue-icon,.sd-detail-heading-icon,.sd-action-icon,.sd-activity-icon,.sd-system-icon,.sd-hero-symbol) { color:#6d28d9 !important; }
+html[data-super-admin-theme="light"] .super-dashboard :is(.sd-metric-icon,.sd-queue-icon,.sd-detail-heading-icon,.sd-action-icon,.sd-activity-icon,.sd-system-icon) { background:linear-gradient(145deg,#f0e7ff,#e3d5ff) !important;border:1px solid #d8c4ff;box-shadow:0 7px 15px rgba(109,40,217,.14),inset 0 1px 0 #fff; }
+html[data-super-admin-theme="dark"] .super-dashboard { color:#f4efff !important; }
+html[data-super-admin-theme="dark"] .super-dashboard :is(.sd-header-copy h1,.sd-hero-copy h1,.sd-section-heading h2,.sd-panel-heading h2,.sd-metric-value,.sd-queue-title,.sd-detail-heading h3,.sd-system-title,.sd-drawer-heading h2,.sd-drawer-link) { color:#f5efff !important; }
+html[data-super-admin-theme="dark"] .super-dashboard :is(.sd-eyebrow,.sd-hero-label,.sd-summary-label,.sd-metric-label,.sd-queue-description,.sd-detail-description,.sd-muted-note,.sd-panel-note,.sd-activity-trail,.sd-drawer-group-label) { color:#c3b3dc !important; }
+html[data-super-admin-theme="dark"] .super-dashboard :is(.sd-metric-icon,.sd-queue-icon,.sd-detail-heading-icon,.sd-action-icon,.sd-activity-icon,.sd-system-icon,.sd-hero-symbol) { color:#d8bfff !important; }
+html[data-super-admin-theme="dark"] .super-dashboard :is(.sd-metric-icon,.sd-queue-icon,.sd-detail-heading-icon,.sd-action-icon,.sd-activity-icon,.sd-system-icon) { background:linear-gradient(145deg,#39245b,#241637) !important;border:1px solid #5b3d83;box-shadow:0 8px 18px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07); }
+.super-dashboard .sd-hero,.super-dashboard .sd-panel,.super-dashboard .sd-detail-panel { border-radius:22px; }
+.super-dashboard .sd-hero { box-shadow:0 20px 46px rgba(79,43,140,.16),inset 0 1px 0 rgba(255,255,255,.45); }
+html[data-super-admin-theme="dark"] .super-dashboard .sd-hero { box-shadow:0 22px 48px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08); }
+.super-dashboard :is(button,a):focus-visible { outline:3px solid #a78bfa !important;outline-offset:3px; }
