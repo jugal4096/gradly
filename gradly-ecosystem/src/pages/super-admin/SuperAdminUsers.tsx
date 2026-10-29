@@ -12,6 +12,7 @@ import {
   import { useNavigate } from "react-router-dom";
   
   import "../../styles/super-admin-dashboard.css";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
   
   interface Student {
     id: string;
@@ -59,7 +60,7 @@ import {
     },
   ];
   
-  export default function SuperAdminDashboard() {
+  export default function SuperAdminUsers() {
     const navigate = useNavigate();
   
     const [activeUsers, setActiveUsers] = useState<number | null>(null);
@@ -68,6 +69,13 @@ import {
   
     async function loadActiveUsers() {
       const token = localStorage.getItem("gradly_super_admin_token");
+
+      if (!isApiConfigured) {
+        setUsersLoading(false);
+        setUsersError(true);
+        setActiveUsers(null);
+        return;
+      }
   
       if (!token) {
         setUsersLoading(false);
