@@ -5,6 +5,7 @@ import { loginSuperAdmin } from "./superAdmin.controller";
 import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
 import { getSuperAdminAuditLogs } from "./audit.controller";
+import { getSuperAdminSecurityEvents } from "./security.controller";
 
 import {
   authenticateSuperAdminToken,
@@ -48,6 +49,12 @@ router.get(
   "/audit",
   authenticateSuperAdminToken,
   getSuperAdminAuditLogs
+);
+
+router.get(
+  "/security/events",
+  authenticateSuperAdminToken,
+  getSuperAdminSecurityEvents
 );
 
 /*
