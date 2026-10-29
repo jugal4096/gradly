@@ -15,7 +15,6 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
   const programId = clean(req.query.programId);
   const branchId = clean(req.query.branchId);
   const search = clean(req.query.search, 160);
-  const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
 
   try {
     const result = await pool.query(`
@@ -71,10 +70,9 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
           COALESCE(to_jsonb(cs)->>'course_code', '') ILIKE '%' || $4 || '%' OR
           c.id::text ILIKE '%' || $4 || '%')
       ORDER BY i.name, p.name, b.name NULLS FIRST, curriculum_name, semester_number NULLS FIRST, subject_name
-      LIMIT $5
-    `, [institutionId, programId, branchId, search, limit]);
+    `, [institutionId, programId, branchId, search]);
 
-    return res.status(200).json({ success: true, data: result.rows, count: result.rows.length, limit, readOnly: true });
+    return res.status(200).json({ success: true, data: result.rows, count: result.rows.length, readOnly: true });
   } catch (error) {
     console.error("Super Admin curriculum catalogue failed:", error);
     return res.status(503).json({
