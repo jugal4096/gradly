@@ -290,19 +290,19 @@ export default function SuperAdminApplications() {
 
         const response = await fetch(
           `${API_BASE_URL}/super-admin/applications${query}`,
-        if (response.status === 401 || response.status === 403) {
-          clearToken();
-          window.location.assign("/super-admin/login");
-          return;
-        }
-
-          {
+{
             headers: {
               Authorization: `Bearer ${token}`,
               Accept: "application/json",
             },
           }
         );
+
+        if (response.status === 401 || response.status === 403) {
+          clearToken();
+          window.location.assign("/super-admin/login");
+          return;
+        }
 
         const data = await readResponse<Application[]>(response);
 
@@ -368,19 +368,19 @@ export default function SuperAdminApplications() {
     try {
       const response = await fetch(
         `${API_BASE_URL}/academic/institutions`,
-      if (response.status === 401 || response.status === 403) {
-        clearToken();
-        window.location.assign("/super-admin/login");
-        return;
-      }
-
-        {
+{
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
         }
       );
+
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return;
+      }
 
       const data = await readResponse<Institution[]>(response);
 
@@ -497,13 +497,7 @@ export default function SuperAdminApplications() {
         `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/configuration`,
-      if (response.status === 401 || response.status === 403) {
-        clearToken();
-        window.location.assign("/super-admin/login");
-        return false;
-      }
-
-        {
+{
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -516,6 +510,18 @@ export default function SuperAdminApplications() {
           }),
         }
       );
+
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return false;
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return;
+      }
 
       const data = await readResponse<unknown>(response);
 
@@ -653,13 +659,7 @@ export default function SuperAdminApplications() {
         `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/review`,
-      if (response.status === 401 || response.status === 403) {
-        clearToken();
-        window.location.assign("/super-admin/login");
-        return;
-      }
-
-        {
+{
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
