@@ -97,7 +97,7 @@ const overviewCards: {
   {
     key: "totalUsers",
     label: "Total users",
-    description: "Global user count unavailable",
+    description: "Global count not exposed by API",
     icon: Users,
     tone: "violet",
     detail: "Monitor registered users and their account status.",
@@ -1011,6 +1011,8 @@ export default function SuperAdminDashboard() {
                     <span className="sd-metric-value">
                       {loading ? (
                         <span className="sd-skeleton" />
+                      ) : error ? (
+                        "—"
                       ) : (
                         formatCount(value)
                       )}
@@ -1136,7 +1138,7 @@ export default function SuperAdminDashboard() {
                 <div className="sd-detail-count">
                   <span>Current count</span>
                   <strong>
-                    {loading ? "—" : formatCount(selectedCount)}
+                    {loading || error ? "—" : formatCount(selectedCount)}
                   </strong>
                 </div>
 
