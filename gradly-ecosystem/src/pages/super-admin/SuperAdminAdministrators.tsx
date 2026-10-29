@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Activity, Bell, CalendarDays, Eye, MoreVertical, RefreshCw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "../../styles/super-admin-dashboard.css";
@@ -16,6 +16,8 @@ type ApiResult = { administrators?: Administrator[]; message?: string };
 type CatalogItem = { id: string; name: string; institution_id?: string; institution_name?: string; program_id?: string; program_name?: string };
 type CatalogResult = { institutions?: CatalogItem[]; programs?: CatalogItem[]; branches?: CatalogItem[]; message?: string };
 type ActivityItem = { id: string; action: string; actor_role?: string; actor_type?: string; created_at: string; metadata?: unknown };
+type AdminPageMode = "profile" | "permissions" | "activity" | "notice" | "access";
+const adminPageModes: Record<string, AdminPageMode> = { profile: "profile", permissions: "permissions", activity: "activity", notice: "notice", access: "access" };
 
 const statuses = ["ACTIVE", "SUSPENDED", "DISABLED", "DELETED"] as const;
 const permissionOptions = [
@@ -40,6 +42,8 @@ function dateInput(value: string | null | undefined) { return value ? value.slic
 
 export default function SuperAdminAdministrators() {
   const navigate = useNavigate();
+  const { adminId, adminPage } = useParams<{ adminId?: string; adminPage?: string }>();
+  const pageMode: AdminPageMode = adminPage && adminPageModes[adminPage] ? adminPageModes[adminPage] : "profile";
   const [records, setRecords] = useState<Administrator[]>([]);
   const [institutionOptions, setInstitutionOptions] = useState<CatalogItem[]>([]);
   const [programOptions, setProgramOptions] = useState<CatalogItem[]>([]);
@@ -90,6 +94,12 @@ export default function SuperAdminAdministrators() {
   }, [navigate, search, status]);
 
   useEffect(() => { void Promise.resolve().then(loadAdministrators); }, [loadAdministrators]);
+
+  useEffect(() => {
+    if (!adminId || loading) return;
+    const match = records.find(item => item.id === adminId);
+    if (match && selected?.id !== match.id) void openProfile(match);
+  }, [adminId, loading, records]);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,7 +281,7 @@ export default function SuperAdminAdministrators() {
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.last_login_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.adminship_expires_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6", whiteSpace: "nowrap" }}>
-                  <div style={{position:"relative",display:"inline-block"}}><button type="button" onClick={() => setOpenMenuId(current => current === admin.id ? null : admin.id)} aria-label={"More actions for " + admin.full_name} aria-expanded={openMenuId===admin.id} title="More administrator actions" style={{padding:9,borderRadius:9,border:"1px solid #ded7f5",background:"#f8f5ff",color:"#5b21b6"}}><MoreVertical size={18}/></button>{openMenuId===admin.id && <div role="menu" style={{position:"absolute",right:0,top:"calc(100% + 6px)",zIndex:30,minWidth:220,padding:6,borderRadius:12,background:"#fff",border:"1px solid #e4def4",boxShadow:"0 14px 36px #24124b24"}}>{["View profile","Manage permissions","View activity","Send notice","Access & account status"].map(label=><button key={label} type="button" role="menuitem" onClick={()=>{setOpenMenuId(null);void openProfile(admin);}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 9px",border:0,borderRadius:8,background:"transparent",color:"#28203f"}}>{label}</button>)}</div>}</div>
+                  <div style={{position:"relative",display:"inline-block"}}><button type="button" onClick={() => setOpenMenuId(current => current === admin.id ? null : admin.id)} aria-label={"More actions for " + admin.full_name} aria-expanded={openMenuId===admin.id} title="More administrator actions" style={{padding:9,borderRadius:9,border:"1px solid #ded7f5",background:"#f8f5ff",color:"#5b21b6"}}><MoreVertical size={18}/></button>{openMenuId===admin.id && <div role="menu" style={{position:"absolute",right:0,top:"calc(100% + 6px)",zIndex:30,minWidth:220,padding:6,borderRadius:12,background:"#fff",border:"1px solid #e4def4",boxShadow:"0 14px 36px #24124b24"}}>{[{label:"View profile",path:"profile"},{label:"Manage permissions",path:"permissions"},{label:"View activity",path:"activity"},{label:"Send notice",path:"notice"},{label:"Access & account status",path:"access"}].map(item=><button key={item.path} type="button" role="menuitem" onClick={()=>{setOpenMenuId(null);navigate(`/super-admin/admins/${encodeURIComponent(admin.id)}/${item.path}`);void openProfile(admin);}} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 9px",border:0,borderRadius:8,background:"transparent",color:"#28203f"}}>{item.label}</button>)}</div>}</div>
                 </td>
               </tr>)}
             </tbody>
@@ -282,28 +292,30 @@ export default function SuperAdminAdministrators() {
 
       {selected && <div role="dialog" aria-modal="true" aria-label={`Administrator profile: ${selected.full_name}`} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(12,8,30,.72)", display: "flex", justifyContent: "flex-end" }}>
         <section style={{ width: "min(760px,100%)", height: "100%", overflowY: "auto", background: "#17122b", color: "#fff", padding: 24, boxShadow: "-20px 0 70px #0008" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}><div><p style={{ color: "#c4b5fd", letterSpacing: 2, fontSize: 12 }}>GRADLY · ADMIN PROFILE</p><h2>{selected.full_name}</h2><p>{selected.email} · {selected.admin_code}</p></div><button type="button" onClick={() => setSelected(null)} aria-label="Close profile"><X/></button></div>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}><div><p style={{ color: "#c4b5fd", letterSpacing: 2, fontSize: 12 }}>GRADLY · ADMINISTRATOR MANAGEMENT / {pageMode.toUpperCase()}</p><h2>{pageMode === "profile" ? "Administrator profile" : pageMode === "permissions" ? "Manage permissions" : pageMode === "activity" ? "Activity history" : pageMode === "notice" ? "Send notice" : "Account access"} </h2><p>{selected.full_name}</p><p>{selected.email} · {selected.admin_code}</p></div><button type="button" onClick={() => { setSelected(null); navigate("/super-admin/admins"); }} aria-label="Close profile"><X/></button></div>
           {detailLoading && <p>Loading profile and activity…</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 10, margin: "20px 0" }}>
+          {(pageMode === "profile") && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 10, margin: "20px 0" }}>
             {[["Institution",selected.institution_name],["Program",selected.program_name || "—"],["Branch",selected.branch_name || "—"],["Status",selected.status],["Role",selected.role],["Enrollment",selected.enrollment_number || "—"],["Created",dateLabel(selected.created_at)],["Last login",dateLabel(selected.last_login_at)]].map(([k,v]) => <div key={k} style={{ padding: 14, borderRadius: 12, background: "#28203f", border: "1px solid #55427a" }}><small style={{ color: "#c4b5fd" }}>{k}</small><p>{v}</p></div>)}
           </div>
-          <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}><CalendarDays size={17}/> Adminship validity</h3>
+          </div>}
+          {pageMode === "profile" && <><h3 style={{ display: "flex", gap: 8, alignItems: "center" }}><CalendarDays size={17}/> Adminship validity</h3>
           <div style={{ display: "grid", gap: 14, gridTemplateColumns: "minmax(0,1fr)", marginBottom: 14 }}>
             <label>Adminship expiry date<input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} style={{ display: "block", width: "100%", padding: 14, marginTop: 8 }}/></label>
           </div>
-          <button type="button" disabled={savingId === selected.id} onClick={() => void saveDates()}>Save dates</button>
-          <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><SlidersHorizontal size={17}/> Permissions</h3>
+          <button type="button" disabled={savingId === selected.id} onClick={() => void saveDates()}>Save dates</button></>}
+          {pageMode === "permissions" && <><h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><SlidersHorizontal size={17}/> Permissions</h3>
           <p style={{ color: "#c4b5fd" }}>Choose the permissions to grant, then save your changes. Backend routes must enforce each permission code for it to control access.</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:10,margin:"16px 0"}}>{permissionOptions.map(option=>{const codes=permissions.split(",").map(v=>v.trim()).filter(Boolean);const checked=codes.includes(option.code);return <label key={option.code} style={{display:"flex",gap:10,alignItems:"center",padding:13,borderRadius:10,border:checked?"1px solid #a78bfa":"1px solid #55427a",background:checked?"#38265d":"#28203f",cursor:"pointer"}}><input type="checkbox" checked={checked} onChange={e=>{const next=new Set(permissions.split(",").map(v=>v.trim()).filter(Boolean));if(e.target.checked)next.add(option.code);else next.delete(option.code);setPermissions([...next].join(", "));}}/><strong>{option.label}</strong></label>})}</div>
           <label style={{display:"block",marginBottom:8}}>Other permission codes<input value={permissions.split(",").map(v=>v.trim()).filter(v=>v&&!permissionOptions.some(o=>o.code===v)).join(", ")} onChange={e=>{const extras=e.target.value.split(",").map(v=>v.trim()).filter(Boolean);const selected=permissions.split(",").map(v=>v.trim()).filter(v=>permissionOptions.some(o=>o.code===v));setPermissions([...selected,...extras].join(", "));}} placeholder="CUSTOM_PERMISSION_CODE" style={{display:"block",width:"100%",padding:12,marginTop:8}}/></label>
-          <button type="button" disabled={savingId === selected.id} onClick={() => void savePermissions()}>Save permissions</button>
-          <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><Bell size={17}/> Send a targeted notice</h3>
+          <button type="button" disabled={savingId === selected.id} onClick={() => void savePermissions()}>Save permissions</button></>}
+          {pageMode === "notice" && <><h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><Bell size={17}/> Send a targeted notice</h3>
           <input value={noticeTitle} onChange={e => setNoticeTitle(e.target.value)} maxLength={160} placeholder="Notice title" style={{ width: "100%", padding: 12, marginBottom: 8 }}/>
           <textarea value={noticeBody} onChange={e => setNoticeBody(e.target.value)} maxLength={5000} rows={4} placeholder={`Write a notice for ${selected.full_name}…`} style={{ width: "100%", padding: 12, marginBottom: 8 }}/>
-          <button type="button" disabled={savingId === selected.id || !noticeTitle.trim() || !noticeBody.trim()} onClick={() => void sendNotice()}>Send notice</button>
-          <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><Activity size={17}/> Recorded activity ({activity.length})</h3>
+          <button type="button" disabled={savingId === selected.id || !noticeTitle.trim() || !noticeBody.trim()} onClick={() => void sendNotice()}>Send notice</button></>}
+          {pageMode === "activity" && <><h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><Activity size={17}/> Recorded activity ({activity.length})</h3>
           {activity.length ? activity.map(item => <article key={item.id} style={{ padding: 12, margin: "8px 0", borderRadius: 10, background: "#28203f", border: "1px solid #55427a" }}><strong>{item.action || "Activity"}</strong><p>{dateLabel(item.created_at)} · {item.actor_role || item.actor_type || "System"}</p><small>{typeof item.metadata === "string" ? item.metadata : JSON.stringify(item.metadata || {})}</small></article>) : <p>No activity records were returned. This can mean no matching audit entries exist or the audit-log schema needs adjustment.</p>}
-          <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><ShieldCheck size={17}/> Account access controls</h3><p style={{ color: "#c4b5fd" }}>Block or suspend access temporarily, disable an account, or reactivate a non-deleted account. Deleted accounts are permanent.</p><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}><button type="button" disabled={savingId === selected.id || selected.status === "DELETED" || selected.status === "SUSPENDED"} onClick={() => void changeStatus(selected, "SUSPENDED")}>Block access</button><button type="button" disabled={savingId === selected.id || selected.status === "DELETED" || selected.status === "DISABLED"} onClick={() => void changeStatus(selected, "DISABLED")}>Disable account</button><button type="button" disabled={savingId === selected.id || selected.status === "DELETED"} onClick={() => void changeStatus(selected, "DELETED")}>Delete account</button>{selected.status !== "DELETED" && selected.status !== "ACTIVE" && <button type="button" disabled={savingId === selected.id} onClick={() => void changeStatus(selected, "ACTIVE")}>Reactivate account</button>}</div>
+          </>}
+          {pageMode === "access" && <><h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><ShieldCheck size={17}/> Account access controls</h3><p style={{ color: "#c4b5fd" }}>Block or suspend access temporarily, disable an account, or reactivate a non-deleted account. Deleted accounts are permanent.</p><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}><button type="button" disabled={savingId === selected.id || selected.status === "DELETED" || selected.status === "SUSPENDED"} onClick={() => void changeStatus(selected, "SUSPENDED")}>Block access</button><button type="button" disabled={savingId === selected.id || selected.status === "DELETED" || selected.status === "DISABLED"} onClick={() => void changeStatus(selected, "DISABLED")}>Disable account</button><button type="button" disabled={savingId === selected.id || selected.status === "DELETED"} onClick={() => void changeStatus(selected, "DELETED")}>Delete account</button>{selected.status !== "DELETED" && selected.status !== "ACTIVE" && <button type="button" disabled={savingId === selected.id} onClick={() => void changeStatus(selected, "ACTIVE")}>Reactivate account</button>}</div></>}
         </section>
       </div>}
     </main>
