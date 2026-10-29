@@ -298,6 +298,10 @@ export default function SuperAdminApplications() {
         const data = await readResponse<Application[]>(response);
 
         if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem("gradly_super_admin_token");
+            setError("Your session expired. Please sign in again.");
+          }
           throw new Error(
             getErrorMessage(
               data,
@@ -343,10 +347,8 @@ export default function SuperAdminApplications() {
     [status]
   );
 
-  // Load institutions and their departments.
+  // Institution master data is public; no Super Admin token is required.
   const loadInstitutions = useCallback(async () => {
-    const token = getToken();
-
     if (!isApiConfigured) {
       setError(API_CONFIGURATION_ERROR);
       setConfigurationLoading(false);
@@ -485,6 +487,10 @@ export default function SuperAdminApplications() {
       const data = await readResponse<unknown>(response);
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          setError("Your session expired. Please sign in again.");
+        }
         throw new Error(
           getErrorMessage(
             data,
@@ -630,6 +636,10 @@ export default function SuperAdminApplications() {
       const data = await readResponse<unknown>(response);
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          setError("Your session expired. Please sign in again.");
+        }
         throw new Error(
           getErrorMessage(
             data,
