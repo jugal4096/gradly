@@ -186,7 +186,7 @@ export default function SuperAdminUsers() {
                 <td style={{ padding: 14, borderBottom: "1px solid #f0edf6", color: "#70647f", fontSize: 12 }}>{formatDate(student.last_login_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0edf6" }}><div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                   <button type="button" style={actionStyle} onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)}><Eye size={14} /> Profile</button>
-                  <button type="button" style={actionStyle} onClick={() => void showActivity(student)}><Activity size={14} /> Activity</button>
+                  <button type="button" style={actionStyle} onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}/activity`)}><Activity size={14} /> Activity</button>
                   <button type="button" disabled={busyId === student.id} style={{ ...actionStyle, background: student.active ? "#fff2f0" : "#ecfbf1", color: student.active ? "#a33131" : "#17663b", borderColor: student.active ? "#f0c8c4" : "#b9e6c9", opacity: busyId === student.id ? .6 : 1 }} onClick={() => void changeStatus(student)}><Power size={14} />{busyId === student.id ? "Saving…" : student.active ? "Disable" : "Reactivate"}</button>
                 </div></td>
               </tr>)}
