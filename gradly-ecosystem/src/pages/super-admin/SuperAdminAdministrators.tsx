@@ -47,7 +47,8 @@ export default function SuperAdminAdministrators() {
       const query = new URLSearchParams();
       if (search.trim()) query.set("search", search.trim());
       if (status !== "ALL") query.set("status", status);
-      const suffix = query.size ? `?${query.toString()}` : "";
+      const encodedQuery = query.toString();
+      const suffix = encodedQuery ? `?${encodedQuery}` : "";
       const response = await fetch(`${API_BASE_URL}/api/super-admin/administrators${suffix}`, {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       });
@@ -117,7 +118,7 @@ export default function SuperAdminAdministrators() {
         {([{label:"Active",value:summary.active},{label:"Suspended",value:summary.suspended},{label:"Disabled",value:summary.disabled}] as const).map((item) => (
           <div className="sd-metric-card" key={item.label}>
             <span className="sd-metric-label">{item.label}</span>
-            <strong className="sd-metric-value">{loading ? "—" : item.value}</strong>
+            <strong className="sd-metric-value">{loading || error ? "—" : item.value}</strong>
             <span className="sd-metric-bottom"><span>In the current result set</span></span>
           </div>
         ))}
