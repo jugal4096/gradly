@@ -108,3 +108,21 @@ export async function updateCurriculumSettings(req: SuperAdminAuthenticatedReque
     return res.status(503).json({ success: false, message: "Curriculum settings could not be saved. Verify the curricula schema and database migration state." });
   }
 }
+
+export async function listCurriculumProgramOptions(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  const institutionId = clean(req.query.institutionId);
+  try {
+    const result = await pool.query(`
+      SELECT p.id::text AS id, p.name AS name, i.id::text AS institution_id
+      FROM public.programs p
+      JOIN public.institutions i ON i.id = p.institution_id
+      WHERE ($1 = '' OR i.id::text = $1)
+      ORDER BY i.name, p.name
+    `, [institutionId]);
+    return res.status(200).json({ success: true, data: result.rows, count: result.rows.length });
+  } catch (error) {
+    console.error("Curriculum program options failed:", error);
+    return res.status(503).json({ success: false, message: "Program options could not be loaded." });
+  }
+}
