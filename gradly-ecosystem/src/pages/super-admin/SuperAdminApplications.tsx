@@ -517,12 +517,6 @@ export default function SuperAdminApplications() {
         return false;
       }
 
-      if (response.status === 401 || response.status === 403) {
-        clearToken();
-        window.location.assign("/super-admin/login");
-        return;
-      }
-
       const data = await readResponse<unknown>(response);
 
       if (!response.ok) {
@@ -669,6 +663,12 @@ export default function SuperAdminApplications() {
           body: JSON.stringify(payload),
         }
       );
+
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return;
+      }
 
       const data = await readResponse<unknown>(response);
 
