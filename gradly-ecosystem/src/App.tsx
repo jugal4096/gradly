@@ -36,6 +36,7 @@ import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminAdministrators from "./pages/super-admin/SuperAdminAdministrators";
 import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
 import SuperAdminSecurity from "./pages/super-admin/SuperAdminSecurity";
+import SuperAdminHierarchy from "./pages/super-admin/SuperAdminHierarchy";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -145,6 +146,11 @@ function App() {
           <Route
             path="security"
             element={<SuperAdminSecurity />}
+          />
+
+          <Route
+            path="hierarchy"
+            element={<SuperAdminHierarchy />}
           />
 
           <Route
