@@ -428,7 +428,7 @@ export default function SuperAdminDashboard() {
   }, [navigate]);
 
   useEffect(() => {
-    void loadDashboard();
+    void Promise.resolve().then(() => loadDashboard());
   }, [loadDashboard]);
 
   useEffect(() => {
