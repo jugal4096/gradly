@@ -1,13 +1,9 @@
 import {
-  Activity,
-  BookOpen,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
   ScrollText,
-  Settings,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -19,6 +15,7 @@ import {
 } from "react-router-dom";
 
 import "../styles/super-admin.css";
+import { clearToken } from "../lib/superAdminSession";
 
 
 const controlNavigation = [
@@ -44,28 +41,9 @@ const controlNavigation = [
     icon: ClipboardList,
   },
   {
-    label: "Feedback",
-    path: "/super-admin/feedback",
-    icon: MessageSquare,
-  },
-  {
-    label: "Curriculum",
-    path: "/super-admin/curriculum",
-    icon: BookOpen,
-  },
-  {
     label: "Audit Logs",
     path: "/super-admin/audit",
     icon: ScrollText,
-  },
-];
-
-
-const systemNavigation = [
-  {
-    label: "Settings",
-    path: "/super-admin/settings",
-    icon: Settings,
   },
 ];
 
@@ -77,9 +55,7 @@ export default function SuperAdminLayout() {
 
   function handleLogout() {
 
-    localStorage.removeItem(
-      "gradly_super_admin_token"
-    );
+    clearToken();
 
     navigate(
       "/super-admin/login",
@@ -175,62 +151,6 @@ export default function SuperAdminLayout() {
                     key={item.path}
                     to={item.path}
                     end={item.end}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
-                );
-
-              }
-            )}
-
-          </nav>
-
-
-          {/* =================================================
-              SYSTEM
-              ================================================= */}
-
-          <div className="sidebar-heading sidebar-system-heading">
-            SYSTEM
-          </div>
-
-
-          <nav className="sidebar-navigation">
-
-            {systemNavigation.map(
-              (item) => {
-
-                const Icon =
-                  item.icon;
-
-                return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
                     className={({ isActive }) =>
                       `sidebar-link ${
                         isActive
