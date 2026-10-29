@@ -53,6 +53,9 @@ export default function SuperAdminAdministrators() {
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [expiryTarget, setExpiryTarget] = useState<Administrator | null>(null);
+  const [expiryDate, setExpiryDate] = useState("");
+  const [expiryBusy, setExpiryBusy] = useState(false);
 
   const loadAdministrators = useCallback(async (nextOffset: number) => {
     if (!isApiConfigured) {
@@ -161,6 +164,57 @@ export default function SuperAdminAdministrators() {
     }
   }
 
+  async function saveExpiry() {
+    if (!expiryTarget) return;
+    if (!expiryDate) {
+      setError("Choose a new expiry date.");
+      return;
+    }
+    const expiryInstant = new Date(`${expiryDate}T23:59:59.000Z`);
+    if (Number.isNaN(expiryInstant.getTime()) || expiryInstant.getTime() <= Date.now()) {
+      setError("The new expiry date must be in the future.");
+      return;
+    }
+    if (!window.confirm(`Confirm extending adminship for ${expiryTarget.full_name} until ${expiryDate}?`)) return;
+    const token = getToken();
+    if (!token) {
+      clearToken();
+      window.location.assign("/super-admin/login");
+      return;
+    }
+    setExpiryBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/super-admin/administrators/${encodeURIComponent(expiryTarget.id)}/adminship`,
+        {
+          method: "PATCH",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ expiresAt: expiryInstant.toISOString() }),
+        }
+      );
+      const result = (await response.json().catch(() => ({}))) as { message?: string };
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+        window.location.assign("/super-admin/login");
+        return;
+      }
+      if (!response.ok) throw new Error(result.message || "Could not extend administrator expiry.");
+      setNotice(`Adminship expiry updated for ${expiryTarget.full_name}.`);
+      setExpiryTarget(null);
+      await loadAdministrators(0);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not extend administrator expiry.");
+    } finally {
+      setExpiryBusy(false);
+    }
+  }
+
   return (
     <section className="sa-admins-page">
       <header className="sa-admins-header">
@@ -227,7 +281,7 @@ export default function SuperAdminAdministrators() {
                 <td><span className={`sa-admins-status sa-admins-status-${(admin.status || "unknown").toLowerCase()}`}>{prettyStatus(admin.status)}</span><small className="sa-admins-registration">Registration: {prettyStatus(admin.registration_status)}</small></td>
                 <td>{formatDate(admin.adminship_expires_at)}</td>
                 <td>{formatDate(admin.last_login_at)}</td>
-                <td><button className={`sa-admins-action ${admin.status === "ACTIVE" ? "sa-admins-action-warning" : "sa-admins-action-primary"}`} type="button" onClick={() => void changeStatus(admin)} disabled={busyId === admin.id || admin.status === "DISABLED"}>{busyId === admin.id ? "Saving…" : admin.status === "ACTIVE" ? "Suspend" : admin.status === "SUSPENDED" ? "Reactivate" : "Disabled"}</button></td>
+                <td><div className="sa-admins-row-actions"><button className={`sa-admins-action ${admin.status === "ACTIVE" ? "sa-admins-action-warning" : "sa-admins-action-primary"}`} type="button" onClick={() => void changeStatus(admin)} disabled={busyId === admin.id || admin.status === "DISABLED"}>{busyId === admin.id ? "Saving…" : admin.status === "ACTIVE" ? "Suspend" : admin.status === "SUSPENDED" ? "Reactivate" : "Disabled"}</button><button className="sa-admins-action sa-admins-action-primary" type="button" onClick={() => { setExpiryTarget(admin); setExpiryDate(admin.adminship_expires_at ? admin.adminship_expires_at.slice(0, 10) : ""); setError(""); }} disabled={admin.status === "DISABLED"}>Extend</button></div></td>
               </tr>
             ))}
           </tbody>
@@ -240,7 +294,16 @@ export default function SuperAdminAdministrators() {
           <button type="button" onClick={() => void loadAdministrators(offset + 25)} disabled={loading || !hasMore}>Next</button>
         </div>
       </footer>
-      <p className="sa-admins-footnote">Sensitive status changes are confirmed before submission. Backend authorization remains the source of truth.</p>
+      <p className="sa-admins-footnote">Sensitive status changes and expiry extensions require confirmation. Backend authorization remains the source of truth.</p>
+      {expiryTarget && <div className="sa-admins-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !expiryBusy) setExpiryTarget(null); }}>
+        <section className="sa-admins-modal" role="dialog" aria-modal="true" aria-labelledby="sa-admins-expiry-title">
+          <div className="sa-admins-modal-icon"><ShieldCheck size={21} /></div>
+          <h2 id="sa-admins-expiry-title">Extend administrator access</h2>
+          <p>Choose a new expiry date for <strong>{expiryTarget.full_name}</strong>. This change is recorded by the backend.</p>
+          <label className="sa-admins-expiry-field"><span>New expiry date</span><input type="date" autoFocus min={new Date().toISOString().slice(0, 10)} value={expiryDate} onChange={(event) => setExpiryDate(event.target.value)} /></label>
+          <div className="sa-admins-modal-actions"><button type="button" onClick={() => setExpiryTarget(null)} disabled={expiryBusy}>Cancel</button><button type="button" onClick={() => void saveExpiry()} disabled={expiryBusy || !expiryDate}>{expiryBusy ? "Saving…" : "Confirm extension"}</button></div>
+        </section>
+      </div>}
     </section>
   );
 }
