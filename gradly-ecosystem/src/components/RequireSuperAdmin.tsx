@@ -14,6 +14,8 @@ export default function RequireSuperAdmin({
   const [state, setState] = useState<GuardState>("checking");
   const [attempt, setAttempt] = useState(0);
 
+  // Session verification is an asynchronous external-system check; its result updates guard state.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     let cancelled = false;
     setState("checking");
