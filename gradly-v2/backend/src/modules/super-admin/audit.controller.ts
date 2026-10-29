@@ -27,14 +27,14 @@ export async function getSuperAdminAuditLogs(
   const values: unknown[] = [];
 
   if (search) {
-    values.push(`%${search.replace(/[\\%_]/g, "\\$&")}%`);
+    values.push(`%${search}%`);
     const index = values.length;
     conditions.push(`(
-      action ILIKE $${index} ESCAPE '\\'
-      OR COALESCE(actor_role, '') ILIKE $${index} ESCAPE '\\'
-      OR COALESCE(entity_table, '') ILIKE $${index} ESCAPE '\\'
-      OR COALESCE(entity_id::text, '') ILIKE $${index} ESCAPE '\\'
-      OR COALESCE(actor_id::text, '') ILIKE $${index} ESCAPE '\\'
+      action ILIKE ${index}
+      OR COALESCE(actor_role, '') ILIKE ${index}
+      OR COALESCE(entity_table, '') ILIKE ${index}
+      OR COALESCE(entity_id::text, '') ILIKE ${index}
+      OR COALESCE(actor_id::text, '') ILIKE ${index}
     )`);
   }
 
