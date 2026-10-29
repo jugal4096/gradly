@@ -8,8 +8,8 @@ import {
     getStudents,
     setStudentActive,
     getStudentActivity,
-    findGuestSessions,
   } from "./user-management.service";
+  import { findGuestSessions } from "./user-management.repository";
   
   import {
     SuperAdminAuthenticatedRequest,
