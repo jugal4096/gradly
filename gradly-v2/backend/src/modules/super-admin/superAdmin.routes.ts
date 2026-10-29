@@ -6,6 +6,7 @@ import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
 import { getSuperAdminAuditLogs } from "./audit.controller";
 import { getSuperAdminSecurityEvents } from "./security.controller";
+import { getSuperAdminAcademicHierarchy } from "./hierarchy.controller";
 
 import {
   authenticateSuperAdminToken,
@@ -55,6 +56,12 @@ router.get(
   "/security/events",
   authenticateSuperAdminToken,
   getSuperAdminSecurityEvents
+);
+
+router.get(
+  "/hierarchy",
+  authenticateSuperAdminToken,
+  getSuperAdminAcademicHierarchy
 );
 
 /*
