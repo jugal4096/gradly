@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   BookOpen,
   Building2,
-  CheckCircle2,
   ClipboardList,
   Clock3,
   FileText,
