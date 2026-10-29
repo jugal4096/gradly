@@ -1919,9 +1919,10 @@
   margin-top: 0;
 }
 
+/* Keep the workspace header visible on desktop and mobile. */
 @media (min-width: 1051px) {
   .sd-main-column > .sd-navigation-bar {
-    display: none;
+    display: flex;
   }
 }
 
