@@ -50,7 +50,8 @@ export default function SuperAdminUsers() {
       if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
       const params = new URLSearchParams();
       if (query.trim()) params.set("search", query.trim());
-      const suffix = params.size ? `?${params.toString()}` : "";
+      const encodedQuery = params.toString();
+      const suffix = encodedQuery ? `?${encodedQuery}` : "";
       const response = await fetch(`${API_BASE_URL}/api/super-admin/users${suffix}`, {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
         signal,
