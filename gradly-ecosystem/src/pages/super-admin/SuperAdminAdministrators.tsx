@@ -36,6 +36,7 @@ export default function SuperAdminAdministrators() {
   const [savingId, setSavingId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [lastLoadedCount, setLastLoadedCount] = useState<number | null>(null);
 
   const loadAdministrators = useCallback(async () => {
     setLoading(true);
@@ -53,15 +54,18 @@ export default function SuperAdminAdministrators() {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       });
       const result = await response.json().catch(() => null) as ListResponse | null;
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         localStorage.removeItem("gradly_super_admin_token");
-        throw new Error("Your session is invalid or no longer authorized. Please sign in again.");
+        throw new Error("Your session expired. Please sign in again.");
       }
+      if (response.status === 403) throw new Error("This account is not authorized to manage administrators.");
       if (!response.ok) throw new Error(result?.message || `Unable to load administrators (HTTP ${response.status}).`);
       if (!Array.isArray(result?.administrators)) throw new Error("The API returned an unexpected administrator list.");
       setRecords(result.administrators);
+      setLastLoadedCount(result.administrators.length);
     } catch (caught) {
       setRecords([]);
+      setLastLoadedCount(null);
       setError(caught instanceof Error ? caught.message : "Unable to load administrators.");
     } finally {
       setLoading(false);
@@ -163,7 +167,7 @@ export default function SuperAdminAdministrators() {
             </tbody>
           </table>
         </div>
-        <p style={{ color: "#737d91", fontSize: 12, marginTop: 12 }}>Showing {records.length} matching records returned by the API. Status changes are confirmed before submission and require Super Admin authorization.</p>
+        <p style={{ color: "#737d91", fontSize: 12, marginTop: 12 }}>{loading ? "Loading matching records…" : error || lastLoadedCount === null ? "Record count unavailable." : `Showing ${lastLoadedCount} matching records returned by the API. Counts reflect current filters, not platform-wide totals.`} Status changes require Super Admin authorization.</p>
       </section>
     </main>
   );
