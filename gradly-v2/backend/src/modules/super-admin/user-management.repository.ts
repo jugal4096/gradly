@@ -329,17 +329,27 @@ export async function findGuestSessions(filters: { search?: string; institution?
        first_seen_at,
        last_seen_at,
        expires_at,
-       COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution') AS institution_name,
-       COALESCE((metadata->>'disabled')::boolean, false) AS disabled,
+       COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name) AS institution_name,
+       (metadata->>'disabled' = 'true') AS disabled,
        CASE
          WHEN COALESCE((metadata->>'disabled')::boolean, false) THEN false
          WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN false
          ELSE true
        END AS active
      FROM guest_sessions
+     LEFT JOIN LATERAL (
+       SELECT i.name AS institution_name
+       FROM guest_semesters gs
+       LEFT JOIN curricula c ON c.id = gs.curriculum_id
+       LEFT JOIN programs p ON p.id = c.program_id
+       LEFT JOIN institutions i ON i.id = p.institution_id
+       WHERE gs.guest_session_id = guest_sessions.id
+       ORDER BY gs.updated_at DESC NULLS LAST
+       LIMIT 1
+     ) selected ON true
      WHERE ($1::text IS NULL OR id::text ILIKE '%' || $1 || '%'
-       OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', '') ILIKE '%' || $1 || '%')
-       AND ($2::text IS NULL OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', '') = $2)
+       OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name, '') ILIKE '%' || $1 || '%')
+       AND ($2::text IS NULL OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name, '') = $2)
        AND ($3::boolean IS NULL OR
          (CASE WHEN COALESCE((metadata->>'disabled')::boolean, false) THEN false
                WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN false ELSE true END) = $3)
