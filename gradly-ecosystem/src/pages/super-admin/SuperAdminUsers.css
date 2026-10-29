@@ -433,3 +433,14 @@ html[data-super-admin-theme="dark"] .super-user-avatar { color:#d7c4ff;backgroun
 html[data-super-admin-theme="dark"] .super-users-empty,
 html[data-super-admin-theme="dark"] .super-users-empty svg { color:#b9adcf; }
 html[data-super-admin-theme="dark"] .super-users-error { color:#ffd6d6;background:#351b22;border-color:#75404a; }
+
+
+/* High-contrast purple icons and typography in both appearance modes */
+html[data-super-admin-theme="light"] .super-users { color:#291743; }
+html[data-super-admin-theme="light"] .super-users :is(h1,h2,h3,th,td,label,strong) { color:#291743; }
+html[data-super-admin-theme="light"] .super-users :is(p,small,.muted,.subtitle) { color:#6e5c83; }
+html[data-super-admin-theme="light"] .super-users svg { color:#6d28d9;opacity:1; }
+html[data-super-admin-theme="dark"] .super-users { color:#f5efff; }
+html[data-super-admin-theme="dark"] .super-users :is(h1,h2,h3,th,td,label,strong) { color:#f5efff; }
+html[data-super-admin-theme="dark"] .super-users :is(p,small,.muted,.subtitle) { color:#c3b4dc; }
+html[data-super-admin-theme="dark"] .super-users svg { color:#d8bfff;opacity:1; }
