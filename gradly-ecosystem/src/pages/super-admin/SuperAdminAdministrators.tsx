@@ -22,6 +22,8 @@ type Administrator = {
 type ListResponse = {
   administrators?: Administrator[];
   count?: number;
+  total?: number;
+  page?: { limit: number; offset: number; hasMore: boolean };
   message?: string;
 };
 
@@ -48,8 +50,11 @@ export default function SuperAdminAdministrators() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
-  const loadAdministrators = useCallback(async () => {
+  const loadAdministrators = useCallback(async (nextOffset: number) => {
     if (!isApiConfigured) {
       setError(API_CONFIGURATION_ERROR);
       setLoading(false);
@@ -70,6 +75,8 @@ export default function SuperAdminAdministrators() {
       if (search.trim()) params.set("search", search.trim());
       if (statusFilter) params.set("status", statusFilter);
       if (registrationFilter) params.set("registrationStatus", registrationFilter);
+      params.set("limit", "25");
+      params.set("offset", String(nextOffset));
 
       const query = params.toString();
       const response = await fetch(
@@ -87,7 +94,11 @@ export default function SuperAdminAdministrators() {
       if (!response.ok) {
         throw new Error(result.message || `Could not load administrators (${response.status}).`);
       }
-      setAdministrators(Array.isArray(result.administrators) ? result.administrators : []);
+      const rows = Array.isArray(result.administrators) ? result.administrators : [];
+      setAdministrators(rows);
+      setOffset(nextOffset);
+      setTotal(Number(result.total ?? result.count ?? rows.length));
+      setHasMore(Boolean(result.page?.hasMore));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not load administrators.");
     } finally {
@@ -98,7 +109,7 @@ export default function SuperAdminAdministrators() {
   // This effect starts an asynchronous API request; state updates happen after it settles.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadAdministrators();
+    void loadAdministrators(0);
   }, [loadAdministrators]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -142,7 +153,7 @@ export default function SuperAdminAdministrators() {
       }
       if (!response.ok) throw new Error(result.message || `Could not ${action} administrator.`);
       setNotice(`${admin.full_name} is now ${prettyStatus(nextStatus)}.`);
-      await loadAdministrators();
+      await loadAdministrators(0);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : `Could not ${action} administrator.`);
     } finally {
@@ -158,7 +169,7 @@ export default function SuperAdminAdministrators() {
           <h1>Administrator management</h1>
           <p>Review administrator accounts, assigned academic scope, status, and expiry.</p>
         </div>
-        <button className="sa-admins-refresh" type="button" onClick={() => void loadAdministrators()} disabled={loading}>
+        <button className="sa-admins-refresh" type="button" onClick={() => void loadAdministrators(offset)} disabled={loading}>
           <RefreshCw size={16} className={loading ? "sa-admins-spin" : ""} />
           Refresh
         </button>
@@ -198,7 +209,7 @@ export default function SuperAdminAdministrators() {
         </label>
       </form>
 
-      {error && <div className="sa-admins-alert sa-admins-alert-error" role="alert"><AlertCircle size={17} /><span>{error}</span><button type="button" onClick={() => void loadAdministrators()}>Retry</button></div>}
+      {error && <div className="sa-admins-alert sa-admins-alert-error" role="alert"><AlertCircle size={17} /><span>{error}</span><button type="button" onClick={() => void loadAdministrators(offset)}>Retry</button></div>}
       {notice && <div className="sa-admins-alert sa-admins-alert-success" role="status"><CheckCircle2 size={17} /><span>{notice}</span></div>}
 
       <div className="sa-admins-table-wrap">
@@ -222,6 +233,13 @@ export default function SuperAdminAdministrators() {
           </tbody>
         </table>
       </div>
+      <footer className="sa-admins-pagination">
+        <span>Showing {total === 0 ? 0 : offset + 1}–{Math.min(offset + administrators.length, total)} of {total.toLocaleString("en-IN")}</span>
+        <div>
+          <button type="button" onClick={() => void loadAdministrators(Math.max(0, offset - 25))} disabled={loading || offset === 0}>Previous</button>
+          <button type="button" onClick={() => void loadAdministrators(offset + 25)} disabled={loading || !hasMore}>Next</button>
+        </div>
+      </footer>
       <p className="sa-admins-footnote">Sensitive status changes are confirmed before submission. Backend authorization remains the source of truth.</p>
     </section>
   );
