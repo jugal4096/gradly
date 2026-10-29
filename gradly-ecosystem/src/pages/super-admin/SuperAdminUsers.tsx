@@ -57,10 +57,13 @@ export default function SuperAdminUsers() {
         signal,
       });
       const result = await response.json().catch(() => null) as UsersResponse | null;
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         localStorage.removeItem("gradly_super_admin_token");
         navigate("/super-admin/login", { replace: true });
-        throw new Error("Your session is invalid or no longer authorized. Please sign in again.");
+        throw new Error("Your session expired. Please sign in again.");
+      }
+      if (response.status === 403) {
+        throw new Error("This account is not authorized to view student records.");
       }
       if (!response.ok) throw new Error(result?.message || `Unable to load users (HTTP ${response.status}).`);
       if (!Array.isArray(result?.students)) throw new Error("The API returned an unexpected user list.");
