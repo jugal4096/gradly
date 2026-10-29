@@ -45,7 +45,7 @@ export async function getSuperAdminWorkspace(
       );
     } else if (moduleName === "curriculum") {
       result = await pool.query(
-        `SELECT id, institution_id, branch_id, status, created_at, updated_at
+        `SELECT id, institution_id, branch_id, status, created_at
          FROM public.curriculum_change_requests
          WHERE ($1 = '' OR COALESCE(status, '') ILIKE '%' || $1 || '%'
                 OR COALESCE(institution_id::text, '') ILIKE '%' || $1 || '%')
@@ -65,7 +65,7 @@ export async function getSuperAdminWorkspace(
       );
     } else {
       result = await pool.query(
-        `SELECT id, status, created_at, updated_at
+        `SELECT id, status, created_at
          FROM public.feedback_requests
          WHERE ($1 = '' OR COALESCE(status, '') ILIKE '%' || $1 || '%'
                 OR COALESCE(id::text, '') ILIKE '%' || $1 || '%')
