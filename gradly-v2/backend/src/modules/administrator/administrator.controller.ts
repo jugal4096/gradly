@@ -146,11 +146,11 @@ export async function updateAdministratorStatus(
     if (
       status !== "ACTIVE" &&
       status !== "SUSPENDED" &&
-      status !== "DISABLED"
+      status !== "DISABLED" &&\n      status !== "DELETED"
     ) {
       return res.status(400).json({
         message:
-          "Status must be ACTIVE, SUSPENDED, or DISABLED.",
+          "Status must be ACTIVE, SUSPENDED, DISABLED, or DELETED.",
       });
     }
 
