@@ -6,22 +6,12 @@ import {
     UserRound,
   } from "lucide-react";
   
-  import {
-    useEffect,
-    useState,
-  } from "react";
+import { useEffect, useState } from "react";
   
-  import {
-    useNavigate,
-    useParams,
-  } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
   
-  import "./SuperAdminUserDetails.css";
-  
-  
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:5000/api";
+import "./SuperAdminUserDetails.css";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
   
   
   interface Student {
@@ -114,7 +104,7 @@ import {
         }
   
         try {
-  
+          if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
           const token =
             localStorage.getItem(
               "gradly_super_admin_token"
@@ -130,7 +120,7 @@ import {
   
           const response =
             await fetch(
-              `${API_BASE_URL}/super-admin/users/${userId}`,
+              `${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(userId)}`,
               {
                 headers: {
                   Authorization:
