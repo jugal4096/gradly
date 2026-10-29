@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
 type Institution = { id: string; name: string };
+type ProgramOption = { id: string; name: string; institution_id: string };
 type Curriculum = {
   id: string; curriculum_name: string; institution_id: string; institution_name: string;
   program_id: string; program_name: string; branch_id: string | null; branch_name: string | null;
@@ -18,6 +19,7 @@ const label: React.CSSProperties = { display: "grid", gap: 8, color: "#d8c8f2", 
 export default function SuperAdminCurriculum() {
   const navigate = useNavigate();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [programOptions, setProgramOptions] = useState<ProgramOption[]>([]);
   const [rows, setRows] = useState<Curriculum[]>([]);
   const [institutionId, setInstitutionId] = useState("");
   const [programId, setProgramId] = useState("");
@@ -51,12 +53,14 @@ export default function SuperAdminCurriculum() {
   const load = useCallback(async () => {
     setLoading(true); setError("");
     try {
-      const [institutionData, curriculumData] = await Promise.all([
+      const [institutionData, curriculumData, programOptionData] = await Promise.all([
         request("/institutions?limit=300"),
-        request("/curriculum/catalog?limit=500")
+        request("/curriculum/catalog?limit=500"),
+        request("/curriculum/program-options")
       ]);
       setInstitutions(institutionData as Institution[]);
       setRows(curriculumData as Curriculum[]);
+      setProgramOptions(programOptionData as ProgramOption[]);
       setLoadedAt(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to load curriculum data.");
@@ -67,9 +71,9 @@ export default function SuperAdminCurriculum() {
   useEffect(() => { void load(); }, [load]);
 
   const programs = useMemo(() => {
-    const source = rows.filter(row => !institutionId || row.institution_id === institutionId);
-    return [...new Map(source.map(row => [row.program_id, { id: row.program_id, name: row.program_name }])).values()].sort((a,b) => a.name.localeCompare(b.name));
-  }, [rows, institutionId]);
+    const source = programOptions.filter(program => !institutionId || program.institution_id === institutionId);
+    return [...new Map(source.map(program => [program.id, { id: program.id, name: program.name }])).values()].sort((a,b) => a.name.localeCompare(b.name));
+  }, [programOptions, institutionId]);
   const branches = useMemo(() => {
     const source = rows.filter(row => (!institutionId || row.institution_id === institutionId) && (!programId || row.program_id === programId) && row.branch_name?.trim());
     // Deduplicate options by normalized branch name, not database ID.
