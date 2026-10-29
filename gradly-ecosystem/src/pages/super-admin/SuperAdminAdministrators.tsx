@@ -32,15 +32,12 @@ export default function SuperAdminAdministrators() {
   const [program, setProgram] = useState("ALL");
   const [branch, setBranch] = useState("ALL");
   const [sortBy, setSortBy] = useState("name");
-  const [graduationFrom, setGraduationFrom] = useState("");
-  const [graduationTo, setGraduationTo] = useState("");
   const [selected, setSelected] = useState<Administrator | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [permissions, setPermissions] = useState("");
   const [noticeTitle, setNoticeTitle] = useState("");
   const [noticeBody, setNoticeBody] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
-  const [graduationDate, setGraduationDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [savingId, setSavingId] = useState("");
@@ -81,16 +78,14 @@ export default function SuperAdminAdministrators() {
     const filtered = records.filter(r =>
       (institution === "ALL" || (r.institution_id || r.institution_name) === institution) &&
       (program === "ALL" || (r.program_id || r.program_name) === program) &&
-      (branch === "ALL" || (r.branch_id || r.branch_name) === branch) &&
-      (!graduationFrom || (!!r.graduation_date && dateInput(r.graduation_date) >= graduationFrom)) &&
-      (!graduationTo || (!!r.graduation_date && dateInput(r.graduation_date) <= graduationTo))
+      (branch === "ALL" || (r.branch_id || r.branch_name) === branch)
     );
     return filtered.sort((a, b) => {
-      const av = sortBy === "institution" ? a.institution_name : sortBy === "program" ? a.program_name : sortBy === "branch" ? a.branch_name : sortBy === "graduation" ? a.graduation_date : sortBy === "expiry" ? a.adminship_expires_at : a.full_name;
-      const bv = sortBy === "institution" ? b.institution_name : sortBy === "program" ? b.program_name : sortBy === "branch" ? b.branch_name : sortBy === "graduation" ? b.graduation_date : sortBy === "expiry" ? b.adminship_expires_at : b.full_name;
+      const av = sortBy === "institution" ? a.institution_name : sortBy === "program" ? a.program_name : sortBy === "branch" ? a.branch_name : sortBy === "expiry" ? a.adminship_expires_at : a.full_name;
+      const bv = sortBy === "institution" ? b.institution_name : sortBy === "program" ? b.program_name : sortBy === "branch" ? b.branch_name : sortBy === "expiry" ? b.adminship_expires_at : b.full_name;
       return (av || "9999").localeCompare(bv || "9999");
     });
-  }, [records, institution, program, branch, graduationFrom, graduationTo, sortBy]);
+  }, [records, institution, program, branch, sortBy]);
 
   const summary = useMemo(() => ({
     active: records.filter(r => r.status === "ACTIVE").length,
@@ -113,14 +108,14 @@ export default function SuperAdminAdministrators() {
   }
 
   async function openProfile(admin: Administrator) {
-    setSelected(admin); setActivity([]); setPermissions(""); setExpiryDate(dateInput(admin.adminship_expires_at)); setGraduationDate(dateInput(admin.graduation_date)); setDetailLoading(true); setError(""); setSuccess("");
+    setSelected(admin); setActivity([]); setPermissions(""); setExpiryDate(dateInput(admin.adminship_expires_at)); setDetailLoading(true); setError(""); setSuccess("");
     try {
       const [details, logs, perms] = await Promise.all([
         requestFor(admin, ""), requestFor(admin, "activity"), requestFor(admin, "permissions")
       ]);
       const full = details.administrator || admin;
       setSelected(full);
-      setExpiryDate(dateInput(full.adminship_expires_at)); setGraduationDate(dateInput(full.graduation_date));
+      setExpiryDate(dateInput(full.adminship_expires_at));
       setActivity(Array.isArray(logs.activity) ? logs.activity : []);
       setPermissions(Array.isArray(perms.permissions) ? perms.permissions.filter((p: { granted?: boolean }) => p.granted !== false).map((p: { permission_code: string }) => p.permission_code).join(", ") : "");
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not load administrator details."); }
@@ -149,7 +144,6 @@ export default function SuperAdminAdministrators() {
     setSavingId(selected.id); setError(""); setSuccess("");
     try {
       if (expiryDate) await requestFor(selected, "adminship", "PATCH", { expiresAt: expiryDate });
-      if (graduationDate) await requestFor(selected, "graduation-date", "PATCH", { graduationDate });
       setSuccess("Administrator dates saved."); await loadAdministrators();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to save dates."); }
     finally { setSavingId(""); }
@@ -198,25 +192,22 @@ export default function SuperAdminAdministrators() {
           <label>Institution <select value={institution} onChange={e => setInstitution(e.target.value)}><option value="ALL">All institutions</option>{institutions.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           <label>Program <select value={program} onChange={e => setProgram(e.target.value)}><option value="ALL">All programs</option>{programs.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
           <label>Branch <select value={branch} onChange={e => setBranch(e.target.value)}><option value="ALL">All branches</option>{branches.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-          <label>Sort by <select value={sortBy} onChange={e => setSortBy(e.target.value)}>{[["name","Name"],["institution","Institution"],["program","Program"],["branch","Branch"],["graduation","Graduation date"],["expiry","Adminship expiry"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-          <label>Graduation from <input type="date" value={graduationFrom} onChange={e => setGraduationFrom(e.target.value)} /></label>
-          <label>Graduation to <input type="date" value={graduationTo} onChange={e => setGraduationTo(e.target.value)} /></label>
-          <button type="button" onClick={() => { setInstitution("ALL"); setProgram("ALL"); setBranch("ALL"); setGraduationFrom(""); setGraduationTo(""); setSortBy("name"); setStatus("ALL"); setSearch(""); }}>Reset filters</button>
+          <label>Sort by <select value={sortBy} onChange={e => setSortBy(e.target.value)}>{[["name","Name"],["institution","Institution"],["program","Program"],["branch","Branch"],["expiry","Adminship expiry"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+          <button type="button" onClick={() => { setInstitution("ALL"); setProgram("ALL"); setBranch("ALL"); setSortBy("name"); setStatus("ALL"); setSearch(""); }}>Reset filters</button>
         </div>
 
         {error && <div role="alert" className="sd-error"><div className="sd-error-copy"><strong>Administrator management error</strong><p>{error}</p></div><button className="sd-error-retry" type="button" onClick={() => void loadAdministrators()}>Retry</button></div>}
         {success && <p role="status" style={{ padding: 12, borderRadius: 10, background: "#edf9f2", color: "#17643b" }}>{success}</p>}
         <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #e8eaf3", borderRadius: 14 }}>
-          <table style={{ width: "100%", minWidth: 1100, borderCollapse: "collapse", textAlign: "left" }}>
-            <thead><tr>{["Administrator","Institution / program / branch","Status","Graduation","Last login","Adminship expiry","Actions"].map(h => <th key={h} scope="col" style={{ padding: 14, borderBottom: "1px solid #e8eaf3", color: "#69738a", fontSize: 12 }}>{h}</th>)}</tr></thead>
+          <table style={{ width: "100%", minWidth: 980, borderCollapse: "collapse", textAlign: "left" }}>
+            <thead><tr>{["Administrator","Institution / program / branch","Status","Last login","Adminship expiry","Actions"].map(h => <th key={h} scope="col" style={{ padding: 14, borderBottom: "1px solid #e8eaf3", color: "#69738a", fontSize: 12 }}>{h}</th>)}</tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan={7} style={{ padding: 24, textAlign: "center" }}>Loading administrator records…</td></tr>
-              : visibleRecords.length === 0 ? <tr><td colSpan={7} style={{ padding: 24, textAlign: "center" }}>No administrators match these filters.</td></tr>
+              {loading ? <tr><td colSpan={6} style={{ padding: 32, textAlign: "center" }}>Loading administrator records…</td></tr>
+              : visibleRecords.length === 0 ? <tr><td colSpan={6} style={{ padding: 32, textAlign: "center" }}>No administrators match these filters.</td></tr>
               : visibleRecords.map(admin => <tr key={admin.id}>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}><strong>{admin.full_name || "Unnamed administrator"}</strong><div style={{ color: "#737d91", fontSize: 12, marginTop: 4 }}>{admin.email || "No email"} · {admin.admin_code}</div><div style={{ color: "#737d91", fontSize: 12 }}>{admin.role}</div></td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{admin.institution_name || "Unassigned"}<div style={{ color: "#737d91", fontSize: 12 }}>{admin.program_name || "No program"} · {admin.branch_name || "No branch"}</div></td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}><strong>{admin.status}</strong><div style={{ color: "#737d91", fontSize: 12 }}>{admin.registration_status}</div></td>
-                <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.graduation_date)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.last_login_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6" }}>{dateLabel(admin.adminship_expires_at)}</td>
                 <td style={{ padding: 14, borderBottom: "1px solid #f0f1f6", whiteSpace: "nowrap" }}>
@@ -239,10 +230,9 @@ export default function SuperAdminAdministrators() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 10, margin: "20px 0" }}>
             {[["Institution",selected.institution_name],["Program",selected.program_name || "—"],["Branch",selected.branch_name || "—"],["Status",selected.status],["Role",selected.role],["Enrollment",selected.enrollment_number || "—"],["Created",dateLabel(selected.created_at)],["Last login",dateLabel(selected.last_login_at)]].map(([k,v]) => <div key={k} style={{ padding: 14, borderRadius: 12, background: "#28203f", border: "1px solid #55427a" }}><small style={{ color: "#c4b5fd" }}>{k}</small><p>{v}</p></div>)}
           </div>
-          <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}><CalendarDays size={17}/> Graduation and adminship</h3>
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", marginBottom: 10 }}>
-            <label>Graduation date<input type="date" value={graduationDate} onChange={e => setGraduationDate(e.target.value)} style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}/></label>
-            <label>Adminship expiry<input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}/></label>
+          <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}><CalendarDays size={17}/> Adminship validity</h3>
+          <div style={{ display: "grid", gap: 14, gridTemplateColumns: "minmax(0,1fr)", marginBottom: 14 }}>
+            <label>Adminship expiry date<input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} style={{ display: "block", width: "100%", padding: 14, marginTop: 8 }}/></label>
           </div>
           <button type="button" disabled={savingId === selected.id} onClick={() => void saveDates()}>Save dates</button>
           <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><SlidersHorizontal size={17}/> Permissions</h3>
