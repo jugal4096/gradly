@@ -118,26 +118,23 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
             return;
           }
   
-          const response =
-            await fetch(
-              `${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(userId)}`,
-              {
-                headers: {
-                  Authorization:
-                    `Bearer ${token}`,
-                },
-              }
-            );
-  
-          const data =
-            await response.json();
-  
+          const response = await fetch(
+            `${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(userId)}`,
+            { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } }
+          );
+          const data = await response.json().catch(() => null);
+          if (response.status === 401) {
+            localStorage.removeItem("gradly_super_admin_token");
+            navigate("/super-admin/login", { replace: true });
+            setError("Your session expired. Please sign in again.");
+            return;
+          }
+          if (response.status === 403) {
+            setError("This account is not authorized to view student records.");
+            return;
+          }
           if (!response.ok) {
-            setError(
-              data.message ||
-                "Failed to load student."
-            );
-  
+            setError(data?.message || `Failed to load student (HTTP ${response.status}).`);
             return;
           }
   
@@ -167,7 +164,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
   
       loadStudent();
   
-    }, [userId]);
+    }, [userId, navigate]);
   
   
     if (loading) {
