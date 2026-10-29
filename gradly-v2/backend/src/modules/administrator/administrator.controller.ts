@@ -13,6 +13,10 @@ import {
   SuperAdminAuthenticatedRequest,
 } from "../../middleware/super-admin-auth.middleware";
 
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 /* =========================================================
    LIST
    ========================================================= */
@@ -105,7 +109,7 @@ export async function getAdministratorDetails(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     if (!adminId) {
       return res.status(400).json({
@@ -147,7 +151,7 @@ export async function updateAdministratorStatus(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       status,
@@ -216,7 +220,7 @@ export async function updateAdministratorDepartment(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       branchId,
@@ -284,7 +288,7 @@ export async function extendAdminship(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       expiresAt,
@@ -352,7 +356,7 @@ export async function updateGraduationDate(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       graduationDate,
