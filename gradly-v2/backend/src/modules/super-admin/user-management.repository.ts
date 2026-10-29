@@ -147,7 +147,7 @@ export async function findStudentById(
 
     WHERE
       u.id = $1
-      AND u.role = 'STUDENT'
+      AND UPPER(COALESCE(u.role, '')) NOT IN ('SUPER_ADMIN', 'SUPERADMIN')
 
     LIMIT 1;
   `;
@@ -351,7 +351,7 @@ export async function findGuestSessions(filters: { search?: string; institution?
        OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name, '') ILIKE '%' || $1 || '%')
        AND ($2::text IS NULL OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name, '') = $2)
        AND ($3::boolean IS NULL OR
-         (CASE WHEN COALESCE((metadata->>'disabled')::boolean, false) THEN false
+         (CASE WHEN metadata->>'disabled' = 'true' THEN false
                WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN false ELSE true END) = $3)
      ORDER BY last_seen_at DESC NULLS LAST
      LIMIT 500`,
