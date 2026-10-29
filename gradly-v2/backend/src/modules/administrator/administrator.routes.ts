@@ -11,6 +11,10 @@ import {
   updateAdministratorDepartment,
   extendAdminship,
   updateGraduationDate,
+  getAdministratorActivity,
+  getAdministratorPermissions,
+  updateAdministratorPermissions,
+  sendAdministratorNotice,
 } from "./administrator.controller";
 
 const router = Router();
@@ -48,6 +52,11 @@ router.get(
 /* =========================================================
    ADMINISTRATOR DETAILS
    ========================================================= */
+
+router.get("/:adminId/activity", getAdministratorActivity);
+router.get("/:adminId/permissions", getAdministratorPermissions);
+router.put("/:adminId/permissions", updateAdministratorPermissions);
+router.post("/:adminId/notices", sendAdministratorNotice);
 
 router.get(
   "/:adminId",
