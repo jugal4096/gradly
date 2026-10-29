@@ -20,9 +20,10 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
   try {
     const result = await pool.query(`
       SELECT
-        c.id::text AS id,
-        COALESCE(to_jsonb(c)->>'name', to_jsonb(c)->>'title', to_jsonb(c)->>'curriculum_name', 'Curriculum') AS curriculum_name,
-        c.program_id::text AS program_id,
+        COALESCE(c.id::text, 'program-' || p.id::text) AS id,
+        COALESCE(to_jsonb(c)->>'name', to_jsonb(c)->>'title', to_jsonb(c)->>'curriculum_name',
+          CASE WHEN c.id IS NULL THEN 'No curriculum linked' ELSE 'Curriculum' END) AS curriculum_name,
+        p.id::text AS program_id,
         p.name AS program_name,
         i.id::text AS institution_id,
         i.name AS institution_name,
@@ -41,12 +42,15 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
         COALESCE(to_jsonb(cs)->>'subject_name', to_jsonb(cs)->>'course_name', to_jsonb(cs)->>'name', to_jsonb(cs)->>'title', 'Unnamed subject') AS subject_name,
         COALESCE(to_jsonb(cs)->>'subject_code', to_jsonb(cs)->>'course_code', to_jsonb(cs)->>'code') AS subject_code,
         NULLIF(COALESCE(to_jsonb(cs)->>'credits', to_jsonb(cs)->>'credit'), '')::numeric AS subject_credits
-      FROM public.curricula c
-      JOIN public.programs p ON p.id = c.program_id
+      FROM public.programs p
       JOIN public.institutions i ON i.id = p.institution_id
-      LEFT JOIN public.branches b ON b.id = c.branch_id
+      LEFT JOIN public.curricula c ON c.program_id = p.id
+      LEFT JOIN public.branches b
+        ON b.program_id = p.id
+       AND (c.branch_id IS NULL OR b.id = c.branch_id)
       LEFT JOIN public.curriculum_subjects cs
         ON COALESCE(to_jsonb(cs)->>'curriculum_id', to_jsonb(cs)->>'curricula_id') = c.id::text
+        OR (c.id IS NULL AND to_jsonb(cs)->>'program_id' = p.id::text)
       LEFT JOIN public.semesters sem
         ON to_jsonb(cs)->>'semester_id' = sem.id::text
       WHERE ($1 = '' OR i.id::text = $1)
@@ -58,6 +62,7 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
           COALESCE(b.name, '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(c)->>'name', '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(c)->>'title', '') ILIKE '%' || $4 || '%' OR
+          (c.id IS NULL AND p.name ILIKE '%' || $4 || '%') OR
           COALESCE(to_jsonb(cs)->>'subject_name', '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(cs)->>'course_name', '') ILIKE '%' || $4 || '%' OR
           COALESCE(to_jsonb(cs)->>'name', '') ILIKE '%' || $4 || '%' OR
