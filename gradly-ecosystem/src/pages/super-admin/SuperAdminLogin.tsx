@@ -25,11 +25,16 @@ export default function SuperAdminLogin() {
 
   useEffect(() => {
     let cancelled = false;
-    verifySession().then((status) => {
-      if (cancelled) return;
-      if (status === "valid") navigate(from, { replace: true });
-      else setChecking(false);
-    });
+    verifySession()
+      .then((status) => {
+        if (cancelled) return;
+        if (status === "valid") navigate(from, { replace: true });
+        else setChecking(false);
+      })
+      .catch(() => {
+        // A temporary session-verification failure should not leave the login screen stuck.
+        if (!cancelled) setChecking(false);
+      });
     return () => {
       cancelled = true;
     };
