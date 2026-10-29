@@ -8,13 +8,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { useLocation } from "react-router-dom";
-
-import {
-  NavLink,
-  Outlet,
-  useNavigate,
-} from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import "../styles/super-admin.css";
 
@@ -160,62 +154,6 @@ export default function SuperAdminLayout() {
                     key={item.path}
                     to={item.path}
                     end={item.end}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
-                );
-
-              }
-            )}
-
-          </nav>
-
-
-          {/* =================================================
-              SYSTEM
-              ================================================= */}
-
-          <div className="sidebar-heading sidebar-system-heading">
-            SYSTEM
-          </div>
-
-
-          <nav className="sidebar-navigation">
-
-            {systemNavigation.map(
-              (item) => {
-
-                const Icon =
-                  item.icon;
-
-                return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
                     className={({ isActive }) =>
                       `sidebar-link ${
                         isActive
