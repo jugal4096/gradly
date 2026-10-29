@@ -5,6 +5,8 @@ import {
     Mail,
     UserRound,
     ShieldCheck,
+    Bell,
+    Power,
   } from "lucide-react";
   
 import { useEffect, useState } from "react";
@@ -88,6 +90,12 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
   
     const [error, setError] =
       useState("");
+    const [activeTab, setActiveTab] = useState<"profile" | "activity" | "actions">("profile");
+    const [actionBusy, setActionBusy] = useState(false);
+    const [actionMessage, setActionMessage] = useState("");
+    const [actionError, setActionError] = useState("");
+    const [noticeTitle, setNoticeTitle] = useState("");
+    const [noticeBody, setNoticeBody] = useState("");
   
   
     useEffect(() => {
@@ -235,17 +243,48 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
   
   
         <nav className="super-user-detail-tabs" aria-label="User management sections">
-          <button type="button" className="is-active" aria-current="page" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(userId || "")}`)}>
-            <UserRound size={15} /> Profile
-          </button>
-          <button type="button" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(userId || "")}/activity`)}>
-            <BookOpen size={15} /> Activity
-          </button>
-          <button type="button" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(userId || "")}/actions`)}>
-            <ShieldCheck size={15} /> Actions
-          </button>
+          <button type="button" className={activeTab === "profile" ? "is-active" : ""} aria-current={activeTab === "profile" ? "page" : undefined} onClick={() => setActiveTab("profile")}><UserRound size={15} /> Profile</button>
+          <button type="button" className={activeTab === "activity" ? "is-active" : ""} onClick={() => { if (userId) navigate(`/super-admin/users/${encodeURIComponent(userId)}/activity`); }}><BookOpen size={15} /> Activity</button>
+          <button type="button" className={activeTab === "actions" ? "is-active" : ""} onClick={() => setActiveTab("actions")}><ShieldCheck size={15} /> Actions</button>
         </nav>
 
+        {activeTab === "actions" ? (
+          <section className="student-information" aria-labelledby="user-actions-title">
+            <div className="student-section-heading"><div><div className="student-section-kicker">ACCOUNT CONTROL</div><h2 id="user-actions-title">Actions for {student.display_name || student.email || "this user"}</h2><p>Changes apply only to this registered account.</p></div></div>
+            {actionError && <p role="alert" style={{ color: "#a33232", background: "#fff0f0", borderRadius: 10, padding: 12 }}>{actionError}</p>}
+            {actionMessage && <p role="status" style={{ color: "#17663b", background: "#effcf4", borderRadius: 10, padding: 12 }}>{actionMessage}</p>}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, margin: "16px 0 24px" }}>
+              <button type="button" disabled={actionBusy} onClick={async () => {
+                const nextActive = !student.active;
+                if (!window.confirm(`Are you sure you want to ${nextActive ? "reactivate" : "disable"} this account?`)) return;
+                setActionBusy(true); setActionError(""); setActionMessage("");
+                try {
+                  const token = localStorage.getItem("gradly_super_admin_token");
+                  if (!token) throw new Error("Super Admin session is missing. Sign in again.");
+                  const response = await fetch(`${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(student.id)}/status`, { method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ active: nextActive }) });
+                  const result = await response.json().catch(() => null);
+                  if (response.status === 401) throw new Error("Super Admin session expired. Please sign in again.");
+                  if (!response.ok) throw new Error(result?.message || `Could not ${nextActive ? "reactivate" : "disable"} account.`);
+                  setStudent((current) => current ? { ...current, active: nextActive } : current);
+                  setActionMessage(result?.message || `Account ${nextActive ? "reactivated" : "disabled"} successfully.`);
+                } catch (cause) { setActionError(cause instanceof Error ? cause.message : "Account action failed."); }
+                finally { setActionBusy(false); }
+              }} style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid #ded6f5", borderRadius: 10, padding: "11px 16px", background: student.active ? "#fff0f0" : "#effcf4", color: student.active ? "#a33232" : "#17663b", fontWeight: 750, cursor: actionBusy ? "wait" : "pointer" }}><Power size={16} />{actionBusy ? "Saving…" : student.active ? "Disable user" : "Reactivate user"}</button>
+            </div>
+            <div style={{ borderTop: "1px solid #e8e1f5", paddingTop: 20 }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: 8 }}><Bell size={18} /> Send notice to this user</h3>
+              <p style={{ color: "#776d89", fontSize: 13 }}>Send a specific account notice or announcement to this registered user.</p>
+              <form onSubmit={async (event) => {
+                event.preventDefault(); setActionError(""); setActionMessage("");
+                setActionError("Notice delivery is not enabled on the backend yet. The notice was not sent.");
+              }} style={{ display: "grid", gap: 12, maxWidth: 720 }}>
+                <label style={{ display: "grid", gap: 6, fontWeight: 650, color: "#50328d" }}>Notice title<input required maxLength={120} value={noticeTitle} onChange={(event) => setNoticeTitle(event.target.value)} placeholder="e.g. Important account update" style={{ minHeight: 42, border: "1px solid #ddd5f4", borderRadius: 10, padding: "10px 12px" }} /></label>
+                <label style={{ display: "grid", gap: 6, fontWeight: 650, color: "#50328d" }}>Message<textarea required maxLength={3000} rows={5} value={noticeBody} onChange={(event) => setNoticeBody(event.target.value)} placeholder="Write the notice for this user…" style={{ border: "1px solid #ddd5f4", borderRadius: 10, padding: "10px 12px", resize: "vertical" }} /></label>
+                <button type="submit" style={{ justifySelf: "start", display: "inline-flex", alignItems: "center", gap: 8, border: 0, borderRadius: 10, padding: "11px 16px", background: "linear-gradient(135deg,#7954d7,#50318f)", color: "#fff", fontWeight: 750, cursor: "pointer" }}><Bell size={16} /> Send notice</button>
+              </form>
+            </div>
+          </section>
+        ) : (
         {/* PROFILE */}
   
         <section className="student-profile-card">
@@ -645,6 +684,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
           )}
   
         </section>
+          )}
   
       </div>
     );
