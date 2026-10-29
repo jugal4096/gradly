@@ -81,8 +81,15 @@ export default function SuperAdminUsers() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadUsers(controller.signal);
-    return () => controller.abort();
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (!cancelled) return loadUsers(controller.signal);
+      return undefined;
+    });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [loadUsers]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
