@@ -202,3 +202,54 @@ html[data-super-admin-theme="dark"] .sam-theme-option { background:rgba(255,255,
 html[data-super-admin-theme="dark"] .sam-theme-option.is-selected { background:rgba(139,92,246,.13);border-color:#a78bfa; }
 html[data-super-admin-theme="dark"] .sam-theme-option-text small { color:#aaa4c7; }
 html[data-super-admin-theme="dark"] .sam-settings-section-icon { color:#ddd6fe;background:rgba(139,92,246,.18); }
+
+
+/* Gradly premium 3D purple polish v1 */
+
+/* Cohesive premium violet surfaces for every Super Admin module */
+.sam-page {
+  --sam-ink: #251642;
+  --sam-muted: #6f6385;
+  --sam-purple: #7041d8;
+  --sam-line: #e6dcf6;
+}
+.sam-header h1, .sam-header h2 { letter-spacing: -.035em; }
+.sam-page .sam-card,
+.sam-page .sam-panel,
+.sam-page .sam-table-wrap,
+.sam-page .sam-settings-card,
+.sam-page .sam-stat-card,
+.sam-page .sam-form-card {
+  border: 1px solid rgba(124, 86, 198, .16);
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(47, 25, 83, .065), inset 0 1px 0 rgba(255,255,255,.82);
+}
+.sam-page button, .sam-page input, .sam-page select, .sam-page textarea {
+  border-radius: 10px;
+}
+.sam-page button { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.sam-page button:hover { filter: brightness(1.025); }
+.sam-page button:active { transform: translateY(1px); }
+.sam-page :is(input,select,textarea,button):focus-visible {
+  outline: 3px solid rgba(139,92,246,.32);
+  outline-offset: 2px;
+}
+html[data-super-admin-theme="dark"] .sam-page {
+  --sam-ink: #f4efff;
+  --sam-muted: #b9adce;
+  --sam-line: rgba(190,171,255,.18);
+}
+html[data-super-admin-theme="dark"] .sam-page .sam-card,
+html[data-super-admin-theme="dark"] .sam-page .sam-panel,
+html[data-super-admin-theme="dark"] .sam-page .sam-table-wrap,
+html[data-super-admin-theme="dark"] .sam-page .sam-settings-card,
+html[data-super-admin-theme="dark"] .sam-page .sam-stat-card,
+html[data-super-admin-theme="dark"] .sam-page .sam-form-card {
+  color: #f4efff;
+  background: linear-gradient(145deg, rgba(33,24,53,.98), rgba(19,14,32,.98));
+  border-color: rgba(167,139,250,.2);
+  box-shadow: 0 14px 32px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.035);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sam-page button { transition: none; }
+}
