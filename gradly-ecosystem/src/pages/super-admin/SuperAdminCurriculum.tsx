@@ -29,6 +29,7 @@ export default function SuperAdminCurriculum() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
+  const [curriculumSearch, setCurriculumSearch] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadedAt, setLoadedAt] = useState("");
@@ -69,21 +70,23 @@ export default function SuperAdminCurriculum() {
     return [...new Map(source.map(row => [row.program_id, { id: row.program_id, name: row.program_name }])).values()].sort((a,b) => a.name.localeCompare(b.name));
   }, [rows, institutionId]);
   const branches = useMemo(() => {
-    const source = rows.filter(row => (!institutionId || row.institution_id === institutionId) && (!programId || row.program_id === programId) && row.branch_id && row.branch_name);
-    return [...new Map(source.map(row => [row.branch_id!, { id: row.branch_id!, name: row.branch_name! }])).values()].sort((a,b) => a.name.localeCompare(b.name));
+    const source = rows.filter(row => (!institutionId || row.institution_id === institutionId) && (!programId || row.program_id === programId) && row.branch_name?.trim());
+    // Deduplicate options by normalized branch name, not database ID.
+    return [...new Map(source.map(row => [row.branch_name!.trim().toLocaleLowerCase(), { id: row.branch_name!.trim(), name: row.branch_name!.trim() }])).values()].sort((a,b) => a.name.localeCompare(b.name));
   }, [rows, institutionId, programId]);
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return rows.filter(row =>
       (!institutionId || row.institution_id === institutionId) &&
       (!programId || row.program_id === programId) &&
-      (!branchId || row.branch_id === branchId) &&
+      (!branchId || row.branch_name?.trim().toLocaleLowerCase() === branchId.trim().toLocaleLowerCase()) &&
+      (!curriculumSearch.trim() || row.curriculum_name.toLocaleLowerCase().includes(curriculumSearch.trim().toLocaleLowerCase())) &&
       (!semester || String(row.semester_number || "") === semester) &&
       (!needle || [row.curriculum_name,row.institution_name,row.program_name,row.branch_name,row.status,row.academic_year,row.version,row.id].some(value => String(value ?? "").toLowerCase().includes(needle)))
     );
-  }, [rows, institutionId, programId, branchId, semester, search]);
+  }, [rows, institutionId, programId, branchId, semester, search, curriculumSearch]);
 
-  function resetFilters() { setInstitutionId(""); setProgramId(""); setBranchId(""); setSemester(""); setSearch(""); }
+  function resetFilters() { setInstitutionId(""); setProgramId(""); setBranchId(""); setSemester(""); setSearch(""); setCurriculumSearch(""); }
   function startEdit(row: Curriculum) {
     const inferred = /b\\.?tech|btech|bachelor of technology/i.test(row.program_name) ? 8 : /mca|m\\.?tech|mtech|master of technology/i.test(row.program_name) ? 4 : (row.total_semesters || 8);
     setEditing(row); setEditStatus(row.status || "DRAFT"); setEditVersion(row.version || "1"); setEditSemesters(String(row.total_semesters || inferred)); setError(""); setNotice("");
@@ -126,8 +129,9 @@ export default function SuperAdminCurriculum() {
         <label style={label}><span><Building2 size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Institute</span><select style={field} value={institutionId} onChange={e => { setInstitutionId(e.target.value); setProgramId(""); setBranchId(""); }}><option value="">All institutes</option>{institutions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         <label style={label}><span><GraduationCap size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Program</span><select style={field} value={programId} onChange={e => { setProgramId(e.target.value); setBranchId(""); }}><option value="">All programs</option>{programs.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         <label style={label}><span><GitBranch size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Branch</span><select style={field} value={branchId} onChange={e => setBranchId(e.target.value)}><option value="">All branches</option>{branches.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label style={label}><span><BookOpen size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Search curriculum</span><input style={field} value={curriculumSearch} onChange={e => setCurriculumSearch(e.target.value)} placeholder="Enter curriculum name…"/></label>
         <label style={label}><span><BookOpen size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Semester</span><select style={field} value={semester} onChange={e => setSemester(e.target.value)}><option value="">All semesters</option>{Array.from({ length: Math.max(0, ...rows.filter(row => !programId || row.program_id === programId).map(row => Number(row.total_semesters) || 0)) }, (_,i) => <option key={i+1} value={String(i+1)}>Semester {i+1}</option>)}</select></label>
-        <label style={label}><span><Search size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Search records</span><input style={field} value={search} onChange={e => setSearch(e.target.value)} placeholder="Name, status, year, ID…"/></label>
+        <label style={label}><span><Search size={14} style={{ verticalAlign: "middle", marginRight: 6 }}/>Search records</span><input style={field} value={search} onChange={e => setSearch(e.target.value)} placeholder="Status, year, program, ID…"/></label>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 18 }}>
         <span style={{ color: "#d4c5e9", fontSize: 12 }}>{loadedAt ? `Last refreshed ${loadedAt}` : "Connected to the authenticated API"} · read-only catalogue</span>
