@@ -50,12 +50,8 @@ type ApplicationStatus =
   | "PENDING"
   | "UNDER_REVIEW"
   | "ACCEPTED"
-  | "APPROVED"
   | "REJECTED"
-  | "REGISTRATION_IN_PROGRESS"
-  | "REGISTRATION_SUCCESSFUL"
-  | "ACTIVE"
-  | "BLOCKED";
+  | "REGISTRATION_SUCCESSFUL";
 
 type ApplicationFilter = "PENDING" | "ACCEPTED" | "REJECTED" | "ALL";
 type ReviewDecision = "ACCEPTED" | "REJECTED";
@@ -155,12 +151,8 @@ function statusLabel(status: ApplicationStatus): string {
     PENDING: "Pending",
     UNDER_REVIEW: "Under Review",
     ACCEPTED: "Accepted",
-    APPROVED: "Approved",
     REJECTED: "Rejected",
-    REGISTRATION_IN_PROGRESS: "Registration in Progress",
     REGISTRATION_SUCCESSFUL: "Registration Successful",
-    ACTIVE: "Active",
-    BLOCKED: "Blocked",
   };
 
   return labels[status] || status;
@@ -170,15 +162,13 @@ function statusClass(status: ApplicationStatus): string {
   if (
     [
       "ACCEPTED",
-      "APPROVED",
-      "ACTIVE",
       "REGISTRATION_SUCCESSFUL",
     ].includes(status)
   ) {
     return "accepted";
   }
 
-  if (["REJECTED", "BLOCKED"].includes(status)) {
+  if (status === "REJECTED") {
     return "rejected";
   }
 
@@ -203,7 +193,6 @@ function StatusIcon({
       "ACCEPTED",
       "APPROVED",
       "ACTIVE",
-      "REGISTRATION_IN_PROGRESS",
       "REGISTRATION_SUCCESSFUL",
     ].includes(status)
   ) {
@@ -1168,68 +1157,6 @@ export default function SuperAdminApplications() {
                 </div>
               )}
 
-              {selected.status === "APPROVED" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Application approved</strong>
-
-                    <span>
-                      Registration must still be completed if
-                      required by the backend workflow.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status ===
-                "REGISTRATION_IN_PROGRESS" && (
-                <div className="completed-notice accepted">
-                  <Clock3 size={20} />
-
-                  <div>
-                    <strong>Registration in progress</strong>
-
-                    <span>
-                      The applicant is completing administrator
-                      registration.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status ===
-                "REGISTRATION_SUCCESSFUL" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Registration successful</strong>
-
-                    <span>
-                      The administrator registration workflow
-                      has completed successfully.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "ACTIVE" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Administrator active</strong>
-
-                    <span>
-                      This application is associated with an
-                      active administrator.
-                    </span>
-                  </div>
-                </div>
-              )}
-
               {selected.status === "REJECTED" && (
                 <div className="completed-notice rejected">
                   <XCircle size={20} />
@@ -1246,19 +1173,6 @@ export default function SuperAdminApplications() {
                 </div>
               )}
 
-              {selected.status === "BLOCKED" && (
-                <div className="completed-notice rejected">
-                  <ShieldBan size={20} />
-
-                  <div>
-                    <strong>Applicant blocked</strong>
-
-                    <span>
-                      This application is marked as blocked.
-                    </span>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </section>
