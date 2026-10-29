@@ -296,7 +296,6 @@ export default function SuperAdminAdministrators() {
           {detailLoading && <p>Loading profile and activity…</p>}
           {(pageMode === "profile") && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 10, margin: "20px 0" }}>
             {[["Institution",selected.institution_name],["Program",selected.program_name || "—"],["Branch",selected.branch_name || "—"],["Status",selected.status],["Role",selected.role],["Enrollment",selected.enrollment_number || "—"],["Created",dateLabel(selected.created_at)],["Last login",dateLabel(selected.last_login_at)]].map(([k,v]) => <div key={k} style={{ padding: 14, borderRadius: 12, background: "#28203f", border: "1px solid #55427a" }}><small style={{ color: "#c4b5fd" }}>{k}</small><p>{v}</p></div>)}
-          </div>
           </div>}
           {pageMode === "profile" && <><h3 style={{ display: "flex", gap: 8, alignItems: "center" }}><CalendarDays size={17}/> Adminship validity</h3>
           <div style={{ display: "grid", gap: 14, gridTemplateColumns: "minmax(0,1fr)", marginBottom: 14 }}>
