@@ -6,7 +6,7 @@ import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
 import { getSuperAdminWorkspace } from "./super-admin-workspace.controller";
 import { listInstitutions, listInstitutionPrograms, createInstitution, createInstitutionProgram, createInstitutionBranch, createInstitutionSemester } from "./institution-management.controller";
-import { listCurriculumCatalog } from "./curriculum-catalog.controller";
+import { listCurriculumCatalog, updateCurriculumSettings } from "./curriculum-catalog.controller";
 
 import {
   authenticateSuperAdminToken,
@@ -58,6 +58,7 @@ router.post(
  * USER MANAGEMENT
  */
 router.get("/curriculum/catalog", authenticateSuperAdminToken, listCurriculumCatalog);
+router.patch("/curriculum/catalog/:curriculumId", authenticateSuperAdminToken, updateCurriculumSettings);
 router.get("/institutions", authenticateSuperAdminToken, listInstitutions);
 router.post("/institutions", authenticateSuperAdminToken, createInstitution);
 router.get("/institutions/:institutionId/programs", authenticateSuperAdminToken, listInstitutionPrograms);
