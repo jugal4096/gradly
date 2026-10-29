@@ -37,6 +37,7 @@ import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminAdministrators from "./pages/super-admin/SuperAdminAdministrators";
 import SuperAdminModule from "./pages/super-admin/SuperAdminModule";
 import SuperAdminInstitutions from "./pages/super-admin/SuperAdminInstitutions";
+import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -154,7 +155,7 @@ function App() {
           />
 
           <Route path="institutions" element={<SuperAdminInstitutions />} />
-          <Route path="curriculum" element={<SuperAdminModule />} />
+          <Route path="curriculum" element={<SuperAdminCurriculum />} />
           <Route path="audit" element={<SuperAdminModule />} />
           <Route path="audit-logs" element={<Navigate to="/super-admin/audit" replace />} />
           <Route path="feedback" element={<SuperAdminModule />} />
