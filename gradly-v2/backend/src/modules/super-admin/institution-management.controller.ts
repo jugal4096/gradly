@@ -50,7 +50,8 @@ export async function listInstitutionPrograms(req: SuperAdminAuthenticatedReques
   const institutionId = text(req.params.institutionId, 100);
   try {
     const result = await pool.query(`
-      SELECT p.id, p.name, p.institution_id, COUNT(DISTINCT b.id)::int AS branch_count,\n        COALESCE((SELECT json_agg(json_build_object('id', ps.id, 'semester_number', ps.semester_number, 'name', ps.name) ORDER BY ps.semester_number) FROM public.program_semesters ps WHERE ps.program_id = p.id), '[]'::json) AS semesters,
+      SELECT p.id, p.name, p.institution_id, COUNT(DISTINCT b.id)::int AS branch_count,
+        COALESCE((SELECT json_agg(json_build_object('id', ps.id, 'semester_number', ps.semester_number, 'name', ps.name) ORDER BY ps.semester_number) FROM public.program_semesters ps WHERE ps.program_id = p.id), '[]'::json) AS semesters,
         COALESCE(json_agg(json_build_object('id', b.id, 'name', b.name) ORDER BY b.name)
           FILTER (WHERE b.id IS NOT NULL), '[]'::json) AS branches
       FROM public.programs p
