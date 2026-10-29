@@ -40,7 +40,7 @@ export default function SuperAdminAdministrators() {
   const [notice, setNotice] = useState("");
   const [lastLoadedCount, setLastLoadedCount] = useState<number | null>(null);
 
-  const loadAdministrators = useCallback(async () => {
+  const loadAdministrators = useCallback(async (): Promise<{ ok: true; count: number } | { ok: false; message: string }> => {
     setLoading(true);
     setError("");
     try {
@@ -66,10 +66,13 @@ export default function SuperAdminAdministrators() {
       if (!Array.isArray(result?.administrators)) throw new Error("The API returned an unexpected administrator list.");
       setRecords(result.administrators);
       setLastLoadedCount(result.administrators.length);
+      return { ok: true, count: result.administrators.length };
     } catch (caught) {
       setRecords([]);
       setLastLoadedCount(null);
-      setError(caught instanceof Error ? caught.message : "Unable to load administrators.");
+      const message = caught instanceof Error ? caught.message : "Unable to load administrators.";
+      setError(message);
+      return { ok: false, message };
     } finally {
       setLoading(false);
     }
@@ -105,11 +108,11 @@ export default function SuperAdminAdministrators() {
       }
       if (response.status === 403) throw new Error("This account is not authorized to change administrator status.");
       if (!response.ok) throw new Error(result?.message || `Unable to update status (HTTP ${response.status}).`);
-      setNotice(`${record.full_name} is now ${nextStatus.toLowerCase()}.`);
       setError("");
-      await loadAdministrators();
-      // loadAdministrators handles its own failures and updates the error state.
-      // Do not erase a successful mutation notice if the follow-up GET fails.
+      const refresh = await loadAdministrators();
+      setNotice(refresh.ok
+        ? `${record.full_name} is now ${nextStatus.toLowerCase()}.`
+        : `${record.full_name} status was updated, but the list could not be refreshed: ${refresh.message}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to update administrator status.");
     } finally {
