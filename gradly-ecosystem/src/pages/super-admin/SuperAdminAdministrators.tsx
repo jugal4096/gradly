@@ -18,6 +18,19 @@ type CatalogResult = { institutions?: CatalogItem[]; programs?: CatalogItem[]; b
 type ActivityItem = { id: string; action: string; actor_role?: string; actor_type?: string; created_at: string; metadata?: unknown };
 
 const statuses = ["ACTIVE", "SUSPENDED", "DISABLED", "DELETED"] as const;
+const permissionOptions = [
+  { code: "VIEW_USERS", label: "View users" },
+  { code: "MANAGE_USERS", label: "Manage users" },
+  { code: "VIEW_STUDENTS", label: "View students" },
+  { code: "MANAGE_STUDENTS", label: "Manage students" },
+  { code: "VIEW_RESULTS", label: "View results" },
+  { code: "MANAGE_RESULTS", label: "Manage results" },
+  { code: "MANAGE_SUBJECTS", label: "Manage subjects" },
+  { code: "MANAGE_APPLICATIONS", label: "Manage applications" },
+  { code: "VIEW_ANALYTICS", label: "View analytics" },
+  { code: "MANAGE_NOTICES", label: "Manage notices" },
+  { code: "MANAGE_SETTINGS", label: "Manage settings" },
+] as const;
 function dateLabel(value: string | null | undefined) {
   if (!value) return "—";
   const date = new Date(value);
@@ -280,8 +293,9 @@ export default function SuperAdminAdministrators() {
           </div>
           <button type="button" disabled={savingId === selected.id} onClick={() => void saveDates()}>Save dates</button>
           <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><SlidersHorizontal size={17}/> Permissions</h3>
-          <p style={{ color: "#c4b5fd" }}>Comma-separated permission codes. Use the permission identifiers recognized by your backend.</p>
-          <input value={permissions} onChange={e => setPermissions(e.target.value)} placeholder="VIEW_USERS, MANAGE_APPLICATIONS" style={{ width: "100%", padding: 12, marginBottom: 8 }}/>
+          <p style={{ color: "#c4b5fd" }}>Choose the permissions to grant, then save your changes. Backend routes must enforce each permission code for it to control access.</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:10,margin:"16px 0"}}>{permissionOptions.map(option=>{const codes=permissions.split(",").map(v=>v.trim()).filter(Boolean);const checked=codes.includes(option.code);return <label key={option.code} style={{display:"flex",gap:10,alignItems:"center",padding:13,borderRadius:10,border:checked?"1px solid #a78bfa":"1px solid #55427a",background:checked?"#38265d":"#28203f",cursor:"pointer"}}><input type="checkbox" checked={checked} onChange={e=>{const next=new Set(permissions.split(",").map(v=>v.trim()).filter(Boolean));if(e.target.checked)next.add(option.code);else next.delete(option.code);setPermissions([...next].join(", "));}}/><strong>{option.label}</strong></label>})}</div>
+          <label style={{display:"block",marginBottom:8}}>Other permission codes<input value={permissions.split(",").map(v=>v.trim()).filter(v=>v&&!permissionOptions.some(o=>o.code===v)).join(", ")} onChange={e=>{const extras=e.target.value.split(",").map(v=>v.trim()).filter(Boolean);const selected=permissions.split(",").map(v=>v.trim()).filter(v=>permissionOptions.some(o=>o.code===v));setPermissions([...selected,...extras].join(", "));}} placeholder="CUSTOM_PERMISSION_CODE" style={{display:"block",width:"100%",padding:12,marginTop:8}}/></label>
           <button type="button" disabled={savingId === selected.id} onClick={() => void savePermissions()}>Save permissions</button>
           <h3 style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 24 }}><Bell size={17}/> Send a targeted notice</h3>
           <input value={noticeTitle} onChange={e => setNoticeTitle(e.target.value)} maxLength={160} placeholder="Notice title" style={{ width: "100%", padding: 12, marginBottom: 8 }}/>
