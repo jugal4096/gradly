@@ -1,9 +1,17 @@
 import {
   Activity,
+  BookOpen,
+  Building2,
   ChevronRight,
   ClipboardList,
+  FileText,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
+  Megaphone,
+  MessageSquare,
+  Settings,
+  ShieldAlert,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -35,6 +43,15 @@ const controlNavigation = [
     path: "/super-admin/applications",
     icon: ClipboardList,
   },
+  { label: "Institutions", path: "/super-admin/institutions", icon: Building2 },
+  { label: "Curriculum", path: "/super-admin/curriculum", icon: BookOpen },
+  { label: "Audit Logs", path: "/super-admin/audit", icon: FileText },
+  { label: "Feedback", path: "/super-admin/feedback", icon: MessageSquare },
+  { label: "Request Centre", path: "/super-admin/requests", icon: Activity },
+  { label: "Password Resets", path: "/super-admin/password-resets", icon: LockKeyhole },
+  { label: "Safety & Security", path: "/super-admin/safety", icon: ShieldAlert },
+  { label: "Announcements", path: "/super-admin/announcements", icon: Megaphone },
+  { label: "Settings", path: "/super-admin/settings", icon: Settings },
 ];
 
 
