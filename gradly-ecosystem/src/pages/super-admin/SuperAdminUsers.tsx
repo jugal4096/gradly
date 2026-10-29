@@ -247,7 +247,7 @@ export default function SuperAdminUsers() {
         </div>
       </section>
 
-        {/if}
+        </>)}
       </section>
 
       {activityUser && <div role="presentation" onClick={() => setActivityUser(null)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(21,12,39,.56)", display: "grid", placeItems: "center", padding: 18 }}>
