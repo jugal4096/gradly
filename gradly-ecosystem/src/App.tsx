@@ -147,6 +147,11 @@ function App() {
             element={<SuperAdminAdministrators />}
           />
 
+          <Route
+            path="admins/:adminId/:adminPage"
+            element={<SuperAdminAdministrators />}
+          />
+
           <Route path="institutions" element={<SuperAdminModule />} />
           <Route path="curriculum" element={<SuperAdminModule />} />
           <Route path="audit" element={<SuperAdminModule />} />
