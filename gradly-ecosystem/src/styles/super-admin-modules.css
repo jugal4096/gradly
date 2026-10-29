@@ -253,3 +253,22 @@ html[data-super-admin-theme="dark"] .sam-page .sam-form-card {
 @media (prefers-reduced-motion: reduce) {
   .sam-page button { transition: none; }
 }
+
+
+/* VISIBILITY PATCH — high contrast purple UI v2 */
+html[data-super-admin-theme="light"] .sam-page { color:#281542 !important; }
+html[data-super-admin-theme="light"] .sam-page :is(h1,h2,h3,h4,th,.sam-capability-number) { color:#2b1648 !important; }
+html[data-super-admin-theme="light"] .sam-page :is(p,.sam-eyebrow,.sam-muted,.sam-settings-copy>p,.sam-theme-option-text small,.sam-readonly-note) { color:#6d5c82 !important; }
+html[data-super-admin-theme="light"] .sam-page svg { color:#6d28d9 !important;opacity:1 !important; }
+html[data-super-admin-theme="light"] .sam-page :is(.sam-header-icon,.sam-settings-section-icon,.sam-status-icon,.sam-capability-number) { background:linear-gradient(145deg,#f1e8ff,#e4d5ff);color:#6d28d9;border:1px solid #d9c6fa;box-shadow:0 8px 18px rgba(109,40,217,.13),inset 0 1px 0 #fff; }
+html[data-super-admin-theme="dark"] .sam-page { color:#f5efff !important; }
+html[data-super-admin-theme="dark"] .sam-page :is(h1,h2,h3,h4,th,td,label,strong,.sam-capability-number,.sam-status-pill,.sam-theme-option-text) { color:#f5efff !important; }
+html[data-super-admin-theme="dark"] .sam-page :is(p,.sam-eyebrow,.sam-muted,.sam-settings-copy>p,.sam-theme-option-text small,.sam-readonly-note) { color:#c3b4dc !important; }
+html[data-super-admin-theme="dark"] .sam-page svg { color:#d8bfff !important;opacity:1 !important; }
+html[data-super-admin-theme="dark"] .sam-page :is(.sam-header-icon,.sam-settings-section-icon,.sam-status-icon,.sam-capability-number) { background:linear-gradient(145deg,#3a255c,#241637);color:#e4d5ff;border:1px solid #5b3d83;box-shadow:0 8px 18px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.06); }
+.sam-page :is(input,select,textarea) { color:#2b1648;background:#fff;border-color:#d8c9eb; }
+.sam-page :is(input,select,textarea)::placeholder { color:#8b7d9f;opacity:1; }
+html[data-super-admin-theme="dark"] .sam-page :is(input,select,textarea) { color:#f5efff;background:#171023;border-color:#574071; }
+html[data-super-admin-theme="dark"] .sam-page :is(input,select,textarea)::placeholder { color:#b5a5cb; }
+.sam-page .sam-theme-option { box-shadow:0 8px 22px rgba(47,25,83,.07),inset 0 1px 0 rgba(255,255,255,.8); }
+html[data-super-admin-theme="dark"] .sam-page .sam-theme-option { box-shadow:0 12px 26px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.04); }
