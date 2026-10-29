@@ -20,6 +20,8 @@ interface Student {
   branch_name: string | null;
 }
 interface UsersResponse { students?: Student[]; count?: number; message?: string }
+interface GuestSession { id: string; account_type: "GUEST"; first_seen_at: string | null; last_seen_at: string | null; expires_at: string | null; institution_name: string | null; active: boolean; disabled: boolean }
+interface GuestsResponse { guests?: GuestSession[]; count?: number; message?: string }
 interface ActivityRecord { id: string; action: string; actor_role: string | null; created_at: string; metadata?: Record<string, unknown> }
 
 const fieldStyle: React.CSSProperties = { minHeight: 42, border: "1px solid #ddd5f4", borderRadius: 11, padding: "9px 12px", background: "var(--sa-surface, #fff)", color: "var(--sa-text, #242039)", minWidth: 145 };
@@ -39,6 +41,9 @@ export default function SuperAdminUsers() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
+  const [guests, setGuests] = useState<GuestSession[]>([]);
+  const [guestsLoading, setGuestsLoading] = useState(true);
+  const [guestsError, setGuestsError] = useState("");
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,6 +86,23 @@ export default function SuperAdminUsers() {
     void Promise.resolve().then(() => { if (!cancelled) return loadUsers(controller.signal); return undefined; });
     return () => { cancelled = true; controller.abort(); };
   }, [loadUsers]);
+
+  const loadGuests = useCallback(async () => {
+    setGuestsLoading(true); setGuestsError("");
+    try {
+      if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
+      const token = localStorage.getItem("gradly_super_admin_token");
+      if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/users/guests`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+      const result = await response.json().catch(() => null) as GuestsResponse | null;
+      if (response.status === 401) { localStorage.removeItem("gradly_super_admin_token"); navigate("/super-admin/login", { replace: true }); throw new Error("Your session expired. Please sign in again."); }
+      if (!response.ok || !Array.isArray(result?.guests)) throw new Error(result?.message || `Unable to load guest sessions (HTTP ${response.status}).`);
+      setGuests(result.guests);
+    } catch (cause) { setGuests([]); setGuestsError(cause instanceof Error ? cause.message : "Unable to load guest sessions."); }
+    finally { setGuestsLoading(false); }
+  }, [navigate]);
+
+  useEffect(() => { void loadGuests(); }, [loadGuests]);
 
   const institutions = useMemo(() => unique(students.map((s) => s.institution_name)), [students]);
   const programs = useMemo(() => unique(students.filter((s) => !institution || s.institution_name === institution).map((s) => s.program_name)), [students, institution]);
@@ -194,6 +216,25 @@ export default function SuperAdminUsers() {
           </table>
         </div>
         <p style={{ color: "#776d89", fontSize: 12, margin: 0 }}>{loading ? "Loading results…" : `Showing ${filtered.length} of ${students.length} loaded users${count == null ? "" : ` · API count: ${count}`}.`}</p>
+      </section>
+
+      <section className="sd-section" style={{ display: "grid", gap: 16 }}>
+        <div className="sd-section-heading"><div><div className="sd-section-kicker">ANONYMOUS ACCESS</div><h2>Guest sessions</h2></div><button className="sd-refresh-button" type="button" onClick={() => void loadGuests()} disabled={guestsLoading}><RefreshCw size={15} className={guestsLoading ? "sd-spin" : ""} /> {guestsLoading ? "Loading…" : "Refresh guests"}</button></div>
+        <p style={{ margin: 0, color: "#776d89", fontSize: 13 }}>Guest sessions have no registered account profile. Gradly displays only their Guest ID, institution metadata when available, and recorded session timestamps.</p>
+        {guestsError && <div role="alert" className="sd-error"><div className="sd-error-copy"><strong>Guest records unavailable</strong><p>{guestsError}</p></div><button className="sd-error-retry" type="button" onClick={() => void loadGuests()}>Retry</button></div>}
+        <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #e3e0ee", borderRadius: 15, boxShadow: "0 12px 30px rgba(40,25,72,.06)" }}>
+          <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", textAlign: "left" }}>
+            <thead><tr>{["Guest ID","Selected institution","First seen","Last activity","Session status","Available actions"].map((heading) => <th key={heading} scope="col" style={{ padding: 14, borderBottom: "1px solid #e8e1f5", background: "#f6f2ff", color: "#5f507b", fontSize: 11, textTransform: "uppercase", letterSpacing: ".04em" }}>{heading}</th>)}</tr></thead>
+            <tbody>{guestsLoading ? <tr><td colSpan={6} style={{ padding: 24, textAlign: "center" }}>Loading guest sessions…</td></tr> : guests.length === 0 ? <tr><td colSpan={6} style={{ padding: 24, textAlign: "center", color: "#746985" }}>{guestsError ? "Guest sessions could not be loaded." : "No guest sessions found."}</td></tr> : guests.map((guest) => <tr key={guest.id}>
+              <td style={{ padding: 14, borderBottom: "1px solid #f0edf6" }}><strong style={{ color: "#302345" }}>Guest · {guest.id.slice(0, 12)}</strong><div style={{ color: "#9388a5", fontSize: 11, marginTop: 4 }}>No registered profile</div></td>
+              <td style={{ padding: 14, borderBottom: "1px solid #f0edf6", color: "#4b405d" }}>{guest.institution_name || "Not recorded"}</td>
+              <td style={{ padding: 14, borderBottom: "1px solid #f0edf6", color: "#70647f", fontSize: 12 }}>{formatDate(guest.first_seen_at)}</td>
+              <td style={{ padding: 14, borderBottom: "1px solid #f0edf6", color: "#70647f", fontSize: 12 }}>{formatDate(guest.last_seen_at)}</td>
+              <td style={{ padding: 14, borderBottom: "1px solid #f0edf6" }}><span style={{ color: guest.active ? "#197344" : "#a33232", fontWeight: 750 }}>{guest.active ? "Active session" : guest.disabled ? "Disabled" : "Expired"}</span></td>
+              <td style={{ padding: 14, borderBottom: "1px solid #f0edf6" }}><button type="button" style={actionStyle} onClick={() => navigate(`/super-admin/requests?guestId=${encodeURIComponent(guest.id)}`)}><Eye size={14} /> View session</button></td>
+            </tr>)}</tbody>
+          </table>
+        </div>
       </section>
 
       {activityUser && <div role="presentation" onClick={() => setActivityUser(null)} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(21,12,39,.56)", display: "grid", placeItems: "center", padding: 18 }}>
