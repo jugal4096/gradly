@@ -236,24 +236,22 @@ export default function SuperAdminApplications() {
 
   // Load applications from the backend.
   const loadApplications = useCallback(
-    async (showLoading = true) => {
+    async (showLoading = true): Promise<{ ok: true } | { ok: false; message: string }> => {
       const token = getToken();
 
       if (!token) {
+        const message = "Your Super Admin session is missing. Please sign in again.";
         setApplications([]);
         setSelected(null);
         setLoading(false);
-        setError("Your Super Admin session is missing. Please sign in again.");
+        setError(message);
         navigate("/super-admin/login", { replace: true });
-        return;
+        return { ok: false, message };
       }
 
       try {
         if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
-        if (showLoading) {
-          setLoading(true);
-        }
-
+        if (showLoading) setLoading(true);
         setError("");
 
         const query =
@@ -273,17 +271,19 @@ export default function SuperAdminApplications() {
 
         const data = await readResponse<Application[]>(response);
 
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          throw new Error("Your session expired. Please sign in again.");
+        }
+
+        if (response.status === 403) {
+          throw new Error("This account is not authorized to review applications.");
+        }
+
         if (!response.ok) {
-          if (response.status === 401) {
-            localStorage.removeItem("gradly_super_admin_token");
-            navigate("/super-admin/login", { replace: true });
-            setError("Your session expired. Please sign in again.");
-          }
           throw new Error(
-            getErrorMessage(
-              data,
-              `Unable to load applications. HTTP ${response.status}.`
-            )
+            getErrorMessage(data, `Unable to load applications. HTTP ${response.status}.`)
           );
         }
 
@@ -294,29 +294,19 @@ export default function SuperAdminApplications() {
             : null;
 
         if (!records) {
-          throw new Error(
-            "The server returned an unexpected application list."
-          );
+          throw new Error("The server returned an unexpected application list.");
         }
 
         setApplications(records);
-
-        setSelected((previous) => {
-          if (!previous) return null;
-
-          return (
-            records.find((item) => item.id === previous.id) ??
-            null
-          );
-        });
-      } catch (err) {
-        console.error("Unable to load applications:", err);
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load applications."
+        setSelected((previous) =>
+          previous ? records.find((item) => item.id === previous.id) ?? null : null
         );
+        return { ok: true };
+      } catch (caught) {
+        console.error("Unable to load applications:", caught);
+        const message = caught instanceof Error ? caught.message : "Unable to load applications.";
+        setError(message);
+        return { ok: false, message };
       } finally {
         setLoading(false);
       }
@@ -480,10 +470,9 @@ export default function SuperAdminApplications() {
 
       setConfigurationSaved(true);
       setNotice("Department and permissions saved.");
-      try {
-        await loadApplications(false);
-      } catch (refreshError) {
-        setError(refreshError instanceof Error ? `Configuration was saved, but the list could not be refreshed: ${refreshError.message}` : "Configuration was saved, but the list could not be refreshed.");
+      const refresh = await loadApplications(false);
+      if (!refresh.ok) {
+        setError(`Configuration was saved, but the list could not be refreshed: ${refresh.message}`);
       }
       return true;
     } catch (err) {
@@ -619,11 +608,9 @@ export default function SuperAdminApplications() {
       setApprovedPermissions([]);
       setConfigurationSaved(false);
       setNotice(action === "accept" ? "Application accepted." : "Application rejected.");
-      try {
-        await loadApplications(false);
-      } catch (refreshError) {
-        setNotice(action === "accept" ? "Application accepted." : "Application rejected.");
-        setError(refreshError instanceof Error ? `Decision saved for ${completedApplication.full_name}, but the list could not be refreshed: ${refreshError.message}` : "Decision saved, but the application list could not be refreshed.");
+      const refresh = await loadApplications(false);
+      if (!refresh.ok) {
+        setError(`Decision saved for ${completedApplication.full_name}, but the list could not be refreshed: ${refresh.message}`);
       }
     } catch (err) {
       console.error("Application review failed:", err);
