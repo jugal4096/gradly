@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { authenticateSuperAdmin } from "./superAdmin.service";
 import { LoginLockedError } from "../auth-security/login-security.service";
+import { isSuperAdminLoginRateLimited } from "./superAdmin.login-rate-limit";
 
 export async function loginSuperAdmin(
   req: Request,
@@ -20,13 +21,15 @@ export async function loginSuperAdmin(
       });
     }
 
+    const ipAddress = req.ip || req.socket.remoteAddress || null;
+    if (ipAddress && await isSuperAdminLoginRateLimited(ipAddress)) {
+      res.setHeader("Retry-After", "900");
+      return res.status(429).json({ message: "Too many unsuccessful login attempts from this network. Please try again in 15 minutes." });
+    }
+
     const result = await authenticateSuperAdmin(
-      adminCode.trim(),
-      password,
-      {
-        ipAddress: req.ip || req.socket.remoteAddress || null,
-        userAgent: req.get("user-agent") || null,
-      }
+      adminCode.trim(), password,
+      { ipAddress, userAgent: req.get("user-agent") || null }
     );
 
     return res.status(200).json({

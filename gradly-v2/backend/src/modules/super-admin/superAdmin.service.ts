@@ -7,6 +7,7 @@ import {
 
 import { createSuperAdminToken } from "../../config/jwt";
 import { executeSecureLogin } from "../auth-security/login-security.service";
+import { recordLoginAttempt } from "../auth-security/login-security.repository";
 
 interface SuperAdminLoginContext {
   ipAddress?: string | null;
@@ -22,6 +23,11 @@ export async function authenticateSuperAdmin(
 
   // Do not disclose whether a code exists or whether the account is disabled.
   if (!superAdmin || superAdmin.status !== "ACTIVE") {
+    await recordLoginAttempt(
+      { principalType: "SUPER_ADMIN", principalId: null, ipAddress: context?.ipAddress, userAgent: context?.userAgent },
+      false,
+      "INVALID_CREDENTIALS"
+    );
     throw new Error("Invalid Super Admin credentials.");
   }
 
