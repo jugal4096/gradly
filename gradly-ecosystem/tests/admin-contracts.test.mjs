@@ -50,7 +50,7 @@ test("applicant submission and ownership-scoped status retrieval match backend r
 });
 
 test("administrator registration consumes and authorizes the exact accepted application ID", () => {
-  assert.match(registrationRoutes, /router\.post\([\s\S]*?authenticateFirebaseToken[\s\S]*?completeRegistration/s);
+  assert.match(registrationRoutes, /router\.post\([\s\S]*?authenticateFirebaseToken[\s\S]*?completeAdminRegistration/s);
   assert.match(adminRegister, /application_id:\s*applicationId/);
   assert.match(registrationService, /validateApplicationId\(body\.application_id\)/);
   assert.match(registrationService, /WHERE id = \$1\s+AND user_id = \$2\s+AND status = 'ACCEPTED'/);
