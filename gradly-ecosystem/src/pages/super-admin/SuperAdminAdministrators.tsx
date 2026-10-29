@@ -57,7 +57,8 @@ export default function SuperAdminAdministrators() {
       const query = new URLSearchParams();
       if (search.trim()) query.set("search", search.trim());
       if (status !== "ALL") query.set("status", status);
-      const response = await fetch(`${API_BASE_URL}/api/super-admin/administrators${query.size ? `?${query.toString()}` : ""}`, {
+      const queryString = query.toString();
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/administrators${queryString ? `?${queryString}` : ""}`, {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }
       });
       const result = await response.json().catch(() => null) as ApiResult | null;
@@ -127,7 +128,7 @@ export default function SuperAdminAdministrators() {
   }
 
   async function changeStatus(admin: Administrator, nextStatus: typeof statuses[number]) {
-    const verb = nextStatus === "ACTIVE" ? "reactivate" : nextStatus === "DELETED" ? "permanently disable and mark deleted" : nextStatus.toLowerCase();
+    const verb = nextStatus === "ACTIVE" ? "reactivate" : nextStatus === "DELETED" ? "mark as deleted (the account cannot be reactivated)" : nextStatus.toLowerCase();
     if (!window.confirm(`Are you sure you want to ${verb} ${admin.full_name}? ${nextStatus === "DELETED" ? "Deleted accounts cannot be reactivated." : ""}`)) return;
     setSavingId(admin.id); setError(""); setSuccess("");
     try {
