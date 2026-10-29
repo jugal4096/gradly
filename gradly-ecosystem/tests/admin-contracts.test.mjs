@@ -18,6 +18,8 @@ const superAdminAdministrators = read(ecosystemRoot, "src/pages/super-admin/Supe
 const superAdminUsers = read(ecosystemRoot, "src/pages/super-admin/SuperAdminUsers.tsx");
 const superAdminDashboard = read(ecosystemRoot, "src/pages/super-admin/SuperAdminDashboard.tsx");
 const session = read(ecosystemRoot, "src/lib/superAdminSession.ts");
+const userManagementRoutes = read(repositoryRoot, "gradly-v2/backend/src/modules/super-admin/user-management.routes.ts");
+const userManagementController = read(repositoryRoot, "gradly-v2/backend/src/modules/super-admin/user-management.controller.ts");
 const adminApplicationRoutes = read(repositoryRoot, "gradly-v2/backend/src/modules/admin-application/admin-application.routes.ts");
 const adminApplicationService = read(repositoryRoot, "gradly-v2/backend/src/modules/admin-application/admin-application.service.ts");
 const academicRoutes = read(repositoryRoot, "gradly-v2/backend/src/modules/academic/academic.routes.ts");
@@ -80,6 +82,15 @@ test("administrator list and status mutation use the existing protected API", ()
   assert.match(superAdminAdministrators, /\/status/);
   assert.match(superAdminAdministrators, /JSON\.stringify\(\{ status: nextStatus \}\)/);
   assert.match(superAdminAdministrators, /window\.confirm/);
+});
+
+
+test("user list search matches supported Super Admin user endpoint", () => {
+  assert.match(userManagementRoutes, /router\.get\([\s\S]*?["']\/["'][\s\S]*?listStudents/s);
+  assert.match(userManagementController, /typeof req\.query\.search === "string"/);
+  assert.match(userManagementController, /count:\s*students\.length/);
+  assert.match(superAdminUsers, /params\.set\("search", query\.trim\(\)\)/);
+  assert.match(superAdminUsers, /\/api\/super-admin\/users\$\{suffix\}/);
 });
 
 test("session verification preserves token on forbidden and transient responses", () => {
