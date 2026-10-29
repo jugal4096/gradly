@@ -942,3 +942,14 @@ html[data-super-admin-theme="light"] .super-admin-sidebar .sidebar-link-active s
 html[data-super-admin-theme="dark"] .super-admin-sidebar .sidebar-link-active svg { color:#c4b5fd !important; }
 .super-admin-topbar,.super-admin-sidebar { box-shadow:0 12px 34px rgba(52,24,94,.09),inset 0 1px 0 rgba(255,255,255,.72); }
 html[data-super-admin-theme="dark"] .super-admin-topbar,html[data-super-admin-theme="dark"] .super-admin-sidebar { box-shadow:0 16px 38px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.04); }
+
+
+
+/* Final visibility pass: never let inherited/low-opacity icon colors disappear */
+.super-admin-shell svg { color: currentColor; opacity: 1; visibility: visible; }
+html[data-super-admin-theme="light"] .super-admin-shell :is(.sidebar-link,.sidebar-logout) { color:#44315f; }
+html[data-super-admin-theme="light"] .super-admin-shell :is(.sidebar-link,.sidebar-logout) svg { color:#7040c8; }
+html[data-super-admin-theme="dark"] .super-admin-shell :is(.sidebar-link,.sidebar-logout) { color:#eee6ff; }
+html[data-super-admin-theme="dark"] .super-admin-shell :is(.sidebar-link,.sidebar-logout) svg { color:#c4a7ff; }
+.super-admin-shell :is(button,a):focus-visible { outline:3px solid #a78bfa; outline-offset:3px; }
+.super-admin-shell :is(button,a) svg { flex-shrink:0; }
