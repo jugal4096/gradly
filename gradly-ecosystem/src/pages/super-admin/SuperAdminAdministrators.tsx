@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
@@ -29,6 +30,7 @@ function displayDate(value: string | null) {
 }
 
 export default function SuperAdminAdministrators() {
+  const navigate = useNavigate();
   const [records, setRecords] = useState<Administrator[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
@@ -56,6 +58,7 @@ export default function SuperAdminAdministrators() {
       const result = await response.json().catch(() => null) as ListResponse | null;
       if (response.status === 401) {
         localStorage.removeItem("gradly_super_admin_token");
+        navigate("/super-admin/login", { replace: true });
         throw new Error("Your session expired. Please sign in again.");
       }
       if (response.status === 403) throw new Error("This account is not authorized to manage administrators.");
@@ -70,7 +73,7 @@ export default function SuperAdminAdministrators() {
     } finally {
       setLoading(false);
     }
-  }, [search, status]);
+  }, [navigate, search, status]);
 
   useEffect(() => { void loadAdministrators(); }, [loadAdministrators]);
 
@@ -95,9 +98,17 @@ export default function SuperAdminAdministrators() {
         body: JSON.stringify({ status: nextStatus }),
       });
       const result = await response.json().catch(() => null) as { message?: string } | null;
+      if (response.status === 401) {
+        localStorage.removeItem("gradly_super_admin_token");
+        navigate("/super-admin/login", { replace: true });
+        throw new Error("Your session expired. Please sign in again.");
+      }
+      if (response.status === 403) throw new Error("This account is not authorized to change administrator status.");
       if (!response.ok) throw new Error(result?.message || `Unable to update status (HTTP ${response.status}).`);
       setNotice(`${record.full_name} is now ${nextStatus.toLowerCase()}.`);
+      setError("");
       await loadAdministrators();
+      if (error) setNotice(`${record.full_name} status was updated, but the list could not be refreshed.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to update administrator status.");
     } finally {
