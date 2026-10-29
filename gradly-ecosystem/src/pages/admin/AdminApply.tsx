@@ -239,7 +239,7 @@ export default function AdminApply() {
                   <div className="application-status-heading"><div><strong>{application.full_name}</strong><div className="application-date">Submitted {new Date(application.created_at).toLocaleDateString("en-IN")}</div></div><span className={`application-status-pill status-${application.status.toLowerCase()}`}>{statusLabel(application.status)}</span></div>
                   <p className="status-description">Enrollment: {application.enrollment_number}</p>
                   {application.rejection_reason && <p className="rejection-reason">{application.rejection_reason}</p>}
-                  {application.status === "ACCEPTED" && <div className="accepted-notice">Your application has been accepted. Follow the registration instructions provided by the administrator team.</div>}
+                  {application.status === "ACCEPTED" && <><div className="accepted-notice">Your application has been accepted. Continue to create your administrator credentials.</div><button className="system-button" type="button" onClick={() => navigate(`/admin/register?applicationId=${encodeURIComponent(application.id)}`)}>Complete registration <ArrowRight size={16} /></button></>}
                 </article>)}
               </section>
             </>
