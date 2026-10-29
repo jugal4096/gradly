@@ -29,6 +29,20 @@ function validateAdminId(value: unknown): string {
   return adminId;
 }
 
+function validateApplicationId(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new RegistrationError("Accepted application ID is required.");
+  }
+
+  const applicationId = value.trim();
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(applicationId)) {
+    throw new RegistrationError("Accepted application ID is invalid.");
+  }
+
+  return applicationId;
+}
+
 function validatePassword(value: unknown): string {
   if (typeof value !== "string" || value.length < 12) {
     throw new RegistrationError(
@@ -48,6 +62,7 @@ export async function registerApprovedAdmin(
   body: Record<string, unknown>
 ) {
   const adminId = validateAdminId(body.admin_id);
+  const applicationId = validateApplicationId(body.application_id);
   const password = validatePassword(body.password);
 
   // Hash before opening the transaction to minimize lock duration.
@@ -90,19 +105,18 @@ export async function registerApprovedAdmin(
     const applicationResult = await client.query(
       `SELECT *
        FROM public.admin_applications
-       WHERE user_id = $1
+       WHERE id = $1
+         AND user_id = $2
          AND status = 'ACCEPTED'
-       ORDER BY reviewed_at DESC NULLS LAST
-       LIMIT 1
        FOR UPDATE`,
-      [user.id]
+      [applicationId, user.id]
     );
 
     const application = applicationResult.rows[0];
 
     if (!application) {
       throw new RegistrationError(
-        "No accepted admin application was found. It may already be registered.",
+        "No accepted admin application matching this account was found. It may already be registered.",
         403
       );
     }
