@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import "../../styles/super-admin-dashboard.css";
 
 type Administrator = {
   id: string;
