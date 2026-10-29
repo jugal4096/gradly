@@ -30,11 +30,11 @@ export async function getSuperAdminAuditLogs(
     values.push(`%${search}%`);
     const index = values.length;
     conditions.push(`(
-      action ILIKE ${index}
-      OR COALESCE(actor_role, '') ILIKE ${index}
-      OR COALESCE(entity_table, '') ILIKE ${index}
-      OR COALESCE(entity_id::text, '') ILIKE ${index}
-      OR COALESCE(actor_id::text, '') ILIKE ${index}
+      action ILIKE $${index}
+      OR COALESCE(actor_role, '') ILIKE $${index}
+      OR COALESCE(entity_table, '') ILIKE $${index}
+      OR COALESCE(entity_id::text, '') ILIKE $${index}
+      OR COALESCE(actor_id::text, '') ILIKE $${index}
     )`);
   }
 
