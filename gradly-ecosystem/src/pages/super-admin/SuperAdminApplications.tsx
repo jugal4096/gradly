@@ -527,7 +527,7 @@ export default function SuperAdminApplications() {
 
   // Accept, reject, or block an application.
   async function performAction(
-    action: "accept" | "reject" | "block"
+    action: "accept" | "reject"
   ) {
     if (!selected) return;
 
@@ -540,23 +540,8 @@ export default function SuperAdminApplications() {
       return;
     }
 
-    if (
-      (action === "reject" || action === "block") &&
-      !reason.trim()
-    ) {
-      setError(
-        action === "reject"
-          ? "Enter a rejection reason."
-          : "Enter a reason for blocking this applicant."
-      );
-      return;
-    }
-
-    // The current backend review API supports only ACCEPTED and REJECTED.
-    if (action === "block") {
-      setError(
-        "Blocking is not supported by the current review API. Use a dedicated blocking endpoint once it is implemented."
-      );
+    if (action === "reject" && !reason.trim()) {
+      setError("Enter a rejection reason.");
       return;
     }
 
@@ -1162,19 +1147,7 @@ export default function SuperAdminApplications() {
                         Reject
                       </button>
 
-                      <button
-                        type="button"
-                        className="action-button block"
-                        disabled={
-                          actionLoading || configurationSaving
-                        }
-                        onClick={() =>
-                          void performAction("block")
-                        }
-                      >
-                        <ShieldBan size={17} />
-                        Permanently block
-                      </button>
+
                     </div>
                   </div>
                 </>
