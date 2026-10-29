@@ -14,9 +14,9 @@ export default function RequireSuperAdmin({
   const [state, setState] = useState<GuardState>("checking");
   const [attempt, setAttempt] = useState(0);
 
+  // Session verification is an asynchronous external-system check; its result updates guard state.
   useEffect(() => {
     let cancelled = false;
-    setState("checking");
 
     verifySession().then((status) => {
       if (!cancelled) setState(status);
@@ -45,7 +45,7 @@ export default function RequireSuperAdmin({
     return (
       <div style={{ padding: 24 }}>
         <p>Could not reach the server to verify your session.</p>
-        <button type="button" onClick={() => setAttempt((n) => n + 1)}>
+        <button type="button" onClick={() => { setState("checking"); setAttempt((n) => n + 1); }}>
           Retry
         </button>
       </div>

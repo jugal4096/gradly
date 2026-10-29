@@ -13,6 +13,10 @@ import {
   SuperAdminAuthenticatedRequest,
 } from "../../middleware/super-admin-auth.middleware";
 
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 /* =========================================================
    LIST
    ========================================================= */
@@ -28,9 +32,11 @@ export async function getAdministrators(
       status,
       registrationStatus,
       search,
+      limit,
+      offset,
     } = req.query;
 
-    const administrators =
+    const result =
       await listAdministrators({
         institutionId:
           typeof institutionId === "string"
@@ -56,11 +62,27 @@ export async function getAdministrators(
           typeof search === "string"
             ? search
             : undefined,
+
+        limit:
+          typeof limit === "string" && /^\d+$/.test(limit)
+            ? Number(limit)
+            : undefined,
+
+        offset:
+          typeof offset === "string" && /^\d+$/.test(offset)
+            ? Number(offset)
+            : undefined,
       });
 
     return res.status(200).json({
-      administrators,
-      count: administrators.length,
+      administrators: result.administrators,
+      count: result.administrators.length,
+      total: result.total,
+      page: {
+        limit: result.limit,
+        offset: result.offset,
+        hasMore: result.offset + result.administrators.length < result.total,
+      },
     });
   } catch (error) {
     console.error(
@@ -87,7 +109,7 @@ export async function getAdministratorDetails(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     if (!adminId) {
       return res.status(400).json({
@@ -129,7 +151,7 @@ export async function updateAdministratorStatus(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       status,
@@ -198,7 +220,7 @@ export async function updateAdministratorDepartment(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       branchId,
@@ -266,7 +288,7 @@ export async function extendAdminship(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       expiresAt,
@@ -334,7 +356,7 @@ export async function updateGraduationDate(
 ) {
   try {
     const adminId =
-      req.params.adminId;
+      firstParam(req.params.adminId);
 
     const {
       graduationDate,

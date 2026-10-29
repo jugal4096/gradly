@@ -16,15 +16,11 @@ import {
     useParams,
   } from "react-router-dom";
   
-  import "./SuperAdminUserDetails.css";
+  import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import "./SuperAdminUserDetails.css";
   
   
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:5000/api";
-  
-  
-  interface Student {
+interface Student {
     id: string;
     email: string | null;
     display_name: string | null;
@@ -128,9 +124,13 @@ import {
             return;
           }
   
+          if (!isApiConfigured) {
+            throw new Error(API_CONFIGURATION_ERROR);
+          }
+
           const response =
             await fetch(
-              `${API_BASE_URL}/super-admin/users/${userId}`,
+              `${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(userId)}`,
               {
                 headers: {
                   Authorization:

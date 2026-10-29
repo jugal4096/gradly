@@ -33,6 +33,10 @@ import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
+import SuperAdminAdministrators from "./pages/super-admin/SuperAdminAdministrators";
+import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
+import SuperAdminSecurity from "./pages/super-admin/SuperAdminSecurity";
+import SuperAdminHierarchy from "./pages/super-admin/SuperAdminHierarchy";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -127,6 +131,26 @@ function App() {
           <Route
             path="users/:userId"
             element={<SuperAdminUserDetails />}
+          />
+
+          <Route
+            path="admins"
+            element={<SuperAdminAdministrators />}
+          />
+
+          <Route
+            path="audit"
+            element={<SuperAdminAudit />}
+          />
+
+          <Route
+            path="security"
+            element={<SuperAdminSecurity />}
+          />
+
+          <Route
+            path="hierarchy"
+            element={<SuperAdminHierarchy />}
           />
 
           <Route

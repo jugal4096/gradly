@@ -4,6 +4,9 @@ import { Router, Response } from "express";
 import { loginSuperAdmin } from "./superAdmin.controller";
 import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
+import { getSuperAdminAuditLogs } from "./audit.controller";
+import { getSuperAdminSecurityEvents } from "./security.controller";
+import { getSuperAdminAcademicHierarchy } from "./hierarchy.controller";
 
 import {
   authenticateSuperAdminToken,
@@ -40,6 +43,25 @@ router.get(
   "/dashboard/stats",
   authenticateSuperAdminToken,
   getSuperAdminDashboardStats
+);
+
+/* Read-only audit history for privileged governance review. */
+router.get(
+  "/audit",
+  authenticateSuperAdminToken,
+  getSuperAdminAuditLogs
+);
+
+router.get(
+  "/security/events",
+  authenticateSuperAdminToken,
+  getSuperAdminSecurityEvents
+);
+
+router.get(
+  "/hierarchy",
+  authenticateSuperAdminToken,
+  getSuperAdminAcademicHierarchy
 );
 
 /*

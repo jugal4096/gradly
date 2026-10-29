@@ -2,6 +2,7 @@ import {
     createGuestCourse,
     createGuestSemester,
     findGuestSemester,
+    findGuestSemesterByIdAndSession,
     getGuestSemesterCourses,
     type CreateGuestCourseData,
     type CreateGuestSemesterData,
@@ -23,13 +24,24 @@ import {
   }
   
   export async function addGuestCourse(
-    data: CreateGuestCourseData
+    data: CreateGuestCourseData,
+    guestSessionId: string
   ) {
-    return await createGuestCourse(data);
+    return await createGuestCourse(data, guestSessionId);
   }
   
   export async function getGuestCourses(
+    guestSessionId: string,
     guestSemesterId: string
   ) {
-    return await getGuestSemesterCourses(guestSemesterId);
+    const semester = await findGuestSemesterByIdAndSession(
+      guestSemesterId,
+      guestSessionId
+    );
+
+    if (!semester) {
+      return null;
+    }
+
+    return await getGuestSemesterCourses(guestSessionId, guestSemesterId);
   }

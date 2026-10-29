@@ -123,6 +123,8 @@ import {
     );
   }
   
+  // This module intentionally exports the AuthContext hook alongside its provider.
+  // eslint-disable-next-line react-refresh/only-export-components
   export function useAuth() {
     const context =
       useContext(AuthContext);

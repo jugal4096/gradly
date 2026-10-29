@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "tsx --test src/modules/guest/guest.academic.repository.test.ts src/modules/super-admin/audit.controller.test.ts src/modules/super-admin/security.controller.test.ts src/modules/super-admin/superAdmin.login-rate-limit.test.ts",
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts"
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",

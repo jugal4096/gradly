@@ -10,6 +10,8 @@ export type AdministratorListFilters = {
   status?: string;
   registrationStatus?: string;
   search?: string;
+  limit?: number;
+  offset?: number;
 };
 
 export type UpdateAdminStatus =
@@ -104,6 +106,23 @@ export async function findAdministrators(
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
 
+  const requestedLimit = Number.isFinite(filters.limit) ? Math.trunc(filters.limit as number) : 25;
+  const requestedOffset = Number.isFinite(filters.offset) ? Math.trunc(filters.offset as number) : 0;
+  const limit = Math.min(100, Math.max(1, requestedLimit));
+  const offset = Math.min(1000000, Math.max(0, requestedOffset));
+
+  const countResult = await pool.query(`
+    SELECT COUNT(*)::int AS total
+    FROM admins a
+    JOIN institutions i ON i.id = a.institution_id
+    LEFT JOIN branches b ON b.id = a.branch_id
+    ${whereClause}
+  `, values);
+
+  const listValues = [...values, limit, offset];
+  const limitParameter = listValues.length - 1;
+  const offsetParameter = listValues.length;
+
   const query = `
     SELECT
       a.id,
@@ -164,15 +183,19 @@ export async function findAdministrators(
         WHEN a.status = 'SUSPENDED' THEN 2
         ELSE 3
       END,
-      a.full_name ASC;
+      a.full_name ASC
+    LIMIT $${limitParameter}
+    OFFSET $${offsetParameter};
   `;
 
-  const result = await pool.query(
-    query,
-    values
-  );
+  const result = await pool.query(query, listValues);
 
-  return result.rows;
+  return {
+    administrators: result.rows,
+    total: Number(countResult.rows[0]?.total ?? 0),
+    limit,
+    offset,
+  };
 }
 
 /* =========================================================
