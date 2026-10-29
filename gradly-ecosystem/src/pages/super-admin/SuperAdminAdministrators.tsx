@@ -175,7 +175,7 @@ export default function SuperAdminAdministrators() {
   }
 
   return (
-    <main className="super-dashboard" style={{ minHeight: "70vh" }}>
+    <main className="super-dashboard sd-admin-management" style={{ minHeight: "70vh" }}>
       <header className="sd-header">
         <div className="sd-header-copy">
           <div className="sd-eyebrow"><ShieldCheck size={14} /> GRADLY / ACCESS GOVERNANCE</div>
