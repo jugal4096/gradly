@@ -14,6 +14,10 @@ import {
   MessageSquare,
   Menu,
   LogOut,
+  LockKeyhole,
+  Megaphone,
+  Settings,
+  ShieldAlert,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -756,20 +760,20 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => goToSection("sd-platform-metrics")}
+                    onClick={() => { setMenuOpen(false); navigate("/super-admin/institutions"); }}
                   >
                     <Building2 size={18} />
-                    <span>Institutions overview</span>
+                    <span>Institutions</span>
                     <ArrowRight size={15} />
                   </button>
 
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => goToSection("sd-work-queues")}
+                    onClick={() => { setMenuOpen(false); navigate("/super-admin/curriculum"); }}
                   >
                     <BookOpen size={18} />
-                    <span>Curriculum requests</span>
+                    <span>Curriculum &amp; courses</span>
                     <ArrowRight size={15} />
                   </button>
 
@@ -806,10 +810,10 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => goToSection("sd-recent-activity")}
+                    onClick={() => { setMenuOpen(false); navigate("/super-admin/audit"); }}
                   >
                     <FileText size={18} />
-                    <span>Quick logs</span>
+                    <span>Audit logs</span>
                     <ArrowRight size={15} />
                   </button>
 
@@ -822,6 +826,15 @@ export default function SuperAdminDashboard() {
                     <span>System information</span>
                     <ArrowRight size={15} />
                   </button>
+
+                  <div className="sd-drawer-divider" />
+                  <span className="sd-drawer-group-label">PLATFORM CONTROL</span>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/requests"); }}><ClipboardList size={18} /><span>Request centre</span><ArrowRight size={15} /></button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/feedback"); }}><MessageSquare size={18} /><span>Feedback &amp; support</span><ArrowRight size={15} /></button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/password-resets"); }}><LockKeyhole size={18} /><span>Password reset requests</span><ArrowRight size={15} /></button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/safety"); }}><ShieldAlert size={18} /><span>Safety &amp; security</span><ArrowRight size={15} /></button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/announcements"); }}><Megaphone size={18} /><span>Announcements</span><ArrowRight size={15} /></button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/settings"); }}><Settings size={18} /><span>System settings</span><ArrowRight size={15} /></button>
                 </nav>
 
                 <div className="sd-drawer-footer">
