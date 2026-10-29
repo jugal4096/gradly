@@ -60,3 +60,81 @@
 @keyframes sam-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.sam-spin{animation:none}}
 @media(max-width:600px){.sam-data-toolbar{align-items:flex-start;flex-direction:column}.sam-refresh{width:100%}.sam-search{gap:7px}.sam-search button{padding:8px}.sam-table th,.sam-table td{padding:10px}}
+
+
+/* Shared premium violet theme for every Super Admin module page */
+.sam-page {
+  --sam-ink: #f5f3ff;
+  --sam-muted: #aaa4c7;
+  --sam-purple: #a78bfa;
+  --sam-line: rgba(190,171,255,.16);
+  color: var(--sam-ink);
+  max-width: 1440px;
+  min-height: calc(100vh - 40px);
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(124,58,237,.2), transparent 38%),
+    radial-gradient(ellipse at 90% 12%, rgba(168,85,247,.12), transparent 32%),
+    linear-gradient(145deg,#0b0816 0%,#100b21 52%,#0b0a17 100%);
+  border: 1px solid var(--sam-line);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.035);
+}
+.sam-page .sam-header h1 { color:#faf7ff; letter-spacing:-.035em; }
+.sam-page .sam-header p, .sam-page .sam-back { color:#b8afd5; }
+.sam-page .sam-eyebrow, .sam-page .sam-section-heading>div>span { color:#c4b5fd; }
+.sam-page .sam-header-icon, .sam-page .sam-status-icon {
+  color:#e9ddff;
+  background:linear-gradient(145deg,rgba(167,139,250,.28),rgba(124,58,237,.13));
+  border:1px solid rgba(196,181,253,.24);
+  box-shadow:0 10px 28px rgba(0,0,0,.2),inset 0 1px rgba(255,255,255,.1);
+}
+.sam-page .sam-data-panel, .sam-page .sam-overview, .sam-page .sam-navigation,
+.sam-page .sam-status-card {
+  color:#f5f3ff;
+  background:linear-gradient(145deg,rgba(30,22,52,.94),rgba(17,14,32,.96));
+  border:1px solid var(--sam-line);
+  border-radius:20px;
+  box-shadow:0 14px 34px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.035);
+}
+.sam-page .sam-data-toolbar h2, .sam-page .sam-section-heading h2,
+.sam-page .sam-status-copy strong { color:#faf7ff; }
+.sam-page .sam-data-toolbar p, .sam-page .sam-status-copy p,
+.sam-page .sam-status-copy>span, .sam-page .sam-capability>span:last-child { color:#aaa4c7; }
+.sam-page .sam-refresh, .sam-page .sam-search button, .sam-page .sam-error button {
+  color:#fff;
+  background:linear-gradient(135deg,#8b5cf6,#6d28d9);
+  border:1px solid rgba(221,214,254,.2);
+  box-shadow:0 8px 22px rgba(109,40,217,.25);
+}
+.sam-page .sam-search { background:rgba(8,6,18,.55); border-color:rgba(190,171,255,.17); color:#c4b5fd; }
+.sam-page .sam-search input { color:#f5f3ff; }
+.sam-page .sam-search input::placeholder { color:#82799f; }
+.sam-page .sam-capability {
+  background:linear-gradient(145deg,rgba(139,92,246,.1),rgba(255,255,255,.018));
+  border:1px solid rgba(190,171,255,.13);
+  border-radius:15px;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.sam-page .sam-capability:hover { transform:translateY(-3px); border-color:rgba(196,181,253,.4); background:rgba(139,92,246,.12); }
+.sam-page .sam-capability strong { color:#f5f3ff; }
+.sam-page .sam-capability-number { color:#c4b5fd; }
+.sam-page .sam-scope, .sam-page .sam-status-pill { color:#ddd6fe; background:rgba(139,92,246,.13); border:1px solid rgba(167,139,250,.22); }
+.sam-page .sam-workspace-link {
+  color:#e9ddff;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(190,171,255,.12);
+  border-radius:14px;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.sam-page .sam-workspace-link:hover { transform:translateY(-2px); color:#fff; background:rgba(139,92,246,.13); border-color:rgba(196,181,253,.36); }
+.sam-page .sam-workspace-link>span { color:#c4b5fd; background:rgba(139,92,246,.15); border:1px solid rgba(190,171,255,.13); }
+.sam-page .sam-table-wrap { border-color:rgba(190,171,255,.14); }
+.sam-page .sam-table th { background:#211638; color:#c4b5fd; border-bottom-color:rgba(190,171,255,.16); }
+.sam-page .sam-table td { color:#d6d0e8; border-bottom-color:rgba(190,171,255,.1); }
+.sam-page .sam-table tbody tr:hover td { background:rgba(139,92,246,.09); }
+.sam-page .sam-empty { color:#a99bcf; }
+.sam-page .sam-empty strong { color:#f5f3ff; }
+.sam-page .sam-error { color:#fecaca; background:rgba(127,29,29,.18); border-color:rgba(248,113,113,.25); }
+.sam-page .sam-readonly-note, .sam-page .sam-footer { color:#958bac; }
+@media(max-width:600px) { .sam-page { border-radius:16px; padding:16px; } }
+@media(prefers-reduced-motion:reduce) { .sam-page .sam-capability,.sam-page .sam-workspace-link { transition:none; } }
