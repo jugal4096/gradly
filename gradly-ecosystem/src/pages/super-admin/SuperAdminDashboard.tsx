@@ -36,16 +36,13 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import { clearToken, getToken } from "../../lib/superAdminSession";
 import "../../styles/super-admin-dashboard.css";
 
-const configuredApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
-).trim().replace(/\/+$/, "");
-
-const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
-
-const STATS_ENDPOINT =
-  `${API_BASE_URL}/api/super-admin/dashboard/stats`;
+const STATS_ENDPOINT = API_BASE_URL
+  ? `${API_BASE_URL}/api/super-admin/dashboard/stats`
+  : "";
 
 type Stats = {
   totalUsers: number | null;
@@ -339,6 +336,7 @@ export default function SuperAdminDashboard() {
 
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [activityAvailable, setActivityAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -360,8 +358,11 @@ export default function SuperAdminDashboard() {
     setError("");
 
     try {
-      const token = localStorage.getItem("gradly_super_admin_token");
+      if (!isApiConfigured) {
+        throw new Error(API_CONFIGURATION_ERROR);
+      }
 
+      const token = getToken();
       const response = await fetch(STATS_ENDPOINT, {
         method: "GET",
         credentials: "include",
@@ -373,7 +374,7 @@ export default function SuperAdminDashboard() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem("gradly_super_admin_token");
+          clearToken();
           navigate("/super-admin/login", { replace: true });
           throw new Error("Your session expired. Please sign in again.");
         }
@@ -417,6 +418,7 @@ export default function SuperAdminDashboard() {
         openFeedback: safeCount(data.openFeedback),
       });
 
+      setActivityAvailable(data.activityAvailable !== false);
       setActivities(
         Array.isArray(data.recentActivity)
           ? data.recentActivity.map(
@@ -1425,19 +1427,21 @@ export default function SuperAdminDashboard() {
                   </div>
 
                   <strong>
-                    {error
+                    {error || !activityAvailable
                       ? "Activity unavailable"
                       : activities.length === 0
-                        ? "No activity loaded yet"
+                        ? "No activity recorded yet"
                         : "No matching events"}
                   </strong>
 
                   <span>
                     {error
-                      ? "Check the dashboard API and audit log source."
-                      : activities.length === 0
-                        ? "The API should return a recentActivity array to populate this feed."
-                        : "Try another search term or activity filter."}
+                      ? "Check the dashboard API configuration and try again."
+                      : !activityAvailable
+                        ? "The audit log source could not be loaded. Dashboard metrics remain available; contact a system maintainer to investigate audit storage."
+                        : activities.length === 0
+                          ? "No audit events are available for this feed yet."
+                          : "Try another search term or activity filter."}
                   </span>
 
                   {(activitySearch || activityFilter !== "all") && (
