@@ -927,3 +927,18 @@ html[data-super-admin-theme="dark"] .super-admin-shell {
   .sidebar-link { transition: none !important; }
   .sidebar-link:hover { transform: none; }
 }
+
+
+/* VISIBILITY PATCH — high contrast purple UI v2 */
+html[data-super-admin-theme="light"] .super-admin-shell { color:#24143d !important; }
+html[data-super-admin-theme="light"] .super-admin-shell :is(.brand-name,.content-system-left,.content-system-right,.system-path,.sidebar-heading,.sidebar-version,.super-admin-page) { color:#2c1a49 !important; }
+html[data-super-admin-theme="light"] .super-admin-shell :is(.brand-product,.sidebar-version,.system-path) { color:#6b5a86 !important; }
+html[data-super-admin-theme="dark"] .super-admin-shell { color:#f7f2ff !important; }
+html[data-super-admin-theme="dark"] .super-admin-shell :is(.brand-name,.content-system-left,.content-system-right,.system-path,.sidebar-heading,.sidebar-version,.super-admin-page) { color:#f2eaff !important; }
+html[data-super-admin-theme="dark"] .super-admin-shell :is(.brand-product,.sidebar-version,.system-path) { color:#c3b3df !important; }
+.super-admin-shell svg { flex-shrink:0; }
+.super-admin-sidebar .sidebar-link svg,.super-admin-sidebar .sidebar-logout svg { color:currentColor !important; opacity:1 !important; }
+html[data-super-admin-theme="light"] .super-admin-sidebar .sidebar-link-active svg { color:#6d28d9 !important; }
+html[data-super-admin-theme="dark"] .super-admin-sidebar .sidebar-link-active svg { color:#c4b5fd !important; }
+.super-admin-topbar,.super-admin-sidebar { box-shadow:0 12px 34px rgba(52,24,94,.09),inset 0 1px 0 rgba(255,255,255,.72); }
+html[data-super-admin-theme="dark"] .super-admin-topbar,html[data-super-admin-theme="dark"] .super-admin-sidebar { box-shadow:0 16px 38px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.04); }
