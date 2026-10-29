@@ -19,7 +19,6 @@ export default function RequireSuperAdmin({
     let cancelled = false;
 
     verifySession().then((status) => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!cancelled) setState(status);
     });
 
