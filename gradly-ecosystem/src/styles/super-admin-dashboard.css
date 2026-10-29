@@ -3692,3 +3692,22 @@ html[data-super-admin-theme="dark"] .super-dashboard :is(.sd-metric-icon,.sd-que
 .super-dashboard .sd-hero { box-shadow:0 20px 46px rgba(79,43,140,.16),inset 0 1px 0 rgba(255,255,255,.45); }
 html[data-super-admin-theme="dark"] .super-dashboard .sd-hero { box-shadow:0 22px 48px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08); }
 .super-dashboard :is(button,a):focus-visible { outline:3px solid #a78bfa !important;outline-offset:3px; }
+
+
+
+/* Purple command-center design system and explicit icon contrast */
+.super-dashboard { --sd-purple:#7541df; --sd-purple-dark:#5424ad; --sd-ink:#281642; --sd-muted:#6e5d83; }
+.super-dashboard svg { flex-shrink:0; opacity:1 !important; visibility:visible; }
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-link { color:#392653 !important; }
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-link svg { color:#7541df !important; }
+html[data-super-admin-theme="dark"] .super-dashboard .sd-drawer-link { color:#f0e8ff !important; }
+html[data-super-admin-theme="dark"] .super-dashboard .sd-drawer-link svg { color:#cbb0ff !important; }
+.super-dashboard .sd-drawer-link { min-height:48px; border-radius:12px; transition:transform .18s ease,background .18s ease,box-shadow .18s ease; }
+.super-dashboard .sd-drawer-link:hover { transform:translateX(3px); box-shadow:0 7px 18px rgba(91,33,182,.12); }
+.super-dashboard .sd-drawer-link svg:first-child { width:19px; height:19px; padding:2px; box-sizing:content-box; border-radius:7px; }
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-link svg:first-child { background:#eee5ff; }
+html[data-super-admin-theme="dark"] .super-dashboard .sd-drawer-link svg:first-child { background:#35214f; }
+.super-dashboard .sd-metric-icon svg,.super-dashboard .sd-queue-icon svg,.super-dashboard .sd-detail-heading-icon svg,.super-dashboard .sd-action-icon svg,.super-dashboard .sd-activity-icon svg,.super-dashboard .sd-system-icon svg { color:inherit !important; opacity:1 !important; }
+html[data-super-admin-theme="light"] .super-dashboard .sd-navigation-bar { box-shadow:0 10px 30px rgba(63,35,103,.09),inset 0 1px 0 rgba(255,255,255,.8); }
+html[data-super-admin-theme="dark"] .super-dashboard .sd-navigation-bar { box-shadow:0 12px 32px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.05); }
+@media (prefers-reduced-motion:reduce) { .super-dashboard .sd-drawer-link { transition:none; } .super-dashboard .sd-drawer-link:hover { transform:none; } }
