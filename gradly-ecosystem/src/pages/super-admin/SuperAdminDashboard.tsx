@@ -756,6 +756,26 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
+                    onClick={() => goToSection("sd-platform-metrics")}
+                  >
+                    <Building2 size={18} />
+                    <span>Institutions overview</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-work-queues")}
+                  >
+                    <BookOpen size={18} />
+                    <span>Curriculum requests</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
                     onClick={() => goToSection("sd-work-queues")}
                   >
                     <ClipboardList size={18} />
@@ -780,6 +800,16 @@ export default function SuperAdminDashboard() {
                   >
                     <Activity size={18} />
                     <span>Recent activity</span>
+                    <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="sd-drawer-link"
+                    onClick={() => goToSection("sd-recent-activity")}
+                  >
+                    <FileText size={18} />
+                    <span>Quick logs</span>
                     <ArrowRight size={15} />
                   </button>
 
