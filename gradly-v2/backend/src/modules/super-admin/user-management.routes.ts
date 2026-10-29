@@ -9,6 +9,7 @@ import {
   getStudent,
   updateStudentStatus,
   getStudentActivityLog,
+  listGuestSessions,
 } from "./user-management.controller";
 
 
@@ -18,6 +19,8 @@ router.use(
   authenticateSuperAdminToken
 );
 
+
+router.get("/guests", listGuestSessions);
 
 router.get(
   "/",
