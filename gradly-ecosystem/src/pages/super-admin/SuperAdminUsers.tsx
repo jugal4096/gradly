@@ -223,7 +223,6 @@ export default function SuperAdminUsers() {
           </table>
         </div>
         <p style={{ color: "#776d89", fontSize: 12, margin: 0 }}>{loading ? "Loading results…" : `Showing ${filtered.length} of ${students.length} loaded users${count == null ? "" : ` · API count: ${count}`}.`}</p>
-      </section>
 
         </>)}
 
