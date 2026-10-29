@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, BookOpen, Building2, FilterX, GitBranch, GraduationCap, RefreshCw, Search, ShieldCheck, Pencil, X, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
@@ -88,7 +88,7 @@ export default function SuperAdminCurriculum() {
     const inferred = /b\\.?tech|btech|bachelor of technology/i.test(row.program_name) ? 8 : /mca|m\\.?tech|mtech|master of technology/i.test(row.program_name) ? 4 : (row.total_semesters || 8);
     setEditing(row); setEditStatus(row.status || "DRAFT"); setEditVersion(row.version || "1"); setEditSemesters(String(row.total_semesters || inferred)); setError(""); setNotice("");
   }
-  async function saveCurriculum(event: React.FormEvent<HTMLFormElement>) {
+  async function saveCurriculum(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!editing) return;
     setSaving(true); setError(""); setNotice("");
     try {
@@ -151,7 +151,7 @@ export default function SuperAdminCurriculum() {
       </form>}
       {error ? <div role="alert" style={{ margin: 20, padding: 16, borderRadius: 12, border: "1px solid #fecaca", background: "#fff1f2", color: "#9f1239" }}><strong>Could not load curriculum data</strong><p style={{ marginBottom: 10 }}>{error}</p><button type="button" onClick={() => void load()}>Try again</button></div> : loading ? <div style={{ padding: 36, textAlign: "center", color: "#756b8e" }}>Loading real curriculum records…</div> : filtered.length === 0 ? <div style={{ padding: 42, textAlign: "center", color: "#756b8e" }}><BookOpen size={28}/><h3 style={{ color: "#241447" }}>No matching curriculum records</h3><p>Try clearing one or more filters, or refresh the catalogue.</p></div> :
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 850, fontSize: 13 }}><thead><tr>{["Curriculum","Institute","Program","Branch","Semester","Academic year","Status","Version","Actions"].map(title => <th key={title} style={{ textAlign: "left", padding: "13px 15px", color: "#76678e", background: "#faf8ff", fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{title}</th>)}</tr></thead><tbody>{filtered.map((row,index) => <tr key={`${row.id}-${row.branch_id ?? "none"}-${row.semester_number ?? "none"}`} style={{ borderTop: "1px solid #f0ebf7", background: index % 2 ? "#fff" : "#fdfcff" }}><td style={{ padding: "15px", fontWeight: 750, color: "#2d1b4b" }}>{row.curriculum_name || "Curriculum"}<small style={{ display: "block", marginTop: 4, color: "#9286a6", fontWeight: 500 }}>ID: {row.id}</small></td><td style={{ padding: "15px" }}>{row.institution_name}</td><td style={{ padding: "15px" }}>{row.program_name}</td><td style={{ padding: "15px" }}>{row.branch_name || "No branch linked"}</td><td style={{ padding: "15px" }}>{row.semester_number ? "Sem " + row.semester_number + (row.semester_name ? " · " + row.semester_name : "") : "Up to " + (row.total_semesters || "—") + " semesters"}</td><td style={{ padding: "15px" }}>{row.academic_year || "—"}</td><td style={{ padding: "15px" }}><span style={{ display: "inline-flex", padding: "5px 8px", borderRadius: 8, background: row.status ? "#f1eaff" : "#f4f1f8", color: row.status ? "#7042b5" : "#7b728b", fontSize: 11, fontWeight: 750 }}>{row.status || "Unspecified"}</span></td><td style={{ padding: "15px" }}>{row.version || "—"}</td><td style={{ padding: "15px" }}><button type="button" onClick={() => startEdit(row)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", border: "1px solid #d9c8f7", borderRadius: 9, background: "#f7f2ff", color: "#7042b5", cursor: "pointer", whiteSpace: "nowrap" }}><Pencil size={13}/> Edit syllabus</button></td></tr>)}</tbody></table></div>}
-      <div style={{ padding: "12px 20px", borderTop: "1px solid #eee8f7", color: "#9286a6", fontSize: 11 }}>This view shows curriculum records returned by the backend (up to 500 per refresh). It does not edit or delete academic data.</div>
+      <div style={{ padding: "12px 20px", borderTop: "1px solid #eee8f7", color: "#9286a6", fontSize: 11 }}>This view shows curriculum records returned by the backend (up to 500 per refresh). Curriculum metadata can be edited; subject-level syllabus editing is not connected yet.</div>
     </section>
   </main>;
 }
