@@ -129,7 +129,6 @@ export async function findAdministrators(
       p.name AS program_name,
 
       a.enrollment_number,
-      a.graduation_date,
 
       a.adminship_started_at,
       a.adminship_expires_at,
@@ -215,7 +214,6 @@ export async function findAdministratorById(
       p.name AS program_name,
 
       a.enrollment_number,
-      a.graduation_date,
 
       a.adminship_started_at,
       a.adminship_expires_at,
@@ -441,8 +439,7 @@ export async function findAdminGraduationDate(
       a.adminship_expires_at,
 
       COALESCE(
-        a.graduation_date,
-        NULL
+          NULL
       ) AS graduation_date
 
     FROM admins a
