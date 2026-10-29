@@ -42,6 +42,7 @@ const STATS_ENDPOINT = `${API_BASE_URL}/api/super-admin/dashboard/stats`;
 
 type Stats = {
   totalUsers: number | null;
+  totalGuestSessions: number | null;
   totalAdmins: number;
   totalInstitutions: number;
   totalCourses: number;
@@ -62,6 +63,7 @@ type ActivityItem = {
 
 type OverviewKey =
   | "totalUsers"
+  | "totalGuestSessions"
   | "totalAdmins"
   | "totalInstitutions"
   | "totalCourses";
@@ -80,6 +82,7 @@ type ActivityFilter =
 
 const EMPTY_STATS: Stats = {
   totalUsers: null,
+  totalGuestSessions: null,
   totalAdmins: 0,
   totalInstitutions: 0,
   totalCourses: 0,
@@ -100,10 +103,18 @@ const overviewCards: {
   {
     key: "totalUsers",
     label: "Total users",
-    description: "Global count not exposed by API",
+    description: "Registered platform accounts",
     icon: Users,
     tone: "violet",
-    detail: "A verified platform-wide user total is not provided by the current dashboard API.",
+    detail: "Registered accounts excluding Super Admin accounts. Guest sessions are counted separately.",
+  },
+  {
+    key: "totalGuestSessions",
+    label: "Guest sessions",
+    description: "Anonymous access sessions",
+    icon: Activity,
+    tone: "violet",
+    detail: "Guest session records created by Gradly. These are anonymous sessions, not registered user profiles.",
   },
   {
     key: "totalAdmins",
@@ -403,6 +414,7 @@ export default function SuperAdminDashboard() {
 
       setStats({
         totalUsers: nullableCount(data.totalUsers),
+        totalGuestSessions: nullableCount(data.totalGuestSessions),
         totalAdmins: safeCount(data.totalAdmins),
         totalInstitutions: safeCount(data.totalInstitutions),
         totalCourses: safeCount(data.totalCourses),
