@@ -412,3 +412,24 @@
     }
   
   }
+
+/* Contrast-safe Super Admin users view */
+html[data-super-admin-theme="dark"] .super-users-page { color:#f4efff;background:#100b20;border-color:#3a2b52; }
+html[data-super-admin-theme="dark"] .super-users-header h1,
+html[data-super-admin-theme="dark"] .super-user-main strong { color:#f6f1ff; }
+html[data-super-admin-theme="dark"] .super-users-header p,
+html[data-super-admin-theme="dark"] .super-users-kicker,
+html[data-super-admin-theme="dark"] .super-user-main span { color:#b8adce; }
+html[data-super-admin-theme="dark"] .super-users-refresh,
+html[data-super-admin-theme="dark"] .super-users-search,
+html[data-super-admin-theme="dark"] .super-users-count,
+html[data-super-admin-theme="dark"] .super-users-table { color:#e9e1f8;background:#19122b;border-color:#403153; }
+html[data-super-admin-theme="dark"] .super-users-search input { color:#f4efff; }
+html[data-super-admin-theme="dark"] .super-users-search input::placeholder { color:#b0a3c7; }
+html[data-super-admin-theme="dark"] .super-users-table-head { color:#d7c9f2;background:#261b3a;border-color:#403153; }
+html[data-super-admin-theme="dark"] .super-user-row { color:#ded5ee;background:#19122b;border-bottom-color:#342644; }
+html[data-super-admin-theme="dark"] .super-user-row:hover { background:#251a38; }
+html[data-super-admin-theme="dark"] .super-user-avatar { color:#d7c4ff;background:#33234d;border-color:#554070; }
+html[data-super-admin-theme="dark"] .super-users-empty,
+html[data-super-admin-theme="dark"] .super-users-empty svg { color:#b9adcf; }
+html[data-super-admin-theme="dark"] .super-users-error { color:#ffd6d6;background:#351b22;border-color:#75404a; }
