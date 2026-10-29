@@ -617,7 +617,7 @@ export default function SuperAdminDashboard() {
                 type="button"
                 className="sd-menu-toggle"
                 aria-label={
-                  menuOpen ? "Close navigation menu" : "Open navigation menu"
+                  menuOpen ? "Close workspace navigation" : "Open workspace navigation"
                 }
                 aria-expanded={menuOpen}
                 aria-controls="sd-navigation-drawer"
@@ -625,7 +625,7 @@ export default function SuperAdminDashboard() {
                 onClick={() => setMenuOpen((open) => !open)}
               >
                 {menuOpen ? <X size={19} /> : <Menu size={19} />}
-                <span>{menuOpen ? "Close menu" : "Menu"}</span>
+                <span>{menuOpen ? "Close workspace" : "Workspace"}</span>
               </button>
             </div>
           </div>
@@ -650,9 +650,9 @@ export default function SuperAdminDashboard() {
                 <div className="sd-drawer-heading">
                   <div>
                     <span className="sd-section-kicker">
-                      GRADLY / CONTROL CENTER
+                      GRADLY / WORKSPACE
                     </span>
-                    <h2 id="sd-drawer-title">Navigation</h2>
+                    <h2 id="sd-drawer-title">Workspace</h2>
                   </div>
 
                   <button
@@ -667,7 +667,7 @@ export default function SuperAdminDashboard() {
 
                 <nav
                   className="sd-drawer-nav"
-                  aria-label="Super Admin navigation"
+                  aria-label="Super Admin workspace navigation"
                 >
                   <button
                     type="button"
@@ -712,16 +712,6 @@ export default function SuperAdminDashboard() {
                     <span>Applications</span>
                     <ArrowRight size={15} />
                   </button>
-
-                  <div className="sd-drawer-divider" />
-
-                  
-
-                  
-
-                  
-
-                  
 
                   <div className="sd-drawer-divider" />
 
