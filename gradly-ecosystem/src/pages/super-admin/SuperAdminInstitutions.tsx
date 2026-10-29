@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
 type Institution = { id: string; name: string; active_admins: number; active_users: number; curriculum_count: number; program_count: number; branch_count: number };
-type Program = { id: string; name: string; branch_count: number; branches: { id: string; name: string }[] };
+type Program = { id: string; name: string; branch_count: number; branches: { id: string; name: string }[]; semesters?: { id: string; semester_number: number; name: string }[] };
 const panel: React.CSSProperties = { background: "linear-gradient(145deg,#201735,#151123)", border: "1px solid #49356d", borderRadius: 18, padding: 20, color: "#f7f2ff", boxShadow: "0 14px 35px #09061155" };
 const field: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 10, border: "1px solid #584578", background: "#100c1d", color: "#fff", outlineColor: "#b99aff" };
 const primary: React.CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 15px", border: 0, borderRadius: 10, background: "linear-gradient(110deg,#8b5cf6,#c084fc)", color: "#fff", fontWeight: 750, cursor: "pointer" };
@@ -17,6 +17,8 @@ export default function SuperAdminInstitutions() {
   const [name, setName] = useState("");
   const [programName, setProgramName] = useState<Record<string, string>>({});
   const [branchName, setBranchName] = useState<Record<string, string>>({});
+  const [semesterName, setSemesterName] = useState<Record<string, string>>({});
+  const [semesterNumber, setSemesterNumber] = useState<Record<string, string>>({});
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState("");
   const [search, setSearch] = useState("");
@@ -87,7 +89,7 @@ export default function SuperAdminInstitutions() {
     finally { setSaving(""); }
   }
 
-  const metrics = [
+  async function submitSemester(event: FormEvent, institutionId: string, programId: string) {\n    event.preventDefault(); const value = (semesterName[programId] || "").trim(); const number = Number(semesterNumber[programId]);\n    if (!value || !Number.isInteger(number) || number < 1 || number > 20) return;\n    setSaving(`semester-${programId}`); setError(""); setNotice("");\n    try {\n      await request(`/institutions/${encodeURIComponent(institutionId)}/programs/${encodeURIComponent(programId)}/semesters`, "POST", { name: value, semesterNumber: number });\n      setSemesterName(old => ({ ...old, [programId]: "" })); setSemesterNumber(old => ({ ...old, [programId]: "" })); setNotice("Semester added to the selected program.");\n      await loadPrograms(institutionId);\n    } catch (e) { setError(e instanceof Error ? e.message : "Unable to create semester."); }\n    finally { setSaving(""); }\n  }\n\n  const metrics = [
     { label: "Active admins", key: "active_admins" as const, icon: ShieldCheck },
     { label: "Active users", key: "active_users" as const, icon: Users },
     { label: "Curricula", key: "curriculum_count" as const, icon: BookOpen },
@@ -137,6 +139,12 @@ export default function SuperAdminInstitutions() {
           </form>
           {(programs[inst.id] || []).map(program => <section key={program.id} style={{ border: "1px solid #45345f", background: "#110d1d", borderRadius: 12, padding: 13 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><strong>{program.name}</strong><span style={{ color: "#cbb5f7", fontSize: 12 }}>{program.branch_count} branches</span></div>
+            {program.semesters?.length ? <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 10 }}>{program.semesters.map(semester => <span key={semester.id} style={{ border: "1px solid #5a4278", borderRadius: 9, background: "#2a1c3c", padding: "6px 9px", color: "#dfd0ff", fontSize: 11 }}>Sem {semester.semester_number} · {semester.name}</span>)}</div> : <div style={{ color: "#a99bbb", fontSize: 12, marginTop: 9 }}>No semesters configured.</div>}
+            <form onSubmit={e => void submitSemester(e, inst.id, program.id)} style={{ display: "grid", gridTemplateColumns: "minmax(70px,90px) minmax(120px,1fr) auto", gap: 8, marginTop: 10 }}>
+              <input aria-label={`Semester number for ${program.name}`} style={field} type="number" required min={1} max={20} value={semesterNumber[program.id] || ""} onChange={e => setSemesterNumber(old => ({ ...old, [program.id]: e.target.value }))} placeholder="No."/>
+              <input aria-label={`Semester name for ${program.name}`} style={field} required minLength={1} maxLength={100} value={semesterName[program.id] || ""} onChange={e => setSemesterName(old => ({ ...old, [program.id]: e.target.value }))} placeholder="Semester name (e.g. Semester 1)"/>
+              <button style={{ ...primary, background: "#7250a3" }} disabled={saving === `semester-${program.id}`}><Plus size={14}/> Add semester</button>
+            </form>
             {program.branches?.length > 0 && <ul style={{ margin: "9px 0", paddingLeft: 22, color: "#c6bad5" }}>{program.branches.map(branch => <li key={branch.id}>{branch.name}</li>)}</ul>}
             <form onSubmit={e => void submitBranch(e, inst.id, program.id)} style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
               <input aria-label={`New branch for ${program.name}`} style={{ ...field, flex: "1 1 160px" }} required minLength={2} maxLength={180} value={branchName[program.id] || ""} onChange={e => setBranchName(old => ({ ...old, [program.id]: e.target.value }))} placeholder="New branch name"/>
