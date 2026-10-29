@@ -285,6 +285,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
             </div>
           </section>
         ) : (
+        <>
         {/* PROFILE */}
   
         <section className="student-profile-card">
@@ -684,6 +685,7 @@ import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../li
           )}
   
         </section>
+        </>
           )}
   
       </div>
