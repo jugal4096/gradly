@@ -74,9 +74,13 @@ export default function SuperAdminLayout() {
 
         <div className="topbar-brand">
 
-          <div className="brand-mark">
-            G
-          </div>
+          <img
+            className="brand-logo-image"
+            src="/gradly-ecosystem-logo.png"
+            alt="Gradly"
+            width={48}
+            height={48}
+          />
 
           <div className="brand-text">
 
