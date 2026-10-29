@@ -41,6 +41,20 @@ export default function RequireSuperAdmin({
     );
   }
 
+  if (state === "forbidden") {
+    return (
+      <div role="alert" style={{ padding: 24 }}>
+        <h2>Access denied</h2>
+        <p>Your session could not be authorized for Super Admin access. The session token has been preserved; sign in with an authorized Super Admin account to continue.</p>
+        <Navigate
+          to="/super-admin/login"
+          replace
+          state={{ from: location.pathname, authorizationRequired: true }}
+        />
+      </div>
+    );
+  }
+
   if (state === "unreachable") {
     return (
       <div style={{ padding: 24 }}>
