@@ -601,24 +601,7 @@ export default function SuperAdminDashboard() {
       <div className="sd-shell">
         <div className="sd-main-column">
           <div className="sd-navigation-bar">
-            <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
-              <img
-                className="sd-brand-logo"
-                src="/gradly-ecosystem-logo.png"
-                alt="Gradly"
-                width={36}
-                height={36}
-              />
-              <span className="sd-brand-name">
-                GRADLY <small>ECOSYSTEM</small>
-              </span>
-            </div>
-
-            <div className="sd-navigation-actions">
-              <span className="sd-access-chip">
-                <ShieldCheck size={14} /> Super Admin
-              </span>
-
+            <div className="sd-navigation-leading">
               <button
                 type="button"
                 className="sd-menu-toggle"
@@ -633,6 +616,25 @@ export default function SuperAdminDashboard() {
                 {menuOpen ? <X size={19} /> : <Menu size={19} />}
                 <span>{menuOpen ? "Close workspace" : "Workspace"}</span>
               </button>
+
+              <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
+                <img
+                  className="sd-brand-logo"
+                  src="/gradly-ecosystem-logo.png"
+                  alt="Gradly"
+                  width={56}
+                  height={56}
+                />
+                <span className="sd-brand-name">
+                  GRADLY <small>ECOSYSTEM</small>
+                </span>
+              </div>
+            </div>
+
+            <div className="sd-navigation-actions">
+              <span className="sd-access-chip">
+                <ShieldCheck size={14} /> Super Admin
+              </span>
             </div>
           </div>
 
