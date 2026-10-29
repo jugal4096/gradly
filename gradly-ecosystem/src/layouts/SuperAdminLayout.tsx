@@ -38,12 +38,6 @@ const controlNavigation = [
 ];
 
 
-const systemNavigation = [
-  {
-    label: "Settings",
-    ];
-
-
 export default function SuperAdminLayout() {
 
   const navigate = useNavigate();
