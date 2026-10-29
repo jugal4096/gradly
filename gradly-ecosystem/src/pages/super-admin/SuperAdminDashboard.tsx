@@ -100,7 +100,7 @@ const overviewCards: {
     description: "Global count not exposed by API",
     icon: Users,
     tone: "violet",
-    detail: "Monitor registered users and their account status.",
+    detail: "A verified platform-wide user total is not provided by the current dashboard API.",
   },
   {
     key: "totalAdmins",
@@ -172,25 +172,25 @@ const quickActions: {
   target: OverviewKey;
 }[] = [
   {
-    label: "Manage users",
+    label: "Open user records",
     description: "Review platform accounts",
     icon: Users,
     target: "totalUsers",
   },
   {
-    label: "Manage administrators",
+    label: "Review administrator metrics",
     description: "Review access and permissions",
     icon: ShieldCheck,
     target: "totalAdmins",
   },
   {
-    label: "Manage institutions",
+    label: "Inspect institution metrics",
     description: "Inspect institutions and branches",
     icon: Building2,
     target: "totalInstitutions",
   },
   {
-    label: "Manage courses",
+    label: "Inspect course metrics",
     description: "Inspect academic courses",
     icon: BookOpen,
     target: "totalCourses",
@@ -1374,7 +1374,7 @@ export default function SuperAdminDashboard() {
               <span>Environment</span>
               <strong>
                 <span className="sd-env-dot" />
-                Development
+                {import.meta.env.MODE === "production" ? "Production" : "Development"}
               </strong>
             </div>
 
