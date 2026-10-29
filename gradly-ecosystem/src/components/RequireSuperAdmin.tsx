@@ -16,9 +16,10 @@ export default function RequireSuperAdmin({
 
   useEffect(() => {
     let cancelled = false;
-    setState("checking");
-
-    verifySession().then((status) => {
+    void Promise.resolve().then(async () => {
+      if (cancelled) return;
+      setState("checking");
+      const status = await verifySession();
       if (!cancelled) setState(status);
     });
 
