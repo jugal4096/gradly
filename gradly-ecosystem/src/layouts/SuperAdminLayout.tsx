@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";\nimport { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import "../styles/super-admin.css";
 
@@ -59,6 +59,17 @@ export default function SuperAdminLayout() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("gradly_super_admin_theme") === "dark" ? "dark" : "light");
+
+  useEffect(() => {
+    document.documentElement.dataset.superAdminTheme = theme;
+    const handleThemeChange = (event: Event) => {
+      const nextTheme = (event as CustomEvent<"light" | "dark">).detail;
+      if (nextTheme === "light" || nextTheme === "dark") setTheme(nextTheme);
+    };
+    window.addEventListener("gradly-super-admin-theme-change", handleThemeChange);
+    return () => window.removeEventListener("gradly-super-admin-theme-change", handleThemeChange);
+  }, [theme]);
 
   if (location.pathname === "/super-admin") {
     return <Outlet />;
