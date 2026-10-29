@@ -1,0 +1,39 @@
+name: Super Admin implementation checks
+
+on:
+  push:
+    branches:
+      - feat/super-admin-system-2026-10-29
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: super-admin-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ecosystem:
+    name: Ecosystem frontend build and lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gradly-ecosystem/package-lock.json
+      - name: Install locked dependencies
+        working-directory: gradly-ecosystem
+        run: npm ci --no-audit --no-fund
+      - name: TypeScript and production build
+        working-directory: gradly-ecosystem
+        run: npm run build
+      - name: Lint
+        working-directory: gradly-ecosystem
+        run: npm run lint
