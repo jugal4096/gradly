@@ -508,10 +508,12 @@ export async function getAdministratorFilterCatalog(_req: SuperAdminAuthenticate
         `SELECT id, name, institution_id FROM public.programs ORDER BY LOWER(name), id`
       ),
       pool.query(
-        `SELECT b.id, b.name, b.program_id, p.institution_id
+        `SELECT b.id, b.name, b.program_id, p.name AS program_name,
+                p.institution_id, i.name AS institution_name
          FROM public.branches b
          JOIN public.programs p ON p.id = b.program_id
-         ORDER BY LOWER(b.name), b.id`
+         JOIN public.institutions i ON i.id = p.institution_id
+         ORDER BY LOWER(b.name), LOWER(p.name), LOWER(i.name), b.id`
       ),
     ]);
     return res.status(200).json({
