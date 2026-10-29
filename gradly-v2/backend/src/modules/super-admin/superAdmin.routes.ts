@@ -4,6 +4,7 @@ import { Router, Response } from "express";
 import { loginSuperAdmin } from "./superAdmin.controller";
 import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
+import { getSuperAdminWorkspace } from "./super-admin-workspace.controller";
 
 import {
   authenticateSuperAdminToken,
@@ -54,6 +55,8 @@ router.post(
 /*
  * USER MANAGEMENT
  */
+router.get("/workspace/:module", authenticateSuperAdminToken, getSuperAdminWorkspace);
+
 router.use("/users", userManagementRoutes);
 
 export default router;
