@@ -39,7 +39,8 @@ export async function listCurriculumCatalog(req: SuperAdminAuthenticatedRequest,
       FROM public.curricula c
       JOIN public.programs p ON p.id = c.program_id
       JOIN public.institutions i ON i.id = p.institution_id
-      LEFT JOIN public.branches b ON b.program_id = p.id\n      LEFT JOIN public.program_semesters ps ON ps.program_id = p.id
+      LEFT JOIN public.branches b ON b.program_id = p.id
+      LEFT JOIN public.program_semesters ps ON ps.program_id = p.id
       WHERE ($1 = '' OR i.id::text = $1)
         AND ($2 = '' OR p.id::text = $2)
         AND ($3 = '' OR b.id::text = $3)
