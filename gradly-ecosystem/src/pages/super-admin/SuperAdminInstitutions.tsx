@@ -89,7 +89,19 @@ export default function SuperAdminInstitutions() {
     finally { setSaving(""); }
   }
 
-  async function submitSemester(event: FormEvent, institutionId: string, programId: string) {\n    event.preventDefault(); const value = (semesterName[programId] || "").trim(); const number = Number(semesterNumber[programId]);\n    if (!value || !Number.isInteger(number) || number < 1 || number > 20) return;\n    setSaving(`semester-${programId}`); setError(""); setNotice("");\n    try {\n      await request(`/institutions/${encodeURIComponent(institutionId)}/programs/${encodeURIComponent(programId)}/semesters`, "POST", { name: value, semesterNumber: number });\n      setSemesterName(old => ({ ...old, [programId]: "" })); setSemesterNumber(old => ({ ...old, [programId]: "" })); setNotice("Semester added to the selected program.");\n      await loadPrograms(institutionId);\n    } catch (e) { setError(e instanceof Error ? e.message : "Unable to create semester."); }\n    finally { setSaving(""); }\n  }\n\n  const metrics = [
+  async function submitSemester(event: FormEvent, institutionId: string, programId: string) {
+    event.preventDefault(); const value = (semesterName[programId] || "").trim(); const number = Number(semesterNumber[programId]);
+    if (!value || !Number.isInteger(number) || number < 1 || number > 20) return;
+    setSaving(`semester-${programId}`); setError(""); setNotice("");
+    try {
+      await request(`/institutions/${encodeURIComponent(institutionId)}/programs/${encodeURIComponent(programId)}/semesters`, "POST", { name: value, semesterNumber: number });
+      setSemesterName(old => ({ ...old, [programId]: "" })); setSemesterNumber(old => ({ ...old, [programId]: "" })); setNotice("Semester added to the selected program.");
+      await loadPrograms(institutionId);
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to create semester."); }
+    finally { setSaving(""); }
+  }
+
+  const metrics = [
     { label: "Active admins", key: "active_admins" as const, icon: ShieldCheck },
     { label: "Active users", key: "active_users" as const, icon: Users },
     { label: "Curricula", key: "curriculum_count" as const, icon: BookOpen },
