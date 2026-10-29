@@ -3515,3 +3515,94 @@
 @media (prefers-reduced-motion: reduce) {
   .super-dashboard .sd-metric-card, .super-dashboard .sd-queue-card, .super-dashboard .sd-action-item, .super-dashboard .sd-drawer-link { transition: none; }
 }
+
+
+/* Accessible WHITE MODE: default appearance for Super Admin dashboard */
+html:not([data-super-admin-theme="dark"]) .super-dashboard,
+html[data-super-admin-theme="light"] .super-dashboard {
+  --sd-ink:#211936;--sd-muted:#625b73;--sd-border:#e6e0f0;--sd-purple:#6741c8;
+  color:#211936;
+  background:radial-gradient(ellipse at 95% 0%,#eee7ff 0,transparent 31%),#f8f7fc;
+}
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-hero,
+html[data-super-admin-theme="light"] .super-dashboard .sd-hero { background:linear-gradient(115deg,#f0eaff,#fff 75%);border-color:#e1d7f5; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-hero-copy h2,
+html[data-super-admin-theme="light"] .super-dashboard .sd-hero-copy h2,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-section-heading h2,
+html[data-super-admin-theme="light"] .super-dashboard .sd-section-heading h2,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-panel-heading h2,
+html[data-super-admin-theme="light"] .super-dashboard .sd-panel-heading h2,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-detail-heading h2,
+html[data-super-admin-theme="light"] .super-dashboard .sd-detail-heading h2 { color:#24183d; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-metric-card,
+html[data-super-admin-theme="light"] .super-dashboard .sd-metric-card,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-queue-card,
+html[data-super-admin-theme="light"] .super-dashboard .sd-queue-card,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-panel,
+html[data-super-admin-theme="light"] .super-dashboard .sd-panel,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-detail-panel,
+html[data-super-admin-theme="light"] .super-dashboard .sd-detail-panel,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-system-strip,
+html[data-super-admin-theme="light"] .super-dashboard .sd-system-strip {
+  color:#29213d;background:#fff;border-color:#e8e2f1;box-shadow:0 8px 24px rgba(45,30,75,.055);
+}
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-metric-label,
+html[data-super-admin-theme="light"] .super-dashboard .sd-metric-label,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-queue-title,
+html[data-super-admin-theme="light"] .super-dashboard .sd-queue-title,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-action-copy strong,
+html[data-super-admin-theme="light"] .super-dashboard .sd-action-copy strong,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-activity-copy strong,
+html[data-super-admin-theme="light"] .super-dashboard .sd-activity-copy strong,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-system-item strong,
+html[data-super-admin-theme="light"] .super-dashboard .sd-system-item strong { color:#2b2141; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-metric-value,
+html[data-super-admin-theme="light"] .super-dashboard .sd-metric-value { color:#5b35b5;text-shadow:none; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-metric-bottom,
+html[data-super-admin-theme="light"] .super-dashboard .sd-metric-bottom,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-queue-description,
+html[data-super-admin-theme="light"] .super-dashboard .sd-queue-description,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-queue-footer,
+html[data-super-admin-theme="light"] .super-dashboard .sd-queue-footer,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-action-copy span,
+html[data-super-admin-theme="light"] .super-dashboard .sd-action-copy span,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-activity-copy p,
+html[data-super-admin-theme="light"] .super-dashboard .sd-activity-copy p,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-activity-copy span,
+html[data-super-admin-theme="light"] .super-dashboard .sd-activity-copy span,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-system-item span,
+html[data-super-admin-theme="light"] .super-dashboard .sd-system-item span { color:#665d79; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-action-item,
+html[data-super-admin-theme="light"] .super-dashboard .sd-action-item { color:#302447;background:#fcfbff;border-color:#e9e2f4; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-search,
+html[data-super-admin-theme="light"] .super-dashboard .sd-search { background:#fff;border-color:#ded5ee;color:#6845b9; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-search input,
+html[data-super-admin-theme="light"] .super-dashboard .sd-search input { color:#29213d; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-search input::placeholder,
+html[data-super-admin-theme="light"] .super-dashboard .sd-search input::placeholder { color:#81768f; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-filter-tabs,
+html[data-super-admin-theme="light"] .super-dashboard .sd-filter-tabs { background:#f5f2fa;border-color:#e5dcef; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-filter-tabs button,
+html[data-super-admin-theme="light"] .super-dashboard .sd-filter-tabs button { color:#665b7b; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-activity-item,
+html[data-super-admin-theme="light"] .super-dashboard .sd-activity-item { border-bottom-color:#eee8f5; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-navigation-drawer,
+html[data-super-admin-theme="light"] .super-dashboard .sd-navigation-drawer { color:#302447;background:linear-gradient(165deg,#fff,#f8f5ff);border-color:#e5dcf3;box-shadow:28px 0 80px rgba(35,20,61,.2); }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-brand strong,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-brand strong,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-heading h2,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-heading h2 { color:#261a3d; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-brand small,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-brand small,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-group-label,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-group-label { color:#726586; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-link,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-link { color:#493d60; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-link:hover,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-link:hover,
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-link.is-current,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-link.is-current { color:#4f2aa6;background:#f0eaff;border-color:#ddd0f4; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-divider,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-divider { background:#e7dff0; }
+html:not([data-super-admin-theme="dark"]) .super-dashboard .sd-drawer-secure-note,
+html[data-super-admin-theme="light"] .super-dashboard .sd-drawer-secure-note { color:#6345a5; }
