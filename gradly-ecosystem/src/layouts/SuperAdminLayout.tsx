@@ -1,5 +1,6 @@
 import {
   Activity,
+  BookOpen,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
@@ -50,6 +51,11 @@ const controlNavigation = [
     label: "Security Center",
     path: "/super-admin/security",
     icon: Activity,
+  },
+  {
+    label: "Academic Hierarchy",
+    path: "/super-admin/hierarchy",
+    icon: BookOpen,
   },
 ];
 
