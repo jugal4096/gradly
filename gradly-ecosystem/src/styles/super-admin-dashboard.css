@@ -3224,3 +3224,52 @@
     padding-left: 16px;
   }
 }
+
+
+/* Workspace control leads the header; brand mark is deliberately prominent. */
+.super-dashboard .sd-navigation-bar {
+  justify-content: space-between;
+  gap: 18px;
+}
+.super-dashboard .sd-navigation-leading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.super-dashboard .sd-navigation-leading .sd-menu-toggle {
+  order: 0;
+  flex: 0 0 auto;
+}
+.super-dashboard .sd-navigation-leading .sd-brand-lockup {
+  order: 1;
+}
+.super-dashboard .sd-navigation-leading .sd-brand-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 13px;
+}
+.super-dashboard .sd-navigation-leading .sd-brand-name {
+  font-size: 16px;
+  font-weight: 850;
+  letter-spacing: .04em;
+}
+.super-dashboard .sd-navigation-leading .sd-brand-name small {
+  font-size: 10px;
+  letter-spacing: .17em;
+}
+@media (max-width: 650px) {
+  .super-dashboard .sd-navigation-leading {
+    gap: 10px;
+  }
+  .super-dashboard .sd-navigation-leading .sd-brand-logo {
+    width: 45px;
+    height: 45px;
+  }
+  .super-dashboard .sd-navigation-leading .sd-brand-name {
+    font-size: 12px;
+  }
+  .super-dashboard .sd-navigation-leading .sd-brand-name small {
+    font-size: 8px;
+  }
+}
