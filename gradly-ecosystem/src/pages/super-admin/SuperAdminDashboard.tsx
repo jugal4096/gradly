@@ -1365,8 +1365,7 @@ export default function SuperAdminDashboard() {
             <div className="sd-system-item">
               <span>Database</span>
               <strong>
-                <CheckCircle2 size={14} />
-                PostgreSQL
+                {error ? "Unavailable" : loading ? "Checking…" : "Not separately verified"}
               </strong>
             </div>
 
