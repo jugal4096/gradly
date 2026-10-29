@@ -1,0 +1,49 @@
+name: Gradly Ecosystem Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "gradly-ecosystem/**"
+      - "gradly-v2/backend/src/modules/admin-registration/**"
+      - "gradly-v2/backend/src/modules/super-admin/**"
+      - "gradly-v2/backend/src/modules/administrator/**"
+      - "gradly-v2/backend/src/modules/academic/**"
+      - ".github/workflows/gradly-ecosystem-validation.yml"
+  push:
+    branches:
+      - "fix/gradly-ecosystem-admin-audit-2026-10-29"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: API contract tests, lint, and production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gradly-ecosystem/package-lock.json
+
+      - name: Install ecosystem dependencies
+        working-directory: gradly-ecosystem
+        run: npm ci
+
+      - name: Run API contract regression tests
+        working-directory: gradly-ecosystem
+        run: npm test
+
+      - name: Run ESLint
+        working-directory: gradly-ecosystem
+        run: npm run lint
+
+      - name: Run TypeScript and Vite production build
+        working-directory: gradly-ecosystem
+        run: npm run build
