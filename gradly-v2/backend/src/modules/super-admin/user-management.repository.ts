@@ -332,7 +332,7 @@ export async function findGuestSessions(filters: { search?: string; institution?
        COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name) AS institution_name,
        (metadata->>'disabled' = 'true') AS disabled,
        CASE
-         WHEN COALESCE((metadata->>'disabled')::boolean, false) THEN false
+         WHEN COALESCE(metadata->>'disabled' = 'true', false) THEN false
          WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN false
          ELSE true
        END AS active
