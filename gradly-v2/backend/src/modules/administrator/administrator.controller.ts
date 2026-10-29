@@ -60,12 +60,12 @@ export async function getAdministrators(
             : undefined,
 
         limit:
-          typeof limit === "string" && /^\\d+$/.test(limit)
+          typeof limit === "string" && /^\d+$/.test(limit)
             ? Number(limit)
             : undefined,
 
         offset:
-          typeof offset === "string" && /^\\d+$/.test(offset)
+          typeof offset === "string" && /^\d+$/.test(offset)
             ? Number(offset)
             : undefined,
       });
