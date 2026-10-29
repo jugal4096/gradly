@@ -12,7 +12,7 @@ import {
   import { useNavigate } from "react-router-dom";
   
   import "../../styles/super-admin-dashboard.css";
-import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
+import { API_BASE_URL, isApiConfigured } from "../../lib/api";
   
   interface Student {
     id: string;
