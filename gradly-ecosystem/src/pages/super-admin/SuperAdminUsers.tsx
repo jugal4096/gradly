@@ -102,19 +102,70 @@ export default function SuperAdminUsers() {
       if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
       const token = localStorage.getItem("gradly_super_admin_token");
       if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
-      const response = await fetch(`${API_BASE_URL}/api/super-admin/users/academic-options`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
+      const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/users/academic-options`, { headers });
       const result = await response.json().catch(() => null) as AcademicOptionsResponse | null;
       if (response.status === 401) {
         localStorage.removeItem("gradly_super_admin_token");
         navigate("/super-admin/login", { replace: true });
         throw new Error("Your session expired. Please sign in again.");
       }
-      if (!response.ok || !Array.isArray(result?.data)) {
-        throw new Error(result?.message || `Unable to load academic options (HTTP ${response.status}).`);
+      if (response.ok && Array.isArray(result?.data)) {
+        setAcademicOptions(result.data);
+        return;
       }
-      setAcademicOptions(result.data);
+
+      // Compatibility fallback for backend deployments that predate
+      // /users/academic-options: use the existing institution/program APIs.
+      const institutionsResponse = await fetch(`${API_BASE_URL}/api/super-admin/institutions`, { headers });
+      const institutionsResult = await institutionsResponse.json().catch(() => null) as {
+        data?: Array<{ id: string | number; name: string }>;
+        message?: string;
+      } | null;
+      if (institutionsResponse.status === 401) {
+        localStorage.removeItem("gradly_super_admin_token");
+        navigate("/super-admin/login", { replace: true });
+        throw new Error("Your session expired. Please sign in again.");
+      }
+      if (!institutionsResponse.ok || !Array.isArray(institutionsResult?.data)) {
+        throw new Error(institutionsResult?.message || result?.message || `Unable to load institutions (HTTP ${institutionsResponse.status}).`);
+      }
+
+      const catalogue = await Promise.all(institutionsResult.data.map(async (institution) => {
+        const programsResponse = await fetch(
+          `${API_BASE_URL}/api/super-admin/institutions/${encodeURIComponent(String(institution.id))}/programs`,
+          { headers },
+        );
+        const programsResult = await programsResponse.json().catch(() => null) as {
+          data?: Array<{
+            id: string | number;
+            name: string;
+            branches?: Array<{ id: string | number; name: string }>;
+          }>;
+          message?: string;
+        } | null;
+        if (programsResponse.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          throw new Error("Your session expired. Please sign in again.");
+        }
+        if (!programsResponse.ok || !Array.isArray(programsResult?.data)) {
+          throw new Error(programsResult?.message || `Unable to load programs for ${institution.name}.`);
+        }
+        return {
+          id: String(institution.id),
+          name: institution.name,
+          programs: programsResult.data.map((program) => ({
+            id: String(program.id),
+            name: program.name,
+            branches: (Array.isArray(program.branches) ? program.branches : []).map((branchOption) => ({
+              id: String(branchOption.id),
+              name: branchOption.name,
+            })),
+          })),
+        };
+      }));
+      setAcademicOptions(catalogue);
     } catch (caught) {
       setAcademicOptions([]);
       setAcademicOptionsError(caught instanceof Error ? caught.message : "Unable to load academic options.");
