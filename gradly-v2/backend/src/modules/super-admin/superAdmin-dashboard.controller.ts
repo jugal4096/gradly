@@ -27,6 +27,12 @@ export async function getSuperAdminDashboardStats(
         (SELECT COUNT(*) FROM admins)::int
           AS "totalAdmins",
 
+        (SELECT COUNT(*) FROM users WHERE UPPER(COALESCE(role, '')) NOT IN ('SUPER_ADMIN', 'SUPERADMIN'))::int
+          AS "totalUsers",
+
+        (SELECT COUNT(*) FROM guest_sessions)::int
+          AS "totalGuestSessions",
+
         (SELECT COUNT(*) FROM institutions)::int
           AS "totalInstitutions",
 
@@ -122,8 +128,6 @@ export async function getSuperAdminDashboardStats(
       success: true,
       data: {
         ...stats,
-        // Do not invent a user count before identifying its table.
-        totalUsers: null,
         recentActivity,
       },
     });

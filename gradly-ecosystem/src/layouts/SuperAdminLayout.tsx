@@ -1,22 +1,23 @@
 import {
   Activity,
   BookOpen,
+  Building2,
   ChevronRight,
   ClipboardList,
+  FileText,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
+  Megaphone,
   MessageSquare,
-  ScrollText,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   Users,
 } from "lucide-react";
 
-import {
-  NavLink,
-  Outlet,
-  useNavigate,
-} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import "../styles/super-admin.css";
 
@@ -43,36 +44,37 @@ const controlNavigation = [
     path: "/super-admin/applications",
     icon: ClipboardList,
   },
-  {
-    label: "Feedback",
-    path: "/super-admin/feedback",
-    icon: MessageSquare,
-  },
-  {
-    label: "Curriculum",
-    path: "/super-admin/curriculum",
-    icon: BookOpen,
-  },
-  {
-    label: "Audit Logs",
-    path: "/super-admin/audit",
-    icon: ScrollText,
-  },
-];
-
-
-const systemNavigation = [
-  {
-    label: "Settings",
-    path: "/super-admin/settings",
-    icon: Settings,
-  },
+  { label: "Institutions", path: "/super-admin/institutions", icon: Building2 },
+  { label: "Curriculum", path: "/super-admin/curriculum", icon: BookOpen },
+  { label: "Quick Logs", path: "/super-admin/audit", icon: FileText },
+  { label: "Feedback", path: "/super-admin/feedback", icon: MessageSquare },
+  { label: "Request Centre", path: "/super-admin/requests", icon: Activity },
+  { label: "Password Requests", path: "/super-admin/password-resets", icon: LockKeyhole },
+  { label: "Security Alarm", path: "/super-admin/safety", icon: ShieldAlert },
+  { label: "Super Admin Announcements", path: "/super-admin/announcements", icon: Megaphone },
+  { label: "Settings", path: "/super-admin/settings", icon: Settings },
 ];
 
 
 export default function SuperAdminLayout() {
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const [theme, setTheme] = useState<"light" | "dark">(() => localStorage.getItem("gradly_super_admin_theme") === "dark" ? "dark" : "light");
+
+  useEffect(() => {
+    document.documentElement.dataset.superAdminTheme = theme;
+    const handleThemeChange = (event: Event) => {
+      const nextTheme = (event as CustomEvent<"light" | "dark">).detail;
+      if (nextTheme === "light" || nextTheme === "dark") setTheme(nextTheme);
+    };
+    window.addEventListener("gradly-super-admin-theme-change", handleThemeChange);
+    return () => window.removeEventListener("gradly-super-admin-theme-change", handleThemeChange);
+  }, [theme]);
+
+  if (location.pathname === "/super-admin") {
+    return <Outlet />;
+  }
 
 
   function handleLogout() {
@@ -101,9 +103,13 @@ export default function SuperAdminLayout() {
 
         <div className="topbar-brand">
 
-          <div className="brand-mark">
-            G
-          </div>
+          <img
+            className="brand-logo-image"
+            src="/gradly-ecosystem-logo.png"
+            alt="Gradly"
+            width={48}
+            height={48}
+          />
 
           <div className="brand-text">
 
@@ -134,7 +140,7 @@ export default function SuperAdminLayout() {
           <span className="status-light" />
 
           <span>
-            ONLINE
+            AUTHENTICATED
           </span>
 
         </div>
@@ -175,62 +181,6 @@ export default function SuperAdminLayout() {
                     key={item.path}
                     to={item.path}
                     end={item.end}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
-                );
-
-              }
-            )}
-
-          </nav>
-
-
-          {/* =================================================
-              SYSTEM
-              ================================================= */}
-
-          <div className="sidebar-heading sidebar-system-heading">
-            SYSTEM
-          </div>
-
-
-          <nav className="sidebar-navigation">
-
-            {systemNavigation.map(
-              (item) => {
-
-                const Icon =
-                  item.icon;
-
-                return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
                     className={({ isActive }) =>
                       `sidebar-link ${
                         isActive
@@ -334,7 +284,7 @@ export default function SuperAdminLayout() {
               </span>
 
               <span className="system-status-value">
-                NORMAL
+                SESSION VERIFIED
               </span>
 
             </div>

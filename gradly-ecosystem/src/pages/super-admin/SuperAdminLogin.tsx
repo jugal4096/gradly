@@ -12,8 +12,9 @@ import "./SuperAdminLogin.css";
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-    (location.state as { from?: string } | null)?.from ?? "/super-admin";
+  const locationState = location.state as { from?: string; authorizationRequired?: boolean } | null;
+  const from = locationState?.from ?? "/super-admin";
+  const authorizationRequired = locationState?.authorizationRequired === true;
 
   const [checking, setChecking] = useState(true);
   const [adminCode, setAdminCode] = useState("");
@@ -24,11 +25,16 @@ export default function SuperAdminLogin() {
 
   useEffect(() => {
     let cancelled = false;
-    verifySession().then((status) => {
-      if (cancelled) return;
-      if (status === "valid") navigate(from, { replace: true });
-      else setChecking(false);
-    });
+    verifySession()
+      .then((status) => {
+        if (cancelled) return;
+        if (status === "valid") navigate(from, { replace: true });
+        else setChecking(false);
+      })
+      .catch(() => {
+        // A temporary session-verification failure should not leave the login screen stuck.
+        if (!cancelled) setChecking(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -162,6 +168,7 @@ export default function SuperAdminLogin() {
               </div>
             </label>
 
+            {authorizationRequired && <p className="super-login-error" role="alert">The previous session was not authorized for Super Admin access. Sign in with an authorized account.</p>}
             {error && <p className="super-login-error" role="alert">{error}</p>}
 
             <button className="super-login-submit" type="submit" disabled={submitting}>

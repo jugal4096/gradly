@@ -10,7 +10,7 @@ import { pool } from "../../config/database";
  * This module is read-only administrative inspection.
  */
 
-export async function findAllStudents(search?: string) {
+export async function findAllStudents(filters: { search?: string; institution?: string; program?: string; branch?: string; active?: boolean } = {}) {
   const query = `
     SELECT
       u.id,
@@ -55,7 +55,7 @@ export async function findAllStudents(search?: string) {
     LEFT JOIN schemes s
       ON s.id = c.scheme_id
 
-    WHERE u.role = 'STUDENT'
+    WHERE UPPER(COALESCE(u.role, '')) NOT IN ('SUPER_ADMIN', 'SUPERADMIN')
 
       AND (
         $1::text IS NULL
@@ -63,14 +63,25 @@ export async function findAllStudents(search?: string) {
         OR u.email ILIKE '%' || $1 || '%'
         OR sp.student_identifier ILIKE '%' || $1 || '%'
         OR b.name ILIKE '%' || $1 || '%'
+        OR i.name ILIKE '%' || $1 || '%'
+        OR p.name ILIKE '%' || $1 || '%'
       )
+
+    AND ($2::text IS NULL OR i.name = $2)
+    AND ($3::text IS NULL OR p.name = $3)
+    AND ($4::text IS NULL OR b.name = $4)
+    AND ($5::boolean IS NULL OR u.active = $5)
 
     ORDER BY
       u.created_at DESC;
   `;
 
   const result = await pool.query(query, [
-    search?.trim() || null,
+    filters.search?.trim() || null,
+    filters.institution?.trim() || null,
+    filters.program?.trim() || null,
+    filters.branch?.trim() || null,
+    typeof filters.active === "boolean" ? filters.active : null,
   ]);
 
   return result.rows;
@@ -136,7 +147,7 @@ export async function findStudentById(
 
     WHERE
       u.id = $1
-      AND u.role = 'STUDENT'
+      AND UPPER(COALESCE(u.role, '')) NOT IN ('SUPER_ADMIN', 'SUPERADMIN')
 
     LIMIT 1;
   `;
@@ -283,4 +294,68 @@ export async function createAuditLog(params: {
       params.metadata ?? {},
     ]
   );
+}
+
+export async function updateStudentActive(userId: string, active: boolean) {
+  const result = await pool.query(
+    `UPDATE users SET active = $2, updated_at = NOW()
+     WHERE id = $1 AND UPPER(COALESCE(role, '')) NOT IN ('SUPER_ADMIN', 'SUPERADMIN')
+     RETURNING id, active, display_name, email`,
+    [userId, active]
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function findUserActivity(userId: string, limit = 100) {
+  const result = await pool.query(
+    `SELECT id, actor_type, actor_id, actor_role, action, entity_table, entity_id,
+            created_at, metadata
+     FROM audit_logs
+     WHERE (entity_table = 'users' AND entity_id = $1) OR actor_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
+}
+
+
+/** Guest sessions have no account profile; expose only session metadata safe for support. */
+export async function findGuestSessions(filters: { search?: string; institution?: string; active?: boolean } = {}) {
+  const result = await pool.query(
+    `SELECT
+       id::text AS id,
+       'GUEST'::text AS account_type,
+       first_seen_at,
+       last_seen_at,
+       expires_at,
+       COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name) AS institution_name,
+       (metadata->>'disabled' = 'true') AS disabled,
+       CASE
+         WHEN COALESCE(metadata->>'disabled' = 'true', false) THEN false
+         WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN false
+         ELSE true
+       END AS active
+     FROM guest_sessions
+     LEFT JOIN LATERAL (
+       SELECT i.name AS institution_name
+       FROM guest_semesters gs
+       LEFT JOIN curricula c ON c.id = gs.curriculum_id
+       LEFT JOIN programs p ON p.id = c.program_id
+       LEFT JOIN institutions i ON i.id = p.institution_id
+       WHERE gs.guest_session_id = guest_sessions.id
+       ORDER BY gs.updated_at DESC NULLS LAST
+       LIMIT 1
+     ) selected ON true
+     WHERE ($1::text IS NULL OR id::text ILIKE '%' || $1 || '%'
+       OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name, '') ILIKE '%' || $1 || '%')
+       AND ($2::text IS NULL OR COALESCE(metadata->>'institutionName', metadata->>'institution_name', metadata->>'selectedInstitution', metadata->>'selected_institution', selected.institution_name, '') = $2)
+       AND ($3::boolean IS NULL OR
+         (CASE WHEN metadata->>'disabled' = 'true' THEN false
+               WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN false ELSE true END) = $3)
+     ORDER BY last_seen_at DESC NULLS LAST
+     LIMIT 500`,
+    [filters.search?.trim() || null, filters.institution?.trim() || null, typeof filters.active === "boolean" ? filters.active : null]
+  );
+  return result.rows;
 }

@@ -32,7 +32,12 @@ import RequireSuperAdmin from "./components/RequireSuperAdmin";
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
+import SuperAdminUserActivity from "./pages/super-admin/SuperAdminUserActivity";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
+import SuperAdminAdministrators from "./pages/super-admin/SuperAdminAdministrators";
+import SuperAdminModule from "./pages/super-admin/SuperAdminModule";
+import SuperAdminInstitutions from "./pages/super-admin/SuperAdminInstitutions";
+import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -125,6 +130,11 @@ function App() {
           />
 
           <Route
+            path="users/:userId/activity"
+            element={<SuperAdminUserActivity />}
+          />
+
+          <Route
             path="users/:userId"
             element={<SuperAdminUserDetails />}
           />
@@ -133,6 +143,27 @@ function App() {
             path="applications"
             element={<SuperAdminApplications />}
           />
+
+          <Route
+            path="admins"
+            element={<SuperAdminAdministrators />}
+          />
+
+          <Route
+            path="admins/:adminId/:adminPage"
+            element={<SuperAdminAdministrators />}
+          />
+
+          <Route path="institutions" element={<SuperAdminInstitutions />} />
+          <Route path="curriculum" element={<SuperAdminCurriculum />} />
+          <Route path="audit" element={<SuperAdminModule />} />
+          <Route path="audit-logs" element={<Navigate to="/super-admin/audit" replace />} />
+          <Route path="feedback" element={<SuperAdminModule />} />
+          <Route path="settings" element={<SuperAdminModule />} />
+          <Route path="safety" element={<SuperAdminModule />} />
+          <Route path="announcements" element={<SuperAdminModule />} />
+          <Route path="password-resets" element={<SuperAdminModule />} />
+          <Route path="requests" element={<SuperAdminModule />} />
         </Route>
 
         {/* =============================================

@@ -7,6 +7,7 @@ import { pool } from "../../config/database";
 export type AdministratorListFilters = {
   institutionId?: string;
   branchId?: string;
+  programId?: string;
   status?: string;
   registrationStatus?: string;
   search?: string;
@@ -15,7 +16,8 @@ export type AdministratorListFilters = {
 export type UpdateAdminStatus =
   | "ACTIVE"
   | "SUSPENDED"
-  | "DISABLED";
+  | "DISABLED"
+  | "DELETED";
 
 export type AdministratorUpdateResult = {
   id: string;
@@ -59,6 +61,8 @@ export async function findAdministrators(
 
     values.push(filters.institutionId);
   }
+
+  if (filters.programId) { conditions.push(`p.id = $${parameterIndex++}`); values.push(filters.programId); }
 
   if (filters.branchId) {
     conditions.push(
@@ -121,6 +125,8 @@ export async function findAdministrators(
 
       a.branch_id,
       b.name AS branch_name,
+      p.id AS program_id,
+      p.name AS program_name,
 
       a.enrollment_number,
 
@@ -155,6 +161,9 @@ export async function findAdministrators(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN programs p
+      ON p.id = b.program_id
 
     ${whereClause}
 
@@ -201,6 +210,8 @@ export async function findAdministratorById(
 
       a.branch_id,
       b.name AS branch_name,
+      p.id AS program_id,
+      p.name AS program_name,
 
       a.enrollment_number,
 
@@ -240,6 +251,9 @@ export async function findAdministratorById(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN programs p
+      ON p.id = b.program_id
 
     WHERE a.id = $1
 
@@ -425,8 +439,7 @@ export async function findAdminGraduationDate(
       a.adminship_expires_at,
 
       COALESCE(
-        a.graduation_date,
-        NULL
+          NULL
       ) AS graduation_date
 
     FROM admins a

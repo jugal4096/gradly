@@ -16,9 +16,10 @@ export default function RequireSuperAdmin({
 
   useEffect(() => {
     let cancelled = false;
-    setState("checking");
-
-    verifySession().then((status) => {
+    void Promise.resolve().then(async () => {
+      if (cancelled) return;
+      setState("checking");
+      const status = await verifySession();
       if (!cancelled) setState(status);
     });
 
@@ -37,6 +38,16 @@ export default function RequireSuperAdmin({
         to="/super-admin/login"
         replace
         state={{ from: location.pathname }}
+      />
+    );
+  }
+
+  if (state === "forbidden") {
+    return (
+      <Navigate
+        to="/super-admin/login"
+        replace
+        state={{ from: location.pathname, authorizationRequired: true }}
       />
     );
   }

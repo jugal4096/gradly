@@ -7,6 +7,10 @@ import {
 import {
   listStudents,
   getStudent,
+  updateStudentStatus,
+  getStudentActivityLog,
+  listGuestSessions,
+  listAcademicOptions,
 } from "./user-management.controller";
 
 
@@ -17,16 +21,18 @@ router.use(
 );
 
 
+router.get("/academic-options", listAcademicOptions);
+router.get("/guests", listGuestSessions);
+
 router.get(
   "/",
   listStudents
 );
 
 
-router.get(
-  "/:userId",
-  getStudent
-);
+router.patch("/:userId/status", updateStudentStatus);
+router.get("/:userId/activity", getStudentActivityLog);
+router.get("/:userId", getStudent);
 
 
 export default router;

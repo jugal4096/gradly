@@ -5,16 +5,13 @@ import {
   Clock3,
   RefreshCw,
   Save,
-  ShieldBan,
   UserRound,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./SuperAdminApplications.css";
-
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
-).replace(/\/+$/, "");
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
 const ADMIN_PERMISSION_OPTIONS = [
   {
@@ -51,17 +48,12 @@ const ADMIN_PERMISSION_OPTIONS = [
 
 type ApplicationStatus =
   | "PENDING"
-  | "UNDER_REVIEW"
   | "ACCEPTED"
-  | "APPROVED"
   | "REJECTED"
-  | "REGISTRATION_IN_PROGRESS"
-  | "REGISTRATION_SUCCESSFUL"
-  | "ACTIVE"
-  | "BLOCKED";
+  | "REGISTRATION_SUCCESSFUL";
 
 type ApplicationFilter = "PENDING" | "ACCEPTED" | "REJECTED" | "ALL";
-type ReviewDecision = "ACCEPTED" | "REJECTED" | "BLOCKED";
+type ReviewDecision = "ACCEPTED" | "REJECTED";
 
 interface Branch {
   id: string;
@@ -156,32 +148,20 @@ function formatDateTime(value?: string | null): string {
 function statusLabel(status: ApplicationStatus): string {
   const labels: Record<ApplicationStatus, string> = {
     PENDING: "Pending",
-    UNDER_REVIEW: "Under Review",
     ACCEPTED: "Accepted",
-    APPROVED: "Approved",
     REJECTED: "Rejected",
-    REGISTRATION_IN_PROGRESS: "Registration in Progress",
     REGISTRATION_SUCCESSFUL: "Registration Successful",
-    ACTIVE: "Active",
-    BLOCKED: "Blocked",
   };
 
   return labels[status] || status;
 }
 
 function statusClass(status: ApplicationStatus): string {
-  if (
-    [
-      "ACCEPTED",
-      "APPROVED",
-      "ACTIVE",
-      "REGISTRATION_SUCCESSFUL",
-    ].includes(status)
-  ) {
+  if (status === "ACCEPTED" || status === "REGISTRATION_SUCCESSFUL") {
     return "accepted";
   }
 
-  if (["REJECTED", "BLOCKED"].includes(status)) {
+  if (status === "REJECTED") {
     return "rejected";
   }
 
@@ -189,7 +169,7 @@ function statusClass(status: ApplicationStatus): string {
 }
 
 function isReviewable(status: ApplicationStatus): boolean {
-  return status === "PENDING" || status === "UNDER_REVIEW";
+  return status === "PENDING";
 }
 
 function StatusIcon({
@@ -201,15 +181,7 @@ function StatusIcon({
     return <Clock3 size={15} />;
   }
 
-  if (
-    [
-      "ACCEPTED",
-      "APPROVED",
-      "ACTIVE",
-      "REGISTRATION_IN_PROGRESS",
-      "REGISTRATION_SUCCESSFUL",
-    ].includes(status)
-  ) {
+  if (["ACCEPTED", "REGISTRATION_SUCCESSFUL"].includes(status)) {
     return <CheckCircle2 size={15} />;
   }
 
@@ -217,6 +189,7 @@ function StatusIcon({
 }
 
 export default function SuperAdminApplications() {
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [status, setStatus] =
     useState<ApplicationFilter>("PENDING");
@@ -230,6 +203,7 @@ export default function SuperAdminApplications() {
   const [reason, setReason] = useState("");
 
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [institutionsError, setInstitutionsError] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [approvedPermissions, setApprovedPermissions] =
     useState<string[]>([]);
@@ -262,24 +236,22 @@ export default function SuperAdminApplications() {
 
   // Load applications from the backend.
   const loadApplications = useCallback(
-    async (showLoading = true) => {
+    async (showLoading = true): Promise<{ ok: true } | { ok: false; message: string }> => {
       const token = getToken();
 
       if (!token) {
+        const message = "Your Super Admin session is missing. Please sign in again.";
         setApplications([]);
         setSelected(null);
         setLoading(false);
-        setError(
-          "Your Super Admin session is missing. Please sign in again."
-        );
-        return;
+        setError(message);
+        navigate("/super-admin/login", { replace: true });
+        return { ok: false, message };
       }
 
       try {
-        if (showLoading) {
-          setLoading(true);
-        }
-
+        if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
+        if (showLoading) setLoading(true);
         setError("");
 
         const query =
@@ -288,7 +260,7 @@ export default function SuperAdminApplications() {
             : `?status=${encodeURIComponent(status)}`;
 
         const response = await fetch(
-          `${API_BASE_URL}/super-admin/applications${query}`,
+          `${API_BASE_URL}/api/super-admin/applications${query}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -299,12 +271,19 @@ export default function SuperAdminApplications() {
 
         const data = await readResponse<Application[]>(response);
 
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          throw new Error("Your session expired. Please sign in again.");
+        }
+
+        if (response.status === 403) {
+          throw new Error("This account is not authorized to review applications.");
+        }
+
         if (!response.ok) {
           throw new Error(
-            getErrorMessage(
-              data,
-              `Unable to load applications. HTTP ${response.status}.`
-            )
+            getErrorMessage(data, `Unable to load applications. HTTP ${response.status}.`)
           );
         }
 
@@ -315,54 +294,40 @@ export default function SuperAdminApplications() {
             : null;
 
         if (!records) {
-          throw new Error(
-            "The server returned an unexpected application list."
-          );
+          throw new Error("The server returned an unexpected application list.");
         }
 
         setApplications(records);
-
-        setSelected((previous) => {
-          if (!previous) return null;
-
-          return (
-            records.find((item) => item.id === previous.id) ??
-            null
-          );
-        });
-      } catch (err) {
-        console.error("Unable to load applications:", err);
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load applications."
+        setSelected((previous) =>
+          previous ? records.find((item) => item.id === previous.id) ?? null : null
         );
+        return { ok: true };
+      } catch (caught) {
+        console.error("Unable to load applications:", caught);
+        const message = caught instanceof Error ? caught.message : "Unable to load applications.";
+        setError(message);
+        return { ok: false, message };
       } finally {
         setLoading(false);
       }
     },
-    [status]
+    [status, navigate]
   );
 
-  // Load institutions and their departments.
+  // Institution master data is public; no Super Admin token is required.
   const loadInstitutions = useCallback(async () => {
-    const token = getToken();
-
-    if (!token) return;
+    if (!isApiConfigured) {
+      setError(API_CONFIGURATION_ERROR);
+      setConfigurationLoading(false);
+      return;
+    }
 
     setConfigurationLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/academic/institutions`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/academic/institutions`, {
+        headers: { Accept: "application/json" },
+      });
 
       const data = await readResponse<Institution[]>(response);
 
@@ -388,10 +353,11 @@ export default function SuperAdminApplications() {
       }
 
       setInstitutions(records);
+      setInstitutionsError("");
     } catch (err) {
       console.error("Unable to load institutions:", err);
 
-      setError(
+      setInstitutionsError(
         err instanceof Error
           ? err.message
           : "Unable to load institutions."
@@ -402,11 +368,11 @@ export default function SuperAdminApplications() {
   }, []);
 
   useEffect(() => {
-    void loadApplications();
+    void Promise.resolve().then(() => loadApplications());
   }, [loadApplications]);
 
   useEffect(() => {
-    void loadInstitutions();
+    void Promise.resolve().then(() => loadInstitutions());
   }, [loadInstitutions]);
 
   // Select an application to review.
@@ -469,7 +435,7 @@ export default function SuperAdminApplications() {
       setNotice("");
 
       const response = await fetch(
-        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
+        `${API_BASE_URL}/api/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/configuration`,
         {
@@ -489,6 +455,11 @@ export default function SuperAdminApplications() {
       const data = await readResponse<unknown>(response);
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          setError("Your session expired. Please sign in again.");
+        }
         throw new Error(
           getErrorMessage(
             data,
@@ -499,9 +470,10 @@ export default function SuperAdminApplications() {
 
       setConfigurationSaved(true);
       setNotice("Department and permissions saved.");
-
-      await loadApplications(false);
-
+      const refresh = await loadApplications(false);
+      if (!refresh.ok) {
+        setError(`Configuration was saved, but the list could not be refreshed: ${refresh.message}`);
+      }
       return true;
     } catch (err) {
       console.error(
@@ -523,7 +495,7 @@ export default function SuperAdminApplications() {
 
   // Accept, reject, or block an application.
   async function performAction(
-    action: "accept" | "reject" | "block"
+    action: "accept" | "reject"
   ) {
     if (!selected) return;
 
@@ -536,23 +508,8 @@ export default function SuperAdminApplications() {
       return;
     }
 
-    if (
-      (action === "reject" || action === "block") &&
-      !reason.trim()
-    ) {
-      setError(
-        action === "reject"
-          ? "Enter a rejection reason."
-          : "Enter a reason for blocking this applicant."
-      );
-      return;
-    }
-
-    // The current backend review API supports only ACCEPTED and REJECTED.
-    if (action === "block") {
-      setError(
-        "Blocking is not supported by the current review API. Use a dedicated blocking endpoint once it is implemented."
-      );
+    if (action === "reject" && !reason.trim()) {
+      setError("Enter a rejection reason.");
       return;
     }
 
@@ -615,7 +572,7 @@ export default function SuperAdminApplications() {
             };
 
       const response = await fetch(
-        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(
+        `${API_BASE_URL}/api/super-admin/applications/${encodeURIComponent(
           selected.id
         )}/review`,
         {
@@ -632,6 +589,10 @@ export default function SuperAdminApplications() {
       const data = await readResponse<unknown>(response);
 
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          setError("Your session expired. Please sign in again.");
+        }
         throw new Error(
           getErrorMessage(
             data,
@@ -640,19 +601,17 @@ export default function SuperAdminApplications() {
         );
       }
 
+      const completedApplication = selected;
       setSelected(null);
       setReason("");
       setDepartmentId("");
       setApprovedPermissions([]);
       setConfigurationSaved(false);
-
-      setNotice(
-        action === "accept"
-          ? "Application accepted."
-          : "Application rejected."
-      );
-
-      await loadApplications(false);
+      setNotice(action === "accept" ? "Application accepted." : "Application rejected.");
+      const refresh = await loadApplications(false);
+      if (!refresh.ok) {
+        setError(`Decision saved for ${completedApplication.full_name}, but the list could not be refreshed: ${refresh.message}`);
+      }
     } catch (err) {
       console.error("Application review failed:", err);
 
@@ -970,6 +929,8 @@ export default function SuperAdminApplications() {
                         </small>
                       )}
 
+                      {institutionsError && <small className="field-warning" role="alert">{institutionsError}</small>}
+
                       {!configurationLoading &&
                         selected.institution_id &&
                         !selectedInstitution && (
@@ -1154,19 +1115,7 @@ export default function SuperAdminApplications() {
                         Reject
                       </button>
 
-                      <button
-                        type="button"
-                        className="action-button block"
-                        disabled={
-                          actionLoading || configurationSaving
-                        }
-                        onClick={() =>
-                          void performAction("block")
-                        }
-                      >
-                        <ShieldBan size={17} />
-                        Permanently block
-                      </button>
+
                     </div>
                   </div>
                 </>
@@ -1182,68 +1131,6 @@ export default function SuperAdminApplications() {
                     <span>
                       The applicant can continue through the
                       administrator registration workflow.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "APPROVED" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Application approved</strong>
-
-                    <span>
-                      Registration must still be completed if
-                      required by the backend workflow.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status ===
-                "REGISTRATION_IN_PROGRESS" && (
-                <div className="completed-notice accepted">
-                  <Clock3 size={20} />
-
-                  <div>
-                    <strong>Registration in progress</strong>
-
-                    <span>
-                      The applicant is completing administrator
-                      registration.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status ===
-                "REGISTRATION_SUCCESSFUL" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Registration successful</strong>
-
-                    <span>
-                      The administrator registration workflow
-                      has completed successfully.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selected.status === "ACTIVE" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Administrator active</strong>
-
-                    <span>
-                      This application is associated with an
-                      active administrator.
                     </span>
                   </div>
                 </div>
@@ -1265,19 +1152,6 @@ export default function SuperAdminApplications() {
                 </div>
               )}
 
-              {selected.status === "BLOCKED" && (
-                <div className="completed-notice rejected">
-                  <ShieldBan size={20} />
-
-                  <div>
-                    <strong>Applicant blocked</strong>
-
-                    <span>
-                      This application is marked as blocked.
-                    </span>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </section>

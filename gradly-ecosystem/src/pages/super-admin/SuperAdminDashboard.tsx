@@ -6,19 +6,18 @@ import {
   ArrowUpRight,
   BookOpen,
   Building2,
-  CheckCircle2,
   ClipboardList,
   Clock3,
   FileText,
   LayoutDashboard,
-  Landmark,
-  GraduationCap,
-  Settings,
-  ScrollText,
   UserCog,
   MessageSquare,
   Menu,
   LogOut,
+  LockKeyhole,
+  Megaphone,
+  Settings,
+  ShieldAlert,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -37,18 +36,13 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import "../../styles/super-admin-dashboard.css";
+import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 
-const configuredApiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
-).trim().replace(/\/+$/, "");
-
-const API_BASE_URL = configuredApiBaseUrl.replace(/\/api$/i, "");
-
-const STATS_ENDPOINT =
-  `${API_BASE_URL}/api/super-admin/dashboard/stats`;
+const STATS_ENDPOINT = `${API_BASE_URL}/api/super-admin/dashboard/stats`;
 
 type Stats = {
   totalUsers: number | null;
+  totalGuestSessions: number | null;
   totalAdmins: number;
   totalInstitutions: number;
   totalCourses: number;
@@ -69,6 +63,7 @@ type ActivityItem = {
 
 type OverviewKey =
   | "totalUsers"
+  | "totalGuestSessions"
   | "totalAdmins"
   | "totalInstitutions"
   | "totalCourses";
@@ -87,6 +82,7 @@ type ActivityFilter =
 
 const EMPTY_STATS: Stats = {
   totalUsers: null,
+  totalGuestSessions: null,
   totalAdmins: 0,
   totalInstitutions: 0,
   totalCourses: 0,
@@ -107,10 +103,18 @@ const overviewCards: {
   {
     key: "totalUsers",
     label: "Total users",
-    description: "Registered platform users",
+    description: "Registered platform accounts",
     icon: Users,
     tone: "violet",
-    detail: "Monitor registered users and their account status.",
+    detail: "Registered accounts excluding Super Admin accounts. Guest sessions are counted separately.",
+  },
+  {
+    key: "totalGuestSessions",
+    label: "Guest sessions",
+    description: "Anonymous access sessions",
+    icon: Activity,
+    tone: "violet",
+    detail: "Guest session records created by Gradly. These are anonymous sessions, not registered user profiles.",
   },
   {
     key: "totalAdmins",
@@ -182,25 +186,25 @@ const quickActions: {
   target: OverviewKey;
 }[] = [
   {
-    label: "Manage users",
+    label: "Open user records",
     description: "Review platform accounts",
     icon: Users,
     target: "totalUsers",
   },
   {
-    label: "Manage administrators",
+    label: "Review administrator metrics",
     description: "Review access and permissions",
     icon: ShieldCheck,
     target: "totalAdmins",
   },
   {
-    label: "Manage institutions",
+    label: "Inspect institution metrics",
     description: "Inspect institutions and branches",
     icon: Building2,
     target: "totalInstitutions",
   },
   {
-    label: "Manage courses",
+    label: "Inspect course metrics",
     description: "Inspect academic courses",
     icon: BookOpen,
     target: "totalCourses",
@@ -360,6 +364,10 @@ export default function SuperAdminDashboard() {
     setError("");
 
     try {
+      if (!isApiConfigured) {
+        throw new Error(API_CONFIGURATION_ERROR);
+      }
+
       const token = localStorage.getItem("gradly_super_admin_token");
 
       const response = await fetch(STATS_ENDPOINT, {
@@ -406,6 +414,7 @@ export default function SuperAdminDashboard() {
 
       setStats({
         totalUsers: nullableCount(data.totalUsers),
+        totalGuestSessions: nullableCount(data.totalGuestSessions),
         totalAdmins: safeCount(data.totalAdmins),
         totalInstitutions: safeCount(data.totalInstitutions),
         totalCourses: safeCount(data.totalCourses),
@@ -435,7 +444,7 @@ export default function SuperAdminDashboard() {
   }, [navigate]);
 
   useEffect(() => {
-    void loadDashboard();
+    void Promise.resolve().then(() => loadDashboard());
   }, [loadDashboard]);
 
   useEffect(() => {
@@ -606,166 +615,14 @@ export default function SuperAdminDashboard() {
       <div className="sd-background-orb sd-orb-two" aria-hidden="true" />
 
       <div className="sd-shell">
-        <aside className="sd-sidebar" aria-label="Super Admin sidebar">
-          <div className="sd-sidebar-brand">
-            <span className="sd-brand-mark">G</span>
-            <span className="sd-brand-name">
-              GRADLY <small>ECOSYSTEM</small>
-            </span>
-          </div>
-
-          <div className="sd-sidebar-caption">WORKSPACE</div>
-
-          <nav className="sd-sidebar-nav" aria-label="Main administration">
-            <button
-              type="button"
-              className="sd-side-link is-active"
-              onClick={() => goToSection("sd-dashboard-top")}
-            >
-              <LayoutDashboard size={18} />
-              <span>Dashboard</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/users")}
-            >
-              <Users size={18} />
-              <span>Users</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/administrators")}
-            >
-              <UserCog size={18} />
-              <span>Admins</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/institutions")}
-            >
-              <Landmark size={18} />
-              <span>Institutions</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/courses")}
-            >
-              <GraduationCap size={18} />
-              <span>Courses</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={openApplications}
-            >
-              <ClipboardList size={18} />
-              <span>Applications</span>
-              {stats.pendingApplications > 0 && (
-                <span className="sd-side-count">
-                  {stats.pendingApplications}
-                </span>
-              )}
-            </button>
-
-            <div className="sd-sidebar-caption sd-sidebar-caption-spaced">
-              ACADEMIC &amp; SUPPORT
-            </div>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/curriculum")}
-            >
-              <BookOpen size={18} />
-              <span>Curriculum</span>
-              {stats.pendingCurriculumRequests > 0 && (
-                <span className="sd-side-count">
-                  {stats.pendingCurriculumRequests}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/feedback")}
-            >
-              <MessageSquare size={18} />
-              <span>Feedback</span>
-              {stats.openFeedback > 0 && (
-                <span className="sd-side-count">
-                  {stats.openFeedback}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/audit-logs")}
-            >
-              <ScrollText size={18} />
-              <span>Audit logs</span>
-            </button>
-
-            <button
-              type="button"
-              className="sd-side-link"
-              onClick={() => navigate("/super-admin/settings")}
-            >
-              <Settings size={18} />
-              <span>Settings</span>
-            </button>
-          </nav>
-
-          <div className="sd-sidebar-bottom">
-            <div className="sd-sidebar-secure">
-              <ShieldCheck size={16} />
-              <span>
-                <strong>Secure workspace</strong>
-                <small>Super Admin access</small>
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className="sd-sidebar-signout"
-              onClick={signOut}
-            >
-              <LogOut size={17} />
-              Sign out
-            </button>
-          </div>
-        </aside>
-
         <div className="sd-main-column">
           <div className="sd-navigation-bar">
-            <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
-              <span className="sd-brand-mark">G</span>
-              <span className="sd-brand-name">
-                GRADLY <small>ECOSYSTEM</small>
-              </span>
-            </div>
-
-            <div className="sd-navigation-actions">
-              <span className="sd-access-chip">
-                <ShieldCheck size={14} /> Super Admin
-              </span>
-
+            <div className="sd-navigation-leading">
               <button
                 type="button"
                 className="sd-menu-toggle"
                 aria-label={
-                  menuOpen ? "Close navigation menu" : "Open navigation menu"
+                  menuOpen ? "Close workspace navigation" : "Open workspace navigation"
                 }
                 aria-expanded={menuOpen}
                 aria-controls="sd-navigation-drawer"
@@ -773,8 +630,27 @@ export default function SuperAdminDashboard() {
                 onClick={() => setMenuOpen((open) => !open)}
               >
                 {menuOpen ? <X size={19} /> : <Menu size={19} />}
-                <span>{menuOpen ? "Close menu" : "Menu"}</span>
+                <span>{menuOpen ? "Close workspace" : "Workspace"}</span>
               </button>
+
+              <div className="sd-brand-lockup" aria-label="Gradly Ecosystem">
+                <img
+                  className="sd-brand-logo"
+                  src="/gradly-ecosystem-logo.png"
+                  alt="Gradly"
+                  width={56}
+                  height={56}
+                />
+                <span className="sd-brand-name">
+                  GRADLY <small>ECOSYSTEM</small>
+                </span>
+              </div>
+            </div>
+
+            <div className="sd-navigation-actions">
+              <span className="sd-access-chip">
+                <ShieldCheck size={14} /> Super Admin
+              </span>
             </div>
           </div>
 
@@ -795,10 +671,23 @@ export default function SuperAdminDashboard() {
                 aria-modal="true"
                 aria-labelledby="sd-drawer-title"
               >
+                <div className="sd-drawer-brand">
+                  <img
+                    src="/gradly-ecosystem-logo.png"
+                    alt=""
+                    width={42}
+                    height={42}
+                  />
+                  <span>
+                    <strong>Gradly Ecosystem</strong>
+                    <small>SUPER ADMIN WORKSPACE</small>
+                  </span>
+                </div>
+
                 <div className="sd-drawer-heading">
                   <div>
                     <span className="sd-section-kicker">
-                      GRADLY / CONTROL CENTER
+                      WORKSPACE MENU
                     </span>
                     <h2 id="sd-drawer-title">Navigation</h2>
                   </div>
@@ -815,8 +704,9 @@ export default function SuperAdminDashboard() {
 
                 <nav
                   className="sd-drawer-nav"
-                  aria-label="Super Admin navigation"
+                  aria-label="Super Admin workspace navigation"
                 >
+                  <span className="sd-drawer-group-label">COMMAND CENTRE</span>
                   <button
                     type="button"
                     className="sd-drawer-link is-current"
@@ -827,148 +717,41 @@ export default function SuperAdminDashboard() {
                     <ArrowRight size={15} />
                   </button>
 
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/users")}
-                  >
-                    <Users size={18} />
-                    <span>Users</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/users"); }}>
+                    <Users size={18} /><span>Users</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/administrators")}
-                  >
-                    <UserCog size={18} />
-                    <span>Admins</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/admins"); }}>
+                    <UserCog size={18} /><span>Administrators</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/institutions")}
-                  >
-                    <Landmark size={18} />
-                    <span>Institutions</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/institutions"); }}>
+                    <Building2 size={18} /><span>Institutions</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/courses")}
-                  >
-                    <GraduationCap size={18} />
-                    <span>Courses</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/curriculum"); }}>
+                    <BookOpen size={18} /><span>Curriculum</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={openApplications}
-                  >
-                    <ClipboardList size={18} />
-                    <span>Applications</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={openApplications}>
+                    <ClipboardList size={18} /><span>Applications</span><ArrowRight size={15} />
+                  </button>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/requests"); }}>
+                    <Activity size={18} /><span>Request Centre</span><ArrowRight size={15} />
                   </button>
 
                   <div className="sd-drawer-divider" />
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/curriculum")}
-                  >
-                    <BookOpen size={18} />
-                    <span>Curriculum</span>
-                    <ArrowRight size={15} />
+                  <span className="sd-drawer-group-label">GOVERNANCE &amp; SECURITY</span>
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/audit"); }}>
+                    <FileText size={18} /><span>Quick Logs</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/feedback")}
-                  >
-                    <MessageSquare size={18} />
-                    <span>Feedback</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/password-resets"); }}>
+                    <LockKeyhole size={18} /><span>Password Requests</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/audit-logs")}
-                  >
-                    <ScrollText size={18} />
-                    <span>Audit logs</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/safety"); }}>
+                    <ShieldAlert size={18} /><span>Security Alarm</span><ArrowRight size={15} />
                   </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/settings")}
-                  >
-                    <Settings size={18} />
-                    <span>Settings</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/announcements"); }}>
+                    <Megaphone size={18} /><span>Super Admin Announcements</span><ArrowRight size={15} />
                   </button>
-
-                  <div className="sd-drawer-divider" />
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-platform-metrics")}
-                  >
-                    <Users size={18} />
-                    <span>Platform metrics</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-work-queues")}
-                  >
-                    <ClipboardList size={18} />
-                    <span>Work queues</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-quick-actions")}
-                  >
-                    <ShieldCheck size={18} />
-                    <span>Quick actions</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-recent-activity")}
-                  >
-                    <Activity size={18} />
-                    <span>Recent activity</span>
-                    <ArrowRight size={15} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="sd-drawer-link"
-                    onClick={() => goToSection("sd-system-information")}
-                  >
-                    <Building2 size={18} />
-                    <span>System information</span>
-                    <ArrowRight size={15} />
+                  <button type="button" className="sd-drawer-link" onClick={() => { setMenuOpen(false); navigate("/super-admin/settings"); }}>
+                    <Settings size={18} /><span>Settings</span><ArrowRight size={15} />
                   </button>
                 </nav>
 
@@ -1038,7 +821,7 @@ export default function SuperAdminDashboard() {
 
             <div className="sd-hero-summary">
               <span className="sd-summary-label">OPEN WORK QUEUE</span>
-              <strong>{loading ? "—" : formatNumber(pendingTotal)}</strong>
+              <strong>{loading || error ? "—" : formatNumber(pendingTotal)}</strong>
               <span className="sd-summary-caption">
                 Items across dashboard queues
               </span>
@@ -1081,16 +864,8 @@ export default function SuperAdminDashboard() {
               </div>
 
               <span className="sd-data-status">
-                <span
-                  className={
-                    error ? "sd-status-dot sd-dot-error" : "sd-status-dot"
-                  }
-                />
-                {loading
-                  ? "Updating data"
-                  : error
-                    ? "API unavailable"
-                    : "Dashboard overview"}
+                <span className={error ? "sd-status-dot sd-dot-error" : "sd-status-dot"} />
+                {loading ? "Updating data" : error ? "API unavailable" : "Live dashboard data"}
               </span>
             </div>
 
@@ -1125,6 +900,8 @@ export default function SuperAdminDashboard() {
                     <span className="sd-metric-value">
                       {loading ? (
                         <span className="sd-skeleton" />
+                      ) : error ? (
+                        "—"
                       ) : (
                         formatCount(value)
                       )}
@@ -1181,7 +958,7 @@ export default function SuperAdminDashboard() {
                           count > 0 ? "has-pending" : ""
                         }`}
                       >
-                        {loading ? "—" : formatNumber(count)}
+                        {loading || error ? "—" : formatNumber(count)}
                       </span>
                     </span>
 
@@ -1200,9 +977,11 @@ export default function SuperAdminDashboard() {
 
                       {loading
                         ? "Checking queue…"
-                        : count > 0
-                          ? "Awaiting attention"
-                          : "No pending items"}
+                        : error
+                          ? "Data unavailable"
+                          : count > 0
+                            ? "Awaiting attention"
+                            : "No pending items"}
 
                       <ArrowRight size={14} />
                     </span>
@@ -1250,7 +1029,7 @@ export default function SuperAdminDashboard() {
                 <div className="sd-detail-count">
                   <span>Current count</span>
                   <strong>
-                    {loading ? "—" : formatCount(selectedCount)}
+                    {loading || error ? "—" : formatCount(selectedCount)}
                   </strong>
                 </div>
 
@@ -1326,7 +1105,7 @@ export default function SuperAdminDashboard() {
                 </div>
 
                 <span className="sd-panel-badge">
-                  {activities.length} EVENTS
+                  {error ? "—" : `${activities.length} EVENTS`}
                 </span>
               </div>
 
@@ -1475,8 +1254,7 @@ export default function SuperAdminDashboard() {
             <div className="sd-system-item">
               <span>Database</span>
               <strong>
-                <CheckCircle2 size={14} />
-                PostgreSQL
+                {error ? "Unavailable" : loading ? "Checking…" : "Not separately verified"}
               </strong>
             </div>
 
@@ -1484,7 +1262,7 @@ export default function SuperAdminDashboard() {
               <span>Environment</span>
               <strong>
                 <span className="sd-env-dot" />
-                Development
+                {import.meta.env.MODE === "production" ? "Production" : "Development"}
               </strong>
             </div>
 
