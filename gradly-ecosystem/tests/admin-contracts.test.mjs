@@ -108,3 +108,34 @@ test("dashboard does not fabricate platform-wide user totals or show healthy cou
   assert.match(superAdminDashboard, /loading \|\| error \? "—"/);
   assert.match(superAdminDashboard, /error \? "—" : `\$\{activities\.length\} EVENTS`/);
 });
+
+
+test("Super Admin workspace routes expose only authenticated, allow-listed read APIs", () => {
+  const workspaceController = read(repositoryRoot, "gradly-v2/backend/src/modules/super-admin/super-admin-workspace.controller.ts");
+  const superAdminRoutes = read(repositoryRoot, "gradly-v2/backend/src/modules/super-admin/superAdmin.routes.ts");
+  const appRoutes = read(ecosystemRoot, "src/App.tsx");
+  const modulePage = read(ecosystemRoot, "src/pages/super-admin/SuperAdminModule.tsx");
+
+  assert.match(superAdminRoutes, /router\.get\("\/workspace\/:module",\s*authenticateSuperAdminToken,\s*getSuperAdminWorkspace\)/);
+  assert.match(workspaceController, /const MODULES = new Set\(\["institutions", "curriculum", "audit", "feedback"\]\)/);
+  assert.match(workspaceController, /if \(!req\.superAdmin\)/);
+  assert.match(workspaceController, /readOnly: true/);
+  assert.match(workspaceController, /WORKSPACE_DATA_UNAVAILABLE/);
+  assert.doesNotMatch(workspaceController, /INSERT INTO|UPDATE public\.|DELETE FROM/);
+
+  for (const route of ["institutions", "curriculum", "audit", "feedback", "settings"]) {
+    assert.match(appRoutes, new RegExp(`path="${route}"`));
+  }
+  assert.match(modulePage, /if \(!info\.apiKey\)/);
+  assert.match(modulePage, /Backend workflow integration required/);
+  assert.match(modulePage, /Not connected to a live data source/);
+});
+
+test("workspace frontend never presents unimplemented modules as live database integrations", () => {
+  const modulePage = read(ecosystemRoot, "src/pages/super-admin/SuperAdminModule.tsx");
+  assert.match(modulePage, /const live = Boolean\(info\.apiKey\)/);
+  assert.match(modulePage, /live \? \(/);
+  assert.match(modulePage, /Integration required/);
+  assert.match(modulePage, /Your appearance preference is saved in this browser/);
+  assert.match(modulePage, /localStorage\.setItem\("gradly_super_admin_theme", nextTheme\)/);
+});
