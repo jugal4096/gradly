@@ -3,6 +3,7 @@ import { Router } from "express";
 import { authenticateSuperAdminToken } from "../../middleware/super-admin-auth.middleware";
 import {
   listGuests,
+  listAcademicOptions,
   listBranches,
   listStudents,
   getStudent,
@@ -18,6 +19,7 @@ const router = Router();
 router.use(authenticateSuperAdminToken);
 
 // Keep the named route before /:userId so "guests" is not treated as a user ID.
+router.get("/academic-options", listAcademicOptions);
 router.get("/guests", listGuests);
 router.get("/guests/:guestId/activity", listGuestActivity);
 router.delete("/guests/:guestId", permanentlyDeleteGuest);
