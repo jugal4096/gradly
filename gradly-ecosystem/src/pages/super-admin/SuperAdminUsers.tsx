@@ -110,13 +110,55 @@ export default function SuperAdminUsers() {
         navigate("/super-admin/login", { replace: true });
         throw new Error("Your session expired. Please sign in again.");
       }
-      if (response.ok && Array.isArray(result?.data)) {
+      if (response.ok && Array.isArray(result?.data) && result.data.some((item) => item.programs?.length)) {
         setAcademicOptions(result.data);
         return;
       }
 
-      // Compatibility fallback for backend deployments that predate
-      // /users/academic-options: use the existing institution/program APIs.
+      // Use the same catalogue endpoints already powering Super Admin → Curriculum.
+      // The academic master catalogue is authoritative for programs and branch names.
+      const [institutionsResponse, programsResponse, curriculumResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/super-admin/institutions?limit=300`, { headers }),
+        fetch(`${API_BASE_URL}/api/super-admin/curriculum/program-options`, { headers }),
+        fetch(`${API_BASE_URL}/api/super-admin/curriculum/catalog`, { headers }),
+      ]);
+      const [institutionsResult, programsResult, curriculumResult] = await Promise.all([
+        institutionsResponse.json().catch(() => null) as Promise<{ data?: Array<{ id: string | number; name: string }>; message?: string } | null>,
+        programsResponse.json().catch(() => null) as Promise<{ data?: Array<{ id: string | number; name: string; institution_id: string | number }>; message?: string } | null>,
+        curriculumResponse.json().catch(() => null) as Promise<{ data?: Array<{ institution_id: string | number; program_id: string | number; branch_id?: string | number | null; branch_name?: string | null }>; message?: string } | null>,
+      ]);
+      for (const candidate of [institutionsResponse, programsResponse, curriculumResponse]) {
+        if (candidate.status === 401) {
+          localStorage.removeItem("gradly_super_admin_token");
+          navigate("/super-admin/login", { replace: true });
+          throw new Error("Your session expired. Please sign in again.");
+        }
+      }
+      if (institutionsResponse.ok && programsResponse.ok && curriculumResponse.ok &&
+          Array.isArray(institutionsResult?.data) && Array.isArray(programsResult?.data) && Array.isArray(curriculumResult?.data)) {
+        const catalogue = institutionsResult.data.map((institution) => ({
+          id: String(institution.id),
+          name: institution.name,
+          programs: programsResult.data!
+            .filter((program) => String(program.institution_id) === String(institution.id))
+            .map((program) => ({
+              id: String(program.id),
+              name: program.name,
+              branches: [...new Map(curriculumResult.data!
+                .filter((row) => String(row.program_id) === String(program.id) && row.branch_name?.trim())
+                .map((row) => [row.branch_name!.trim().toLocaleLowerCase(), {
+                  id: String(row.branch_id ?? row.branch_name),
+                  name: row.branch_name!.trim(),
+                }])).values()],
+            })),
+        }));
+        if (catalogue.length) {
+          setAcademicOptions(catalogue);
+          return;
+        }
+      }
+
+      // Last compatibility fallback for older backend deployments.
       const institutionsResponse = await fetch(`${API_BASE_URL}/api/super-admin/institutions`, { headers });
       const institutionsResult = await institutionsResponse.json().catch(() => null) as {
         data?: Array<{ id: string | number; name: string }>;
