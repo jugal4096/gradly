@@ -78,7 +78,7 @@ test("administrator list and status mutation use the existing protected API", ()
   assert.match(administratorRoutes, /router\.get\([\s\S]*?getAdministrators/s);
   assert.match(administratorRoutes, /router\.patch\([\s\S]*?["']\/:adminId\/status["'][\s\S]*?updateAdministratorStatus/s);
   assert.match(administratorController, /status !== "ACTIVE"[\s\S]*?status !== "SUSPENDED"[\s\S]*?status !== "DISABLED"/);
-  assert.match(superAdminAdministrators, /\/api\/super-admin\/administrators\$\{suffix\}/);
+  assert.match(superAdminAdministrators, /\/api\/super-admin\/administrators\$\{queryString/);
   assert.match(superAdminAdministrators, /\/status/);
   assert.match(superAdminAdministrators, /JSON\.stringify\(\{ status: nextStatus \}\)/);
   assert.match(superAdminAdministrators, /window\.confirm/);
@@ -90,7 +90,7 @@ test("user list search matches supported Super Admin user endpoint", () => {
   assert.match(userManagementController, /typeof req\.query\.search === "string"/);
   assert.match(userManagementController, /count:\s*students\.length/);
   assert.match(superAdminUsers, /params\.set\("search", query\.trim\(\)\)/);
-  assert.match(superAdminUsers, /\/api\/super-admin\/users\$\{suffix\}/);
+  assert.match(superAdminUsers, /\/api\/super-admin\/users\?\$\{params\.toString\(\)\}/);
 });
 
 test("session verification preserves token on forbidden and transient responses", () => {
@@ -101,7 +101,7 @@ test("session verification preserves token on forbidden and transient responses"
 });
 
 test("dashboard does not fabricate platform-wide user totals or show healthy counts on failed fetches", () => {
-  assert.match(dashboardController, /totalUsers:\s*null/);
+  assert.match(dashboardController, /SELECT COUNT\(\*\) FROM users[\s\S]*?AS "totalUsers"/);
   assert.match(superAdminDashboard, /totalUsers:\s*nullableCount\(data\.totalUsers\)/);
   assert.match(superAdminDashboard, /Global count not exposed by API/);
   assert.match(superAdminDashboard, /loading \|\| error \? "—"/);
