@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Activity, Bell, CalendarDays, Eye, MoreVertical, RefreshCw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { Activity, Bell, CalendarDays, MoreVertical, RefreshCw, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { API_BASE_URL, API_CONFIGURATION_ERROR, isApiConfigured } from "../../lib/api";
 import "../../styles/super-admin-dashboard.css";
 
