@@ -159,21 +159,21 @@ export default function SuperAdminUsers() {
       }
 
       // Last compatibility fallback for older backend deployments.
-      const institutionsResponse = await fetch(`${API_BASE_URL}/api/super-admin/institutions`, { headers });
-      const institutionsResult = await institutionsResponse.json().catch(() => null) as {
+      const legacyInstitutionsResponse = await fetch(`${API_BASE_URL}/api/super-admin/institutions`, { headers });
+      const legacyInstitutionsResult = await legacyInstitutionsResponse.json().catch(() => null) as {
         data?: Array<{ id: string | number; name: string }>;
         message?: string;
       } | null;
-      if (institutionsResponse.status === 401) {
+      if (legacyInstitutionsResponse.status === 401) {
         localStorage.removeItem("gradly_super_admin_token");
         navigate("/super-admin/login", { replace: true });
         throw new Error("Your session expired. Please sign in again.");
       }
-      if (!institutionsResponse.ok || !Array.isArray(institutionsResult?.data)) {
-        throw new Error(institutionsResult?.message || result?.message || `Unable to load institutions (HTTP ${institutionsResponse.status}).`);
+      if (!legacyInstitutionsResponse.ok || !Array.isArray(legacyInstitutionsResult?.data)) {
+        throw new Error(legacyInstitutionsResult?.message || result?.message || `Unable to load institutions (HTTP ${legacyInstitutionsResponse.status}).`);
       }
 
-      const catalogue = await Promise.all(institutionsResult.data.map(async (institution) => {
+      const legacyCatalogue = await Promise.all(legacyInstitutionsResult.data.map(async (institution) => {
         const programsResponse = await fetch(
           `${API_BASE_URL}/api/super-admin/institutions/${encodeURIComponent(String(institution.id))}/programs`,
           { headers },
@@ -207,7 +207,7 @@ export default function SuperAdminUsers() {
           })),
         };
       }));
-      setAcademicOptions(catalogue);
+      setAcademicOptions(legacyCatalogue);
     } catch (caught) {
       setAcademicOptions([]);
       setAcademicOptionsError(caught instanceof Error ? caught.message : "Unable to load academic options.");
