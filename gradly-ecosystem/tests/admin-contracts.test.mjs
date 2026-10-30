@@ -139,3 +139,14 @@ test("workspace frontend never presents unimplemented modules as live database i
   assert.match(modulePage, /Your appearance preference is saved in this browser/);
   assert.match(modulePage, /localStorage\.setItem\("gradly_super_admin_theme", nextTheme\)/);
 });
+
+
+test("Super Admin user filters load the full academic catalogue, not only user-linked values", () => {
+  assert.match(userManagementRoutes, /router\.get\(["']\/academic-options["'],\s*listAcademicOptions\)/);
+  assert.match(userManagementController, /export async function listAcademicOptions/);
+  assert.match(userManagementController, /FROM public\.institutions i\s+LEFT JOIN public\.programs p ON p\.institution_id = i\.id\s+LEFT JOIN public\.branches b ON b\.program_id = p\.id/);
+  assert.match(userManagementController, /programs: Array\.from\(institution\.programs\.values\(\)\)/);
+  assert.match(superAdminUsers, /\/api\/super-admin\/users\/academic-options/);
+  assert.match(superAdminUsers, /unique\(\(academicOptions \?\? \[\]\)\.map\(\(item\) => item\.name\)\)/);
+  assert.doesNotMatch(superAdminUsers, /const institutions = useMemo\(\(\) => unique\(students\.map/);
+});
