@@ -4,6 +4,8 @@ import {
   authenticateSuperAdminToken,
 } from "../../middleware/super-admin-auth.middleware";
 
+import { getAdministratorCatalog } from "./administrator-catalog.controller";
+
 import {
   getAdministrators,
   getAdministratorDetails,
@@ -48,6 +50,12 @@ router.get(
 /* =========================================================
    ADMINISTRATOR DETAILS
    ========================================================= */
+
+// Keep this static route before /:adminId so "catalog" is never parsed as a UUID.
+router.get(
+  "/catalog",
+  getAdministratorCatalog
+);
 
 router.get(
   "/:adminId",
