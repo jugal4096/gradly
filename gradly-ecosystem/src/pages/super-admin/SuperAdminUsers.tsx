@@ -22,6 +22,10 @@ interface Student {
 interface UsersResponse { students?: Student[]; count?: number; message?: string }
 interface GuestSession { id: string; account_type: "GUEST"; first_seen_at: string | null; last_seen_at: string | null; expires_at: string | null; institution_name: string | null; active: boolean; disabled: boolean }
 interface GuestsResponse { guests?: GuestSession[]; count?: number; message?: string }
+interface AcademicOptionsResponse {
+  data?: Array<{ id: string; name: string; programs: Array<{ id: string; name: string; branches: Array<{ id: string; name: string }> }> }>;
+  message?: string;
+}
 interface ActivityRecord { id: string; action: string; actor_role: string | null; created_at: string; metadata?: Record<string, unknown> }
 
 const fieldStyle: React.CSSProperties = { minHeight: 42, border: "1px solid #ddd5f4", borderRadius: 11, padding: "9px 12px", background: "var(--sa-surface, #fff)", color: "var(--sa-text, #242039)", minWidth: 145 };
@@ -42,6 +46,9 @@ export default function SuperAdminUsers() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
+  const [academicOptions, setAcademicOptions] = useState<AcademicOptionsResponse["data"]>([]);
+  const [academicOptionsLoading, setAcademicOptionsLoading] = useState(true);
+  const [academicOptionsError, setAcademicOptionsError] = useState("");
   const [guests, setGuests] = useState<GuestSession[]>([]);
   const [guestsLoading, setGuestsLoading] = useState(true);
   const [guestsError, setGuestsError] = useState("");
@@ -88,6 +95,36 @@ export default function SuperAdminUsers() {
     return () => { cancelled = true; controller.abort(); };
   }, [loadUsers]);
 
+  const loadAcademicOptions = useCallback(async () => {
+    setAcademicOptionsLoading(true);
+    setAcademicOptionsError("");
+    try {
+      if (!isApiConfigured) throw new Error(API_CONFIGURATION_ERROR);
+      const token = localStorage.getItem("gradly_super_admin_token");
+      if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/users/academic-options`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      const result = await response.json().catch(() => null) as AcademicOptionsResponse | null;
+      if (response.status === 401) {
+        localStorage.removeItem("gradly_super_admin_token");
+        navigate("/super-admin/login", { replace: true });
+        throw new Error("Your session expired. Please sign in again.");
+      }
+      if (!response.ok || !Array.isArray(result?.data)) {
+        throw new Error(result?.message || `Unable to load academic options (HTTP ${response.status}).`);
+      }
+      setAcademicOptions(result.data);
+    } catch (caught) {
+      setAcademicOptions([]);
+      setAcademicOptionsError(caught instanceof Error ? caught.message : "Unable to load academic options.");
+    } finally {
+      setAcademicOptionsLoading(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => { void loadAcademicOptions(); }, [loadAcademicOptions]);
+
   const loadGuests = useCallback(async () => {
     setGuestsLoading(true); setGuestsError("");
     try {
@@ -107,9 +144,15 @@ export default function SuperAdminUsers() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadGuests(); }, [loadGuests]);
 
-  const institutions = useMemo(() => unique(students.map((s) => s.institution_name)), [students]);
-  const programs = useMemo(() => unique(students.filter((s) => !institution || s.institution_name === institution).map((s) => s.program_name)), [students, institution]);
-  const branches = useMemo(() => unique(students.filter((s) => (!institution || s.institution_name === institution) && (!program || s.program_name === program)).map((s) => s.branch_name)), [students, institution, program]);
+  const institutions = useMemo(() => unique((academicOptions ?? []).map((item) => item.name)), [academicOptions]);
+  const programs = useMemo(() => unique((academicOptions ?? [])
+    .filter((item) => !institution || item.name === institution)
+    .flatMap((item) => item.programs.map((option) => option.name))), [academicOptions, institution]);
+  const branches = useMemo(() => unique((academicOptions ?? [])
+    .filter((item) => !institution || item.name === institution)
+    .flatMap((item) => item.programs
+      .filter((option) => !program || option.name === program)
+      .flatMap((option) => option.branches.map((branchOption) => branchOption.name)))), [academicOptions, institution, program]);
   const filtered = useMemo(() => students.filter((s) =>
     (!institution || s.institution_name === institution) &&
     (!program || s.program_name === program) &&
@@ -191,6 +234,9 @@ export default function SuperAdminUsers() {
 
         <div style={{ border: "1px solid #e3daf6", borderRadius: 15, padding: 15, background: "rgba(247,243,255,.72)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontWeight: 700, color: "#50328d" }}><Filter size={17} /> Filter users by academic structure</div>
+          {academicOptionsLoading && <p style={{ margin: "0 0 10px", color: "#776d89", fontSize: 12 }}>Loading the complete academic catalogue…</p>}
+          {academicOptionsError && <p role="alert" style={{ margin: "0 0 10px", color: "#a33131", fontSize: 12 }}>{academicOptionsError} <button type="button" onClick={() => void loadAcademicOptions()} style={actionStyle}>Retry</button></p>}
+          {!academicOptionsLoading && !academicOptionsError && <p style={{ margin: "0 0 10px", color: "#776d89", fontSize: 12 }}>{institutions.length} institutions · {programs.length} programs · {branches.length} branches available in the database catalogue</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))", gap: 10 }}>
             <select aria-label="Filter by institution or college" value={institution} style={fieldStyle} onChange={(e) => { setInstitution(e.target.value); setProgram(""); setBranch(""); }}><option value="">All colleges / institutions</option>{institutions.map((v) => <option key={v} value={v}>{v}</option>)}</select>
             <select aria-label="Filter by program" value={program} style={fieldStyle} onChange={(e) => { setProgram(e.target.value); setBranch(""); }}><option value="">All programs</option>{programs.map((v) => <option key={v} value={v}>{v}</option>)}</select>
