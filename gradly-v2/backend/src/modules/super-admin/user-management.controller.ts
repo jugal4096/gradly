@@ -296,3 +296,49 @@ export async function updateStudentAccountStatus(req: SuperAdminAuthenticatedReq
     client.release();
   }
 }
+
+
+/** Return the full institution -> program -> branch catalogue for Super Admin filters. */
+export async function listAcademicOptions(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  try {
+    const result = await pool.query(`
+      SELECT
+        i.id::text AS institution_id,
+        i.name AS institution_name,
+        p.id::text AS program_id,
+        p.name AS program_name,
+        b.id::text AS branch_id,
+        b.name AS branch_name
+      FROM public.institutions i
+      LEFT JOIN public.programs p ON p.institution_id = i.id
+      LEFT JOIN public.branches b ON b.program_id = p.id
+      ORDER BY i.name ASC, p.name ASC NULLS FIRST, b.name ASC NULLS FIRST
+    `);
+    const institutions = new Map<string, {
+      id: string;
+      name: string;
+      programs: Map<string, { id: string; name: string; branches: { id: string; name: string }[] }>;
+    }>();
+    for (const row of result.rows) {
+      if (!institutions.has(row.institution_id)) {
+        institutions.set(row.institution_id, { id: row.institution_id, name: row.institution_name, programs: new Map() });
+      }
+      if (!row.program_id) continue;
+      const institution = institutions.get(row.institution_id)!;
+      if (!institution.programs.has(row.program_id)) {
+        institution.programs.set(row.program_id, { id: row.program_id, name: row.program_name, branches: [] });
+      }
+      if (row.branch_id) institution.programs.get(row.program_id)!.branches.push({ id: row.branch_id, name: row.branch_name });
+    }
+    const data = Array.from(institutions.values()).map((institution) => ({
+      id: institution.id,
+      name: institution.name,
+      programs: Array.from(institution.programs.values()),
+    }));
+    return res.status(200).json({ success: true, data, count: data.length });
+  } catch (error) {
+    console.error("Failed to load academic filter options:", error);
+    return res.status(503).json({ success: false, message: "Academic institution, program and branch options could not be loaded." });
+  }
+}
