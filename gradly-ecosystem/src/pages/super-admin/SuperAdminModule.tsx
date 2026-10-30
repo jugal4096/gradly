@@ -114,9 +114,9 @@ export default function SuperAdminModule() {
   }, [info.apiKey, navigate, submittedSearch]);
 
   // This effect intentionally starts an abortable async data request.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async loader owns loading/error state.
     void loadData(controller.signal);
     return () => controller.abort();
   }, [loadData]);
