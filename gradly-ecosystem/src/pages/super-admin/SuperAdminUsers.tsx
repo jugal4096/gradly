@@ -22,7 +22,6 @@ interface Student {
 interface UsersResponse { students?: Student[]; count?: number; message?: string }
 interface GuestSession { id: string; account_type: "GUEST"; first_seen_at: string | null; last_seen_at: string | null; expires_at: string | null; institution_name: string | null; active: boolean; disabled: boolean }
 interface GuestsResponse { guests?: GuestSession[]; count?: number; message?: string }
-interface ActivityRecord { id: string; action: string; actor_role: string | null; created_at: string; metadata?: Record<string, unknown> }
 
 const fieldStyle: React.CSSProperties = { minHeight: 42, border: "1px solid #ddd5f4", borderRadius: 11, padding: "9px 12px", background: "var(--sa-surface, #fff)", color: "var(--sa-text, #242039)", minWidth: 145 };
 const actionStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 34, border: "1px solid #ded6f5", borderRadius: 9, padding: "7px 10px", background: "#f7f3ff", color: "#5b35bb", fontWeight: 650, cursor: "pointer", whiteSpace: "nowrap" };
@@ -54,10 +53,6 @@ export default function SuperAdminUsers() {
   const [status, setStatus] = useState("all");
   const [busyId, setBusyId] = useState("");
   const [notice, setNotice] = useState("");
-  const [activityUser, setActivityUser] = useState<Student | null>(null);
-  const [activity, setActivity] = useState<ActivityRecord[]>([]);
-  const [activityLoading, setActivityLoading] = useState(false);
-  const [activityError, setActivityError] = useState("");
 
   const loadUsers = useCallback(async (signal?: AbortSignal) => {
     setLoading(true); setError(""); setNotice("");
@@ -138,20 +133,6 @@ export default function SuperAdminUsers() {
       setNotice(result?.message || `User ${nextActive ? "reactivated" : "disabled"} successfully.`);
     } catch (caught) { setError(caught instanceof Error ? caught.message : `Unable to ${action} user.`); }
     finally { setBusyId(""); }
-  }
-
-  async function showActivity(student: Student) {
-    setActivityUser(student); setActivity([]); setActivityError(""); setActivityLoading(true);
-    try {
-      const token = localStorage.getItem("gradly_super_admin_token");
-      if (!token) throw new Error("Your Super Admin session is missing. Please sign in again.");
-      const response = await fetch(`${API_BASE_URL}/api/super-admin/users/${encodeURIComponent(student.id)}/activity`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
-      const result = await response.json().catch(() => null) as { activity?: ActivityRecord[]; message?: string } | null;
-      if (response.status === 401) { localStorage.removeItem("gradly_super_admin_token"); navigate("/super-admin/login", { replace: true }); throw new Error("Your session expired. Please sign in again."); }
-      if (!response.ok) throw new Error(result?.message || `Unable to load activity (HTTP ${response.status}).`);
-      setActivity(Array.isArray(result?.activity) ? result.activity : []);
-    } catch (caught) { setActivityError(caught instanceof Error ? caught.message : "Unable to load user activity."); }
-    finally { setActivityLoading(false); }
   }
 
   return (
