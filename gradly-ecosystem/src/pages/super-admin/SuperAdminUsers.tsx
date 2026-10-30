@@ -103,6 +103,8 @@ export default function SuperAdminUsers() {
     finally { setGuestsLoading(false); }
   }, [navigate]);
 
+  // This effect intentionally starts an async guest-session request.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadGuests(); }, [loadGuests]);
 
   const institutions = useMemo(() => unique(students.map((s) => s.institution_name)), [students]);
