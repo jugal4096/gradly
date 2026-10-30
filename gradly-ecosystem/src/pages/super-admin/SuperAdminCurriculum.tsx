@@ -68,6 +68,8 @@ export default function SuperAdminCurriculum() {
     } finally { setLoading(false); }
   }, [request]);
 
+  // This effect intentionally starts an async data request; its state updates occur as the request progresses.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
 
   const programs = useMemo(() => {
