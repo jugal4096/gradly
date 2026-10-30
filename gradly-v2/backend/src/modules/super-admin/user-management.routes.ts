@@ -10,6 +10,7 @@ import {
   updateStudentStatus,
   getStudentActivityLog,
   listGuestSessions,
+  listAcademicOptions,
 } from "./user-management.controller";
 
 
@@ -20,6 +21,7 @@ router.use(
 );
 
 
+router.get("/academic-options", listAcademicOptions);
 router.get("/guests", listGuestSessions);
 
 router.get(
