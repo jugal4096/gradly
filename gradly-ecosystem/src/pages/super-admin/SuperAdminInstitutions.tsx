@@ -47,6 +47,8 @@ export default function SuperAdminInstitutions() {
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to load institutions."); }
   }, [request, search]);
 
+  // This effect intentionally starts an async data request; its state updates occur as the request progresses.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
 
   async function loadPrograms(id: string) {
