@@ -150,3 +150,10 @@ test("Super Admin user filters load the full academic catalogue, not only user-l
   assert.match(superAdminUsers, /unique\(\(academicOptions \?\? \[\]\)\.map\(\(item\) => item\.name\)\)/);
   assert.doesNotMatch(superAdminUsers, /const institutions = useMemo\(\(\) => unique\(students\.map/);
 });
+
+test("academic curriculum selector treats the catalog sentinel as no UUID filter", () => {
+  const academicRoutes = read(repositoryRoot, "gradly-v2/backend/src/modules/academic/academic.routes.ts");
+  assert.match(academicRoutes, /rawInstitutionId\.toLowerCase\(\) !== "catalog"/);
+  assert.match(academicRoutes, /rawBranchId\.toLowerCase\(\) !== "catalog"/);
+  assert.match(academicRoutes, /if \(\(institutionId && !isUuid\(institutionId\)\) \|\| \(branchId && !isUuid\(branchId\)\)\)/);
+});
