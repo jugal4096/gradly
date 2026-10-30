@@ -102,8 +102,16 @@ router.get(
 /** Public curriculum selector used by student onboarding. */
 router.get("/curricula", async (req: Request, res: Response): Promise<void> => {
   try {
-    const institutionId = typeof req.query.institutionId === "string" ? req.query.institutionId : null;
-    const branchId = typeof req.query.branchId === "string" ? req.query.branchId : null;
+    const rawInstitutionId = typeof req.query.institutionId === "string" ? req.query.institutionId.trim() : "";
+    const rawBranchId = typeof req.query.branchId === "string" ? req.query.branchId.trim() : "";
+    // UI sentinel values such as "catalog" mean no filter; never cast them to UUID.
+    const institutionId = rawInstitutionId && rawInstitutionId.toLowerCase() !== "catalog" ? rawInstitutionId : null;
+    const branchId = rawBranchId && rawBranchId.toLowerCase() !== "catalog" ? rawBranchId : null;
+    const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    if ((institutionId && !isUuid(institutionId)) || (branchId && !isUuid(branchId))) {
+      res.status(400).json({ success: false, message: "Institution and branch filters must be valid IDs." });
+      return;
+    }
     const result = await pool.query(
       `SELECT
          c.id,
