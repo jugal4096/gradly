@@ -16,6 +16,7 @@ import { listFeedbackRequests, updateFeedbackStatus } from "./superAdmin-feedbac
 import { listInstitutionDirectory, listInstitutionAdditionRequests, updateInstitutionAdditionRequest } from "./superAdmin-institutions.controller";
 import { createInstitutionManually, createSyllabusManually } from "./superAdmin-institution-create.controller";
 import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum.controller";
+import { listCurriculumCatalog, listCurriculumProgramOptions, updateCurriculumSettings } from "./curriculum-catalog.controller";
 import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
 import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
 import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
@@ -71,6 +72,10 @@ router.patch("/institutions/requests/:requestId", authenticateSuperAdminToken, u
 router.post("/institutions", authenticateSuperAdminToken, createInstitutionManually);
 router.post("/institutions/syllabus", authenticateSuperAdminToken, createSyllabusManually);
 router.get("/student-syllabus-feedback", authenticateSuperAdminToken, listForwardedStudentSyllabusFeedback);
+// Curriculum Explorer API used by the Super Admin catalogue page.
+router.get("/curriculum/catalog", authenticateSuperAdminToken, listCurriculumCatalog);
+router.get("/curriculum/program-options", authenticateSuperAdminToken, listCurriculumProgramOptions);
+router.patch("/curriculum/catalog/:curriculumId", authenticateSuperAdminToken, updateCurriculumSettings);
 router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
 router.patch("/curriculum/:id", authenticateSuperAdminToken, updateCurriculumSubject);
 router.get("/security-notifications", authenticateSuperAdminToken, listSecurityNotifications);
