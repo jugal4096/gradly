@@ -123,7 +123,16 @@ export default function SuperAdminUsers() {
     }
   }, [navigate]);
 
-  useEffect(() => { void loadAcademicOptions(); }, [loadAcademicOptions]);
+  // Defer the initial request until after the effect flush to avoid a synchronous
+  // state update during effect execution under the React hooks lint rules.
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (!cancelled) return loadAcademicOptions();
+      return undefined;
+    });
+    return () => { cancelled = true; };
+  }, [loadAcademicOptions]);
 
   const loadGuests = useCallback(async () => {
     setGuestsLoading(true); setGuestsError("");
