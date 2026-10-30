@@ -103,8 +103,8 @@ test("session verification preserves token on forbidden and transient responses"
 test("dashboard does not fabricate platform-wide user totals or show healthy counts on failed fetches", () => {
   assert.match(dashboardController, /SELECT COUNT\(\*\) FROM users[\s\S]*?AS "totalUsers"/);
   assert.match(superAdminDashboard, /totalUsers:\s*nullableCount\(data\.totalUsers\)/);
-  assert.match(superAdminDashboard, /function formatCount\\(value: number \\| null\\): string \\{\\s*return value === null \\? "—" : formatNumber\\(value\\);/);
-  assert.match(superAdminDashboard, /formatCount\\(value\\)/);
+  assert.match(superAdminDashboard, /function formatCount\(value: number \| null\): string \{\s*return value === null \? "—" : formatNumber\(value\);/);
+  assert.match(superAdminDashboard, /formatCount\(value\)/);
   assert.match(superAdminDashboard, /loading \|\| error \? "—"/);
   assert.match(superAdminDashboard, /error \? "—" : `\$\{activities\.length\} EVENTS`/);
 });
