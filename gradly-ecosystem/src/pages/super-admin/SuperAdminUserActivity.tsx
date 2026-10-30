@@ -31,6 +31,8 @@ export default function SuperAdminUserActivity() {
     finally { setLoading(false); }
   }
 
+  // This effect loads audit events when the selected user changes.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
