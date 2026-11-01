@@ -133,3 +133,7 @@ export async function createApplication(input: CreateApplicationInput) {
 
   return result.rows[0];
 }
+
+export {
+  createAdminAuditLog,
+} from "../super-admin/user-management.repository";
