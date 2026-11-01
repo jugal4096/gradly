@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, BellRing, CheckCircle2, Clock3, RefreshCw, ShieldCheck, UnlockKeyhole } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, RefreshCw, ShieldCheck, UnlockKeyhole } from "lucide-react";
 import "./SuperAdminSecurityAlerts.css";
 
 type SecurityNotification = { id: string; event_type: string; principal_type: string; principal_id: string; principal_code: string; principal_name?: string | null; principal_email?: string | null; message: string; status: string; locked_until?: string | null; created_at?: string; reviewed_at?: string | null; metadata?: Record<string, unknown> };
