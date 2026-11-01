@@ -7,6 +7,7 @@ import {
   changeAdministratorDepartment,
   extendAdministratorShip,
   changeAdministratorGraduationDate,
+  deleteAdministrator,
 } from "./administrator.service";
 
 import {
@@ -388,6 +389,46 @@ export async function updateGraduationDate(
         error instanceof Error
           ? error.message
           : "Failed to update graduation date.",
+    });
+  }
+}
+
+/* =========================================================
+   DELETE ADMINISTRATOR
+   ========================================================= */
+
+export async function deleteAdministratorAccount(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    const adminId = req.params.adminId;
+
+    if (!adminId) {
+      return res.status(400).json({
+        message: "Administrator ID is required.",
+      });
+    }
+
+    if (!req.superAdmin?.superAdminId) {
+      return res.status(401).json({
+        message: "Super Admin authentication required.",
+      });
+    }
+
+    const administrator = await deleteAdministrator(adminId);
+
+    return res.status(200).json({
+      message: "Administrator account deleted. The previous application was retained as rejected, and the user may submit a fresh application.",
+      administrator,
+    });
+  } catch (error) {
+    console.error("Failed to delete administrator:", error);
+
+    return res.status(400).json({
+      message: error instanceof Error
+        ? error.message
+        : "Failed to delete administrator.",
     });
   }
 }
