@@ -1,4 +1,5 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Bell, BookOpen, Building2, Check, CheckCheck, ClipboardList, Layers3, LogOut, RefreshCw, Search, ShieldCheck, Send, CircleAlert, X, Pencil, Settings, UserRound, Users, MessageSquareText } from "lucide-react";
 import "./AdminDashboard.css";
