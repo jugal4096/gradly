@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { BellRing, CheckCircle2, CircleAlert, Send, ShieldCheck } from "lucide-react";
 import "./SuperAdminAdminMessages.css";
 
