@@ -284,3 +284,27 @@ export async function createAuditLog(params: {
     ]
   );
 }
+
+/**
+ * Backward-compatible adapter for administrator and application services.
+ * Keeps the existing createAuditLog schema and maps Super Admin identity fields.
+ */
+export async function createAdminAuditLog(params: {
+  superAdminId: string;
+  action: string;
+  entityTable: string;
+  entityId: string;
+  ipAddress?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  return createAuditLog({
+    actorType: "SUPER_ADMIN",
+    actorId: params.superAdminId,
+    actorRole: "SUPER_ADMIN",
+    action: params.action,
+    entityTable: params.entityTable,
+    entityId: params.entityId,
+    ipAddress: params.ipAddress,
+    metadata: params.metadata,
+  });
+}
