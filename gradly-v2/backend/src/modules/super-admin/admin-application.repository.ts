@@ -420,3 +420,7 @@ export async function reviewApplication(
     client.release();
   }
 }
+
+export {
+  createAdminAuditLog,
+} from "./user-management.repository";
