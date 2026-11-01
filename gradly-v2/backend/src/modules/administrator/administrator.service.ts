@@ -62,6 +62,15 @@ import {
       );
     }
   
+    // Keep deleted administrator records for audit history and prevent reactivation.
+    if (admin.status === "DELETED" && status !== "DELETED") {
+      throw new Error("Deleted administrator accounts cannot be reactivated.");
+    }
+
+    if (status === "DELETED" && admin.status === "DELETED") {
+      throw new Error("Administrator is already deleted.");
+    }
+
     if (
       status === "DISABLED" &&
       admin.status === "DISABLED"
