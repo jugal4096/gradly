@@ -501,3 +501,55 @@ export async function updateAdminGraduationDate(
     client.release();
   }
 }
+
+/* =========================================================
+   PERMANENTLY DELETE ADMINISTRATOR
+   ========================================================= */
+
+export async function deleteAdministratorAccount(adminId: string) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await client.query(
+      `SELECT id, admin_code, full_name, email, user_id, application_id
+       FROM public.admins
+       WHERE id = $1
+       FOR UPDATE`,
+      [adminId]
+    );
+
+    const administrator = existing.rows[0];
+    if (!administrator) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    if (administrator.application_id) {
+      await client.query(
+        `UPDATE public.admin_applications
+         SET status = 'REJECTED',
+             rejection_reason = 'Administrator account removed by Super Admin. You may submit a fresh adminship application.',
+             reviewed_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $1`,
+        [administrator.application_id]
+      );
+    }
+
+    await client.query(
+      `DELETE FROM public.admins
+       WHERE id = $1`,
+      [adminId]
+    );
+
+    await client.query("COMMIT");
+    return administrator;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
