@@ -15,7 +15,8 @@ export type AdministratorListFilters = {
 export type UpdateAdminStatus =
   | "ACTIVE"
   | "SUSPENDED"
-  | "DISABLED";
+  | "DISABLED"
+  | "DELETED";
 
 export type AdministratorUpdateResult = {
   id: string;
