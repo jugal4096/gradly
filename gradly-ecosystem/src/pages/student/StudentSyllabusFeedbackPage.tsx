@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { ArrowLeft, CheckCircle2, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { auth } from "../../config/firebase";
