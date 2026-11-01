@@ -10,6 +10,7 @@ import {
     findBranchForInstitution,
     updateAdminshipExpiry,
     updateAdminGraduationDate,
+    deleteAdministratorAccount,
     type AdministratorListFilters,
     type UpdateAdminStatus,
   } from "./administrator.repository";
@@ -408,3 +409,19 @@ import {
   
     return updated;
   }
+
+/* =========================================================
+   DELETE ADMINISTRATOR ACCOUNT
+   ========================================================= */
+
+export async function deleteAdministrator(
+  adminId: string
+) {
+  const deleted = await deleteAdministratorAccount(adminId);
+
+  if (!deleted) {
+    throw new Error("Administrator was not found.");
+  }
+
+  return deleted;
+}
