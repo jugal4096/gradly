@@ -252,6 +252,9 @@ export async function saveApplicationConfigurationController(
       });
     }
 
+    const programId = getStringField(req.body, ["programId", "program_id"])?.trim();
+    if (!isUuid(programId)) return res.status(400).json({ success: false, message: "Select a valid program." });
+
     const branchId = getStringField(req.body, [
       "branchId",
       "branch_id",
@@ -286,6 +289,7 @@ export async function saveApplicationConfigurationController(
     const application = await saveApplicationConfiguration({
       applicationId,
       superAdminId,
+      programId,
       branchId,
       approvedPermissions,
     });

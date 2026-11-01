@@ -174,6 +174,37 @@ export async function resetExpiredLockout(
   return result.rows[0] ?? null;
 }
 
+export async function notifySecurityLockout(
+  principalType: PrincipalType,
+  principalId: string,
+  lockedUntil: Date
+): Promise<void> {
+  if (principalType === "ADMIN") {
+    await pool.query(
+      `INSERT INTO public.security_notifications
+        (event_type, principal_type, principal_id, principal_code, principal_name, principal_email, message, metadata, locked_until)
+       SELECT 'ADMIN_LOCKOUT', 'ADMIN', a.id, a.admin_code, a.full_name, a.email,
+              'Administrator account locked after three failed password attempts.',
+              jsonb_build_object('attempt_limit', 3), $2
+       FROM public.admins a WHERE a.id = $1`,
+      [principalId, lockedUntil]
+    );
+    return;
+  }
+
+  if (principalType === "SUPER_ADMIN") {
+    await pool.query(
+      `INSERT INTO public.security_notifications
+        (event_type, principal_type, principal_id, principal_code, principal_name, principal_email, message, metadata, locked_until)
+       SELECT 'SUPER_ADMIN_LOCKOUT', 'SUPER_ADMIN', s.id, s.admin_code, s.full_name, s.email,
+              'Super Admin account locked after three failed password attempts.',
+              jsonb_build_object('attempt_limit', 3), $2
+       FROM public.super_admins s WHERE s.id = $1`,
+      [principalId, lockedUntil]
+    );
+  }
+}
+
 export async function recordLoginAttempt(
   context: LoginAttemptContext,
   success: boolean,

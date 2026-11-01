@@ -10,6 +10,7 @@ export async function findAdminByCodeForManagement(
       id,
       admin_code,
       institution_id,
+      program_id,
       branch_id,
       full_name,
       email,
@@ -82,15 +83,18 @@ export async function createAdmin(
     INSERT INTO admins (
       admin_code,
       institution_id,
+      program_id,
       branch_id,
       full_name,
       email,
       phone_number,
       password_hash,
       role,
-      status
+      status,
+      password_changed_at,
+      password_expires_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE')
+    VALUES ($1, $2, (SELECT program_id FROM public.branches WHERE id = $3), $3, $4, $5, $6, $7, $8, 'ACTIVE', NOW(), NOW() + INTERVAL '1 month')
     RETURNING
       id,
       admin_code,

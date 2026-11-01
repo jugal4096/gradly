@@ -11,6 +11,13 @@ import {
 } from "../../middleware/super-admin-auth.middleware";
 
 import userManagementRoutes from "./user-management.routes";
+import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
+import { listFeedbackRequests } from "./superAdmin-feedback.controller";
+import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum.controller";
+import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
+import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
+import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
+import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
 
 const router = Router();
 
@@ -50,6 +57,32 @@ router.post(
   authenticateSuperAdminToken,
   createAdmin
 );
+
+/*
+ * FEEDBACK INBOX
+ */
+router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
+router.get("/student-syllabus-feedback", authenticateSuperAdminToken, listForwardedStudentSyllabusFeedback);
+router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
+router.patch("/curriculum/:id", authenticateSuperAdminToken, updateCurriculumSubject);
+router.get("/security-notifications", authenticateSuperAdminToken, listSecurityNotifications);
+router.post("/admin-workspace-notifications", authenticateSuperAdminToken, createAdminWorkspaceNotification);
+router.get("/admin-subject-change-requests", authenticateSuperAdminToken, listAdminSubjectChangeRequestsForSuperAdmin);
+router.patch("/admin-subject-change-requests/:requestId/review", authenticateSuperAdminToken, reviewAdminSubjectChangeRequest);
+router.patch("/security-notifications/:notificationId/acknowledge", authenticateSuperAdminToken, acknowledgeSecurityNotification);
+router.patch("/security-notifications/:notificationId/revoke-lockout", authenticateSuperAdminToken, revokeAccountLockout);
+
+/*
+ * ADMIN AUDIT HISTORY
+ */
+router.get("/audit/admin-activity", authenticateSuperAdminToken, getAdminAuditEvents);
+router.get("/audit/admin-actions", authenticateSuperAdminToken, getAdminAuditActions);
+
+/*
+ * GUEST SESSION REVIEW — Super Admin only
+ */
+router.get("/guest-sessions", authenticateSuperAdminToken, listGuestSessionsForSuperAdmin);
+router.get("/guest-sessions/:guestSessionId", authenticateSuperAdminToken, getGuestSessionForSuperAdmin);
 
 /*
  * USER MANAGEMENT

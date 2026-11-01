@@ -1,7 +1,5 @@
-import {
-    Request,
-    Response,
-  } from "express";
+import { findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity } from "./user-management.repository";
+import { Response } from "express";
   
   import {
     getStudentDetails,
@@ -13,7 +11,23 @@ import {
   } from "../../middleware/super-admin-auth.middleware";
   
   
-  export async function listStudents(
+  export async function listBranches(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) {
+      return res.status(401).json({ message: "Super Admin authentication required." });
+    }
+    const branches = await findAllBranches();
+    return res.status(200).json({ branches, count: branches.length });
+  } catch (error) {
+    console.error("Failed to load branches:", error);
+    return res.status(500).json({ message: "Failed to load branches." });
+  }
+}
+
+export async function listStudents(
     req: SuperAdminAuthenticatedRequest,
     res: Response
   ) {
@@ -52,6 +66,38 @@ import {
   }
   
   
+
+  
+  export async function listGuests(
+    req: SuperAdminAuthenticatedRequest,
+    res: Response
+  ) {
+    try {
+      if (!req.superAdmin) {
+        return res.status(401).json({
+          message: "Super Admin authentication required.",
+        });
+      }
+
+      const search =
+        typeof req.query.search === "string"
+          ? req.query.search
+          : undefined;
+      const guests = await findGuestSessions(search);
+
+      return res.status(200).json({
+        guests,
+        count: guests.length,
+        capped: guests.length === 500,
+      });
+    } catch (error) {
+      console.error("Failed to load guest sessions:", error);
+      return res.status(500).json({
+        message: "Failed to load guest sessions.",
+      });
+    }
+  }
+
   export async function getStudent(
     req: SuperAdminAuthenticatedRequest,
     res: Response
@@ -113,3 +159,38 @@ import {
       });
     }
   }
+
+export async function listStudentActivity(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) {
+      return res.status(401).json({ message: "Super Admin authentication required." });
+    }
+    const { userId } = req.params;
+    if (!userId) return res.status(400).json({ message: "Student user ID is required." });
+    const events = await findStudentActivity(userId);
+    return res.status(200).json({ events, count: events.length, capped: events.length === 200 });
+  } catch (error) {
+    console.error("Failed to load student activity:", error);
+    return res.status(500).json({ message: "Failed to load student activity." });
+  }
+}
+
+
+export async function listGuestActivity(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) return res.status(401).json({ message: "Super Admin authentication required." });
+    const { guestId } = req.params;
+    if (!guestId) return res.status(400).json({ message: "Guest session ID is required." });
+    const events = await findGuestActivity(guestId);
+    return res.status(200).json({ events, count: events.length, capped: events.length === 200 });
+  } catch (error) {
+    console.error("Failed to load guest activity:", error);
+    return res.status(500).json({ message: "Failed to load guest activity." });
+  }
+}

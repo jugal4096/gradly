@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { firebaseAuth } from "../config/firebase-admin";
+import { recordAuthenticatedActivity } from "../modules/admin/admin-privacy.controller";
 
 export interface AuthenticatedRequest extends Request {
   firebaseUser?: {
     uid: string;
     email?: string;
     name?: string;
+    emailVerified?: boolean;
   };
 }
 
@@ -31,7 +33,12 @@ export async function authenticateFirebaseToken(
       uid: decodedToken.uid,
       email: decodedToken.email,
       name: decodedToken.name,
+      emailVerified: decodedToken.email_verified === true,
     };
+
+    // Update aggregate-only activity tracking. Authentication must still work if telemetry fails.
+    try { await recordAuthenticatedActivity(decodedToken.uid); }
+    catch (activityError) { console.error("Authenticated activity tracking failed:", activityError); }
 
     next();
   } catch (error) {

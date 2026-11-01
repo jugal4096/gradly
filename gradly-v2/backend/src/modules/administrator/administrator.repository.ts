@@ -15,8 +15,7 @@ export type AdministratorListFilters = {
 export type UpdateAdminStatus =
   | "ACTIVE"
   | "SUSPENDED"
-  | "DISABLED"
-  | "DELETED";
+  | "DISABLED";
 
 export type AdministratorUpdateResult = {
   id: string;
@@ -97,7 +96,6 @@ export async function findAdministrators(
     `);
 
     values.push(`%${filters.search.trim()}%`);
-    parameterIndex++;
   }
 
   const whereClause =

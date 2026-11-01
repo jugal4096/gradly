@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { authenticateSuperAdmin } from "./superAdmin.service";
+import { InvalidLoginAttemptError, LoginLockedError } from "../auth-security/login-security.service";
 
 export async function loginSuperAdmin(
   req: Request,
@@ -21,7 +22,8 @@ export async function loginSuperAdmin(
 
     const result = await authenticateSuperAdmin(
       adminCode.trim(),
-      password
+      password,
+      { ipAddress: req.ip || req.socket.remoteAddress || null, userAgent: req.get("user-agent") || null }
     );
 
     return res.status(200).json({
@@ -29,6 +31,18 @@ export async function loginSuperAdmin(
       superAdmin: result.superAdmin,
     });
   } catch (error) {
+    if (error instanceof InvalidLoginAttemptError) {
+      return res.status(401).json({ code: "INVALID_CREDENTIALS", message: error.message, attemptsRemaining: error.attemptsRemaining });
+    }
+
+    if (error instanceof LoginLockedError) {
+      return res.status(423).json({
+        code: "ACCOUNT_LOCKED",
+        message: "Super Admin account locked after three failed attempts. The Super Admin security alert has been recorded.",
+        lockedUntil: error.lockedUntil?.toISOString() ?? null,
+      });
+    }
+
     const message =
       error instanceof Error
         ? error.message

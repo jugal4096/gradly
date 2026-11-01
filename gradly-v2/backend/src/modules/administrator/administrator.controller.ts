@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type { Response } from "express";
 
 import {
   listAdministrators,
@@ -145,12 +145,11 @@ export async function updateAdministratorStatus(
     if (
       status !== "ACTIVE" &&
       status !== "SUSPENDED" &&
-      status !== "DISABLED" &&
-      status !== "DELETED"
+      status !== "DISABLED"
     ) {
       return res.status(400).json({
         message:
-          "Status must be ACTIVE, SUSPENDED, DISABLED, or DELETED.",
+          "Status must be ACTIVE, SUSPENDED, or DISABLED.",
       });
     }
 

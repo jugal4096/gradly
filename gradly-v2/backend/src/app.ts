@@ -1,6 +1,7 @@
 
 import express from "express";
 import cors from "cors";
+import { env } from "./config/env";
 
 // Existing modules
 import adminRoutes from "./modules/admin/admin.routes";
@@ -8,7 +9,6 @@ import superAdminRoutes from "./modules/super-admin/superAdmin.routes";
 import authRoutes from "./modules/auth/auth.routes";
 import studentRoutes from "./modules/student/student.routes";
 import guestRoutes from "./modules/guest/guest.routes";
-import guestAcademicRoutes from "./modules/guest/guest.academic.routes";
 
 // Admin application and registration modules
 import adminApplicationRoutes from "./modules/admin-application/admin-application.routes";
@@ -21,6 +21,7 @@ import academicRoutes from "./modules/academic/academic.routes";
 
 // Super Admin → Administrator Management
 import administratorRoutes from "./modules/administrator/administrator.routes";
+import adminPasswordRequestRoutes from "./modules/admin-password-requests/admin-password-request.routes";
 
 const app = express();
 
@@ -28,25 +29,9 @@ const app = express();
    CORS
    ========================================================= */
 
-const configuredFrontendOrigins = (process.env.FRONTEND_ORIGINS ?? "")
-  .split(",")
-  .map((origin) => origin.trim().replace(/\/+$/, ""))
-  .filter(Boolean);
-
-const isAllowedFrontendOrigin = (origin: string) =>
-  configuredFrontendOrigins.includes(origin) ||
-  /^https?:\/\/(localhost|127\.0\.0\.1):(5173|5174|4173)$/.test(origin) ||
-  origin === "https://gradly.vercel.app" ||
-  origin === "https://gradly-peach.vercel.app" ||
-  origin === "https://gradly-reach.vercel.app" ||
-  /^https:\/\/gradly(?:-[a-z0-9-]+)?-jugal4096s-projects\.vercel\.app$/.test(origin);
-
 app.use(
   cors({
-    origin(origin, callback) {
-      // Allow non-browser health checks and server-to-server requests.
-      callback(null, !origin || isAllowedFrontendOrigin(origin));
-    },
+    origin: env.corsOrigins,
     credentials: true,
   })
 );
@@ -92,11 +77,7 @@ app.use("/api/student", studentRoutes);
 
 app.use("/api/guest", guestRoutes);
 
-/* =========================================================
-   GUEST ACADEMIC
-   ========================================================= */
-
-app.use("/api/guest/academic", guestAcademicRoutes);
+/* Guest Mode intentionally exposes generic calculators only; legacy semester-based guest routes are disabled. */
 
 /* =========================================================
    ADMIN APPLICATIONS
@@ -110,6 +91,9 @@ app.use("/api/admin-applications/setup", adminAccountSetupRoutes);
 
 // Complete Admin ID and password registration.
 app.use("/api/admin-registration", adminRegistrationRoutes);
+
+// Admin password-change requests, reviewed by Super Admin.
+app.use("/api/admin-password-requests", adminPasswordRequestRoutes);
 
 /* =========================================================
    ADMIN
@@ -160,6 +144,7 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
+    void _next; // Express requires four arguments for error middleware.
     console.error("Unhandled API error:", error);
 
     res.status(500).json({
