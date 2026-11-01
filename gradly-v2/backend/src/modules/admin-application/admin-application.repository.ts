@@ -113,6 +113,7 @@ export async function findDuplicateApplication(
     `SELECT id, status
      FROM public.admin_applications
      WHERE user_id = $1
+       AND status <> 'REJECTED'
      ORDER BY created_at ASC
      LIMIT 1`,
     [userId]
