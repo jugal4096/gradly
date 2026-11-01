@@ -1,9 +1,12 @@
 import {
   Activity,
+  BellRing,
+  Send,
   BookOpen,
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
+  KeyRound,
   LogOut,
   MessageSquare,
   ScrollText,
@@ -41,6 +44,26 @@ const controlNavigation = [
   {
     label: "Applications",
     path: "/super-admin/applications",
+    icon: ClipboardList,
+  },
+  {
+    label: "Password Requests",
+    path: "/super-admin/password-requests",
+    icon: KeyRound,
+  },
+  {
+    label: "Security Alerts",
+    path: "/super-admin/security-alerts",
+    icon: BellRing,
+  },
+  {
+    label: "Admin Announcements",
+    path: "/super-admin/admin-announcements",
+    icon: Send,
+  },
+  {
+    label: "Admin Subject Requests",
+    path: "/super-admin/admin-requests",
     icon: ClipboardList,
   },
   {

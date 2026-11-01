@@ -1,7 +1,11 @@
 const TOKEN_KEY = "gradly_super_admin_token";
 
-import { API_BASE_URL, isApiConfigured } from "./api";
-export { API_BASE_URL } from "./api";
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
+)
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
 
 export function getToken(): string | null {
   try {
@@ -30,7 +34,6 @@ export function clearToken(): void {
 export type SessionStatus = "valid" | "invalid" | "unreachable";
 
 export async function verifySession(): Promise<SessionStatus> {
-  if (!isApiConfigured) return "unreachable";
   const token = getToken();
   if (!token) return "invalid";
 

@@ -12,9 +12,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./SuperAdminApplications.css";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
-).replace(/\/+$/, "");
+const configuredApiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000"
+)
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
+
+const API_BASE_URL = `${configuredApiBaseUrl}/api`;
 
 const ADMIN_PERMISSION_OPTIONS = [
   {
@@ -67,6 +72,8 @@ interface Branch {
   id: string;
   name: string;
   code?: string | null;
+  program_id: string;
+  program_name?: string;
   active?: boolean;
 }
 
@@ -89,6 +96,8 @@ interface Application {
   institution_name: string | null;
   branch_id?: string | null;
   branch_name: string | null;
+  program_id?: string | null;
+  program_name?: string | null;
   approved_permissions?: string[] | null;
   created_at: string;
   rejection_reason?: string | null;
@@ -105,7 +114,11 @@ interface ApiResponse<T> {
 }
 
 function getToken(): string | null {
-  return localStorage.getItem("gradly_super_admin_token");
+  try {
+    return localStorage.getItem("gradly_super_admin_token");
+  } catch {
+    return null;
+  }
 }
 
 function getErrorMessage(
@@ -231,6 +244,7 @@ export default function SuperAdminApplications() {
 
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [departmentId, setDepartmentId] = useState("");
+  const [programId, setProgramId] = useState("");
   const [approvedPermissions, setApprovedPermissions] =
     useState<string[]>([]);
 
@@ -252,12 +266,15 @@ export default function SuperAdminApplications() {
     [institutions, selected?.institution_id]
   );
 
+  const availablePrograms = useMemo(() => {
+    const unique = new Map<string, { id: string; name: string }>();
+    (selectedInstitution?.branches ?? []).filter((branch) => branch.active !== false).forEach((branch) => unique.set(branch.program_id, { id: branch.program_id, name: branch.program_name || branch.program_id }));
+    return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [selectedInstitution]);
+
   const availableBranches = useMemo(
-    () =>
-      selectedInstitution?.branches.filter(
-        (branch) => branch.active !== false
-      ) ?? [],
-    [selectedInstitution]
+    () => selectedInstitution?.branches.filter((branch) => branch.active !== false && branch.program_id === programId) ?? [],
+    [selectedInstitution, programId]
   );
 
   // Load applications from the backend.
@@ -416,6 +433,7 @@ export default function SuperAdminApplications() {
     setError("");
     setNotice("");
     setDepartmentId(application.branch_id || "");
+    setProgramId(application.program_id || institutions.find((institution) => institution.id === application.institution_id)?.branches.find((branch) => branch.id === application.branch_id)?.program_id || "");
 
     setApprovedPermissions(
       Array.isArray(application.approved_permissions)
@@ -439,8 +457,8 @@ export default function SuperAdminApplications() {
       return false;
     }
 
-    if (!departmentId) {
-      setError("Select a department before saving.");
+    if (!programId || !departmentId) {
+      setError("Select a program and department before saving.");
       return false;
     }
 
@@ -480,6 +498,7 @@ export default function SuperAdminApplications() {
             Accept: "application/json",
           },
           body: JSON.stringify({
+            programId,
             branchId: departmentId,
             approvedPermissions,
           }),
@@ -498,7 +517,7 @@ export default function SuperAdminApplications() {
       }
 
       setConfigurationSaved(true);
-      setNotice("Department and permissions saved.");
+      setNotice("Program, department and permissions saved.");
 
       await loadApplications(false);
 
@@ -929,6 +948,15 @@ export default function SuperAdminApplications() {
                     </div>
 
                     <div className="configuration-field">
+                      <label htmlFor="application-program">Program</label>
+                      <select id="application-program" value={programId} onChange={(event) => { setProgramId(event.target.value); setDepartmentId(""); setConfigurationSaved(false); setError(""); }} disabled={configurationLoading || configurationSaving || actionLoading || !selectedInstitution}>
+                        <option value="">Select a program</option>
+                        {availablePrograms.map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
+                      </select>
+                      <small>The program is linked to its departments in the institution master data.</small>
+                    </div>
+
+                    <div className="configuration-field">
                       <label htmlFor="application-department">
                         Department / Branch
                       </label>
@@ -944,11 +972,12 @@ export default function SuperAdminApplications() {
                         disabled={
                           configurationLoading ||
                           configurationSaving ||
-                          actionLoading
+                          actionLoading ||
+                          !programId
                         }
                       >
                         <option value="">
-                          Select a department
+                          {programId ? "Select a department" : "Select a program first"}
                         </option>
 
                         {availableBranches.map((branch) => (
