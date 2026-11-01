@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Activity, Search, RefreshCw, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
+import { Activity, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import "./SuperAdminAudit.css";
 
 type AuditEvent = {
