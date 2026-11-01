@@ -148,6 +148,11 @@ function App() {
           />
 
           <Route
+            path="dashboard"
+            element={<SuperAdminDashboard />}
+          />
+
+          <Route
             path="users"
             element={<SuperAdminUsers />}
           />
