@@ -30,8 +30,11 @@ export async function findAllStudents(filters: { search?: string; institution?: 
       sp.current_cgpa,
       sp.current_earned_credits,
 
+      i.id::text AS institution_id,
       i.name AS institution_name,
+      p.id::text AS program_id,
       p.name AS program_name,
+      b.id::text AS branch_id,
       b.name AS branch_name,
       s.name AS scheme_name
 
