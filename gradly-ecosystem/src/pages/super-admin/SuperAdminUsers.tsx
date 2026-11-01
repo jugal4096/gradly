@@ -15,8 +15,11 @@ interface Student {
   student_identifier: string | null;
   current_semester_number: number | null;
   current_cgpa: number | null;
+  institution_id: string | null;
   institution_name: string | null;
+  program_id: string | null;
   program_name: string | null;
+  branch_id: string | null;
   branch_name: string | null;
 }
 interface UsersResponse { students?: Student[]; count?: number; message?: string }
@@ -36,10 +39,6 @@ function formatDate(value: string | null | undefined) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Unavailable" : date.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
-function unique(values: Array<string | null | undefined>) {
-  return [...new Set(values.map((value) => value?.trim()).filter((value): value is string => Boolean(value)))].sort((a, b) => a.localeCompare(b));
-}
-
 export default function SuperAdminUsers() {
   const navigate = useNavigate();
   const [accountView, setAccountView] = useState<"registered" | "guest">("registered");
@@ -246,19 +245,21 @@ export default function SuperAdminUsers() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadGuests(); }, [loadGuests]);
 
-  const institutions = useMemo(() => unique((academicOptions ?? []).map((item) => item.name)), [academicOptions]);
-  const programs = useMemo(() => unique((academicOptions ?? [])
-    .filter((item) => !institution || item.name === institution)
-    .flatMap((item) => item.programs.map((option) => option.name))), [academicOptions, institution]);
-  const branches = useMemo(() => unique((academicOptions ?? [])
-    .filter((item) => !institution || item.name === institution)
+  const institutions = useMemo(() => [...(academicOptions ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [academicOptions]);
+  const programs = useMemo(() => (academicOptions ?? [])
+    .filter((item) => !institution || item.id === institution)
+    .flatMap((item) => item.programs)
+    .sort((a, b) => a.name.localeCompare(b.name)), [academicOptions, institution]);
+  const branches = useMemo(() => (academicOptions ?? [])
+    .filter((item) => !institution || item.id === institution)
     .flatMap((item) => item.programs
-      .filter((option) => !program || option.name === program)
-      .flatMap((option) => option.branches.map((branchOption) => branchOption.name)))), [academicOptions, institution, program]);
+      .filter((option) => !program || option.id === program)
+      .flatMap((option) => option.branches))
+    .sort((a, b) => a.name.localeCompare(b.name)), [academicOptions, institution, program]);
   const filtered = useMemo(() => students.filter((s) =>
-    (!institution || s.institution_name === institution) &&
-    (!program || s.program_name === program) &&
-    (!branch || s.branch_name === branch) &&
+    (!institution || s.institution_id === institution) &&
+    (!program || s.program_id === program) &&
+    (!branch || s.branch_id === branch) &&
     (status === "all" || (status === "active" ? s.active : !s.active))
   ), [students, institution, program, branch, status]);
 
@@ -340,9 +341,9 @@ export default function SuperAdminUsers() {
           {academicOptionsError && <p role="alert" style={{ margin: "0 0 10px", color: "#a33131", fontSize: 12 }}>{academicOptionsError} <button type="button" onClick={() => void loadAcademicOptions()} style={actionStyle}>Retry</button></p>}
           {!academicOptionsLoading && !academicOptionsError && <p style={{ margin: "0 0 10px", color: "#776d89", fontSize: 12 }}>{institutions.length} institutions · {programs.length} programs · {branches.length} branches available in the database catalogue</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))", gap: 10 }}>
-            <select aria-label="Filter by institution or college" value={institution} style={fieldStyle} onChange={(e) => { setInstitution(e.target.value); setProgram(""); setBranch(""); }}><option value="">All colleges / institutions</option>{institutions.map((v) => <option key={v} value={v}>{v}</option>)}</select>
-            <select aria-label="Filter by program" value={program} style={fieldStyle} onChange={(e) => { setProgram(e.target.value); setBranch(""); }}><option value="">All programs</option>{programs.map((v) => <option key={v} value={v}>{v}</option>)}</select>
-            <select aria-label="Filter by branch" value={branch} style={fieldStyle} onChange={(e) => setBranch(e.target.value)}><option value="">All branches</option>{branches.map((v) => <option key={v} value={v}>{v}</option>)}</select>
+            <select aria-label="Filter by institution or college" value={institution} style={fieldStyle} onChange={(e) => { setInstitution(e.target.value); setProgram(""); setBranch(""); }}><option value="">All colleges / institutions</option>{institutions.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>
+            <select aria-label="Filter by program" value={program} style={fieldStyle} onChange={(e) => { setProgram(e.target.value); setBranch(""); }}><option value="">All programs</option>{programs.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>
+            <select aria-label="Filter by branch" value={branch} style={fieldStyle} onChange={(e) => setBranch(e.target.value)}><option value="">All branches</option>{branches.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>
             <select aria-label="Filter by account status" value={status} style={fieldStyle} onChange={(e) => setStatus(e.target.value)}><option value="all">All account statuses</option><option value="active">Active only</option><option value="inactive">Disabled only</option></select>
             <button type="button" onClick={resetFilters} style={{ ...actionStyle, background: "#fff" }}><X size={15} /> Clear filters</button>
           </div>
