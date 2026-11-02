@@ -8,6 +8,7 @@ export interface ReviewApplicationInput {
   superAdminId: string;
   decision: ApplicationDecision;
   rejectionReason?: string;
+  programId?: string;
   branchId?: string;
   permissions?: string[];
 }
@@ -209,7 +210,8 @@ export async function saveApplicationConfiguration(
       [
         input.applicationId,
         input.branchId,
-        JSON.stringify(permissions)
+        JSON.stringify(permissions),
+        input.programId ?? null
       ]
     );
 
@@ -241,6 +243,7 @@ export async function saveApplicationConfiguration(
       [
         input.applicationId,
         JSON.stringify({
+          program_id: application.program_id,
           branch_id: application.branch_id,
           approved_permissions: application.approved_permissions
         }),
@@ -310,17 +313,22 @@ export async function reviewApplication(
         );
       }
 
+      if (!input.programId) {
+        throw httpError("Select a program before accepting.", 400);
+      }
+
       const branchResult = await client.query(
-        `SELECT b.id
+        `SELECT b.id, p.id AS program_id
          FROM public.branches b
          JOIN public.programs p
            ON p.id = b.program_id
          WHERE b.id = $1
-           AND p.institution_id = $2
+           AND p.id = $2
+           AND p.institution_id = $3
            AND b.active = TRUE
            AND p.active = TRUE
          LIMIT 1`,
-        [input.branchId, application.institution_id]
+        [input.branchId, input.programId, application.institution_id]
       );
 
       if (branchResult.rowCount !== 1) {
@@ -349,7 +357,7 @@ export async function reviewApplication(
              ELSE branch_id
            END,
            program_id = CASE
-             WHEN $2 = 'ACCEPTED' THEN (SELECT program_id FROM public.branches WHERE id = $3::uuid)
+             WHEN $2 = 'ACCEPTED' THEN $7::uuid
              ELSE program_id
            END,
            reviewed_by_super_admin_id = $4,
@@ -407,6 +415,7 @@ export async function reviewApplication(
         }),
         JSON.stringify({
           status: input.decision,
+          program_id: input.programId ?? application.program_id,
           branch_id: branchId,
           approved_permissions: permissions,
           reviewed_at: updatedResult.rows[0].reviewed_at
