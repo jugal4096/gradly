@@ -91,6 +91,7 @@ interface Application {
   mobile_number: string;
   email: string;
   graduation_date: string | null;
+  adminship_expiry_date?: string | null;
   status: ApplicationStatus;
   institution_id?: string | null;
   institution_name: string | null;
@@ -245,6 +246,7 @@ export default function SuperAdminApplications() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [departmentId, setDepartmentId] = useState("");
   const [programId, setProgramId] = useState("");
+  const [adminshipExpiryDate, setAdminshipExpiryDate] = useState("");
   const [approvedPermissions, setApprovedPermissions] =
     useState<string[]>([]);
 
@@ -433,6 +435,7 @@ export default function SuperAdminApplications() {
     setError("");
     setNotice("");
     setDepartmentId(application.branch_id || "");
+    setAdminshipExpiryDate(application.adminship_expiry_date?.slice(0, 10) || application.graduation_date?.slice(0, 10) || "");
     setProgramId(application.program_id || institutions.find((institution) => institution.id === application.institution_id)?.branches.find((branch) => branch.id === application.branch_id)?.program_id || "");
 
     setApprovedPermissions(
@@ -454,6 +457,11 @@ export default function SuperAdminApplications() {
       setError(
         "Your Super Admin session is missing. Please sign in again."
       );
+      return false;
+    }
+
+    if (!adminshipExpiryDate) {
+      setError("Choose an admin expiry date. It defaults to the applicant's graduation date.");
       return false;
     }
 
@@ -501,6 +509,7 @@ export default function SuperAdminApplications() {
             programId,
             branchId: departmentId,
             approvedPermissions,
+            adminshipExpiryDate,
           }),
         }
       );
@@ -628,6 +637,7 @@ export default function SuperAdminApplications() {
               programId,
               branchId: departmentId,
               permissions: approvedPermissions,
+              adminshipExpiryDate,
             }
           : {
               decision,
@@ -663,6 +673,7 @@ export default function SuperAdminApplications() {
       setSelected(null);
       setReason("");
       setDepartmentId("");
+      setAdminshipExpiryDate("");
       setApprovedPermissions([]);
       setConfigurationSaved(false);
 
@@ -942,8 +953,7 @@ export default function SuperAdminApplications() {
                         </h3>
 
                         <p>
-                          Choose the program, department / branch, and exact
-                          access this admin should receive.
+                          Choose the program, department / branch, access permissions, and admin access expiry.
                         </p>
                       </div>
                     </div>
@@ -1018,6 +1028,23 @@ export default function SuperAdminApplications() {
                             for this institution.
                           </small>
                         )}
+                    </div>
+
+                    <div className="configuration-field">
+                      <label htmlFor="application-admin-expiry">Admin access expiry date</label>
+                      <input
+                        id="application-admin-expiry"
+                        type="date"
+                        value={adminshipExpiryDate}
+                        min={new Date().toISOString().slice(0, 10)}
+                        onChange={(event) => {
+                          setAdminshipExpiryDate(event.target.value);
+                          setConfigurationSaved(false);
+                          setError("");
+                        }}
+                        disabled={configurationSaving || actionLoading}
+                      />
+                      <small>Defaults to the applicant's graduation date. Super Admin can choose a different expiry date.</small>
                     </div>
 
                     <div className="permissions-heading">
