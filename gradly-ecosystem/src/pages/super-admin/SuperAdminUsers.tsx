@@ -243,7 +243,7 @@ export default function SuperAdminUsers() {
     return guests;
   }, [guests, statusFilter]);
 
-  const filteredCount = directoryType === "registered" ? filteredStudents.length : filteredGuests.length;
+  const filteredCount = directoryType === "guest" ? filteredGuests.length : filteredStudents.length;
   const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const visibleStudents = filteredStudents.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -509,14 +509,14 @@ export default function SuperAdminUsers() {
               </select>
             </label>
           </>}
-          <label className="super-users-filter">
+          {directoryType !== "blacklist" && <label className="super-users-filter">
             <Filter size={15} />
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} aria-label="Filter by status">
               <option value="all">All statuses</option>
               <option value="active">Active</option>
               <option value="inactive">{directoryType === "guest" ? "Expired" : "Inactive"}</option>
             </select>
-          </label>
+          </label>}
         </div>
 
         {error && <div className="super-users-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => void loadDirectory()}>Retry</button></div>}
@@ -536,7 +536,7 @@ export default function SuperAdminUsers() {
                     <td><span className="super-users-branch">{student.branch_name || "Not provided"}</span><small className="super-users-subtext">{student.program_name || ""}</small></td>
                     <td>{student.current_semester_number ? `Semester ${student.current_semester_number}` : "—"}</td>
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
-                    <td><span className={`super-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Inactive"}</span></td>
+                    <td><span className={`super-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Blocked"}</span></td>
                     <td><span className="super-users-date">{formatDate(student.last_login_at)}</span></td>
                     <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view student-notify-action" onClick={() => setNotificationTarget(student)} aria-label={`Send notification to ${student.display_name || student.email || "student"}`} title="Send notification" disabled={studentActionId === student.id}><Bell size={15} /></button><button type="button" className="super-users-view student-status-action" onClick={() => void updateStudentStatus(student)} aria-label={student.active ? "Disable student" : "Reactivate student"} title={student.active ? "Disable account" : "Reactivate account"} disabled={studentActionId === student.id}>{student.active ? <PauseCircle size={15} /> : directoryType === "blacklist" ? "Reactivate" : <PlayCircle size={15} />}</button><button type="button" className="super-users-view student-delete-action" onClick={() => void deleteStudent(student)} aria-label="Delete student account" title="Soft-delete account" disabled={studentActionId === student.id}>{studentActionId === student.id ? "…" : <Trash2 size={15} />}</button></div></td>
                   </tr>)}
@@ -564,7 +564,7 @@ export default function SuperAdminUsers() {
         </div>
 
         <footer className="super-users-pagination">
-          <span>Showing {filteredCount ? (safePage - 1) * PAGE_SIZE + 1 : 0}–{Math.min(safePage * PAGE_SIZE, filteredCount)} of {filteredCount} {directoryType === "registered" ? "users" : "guest sessions"}</span>
+          <span>Showing {filteredCount ? (safePage - 1) * PAGE_SIZE + 1 : 0}–{Math.min(safePage * PAGE_SIZE, filteredCount)} of {filteredCount} {directoryType === "guest" ? "guest sessions" : directoryType === "blacklist" ? "blocked users" : "users"}</span>
           <div>
             <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={safePage <= 1} aria-label="Previous page"><ChevronLeft size={16} /> Previous</button>
             <span>Page {safePage} of {totalPages}</span>
