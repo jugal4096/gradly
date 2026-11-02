@@ -164,9 +164,9 @@ export async function saveApplicationConfiguration(
 
     const application = applicationResult.rows[0];
 
-    if (application.status !== "PENDING") {
+    if (!["PENDING", "ACCEPTED"].includes(application.status)) {
       throw httpError(
-        "Only pending applications can be configured.",
+        "Only pending or accepted applications can be configured.",
         409
       );
     }
@@ -236,7 +236,7 @@ export async function saveApplicationConfiguration(
        )
        VALUES (
          'SUPER_ADMIN',
-         'ADMIN_APPLICATION_CONFIGURATION_SAVED',
+         application.status === 'ACCEPTED' ? 'ACCEPTED_ADMIN_APPLICATION_EDITED' : 'ADMIN_APPLICATION_CONFIGURATION_SAVED',
          'admin_applications',
          $1,
          $2::jsonb,
