@@ -165,6 +165,10 @@ export async function registerApprovedAdmin(
       );
     }
 
+    if (!application.adminship_expiry_date && !application.graduation_date) {
+      throw new RegistrationError("Admin expiry date is missing. Contact the Super Admin.", 409);
+    }
+
     // 6. Create the administrator using the approved institution,
     // department, role, and application details.
     const adminResult = await client.query(
@@ -183,6 +187,7 @@ export async function registerApprovedAdmin(
          registration_status,
          registered_at,
          adminship_started_at,
+         adminship_expires_at,
          user_id,
          application_id,
          enrollment_number,
@@ -199,6 +204,7 @@ export async function registerApprovedAdmin(
          'REGISTERED',
          NOW(),
          NOW(),
+         ($13::date::timestamp + INTERVAL '1 day' - INTERVAL '1 millisecond'),
          $9,
          $10,
          $11,
@@ -235,7 +241,8 @@ export async function registerApprovedAdmin(
         String(application.enrollment_number)
           .trim()
           .toUpperCase()
-          .replace(/\s+/g, "")
+          .replace(/\s+/g, ""),
+        application.adminship_expiry_date || application.graduation_date
       ]
     );
 
