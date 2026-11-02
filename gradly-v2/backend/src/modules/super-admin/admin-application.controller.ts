@@ -95,7 +95,7 @@ function normalizePermissions(value: unknown): string[] | null {
  * Read the first string-valued field from a request body.
  */
 function isValidFutureDateOnly(value: string | undefined): value is string {
-  if (!value || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const expiry = new Date(`${value}T23:59:59.999Z`);
   return !Number.isNaN(expiry.getTime()) && expiry.toISOString().slice(0, 10) === value && expiry > new Date();
 }
@@ -275,7 +275,7 @@ export async function saveApplicationConfigurationController(
     }
 
     const adminshipExpiryDate = getStringField(req.body, ["adminshipExpiryDate", "adminship_expiry_date"])?.trim();
-    if (!adminshipExpiryDate || !/^\d{4}-\d{2}-\d{2}$/.test(adminshipExpiryDate) || Number.isNaN(Date.parse(`${adminshipExpiryDate}T00:00:00.000Z`))) {
+    if (!isValidFutureDateOnly(adminshipExpiryDate)) {
       return res.status(400).json({ success: false, message: "Choose a valid admin expiry date." });
     }
 
