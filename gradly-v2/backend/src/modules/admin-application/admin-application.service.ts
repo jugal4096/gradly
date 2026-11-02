@@ -42,8 +42,20 @@ export async function submitAdminApplication(
     );
   }
 
-  // Admin applications are requests for platform review, not account activation.
-  // A disabled user may submit a request; their Gradly account remains inactive.
+  // Disabled and soft-deleted accounts must remain blocked. Signing in with
+  // Firebase must never turn a blacklisted account into a fresh applicant.
+  if (user.active === false) {
+    throw new ApplicationError(
+      "This Gradly account is disabled and has been added to the blacklist. Contact the Super Admin to request reactivation.",
+      403
+    );
+  }
+  if (user.deleted_at) {
+    throw new ApplicationError(
+      "This Gradly account is no longer active and cannot submit a new application.",
+      403
+    );
+  }
 
   const institutionId = requiredString(
     body.institution_id,
@@ -148,11 +160,9 @@ export async function submitAdminApplication(
     specializationId = specialization.id;
   }
 
-  // A soft-deleted account is treated as a fresh Admin applicant.
-  // Keep its inactive/deleted state and historical records; simply allow a new request.
-  const duplicate = user.deleted_at
-    ? null
-    : await findDuplicateApplication(user.id, institutionId, branchId);
+  // A Firebase identity gets exactly one application, regardless of status.
+  // Rejected applications and soft-deleted account history still count.
+  const duplicate = await findDuplicateApplication(user.id, institutionId, branchId);
 
   if (duplicate) {
     throw new ApplicationError(
@@ -205,12 +215,7 @@ export async function getMyAdminApplications(firebaseUid: string) {
     );
   }
 
-  // Soft-deleted users start with a clean application screen. Their prior
-  // application records remain stored for audit/history, but are not reused
-  // to block or pre-populate a new application.
-  if (user.deleted_at) {
-    return [];
-  }
-
+  // Keep application history readable even for disabled/soft-deleted accounts.
+  // The submit endpoint independently blocks disabled and deleted accounts.
   return findApplicationsForUser(user.id);
 }

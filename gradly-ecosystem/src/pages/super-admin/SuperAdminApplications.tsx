@@ -1061,9 +1061,25 @@ export default function SuperAdminApplications() {
                         </p>
                       </div>
 
-                      <span className="permission-count">
-                        {approvedPermissions.length} selected
-                      </span>
+                      <div className="permissions-heading-actions">
+                        <span className="permission-count">
+                          {approvedPermissions.length} selected
+                        </span>
+                        <button
+                          type="button"
+                          className="action-button"
+                          onClick={() => {
+                            const allPermissionCodes = ADMIN_PERMISSION_OPTIONS.map((permission) => permission.code);
+                            const allSelected = allPermissionCodes.every((code) => approvedPermissions.includes(code));
+                            setApprovedPermissions(allSelected ? [] : allPermissionCodes);
+                            setConfigurationSaved(false);
+                            setError("");
+                          }}
+                          disabled={configurationSaving || actionLoading || configurationLoading}
+                        >
+                          {ADMIN_PERMISSION_OPTIONS.every((permission) => approvedPermissions.includes(permission.code)) ? "Deselect all" : "Select all"}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="permission-options">
