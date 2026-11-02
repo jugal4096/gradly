@@ -117,3 +117,56 @@ export async function acknowledgePlatformRequest(req: SuperAdminAuthenticatedReq
     return res.json({success:true,request:result.rows[0]});
   } catch(error) {console.error("Request acknowledgement failed:",error);return res.status(500).json({success:false,message:"Unable to acknowledge request."});}
 }
+
+
+const deletableRequestTables: Record<string, string> = {
+  platform: "platform_requests",
+  password: "admin_password_change_requests",
+  curriculum: "admin_subject_change_requests",
+  student: "student_syllabus_feedback",
+  feedback: "feedback_requests",
+  institution: "guest_institution_requests",
+};
+
+export async function deleteRequestRecord(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const superAdminId = req.superAdmin?.superAdminId;
+  if (!superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
+  const table = deletableRequestTables[String(req.params.source || "")];
+  if (!table) return res.status(400).json({ success:false, message:"Unsupported request source." });
+  const requestId = String(req.params.requestId || "").trim();
+  if (!requestId || requestId.length > 120) return res.status(400).json({ success:false, message:"Invalid request ID." });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query(
+      `SELECT to_jsonb(t) AS snapshot FROM public.${table} t WHERE t.id::text=$1 FOR UPDATE`,
+      [requestId]
+    );
+    if (!found.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ success:false, message:"Request record not found." });
+    }
+    let events: unknown[] = [];
+    if (table === "platform_requests") {
+      const eventRows = await client.query(
+        "SELECT to_jsonb(e) AS event FROM public.platform_request_events e WHERE e.request_id::text=$1 ORDER BY e.created_at ASC",
+        [requestId]
+      );
+      events = eventRows.rows.map((row) => row.event);
+    }
+    await client.query(
+      `INSERT INTO public.request_record_deletion_audit(source,record_id,record_snapshot,event_snapshot,deleted_by)
+       VALUES($1,$2,$3::jsonb,$4::jsonb,$5)`,
+      [req.params.source, requestId, JSON.stringify(found.rows[0].snapshot), JSON.stringify(events), superAdminId]
+    );
+    await client.query(`DELETE FROM public.${table} WHERE id::text=$1`, [requestId]);
+    await client.query("COMMIT");
+    return res.json({ success:true, message:"Request deleted. An audit snapshot has been retained." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Request record deletion failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to delete request record. Check related database constraints." });
+  } finally {
+    client.release();
+  }
+}

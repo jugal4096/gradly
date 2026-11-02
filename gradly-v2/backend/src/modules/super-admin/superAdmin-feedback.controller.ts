@@ -43,7 +43,7 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
     const institutionLimit = addInstitutionValue(200);
     const institutionResult = await pool.query(
       `SELECT id, college_name AS subject, college_name AS title,
-              'Institution addition request' AS category, 'INSTITUTION_REQUEST' AS type,
+              'Institution addition request' AS category, 'INSTITUTION_REQUEST' AS type, 'institution' AS request_source,
               concat('College: ', college_name, E'\\nLocality / City: ', locality,
                 E'\\nGuest ID: ', COALESCE(guest_id, 'Not provided'),
                 E'\\nExternal directory ID: ', COALESCE(external_institution_id, 'Not provided')) AS message,
@@ -58,7 +58,7 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
       institutionValues
     );
     const feedback = [
-      ...result.rows.map((row) => row.record as Record<string, unknown>),
+      ...result.rows.map((row) => ({ ...(row.record as Record<string, unknown>), request_source: "feedback" })),
       ...institutionResult.rows as Record<string, unknown>[],
     ].sort((a, b) => {
       const at = new Date(String(a.created_at ?? a.submitted_at ?? 0)).getTime() || 0;
