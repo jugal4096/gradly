@@ -376,7 +376,8 @@ export async function reviewApplication(
           ? input.rejectionReason?.trim() ||
             "Application rejected."
           : null,
-        JSON.stringify(permissions)
+        JSON.stringify(permissions),
+        input.programId ?? null
       ]
     );
 
@@ -410,6 +411,7 @@ export async function reviewApplication(
         input.applicationId,
         JSON.stringify({
           status: application.status,
+          program_id: application.program_id,
           branch_id: application.branch_id,
           approved_permissions: application.approved_permissions
         }),
