@@ -15,6 +15,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { useCallback, useEffect, useState } from "react";
+
 import {
   NavLink,
   Outlet,
@@ -44,6 +46,11 @@ const controlNavigation = [
   {
     label: "Applications",
     path: "/super-admin/applications",
+    icon: ClipboardList,
+  },
+  {
+    label: "Request Center",
+    path: "/super-admin/requests",
     icon: ClipboardList,
   },
   {
@@ -94,8 +101,26 @@ const systemNavigation = [
 
 
 export default function SuperAdminLayout() {
-
   const navigate = useNavigate();
+  const [unattendedCount, setUnattendedCount] = useState(0);
+  const [newCount, setNewCount] = useState(0);
+  const loadRequestCounts = useCallback(async () => {
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) return;
+    try {
+      const root = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
+      const response = await fetch(root + "/super-admin/platform-requests", { headers: { Authorization: "Bearer " + token, Accept: "application/json" } });
+      if (!response.ok) return;
+      const data = await response.json();
+      setUnattendedCount(Number(data.counts?.unattended) || 0);
+      setNewCount(Number(data.counts?.unacknowledged) || 0);
+    } catch { /* Keep the last known badge count while offline. */ }
+  }, []);
+  useEffect(() => {
+    void loadRequestCounts();
+    const timer = window.setInterval(() => void loadRequestCounts(), 45000);
+    return () => window.clearInterval(timer);
+  }, [loadRequestCounts]);
 
 
   function handleLogout() {
@@ -215,6 +240,11 @@ export default function SuperAdminLayout() {
                     <span>
                       {item.label}
                     </span>
+                    {item.path === "/super-admin/requests" && unattendedCount > 0 && (
+                      <span className="sidebar-request-badge" title={newCount + " new, " + unattendedCount + " unattended"}>
+                        {unattendedCount > 99 ? "99+" : unattendedCount}
+                      </span>
+                    )}
 
                     <ChevronRight
                       className="sidebar-arrow"
