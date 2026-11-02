@@ -1,4 +1,4 @@
-import { findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity } from "./user-management.repository";
+import { deleteGuestSession, findAcademicFilters, findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity } from "./user-management.repository";
 import { Response } from "express";
   
   import {
@@ -24,6 +24,38 @@ import { Response } from "express";
   } catch (error) {
     console.error("Failed to load branches:", error);
     return res.status(500).json({ message: "Failed to load branches." });
+  }
+}
+
+
+export async function getAcademicFilters(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin) return res.status(401).json({ message: "Super Admin authentication required." });
+    const filters = await findAcademicFilters();
+    return res.status(200).json(filters);
+  } catch (error) {
+    console.error("Failed to load academic filter catalogue:", error);
+    return res.status(500).json({ message: "Failed to load academic filter options." });
+  }
+}
+
+export async function removeGuestSession(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    if (!req.superAdmin?.superAdminId) return res.status(401).json({ message: "Super Admin authentication required." });
+    const { guestId } = req.params;
+    if (!guestId) return res.status(400).json({ message: "Guest session ID is required." });
+    const deleted = await deleteGuestSession(guestId, req.superAdmin.superAdminId);
+    if (!deleted) return res.status(404).json({ message: "Guest session was not found. It may already have been deleted." });
+    return res.status(200).json({ message: "Guest session and its recorded guest activity were deleted." });
+  } catch (error) {
+    console.error("Failed to delete guest session:", error);
+    return res.status(500).json({ message: "Failed to delete guest session." });
   }
 }
 
