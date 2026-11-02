@@ -10,6 +10,7 @@ import {
   getInstitutionBranches,
   reviewApplication,
   saveApplicationConfigurationController,
+  updateAcceptedApplicationExpiryController,
 } from "./admin-application.controller";
 
 const router = Router();
@@ -28,6 +29,8 @@ const configurationHandler =
 
 const reviewHandler =
   reviewApplication as RequestHandler;
+const expiryHandler =
+  updateAcceptedApplicationExpiryController as RequestHandler;
 
 /**
  * Validate all imported handlers during startup.
@@ -38,6 +41,7 @@ const handlers: Record<string, unknown> = {
   getInstitutionBranches: branchesHandler,
   saveApplicationConfigurationController: configurationHandler,
   reviewApplication: reviewHandler,
+  updateAcceptedApplicationExpiryController: expiryHandler,
 };
 
 for (const [name, handler] of Object.entries(handlers)) {
@@ -84,6 +88,12 @@ router.patch(
 /**
  * PATCH /api/super-admin/applications/:applicationId/review
  */
+router.patch(
+  "/:applicationId/expiry",
+  authHandler,
+  expiryHandler
+);
+
 router.patch(
   "/:applicationId/review",
   authHandler,
