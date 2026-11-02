@@ -30,7 +30,7 @@ export default function SuperAdminRequestCenter(){
    const sf=get("student");
    const student=(Array.isArray(sf?.feedback)?sf.feedback:[]).map((r:Record<string,unknown>)=>({id:"student-"+String(r.id),source:"STUDENT_SYLLABUS",requestType:String(r.requestType||"SYLLABUS_FEEDBACK"),title:"Student syllabus · "+String(r.subjectName||"Feedback"),description:String(r.message||""),priority:"NORMAL",status:String(r.status||"FORWARDED"),createdAt:String(r.createdAt||""),institution:String(r.institutionName||""),program:String(r.programName||""),branch:String(r.branchName||""),reviewNote:r.adminReviewNote?String(r.adminReviewNote):null}));
    const fb=get("feedback");
-   const feedback=(Array.isArray(fb?.feedback)?fb.feedback:[]).map((r:Record<string,unknown>)=>({id:"feedback-"+String(r.id),source:"USER_FEEDBACK",requestType:String(r.category||r.type||"USER_FEEDBACK"),title:String(r.subject||r.title||"User feedback"),description:String(r.message||r.description||""),priority:"NORMAL",status:String(r.status||"PENDING"),createdAt:String(r.created_at||""),adminName:String(r.name||"Student / user")}));
+   const feedback=(Array.isArray(fb?.feedback)?fb.feedback:[]).map((r:Record<string,unknown>)=>({id:(String(r.request_source)==="institution"?"institution-":"feedback-")+String(r.id),source:String(r.request_source)==="institution"?"INSTITUTION_REQUEST":"USER_FEEDBACK",requestType:String(r.category||r.type||"USER_FEEDBACK"),title:String(r.subject||r.title||"User feedback"),description:String(r.message||r.description||""),priority:"NORMAL",status:String(r.status||"PENDING"),createdAt:String(r.created_at||""),adminName:String(r.name||"Student / user")}));
    const merged=[...platform,...password,...curriculum,...student,...feedback] as Row[];
    const filtered=merged.filter(r=>status==="ALL"||r.status.toUpperCase()===status);
    setRows(filtered.sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()));setCounts(core.counts||{});setError("");
@@ -47,7 +47,7 @@ export default function SuperAdminRequestCenter(){
   return !q||[r.title,r.description,r.adminName,r.adminCode,r.adminEmail,r.institution,r.program,r.branch,r.targetUserId].some(v=>String(v||"").toLowerCase().includes(q));
  }),[rows,requesterFilter,search]);
  async function deleteRequest(row:Row){
-  const sourceMap:Record<string,string>={ADMIN_REQUEST:"platform",PASSWORD_RESET:"password",ADMIN_CURRICULUM:"curriculum",STUDENT_SYLLABUS:"student",USER_FEEDBACK:"feedback"};
+  const sourceMap:Record<string,string>={ADMIN_REQUEST:"platform",PASSWORD_RESET:"password",ADMIN_CURRICULUM:"curriculum",STUDENT_SYLLABUS:"student",USER_FEEDBACK:"feedback",INSTITUTION_REQUEST:"institution"};
   const source=sourceMap[row.source];if(!source)return;
   if(!window.confirm("Delete this request record? A deletion audit entry will be retained."))return;
   const rawId=row.id.slice(row.id.indexOf("-")+1);
