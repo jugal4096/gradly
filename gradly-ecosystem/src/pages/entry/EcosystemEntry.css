@@ -2,13 +2,14 @@
    GRADLY ECOSYSTEM
    ========================================================= */
 
+   /* Keep the entry screen's viewport behavior scoped to its own page.
+      Global html/body/#root overflow rules break other SPA routes after navigation. */
    html,
    body,
    #root {
      width: 100%;
-     height: 100%;
+     min-height: 100%;
      margin: 0;
-     overflow: hidden;
    }
    
    * {
