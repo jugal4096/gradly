@@ -6,8 +6,8 @@ import "./AdminRegister.css";
 
 const configuredApiBaseUrl = (
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api"
-).trim().replace(/\\/+$/, "");
-const API_BASE_URL = /\\/api$/i.test(configuredApiBaseUrl)
+).trim().replace(/\/+$/, "");
+const API_BASE_URL = /\/api$/i.test(configuredApiBaseUrl)
   ? configuredApiBaseUrl
   : `${configuredApiBaseUrl}/api`;
 
