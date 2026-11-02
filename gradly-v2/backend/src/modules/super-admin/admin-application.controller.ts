@@ -6,6 +6,7 @@ import {
   listInstitutionBranches,
   saveApplicationConfiguration,
   reviewApplication as reviewApplicationInDb,
+  updateAcceptedApplicationExpiry,
 } from "./admin-application.repository";
 
 interface SuperAdminRequest extends Request {
@@ -485,5 +486,28 @@ export async function reviewApplication(
           ? error.message
           : "Could not review the administrator application.",
     });
+  }
+}
+
+
+/** PATCH /api/super-admin/applications/:applicationId/expiry */
+export async function updateAcceptedApplicationExpiryController(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const superAdminId = getSuperAdminId(req);
+    if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+    const applicationId = req.params.applicationId?.trim();
+    if (!isUuid(applicationId)) return res.status(400).json({ success: false, message: "A valid application ID is required." });
+    const adminshipExpiryDate = getStringField(req.body, ["adminshipExpiryDate", "adminship_expiry_date"])?.trim();
+    if (!isValidFutureDateOnly(adminshipExpiryDate)) {
+      return res.status(400).json({ success: false, message: "Choose a valid future admin expiry date." });
+    }
+    const application = await updateAcceptedApplicationExpiry(applicationId, superAdminId, adminshipExpiryDate);
+    return res.status(200).json({ success: true, message: "Admin expiry date updated. The applicant can now complete registration.", application });
+  } catch (error) {
+    console.error("Could not update accepted application expiry:", error);
+    return res.status(getErrorStatus(error)).json({ success: false, message: error instanceof Error ? error.message : "Could not update admin expiry date." });
   }
 }
