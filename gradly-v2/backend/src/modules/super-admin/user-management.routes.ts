@@ -10,6 +10,9 @@ import {
   listGuestActivity,
   getAcademicFilters,
   removeGuestSession,
+  updateStudentStatus,
+  deleteStudentAccount,
+  sendStudentNotification,
 } from "./user-management.controller";
 
 const router = Router();
@@ -24,6 +27,9 @@ router.get("/guests/:guestId/activity", listGuestActivity);
 router.get("/filters", getAcademicFilters);
 router.get("/branches", listBranches);
 router.get("/:userId/activity", listStudentActivity);
+router.patch("/:userId/status", updateStudentStatus);
+router.delete("/:userId", deleteStudentAccount);
+router.post("/:userId/notifications", sendStudentNotification);
 router.get("/", listStudents);
 router.get("/:userId", getStudent);
 
