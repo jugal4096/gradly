@@ -109,7 +109,7 @@ export async function findAllStudents(search?: string) {
     LEFT JOIN schemes s
       ON s.id = c.scheme_id
 
-    WHERE u.role = 'STUDENT'
+    WHERE u.role = 'STUDENT' AND u.deleted_at IS NULL
 
       AND (
         $1::text IS NULL
@@ -225,6 +225,7 @@ export async function findStudentById(
     WHERE
       u.id = $1
       AND u.role = 'STUDENT'
+      AND u.deleted_at IS NULL
 
     LIMIT 1;
   `;
