@@ -1,4 +1,4 @@
-import { createStudentNotification, deleteGuestSession, findAcademicFilters, findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity, softDeleteStudentAccount, updateStudentAccountStatus } from "./user-management.repository";
+import { createStudentNotification, deleteGuestSession, findAcademicFilters, findAllBranches, findDisabledAccounts, findGuestActivity, findGuestSessions, findStudentActivity, softDeleteStudentAccount, updateStudentAccountStatus } from "./user-management.repository";
 import { Response } from "express";
   
   import {
@@ -56,6 +56,21 @@ export async function removeGuestSession(
   } catch (error) {
     console.error("Failed to delete guest session:", error);
     return res.status(500).json({ message: "Failed to delete guest session." });
+  }
+}
+
+export async function listDisabledAccounts(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  if (!req.superAdmin) return res.status(401).json({ message: "Super Admin authentication required." });
+  try {
+    const search = typeof req.query.search === "string" ? req.query.search : undefined;
+    const students = await findDisabledAccounts(search);
+    return res.status(200).json({ students, count: students.length });
+  } catch (error) {
+    console.error("Failed to load disabled accounts:", error);
+    return res.status(500).json({ message: "Failed to load disabled accounts." });
   }
 }
 
@@ -245,7 +260,7 @@ export async function updateStudentStatus(
     );
     if (!updated) return res.status(404).json({ message: "Student account was not found or has already been deleted." });
     return res.status(200).json({
-      message: active ? "Student account reactivated." : "Student account disabled.",
+      message: active ? "Account reactivated." : "Account disabled.",
       student: updated,
     });
   } catch (error) {
