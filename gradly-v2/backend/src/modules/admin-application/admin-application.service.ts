@@ -205,5 +205,12 @@ export async function getMyAdminApplications(firebaseUid: string) {
     );
   }
 
+  // Soft-deleted users start with a clean application screen. Their prior
+  // application records remain stored for audit/history, but are not reused
+  // to block or pre-populate a new application.
+  if (user.deleted_at) {
+    return [];
+  }
+
   return findApplicationsForUser(user.id);
 }
