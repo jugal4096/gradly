@@ -13,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  ShieldAlert,
 } from "lucide-react";
 
 import { useCallback, useEffect, useState } from "react";
@@ -37,6 +38,11 @@ const controlNavigation = [
     label: "Users",
     path: "/super-admin/users",
     icon: Users,
+  },
+  {
+    label: "Blacklist",
+    path: "/super-admin/blacklist",
+    icon: ShieldAlert,
   },
   {
     label: "Administrators",
