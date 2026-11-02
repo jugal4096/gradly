@@ -189,7 +189,7 @@ export default function SuperAdminUsers() {
       if (!response.ok) throw new Error("Could not load directory records. Please retry.");
 
       const data = await response.json() as { students?: Student[]; guests?: GuestSession[] };
-      if (directoryType === "registered") {
+      if (directoryType !== "guest") {
         setStudents(Array.isArray(data.students) ? data.students : []);
         // Load master-data filters independently of student assignments.
         const filtersResponse = await fetch(`${getApiBaseUrl()}/api/super-admin/users/filters`, {
@@ -206,7 +206,7 @@ export default function SuperAdminUsers() {
       } else setGuests(Array.isArray(data.guests) ? data.guests : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load directory records.");
-      if (directoryType === "registered") setStudents([]);
+      if (directoryType !== "guest") setStudents([]);
       else setGuests([]);
     } finally {
       setLoading(false);
@@ -228,8 +228,8 @@ export default function SuperAdminUsers() {
   const filteredBranches = useMemo(() => academicFilters.branches.filter((branch) => programFilter === "all" || branch.program_id === programFilter), [academicFilters.branches, programFilter]);
 
   const filteredStudents = useMemo(() => students.filter((student) => {
-    if (statusFilter === "active" && !student.active) return false;
-    if (statusFilter === "inactive" && student.active) return false;
+    if ((directoryType === "blacklist" || statusFilter === "inactive") && student.active) return false;
+    if (directoryType !== "blacklist" && statusFilter === "active" && !student.active) return false;
     if (institutionFilter !== "all" && student.institution_id !== institutionFilter) return false;
     if (programFilter !== "all" && student.program_id !== programFilter) return false;
     if (branchFilter !== "all" && student.branch_id !== branchFilter) return false;
@@ -388,8 +388,8 @@ export default function SuperAdminUsers() {
   }
 
   function exportCurrentDirectory() {
-    if (directoryType === "registered") {
-      downloadCsv("gradly-registered-users.csv", filteredStudents.map((student) => ({
+    if (directoryType !== "guest") {
+      downloadCsv(directoryType === "blacklist" ? "gradly-blacklisted-users.csv" : "gradly-registered-users.csv", filteredStudents.map((student) => ({
         id: student.id,
         name: student.display_name,
         role: student.role,
@@ -421,8 +421,8 @@ export default function SuperAdminUsers() {
       <header className="super-users-header">
         <div>
           <div className="super-users-kicker">GRADLY / USER MANAGEMENT</div>
-          <h1>Users &amp; Guest Sessions</h1>
-          <p>Review registered student accounts and anonymous guest sessions separately.</p>
+          <h1>Users, Blacklist &amp; Guest Sessions</h1>
+          <p>Manage student access, reactivate blocked accounts, and review guest sessions.</p>
         </div>
         <div className="super-users-header-actions">
           <button type="button" className="super-users-secondary-action" onClick={exportCurrentDirectory} disabled={loading || filteredCount === 0}>
@@ -468,7 +468,8 @@ export default function SuperAdminUsers() {
         </div>
 
         <div className="super-users-tabs" role="tablist" aria-label="User type">
-          <button type="button" role="tab" aria-selected={directoryType === "registered"} className={directoryType === "registered" ? "is-active" : ""} onClick={() => setDirectoryType("registered")}><UserRound size={16} /> Login users <span>{students.length}</span></button>\n          <button type="button" role="tab" aria-selected={directoryType === "blacklist"} className={directoryType === "blacklist" ? "is-active" : ""} onClick={() => { setDirectoryType("blacklist"); setStatusFilter("all"); }}><ShieldCheck size={16} /> Blacklist <span>{students.filter((student) => !student.active).length}</span></button>
+          <button type="button" role="tab" aria-selected={directoryType === "registered"} className={directoryType === "registered" ? "is-active" : ""} onClick={() => { setDirectoryType("registered"); setStatusFilter("all"); }}><UserRound size={16} /> Login users <span>{students.length}</span></button>
+          <button type="button" role="tab" aria-selected={directoryType === "blacklist"} className={directoryType === "blacklist" ? "is-active" : ""} onClick={() => { setDirectoryType("blacklist"); setStatusFilter("all"); }}><ShieldCheck size={16} /> Blacklist <span>{students.filter((student) => !student.active).length}</span></button>
           <button type="button" role="tab" aria-selected={directoryType === "guest"} className={directoryType === "guest" ? "is-active" : ""} onClick={() => setDirectoryType("guest")}><Activity size={16} /> Guest users <span>{guests.length}</span></button>
         </div>
 
@@ -523,7 +524,7 @@ export default function SuperAdminUsers() {
         {studentNotice && <div className="super-users-success" role="status">{studentNotice}</div>}
 
         <div className="super-users-table-wrap" key={directoryType}>
-          {directoryType === "registered" ? (
+          {directoryType !== "guest" ? (
             <table className="super-users-table">
               <thead><tr><th>STUDENT</th><th>BRANCH / PROGRAM</th><th>SEMESTER</th><th>CGPA</th><th>STATUS</th><th>LAST LOGIN</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
