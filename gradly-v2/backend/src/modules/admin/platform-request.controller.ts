@@ -64,9 +64,16 @@ export async function listPlatformRequests(req: SuperAdminAuthenticatedRequest,r
        LEFT JOIN public.institutions i ON i.id=r.institution_id LEFT JOIN public.programs p ON p.id=r.program_id LEFT JOIN public.branches b ON b.id=r.branch_id
        ${where.length ? "WHERE "+where.join(" AND ") : ""}
        ORDER BY CASE WHEN r.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,r.created_at DESC LIMIT 500`,values);
-    const counts=await pool.query(`SELECT COUNT(*) FILTER(WHERE status IN ('PENDING','IN_REVIEW','NEEDS_INFO'))::int AS unattended,
-      COUNT(*) FILTER(WHERE acknowledged_at IS NULL AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO'))::int AS unacknowledged,
-      COUNT(*) FILTER(WHERE status='PENDING')::int AS pending FROM public.platform_requests`);
+    const counts=await pool.query(`SELECT
+      ((SELECT COUNT(*) FROM public.platform_requests WHERE status IN ('PENDING','IN_REVIEW','NEEDS_INFO')) +
+       (SELECT COUNT(*) FROM public.admin_password_change_requests WHERE status='PENDING') +
+       (SELECT COUNT(*) FROM public.admin_subject_change_requests WHERE status='PENDING') +
+       (SELECT COUNT(*) FROM public.student_syllabus_feedback WHERE status='FORWARDED'))::int AS unattended,
+      (SELECT COUNT(*)::int FROM public.platform_requests WHERE acknowledged_at IS NULL AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO')) AS unacknowledged,
+      ((SELECT COUNT(*) FROM public.platform_requests WHERE status='PENDING') +
+       (SELECT COUNT(*) FROM public.admin_password_change_requests WHERE status='PENDING') +
+       (SELECT COUNT(*) FROM public.admin_subject_change_requests WHERE status='PENDING') +
+       (SELECT COUNT(*) FROM public.student_syllabus_feedback WHERE status='FORWARDED'))::int AS pending`);
     return res.json({success:true,requests:result.rows,counts:counts.rows[0]});
   } catch(error) {
     console.error("Super Admin platform request list failed:",error);
