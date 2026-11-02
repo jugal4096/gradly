@@ -60,6 +60,37 @@ export async function findAcademicFilters() {
 }
 
 
+/** All disabled, non-deleted accounts across roles for Super Admin recovery. */
+export async function findDisabledAccounts(search?: string) {
+  const result = await pool.query(
+    `SELECT
+       u.id, u.email, u.display_name, u.role, u.active, u.last_login_at, u.created_at,
+       sp.student_identifier, sp.current_semester_number, sp.current_cgpa,
+       sp.institution_id, c.program_id, c.branch_id, c.scheme_id,
+       i.name AS institution_name, p.name AS program_name,
+       b.name AS branch_name, s.name AS scheme_name
+     FROM public.users u
+     LEFT JOIN public.student_profiles sp ON sp.user_id = u.id
+     LEFT JOIN public.curricula c ON c.id = sp.curriculum_id
+     LEFT JOIN public.institutions i ON i.id = sp.institution_id
+     LEFT JOIN public.programs p ON p.id = c.program_id
+     LEFT JOIN public.branches b ON b.id = c.branch_id
+     LEFT JOIN public.schemes s ON s.id = c.scheme_id
+     WHERE u.active = FALSE
+       AND u.deleted_at IS NULL
+       AND (
+         $1::text IS NULL
+         OR u.email ILIKE '%' || $1 || '%'
+         OR u.display_name ILIKE '%' || $1 || '%'
+         OR u.id::text ILIKE '%' || $1 || '%'
+       )
+     ORDER BY u.updated_at DESC NULLS LAST, u.created_at DESC
+     LIMIT 1000`,
+    [search?.trim() || null]
+  );
+  return result.rows;
+}
+
 export async function findAllStudents(search?: string) {
   const query = `
     SELECT
@@ -455,7 +486,7 @@ export async function updateStudentAccountStatus(
     const result = await client.query(
       `UPDATE public.users
        SET active = $2, updated_at = NOW()
-       WHERE id = $1 AND role = 'STUDENT' AND deleted_at IS NULL
+       WHERE id = $1 AND deleted_at IS NULL
        RETURNING id, active`,
       [userId, active]
     );
