@@ -85,7 +85,9 @@ export async function registerApprovedAdmin(
     // 2. Lock the accepted application so concurrent registration
     // attempts cannot register the same application simultaneously.
     const applicationResult = await client.query(
-      `SELECT *
+      `SELECT *,
+              adminship_expiry_date::text AS adminship_expiry_date_text,
+              graduation_date::text AS graduation_date_text
        FROM public.admin_applications
        WHERE user_id = $1
          AND status = 'ACCEPTED'
@@ -165,16 +167,35 @@ export async function registerApprovedAdmin(
       );
     }
 
-    if (!application.adminship_expiry_date && !application.graduation_date) {
-      throw new RegistrationError("Admin expiry date is missing. Contact the Super Admin.", 409);
+    // PostgreSQL DATE values can be parsed by node-postgres as JavaScript Date
+    // objects. Read the explicit ::text aliases above so date-only values remain
+    // stable YYYY-MM-DD strings and are not corrupted by Date.toString()/timezone
+    // conversion before validation.
+    const adminshipExpiryDate =
+      application.adminship_expiry_date_text ||
+      application.graduation_date_text ||
+      "";
+
+    if (!adminshipExpiryDate) {
+      throw new RegistrationError(
+        "Admin expiry date is missing. Contact the Super Admin.",
+        409
+      );
     }
 
-    const adminshipExpiryDate = String(application.adminship_expiry_date || application.graduation_date || "").slice(0, 10);
-    const expiryAt = /^\d{4}-\d{2}-\d{2}$/.test(adminshipExpiryDate)
+    const expiryAt = /^\\d{4}-\\d{2}-\\d{2}$/.test(adminshipExpiryDate)
       ? new Date(`${adminshipExpiryDate}T23:59:59.999Z`)
       : new Date(Number.NaN);
-    if (Number.isNaN(expiryAt.getTime()) || expiryAt.toISOString().slice(0, 10) !== adminshipExpiryDate || expiryAt <= new Date()) {
-      throw new RegistrationError("A valid future admin expiry date is required. Contact the Super Admin.", 409);
+
+    if (
+      Number.isNaN(expiryAt.getTime()) ||
+      expiryAt.toISOString().slice(0, 10) !== adminshipExpiryDate ||
+      expiryAt <= new Date()
+    ) {
+      throw new RegistrationError(
+        "A valid future admin expiry date is required. Contact the Super Admin.",
+        409
+      );
     }
 
     // 6. Create the administrator using the approved institution,
