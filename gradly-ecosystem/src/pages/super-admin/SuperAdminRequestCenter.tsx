@@ -44,6 +44,7 @@ export default function SuperAdminRequestCenter(){
   const isAdmin=["ADMIN_REQUEST","PASSWORD_RESET","ADMIN_CURRICULUM"].includes(r.source);
   if(requesterFilter==="ADMIN"&&!isAdmin)return false;
   if(requesterFilter==="USER"&&isAdmin)return false;
+  if(requesterNameFilter!=="ALL"){const identity=requesterFilter==="ADMIN"?(r.adminCode||r.adminEmail||r.adminName||"Unknown Admin"):(r.adminEmail||r.adminName||r.targetUserId||"Unknown user");if(identity!==requesterNameFilter)return false;}
   const q=search.trim().toLowerCase();
   return !q||[r.title,r.description,r.adminName,r.adminCode,r.adminEmail,r.institution,r.program,r.branch,r.targetUserId].some(v=>String(v||"").toLowerCase().includes(q));
  }),[rows,requesterFilter,requesterNameFilter,search]);
