@@ -148,11 +148,11 @@ export async function submitAdminApplication(
     specializationId = specialization.id;
   }
 
-  const duplicate = await findDuplicateApplication(
-    user.id,
-    institutionId,
-    branchId
-  );
+  // A soft-deleted account is treated as a fresh Admin applicant.
+  // Keep its inactive/deleted state and historical records; simply allow a new request.
+  const duplicate = user.deleted_at
+    ? null
+    : await findDuplicateApplication(user.id, institutionId, branchId);
 
   if (duplicate) {
     throw new ApplicationError(
