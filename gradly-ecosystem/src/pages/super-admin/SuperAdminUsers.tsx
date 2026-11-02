@@ -178,7 +178,7 @@ export default function SuperAdminUsers() {
     try {
       const query = new URLSearchParams();
       if (search) query.set("search", search);
-      const endpoint = directoryType === "guest" ? "users/guests" : "users";
+      const endpoint = directoryType === "guest" ? "users/guests" : directoryType === "blacklist" ? "users/disabled" : "users";
       const response = await fetch(`${getApiBaseUrl()}/api/super-admin/${endpoint}?${query.toString()}`, {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       });
@@ -280,7 +280,7 @@ export default function SuperAdminUsers() {
 
   async function updateStudentStatus(student: Student) {
     const nextActive = !student.active;
-    const label = student.display_name || student.email || "this student";
+    const label = student.display_name || student.email || "this account";
     if (!window.confirm(`${nextActive ? "Reactivate" : "Disable"} ${label}'s Gradly account?${nextActive ? "" : " They will immediately lose access to Firebase-protected Gradly APIs."}`)) return;
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
@@ -526,13 +526,13 @@ export default function SuperAdminUsers() {
         <div className="super-users-table-wrap" key={directoryType}>
           {directoryType !== "guest" ? (
             <table className="super-users-table">
-              <thead><tr><th>STUDENT</th><th>BRANCH / PROGRAM</th><th>SEMESTER</th><th>CGPA</th><th>STATUS</th><th>LAST LOGIN</th><th><span className="sr-only">Actions</span></th></tr></thead>
+              <thead><tr><th>ACCOUNT</th><th>BRANCH / PROGRAM</th><th>SEMESTER</th><th>CGPA</th><th>STATUS</th><th>LAST LOGIN</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>
                 {loading ? <tr><td colSpan={7}><div className="super-users-state"><span className="super-users-loader" />Loading registered users…</div></td></tr>
                   : error ? <tr><td colSpan={8}><div className="super-users-state">Directory could not be loaded.</div></td></tr>
                   : visibleStudents.length === 0 ? <tr><td colSpan={8}><div className="super-users-state"><Users size={25} /><strong>No registered users found</strong><span>Try changing your search or status filter.</span></div></td></tr>
                   : visibleStudents.map((student) => <tr key={student.id}>
-                    <td><div className="super-users-person"><span className="super-users-avatar">{initials(student.display_name, null)}</span><span className="super-users-person-copy"><strong>{student.display_name || "Unnamed student"}</strong><small>Student account</small></span></div></td>
+                    <td><div className="super-users-person"><span className="super-users-avatar">{initials(student.display_name, null)}</span><span className="super-users-person-copy"><strong>{student.display_name || "Unnamed account"}</strong><small>{student.role || "Registered"} account</small></span></div></td>
                     <td><span className="super-users-branch">{student.branch_name || "Not provided"}</span><small className="super-users-subtext">{student.program_name || ""}</small></td>
                     <td>{student.current_semester_number ? `Semester ${student.current_semester_number}` : "—"}</td>
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
