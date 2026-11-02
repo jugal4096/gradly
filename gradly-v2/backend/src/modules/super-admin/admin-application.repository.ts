@@ -164,9 +164,9 @@ export async function saveApplicationConfiguration(
 
     const application = applicationResult.rows[0];
 
-    if (application.status !== "PENDING") {
+    if (!["PENDING", "ACCEPTED"].includes(application.status)) {
       throw httpError(
-        "Only pending applications can be configured.",
+        "Only pending or accepted applications can be configured.",
         409
       );
     }

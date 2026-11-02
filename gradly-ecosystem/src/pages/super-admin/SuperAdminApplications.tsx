@@ -1234,13 +1234,59 @@ export default function SuperAdminApplications() {
                   <div className="completed-notice accepted">
                     <CheckCircle2 size={20} />
                     <div>
-                      <strong>Application accepted</strong>
+                      <strong>Application accepted — editable configuration</strong>
                       <span>
-                        If the applicant sees an expiry-date error, set a new
-                        future date here. The applicant can then retry registration.
+                        Super Admin can update the approved program, branch, permissions and admin access expiry.
+                        Changes are recorded in the audit log.
                       </span>
                     </div>
                   </div>
+
+                  <div className="configuration-field">
+                    <label htmlFor="accepted-application-program">Program</label>
+                    <select
+                      id="accepted-application-program"
+                      value={programId}
+                      onChange={(event) => {
+                        setProgramId(event.target.value);
+                        setDepartmentId("");
+                        setConfigurationSaved(false);
+                        setError("");
+                      }}
+                      disabled={configurationLoading || configurationSaving || actionLoading || !selectedInstitution}
+                    >
+                      <option value="">Select a program</option>
+                      {availablePrograms.map((program) => (
+                        <option key={program.id} value={program.id}>{program.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="configuration-field">
+                    <label htmlFor="accepted-application-branch">Department / Branch</label>
+                    <select
+                      id="accepted-application-branch"
+                      value={departmentId}
+                      onChange={(event) => {
+                        setDepartmentId(event.target.value);
+                        setConfigurationSaved(false);
+                        setError("");
+                      }}
+                      disabled={configurationLoading || configurationSaving || actionLoading || !programId}
+                    >
+                      <option value="">Select a department</option>
+                      {availableBranches.map((branch) => (
+                        <option key={branch.id} value={branch.id}>
+                          {branch.name}{branch.code ? ` (${branch.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {configurationLoading && <small>Loading institution departments…</small>}
+                    {!configurationLoading && selectedInstitution && availableBranches.length === 0 && (
+                      <small className="field-warning">No active departments were returned for this program.</small>
+                    )}
+                  </div>
+
                   <div className="configuration-field">
                     <label htmlFor="accepted-application-expiry">Admin access expiry date</label>
                     <input
@@ -1248,54 +1294,62 @@ export default function SuperAdminApplications() {
                       type="date"
                       value={adminshipExpiryDate}
                       min={new Date().toISOString().slice(0, 10)}
-                      onChange={(event) => setAdminshipExpiryDate(event.target.value)}
+                      onChange={(event) => {
+                        setAdminshipExpiryDate(event.target.value);
+                        setConfigurationSaved(false);
+                        setError("");
+                      }}
                       disabled={configurationSaving || actionLoading}
                     />
-                    <small>Choose a date in the future. This updates the accepted application before registration.</small>
+                    <small>Choose a future date for this administrator's access.</small>
                   </div>
-                  <div className="application-actions">
+
+                  <div className="permissions-heading">
+                    <div>
+                      <h4>Approved permissions</h4>
+                      <p>Update the capabilities granted to this administrator.</p>
+                    </div>
+                    <span className="permission-count">{approvedPermissions.length} selected</span>
+                  </div>
+
+                  <div className="permission-options">
+                    {ADMIN_PERMISSION_OPTIONS.map((permission) => (
+                      <label className="permission-option" key={permission.code}>
+                        <input
+                          type="checkbox"
+                          checked={approvedPermissions.includes(permission.code)}
+                          disabled={configurationSaving || actionLoading}
+                          onChange={(event) => {
+                            setApprovedPermissions((previous) =>
+                              event.target.checked
+                                ? [...new Set([...previous, permission.code])]
+                                : previous.filter((code) => code !== permission.code)
+                            );
+                            setConfigurationSaved(false);
+                            setError("");
+                          }}
+                        />
+                        <span className="permission-copy">
+                          <strong>{permission.label}</strong>
+                          <small>{permission.description}</small>
+                          <code>{permission.code}</code>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="configuration-footer">
+                    <span className={configurationSaved ? "save-state saved" : "save-state"}>
+                      {configurationSaved ? "Changes saved" : "Edit the values and save to apply changes"}
+                    </span>
                     <button
                       type="button"
-                      className="action-button accept"
-                      disabled={configurationSaving || actionLoading || !adminshipExpiryDate}
-                      onClick={async () => {
-                        const token = getToken();
-                        if (!token) {
-                          setError("Your Super Admin session is missing. Please sign in again.");
-                          return;
-                        }
-                        setConfigurationSaving(true);
-                        setError("");
-                        setNotice("");
-                        try {
-                          const response = await fetch(
-                            `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(selected.id)}/expiry`,
-                            {
-                              method: "PATCH",
-                              headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`,
-                                Accept: "application/json",
-                              },
-                              body: JSON.stringify({ adminshipExpiryDate }),
-                            }
-                          );
-                          const data = await readResponse<unknown>(response);
-                          if (!response.ok) {
-                            throw new Error(getErrorMessage(data, `Unable to update expiry date. HTTP ${response.status}.`));
-                          }
-                          setSelected((current) => current ? { ...current, adminship_expiry_date: adminshipExpiryDate } : current);
-                          setApplications((current) => current.map((item) => item.id === selected.id ? { ...item, adminship_expiry_date: adminshipExpiryDate } : item));
-                          setNotice("Admin expiry date updated. Ask the applicant to refresh and complete registration.");
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : "Unable to update admin expiry date.");
-                        } finally {
-                          setConfigurationSaving(false);
-                        }
-                      }}
+                      className="action-button save-configuration"
+                      onClick={() => void saveConfiguration()}
+                      disabled={configurationLoading || configurationSaving || actionLoading}
                     >
                       <Save size={16} />
-                      {configurationSaving ? "Saving…" : "Save expiry date"}
+                      {configurationSaving ? "Saving…" : "Save approved changes"}
                     </button>
                   </div>
                 </div>
