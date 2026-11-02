@@ -439,3 +439,119 @@ export async function deleteGuestSession(guestSessionId: string, superAdminId: s
     client.release();
   }
 }
+
+
+/** Change the active state of a registered student without touching academic data. */
+export async function updateStudentAccountStatus(
+  userId: string,
+  active: boolean,
+  superAdminId: string,
+  ipAddress?: string | null
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      `UPDATE public.users
+       SET active = $2, updated_at = NOW()
+       WHERE id = $1 AND role = 'STUDENT' AND deleted_at IS NULL
+       RETURNING id, active`,
+      [userId, active]
+    );
+    if (!result.rowCount) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
+       VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', $2, 'users', $3, $4, $5::jsonb)`,
+      [superAdminId, active ? "SUPER_ADMIN_REACTIVATED_STUDENT" : "SUPER_ADMIN_DISABLED_STUDENT", userId, ipAddress ?? null, JSON.stringify({ active })]
+    );
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** Soft-delete the account; academic records and audit history remain intact. */
+export async function softDeleteStudentAccount(
+  userId: string,
+  superAdminId: string,
+  ipAddress?: string | null
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      `UPDATE public.users
+       SET active = FALSE, deleted_at = COALESCE(deleted_at, NOW()), updated_at = NOW()
+       WHERE id = $1 AND role = 'STUDENT' AND deleted_at IS NULL
+       RETURNING id`,
+      [userId]
+    );
+    if (!result.rowCount) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
+       VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', 'SUPER_ADMIN_SOFT_DELETED_STUDENT', 'users', $2, $3, $4::jsonb)`,
+      [superAdminId, userId, ipAddress ?? null, JSON.stringify({ active: false, softDeleted: true })]
+    );
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function createStudentNotification(
+  userId: string,
+  superAdminId: string,
+  input: { title: string; message: string; notificationType: string; actionUrl?: string | null },
+  ipAddress?: string | null
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const recipient = await client.query(
+      `SELECT id FROM public.users
+       WHERE id = $1 AND role = 'STUDENT' AND active = TRUE AND deleted_at IS NULL
+       FOR UPDATE`,
+      [userId]
+    );
+    if (!recipient.rowCount) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    const inserted = await client.query(
+      `INSERT INTO public.student_notifications
+       (user_id, notification_type, title, message, action_url)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, notification_type AS type, title, message, action_url AS "actionUrl", created_at AS "createdAt"`,
+      [userId, input.notificationType, input.title, input.message, input.actionUrl ?? null]
+    );
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
+       VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', 'SUPER_ADMIN_SENT_STUDENT_NOTIFICATION', 'student_notifications', $2, $3, $4::jsonb)`,
+      [superAdminId, inserted.rows[0].id, ipAddress ?? null, JSON.stringify({ recipientUserId: userId, notificationType: input.notificationType })]
+    );
+    await client.query("COMMIT");
+    return inserted.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
