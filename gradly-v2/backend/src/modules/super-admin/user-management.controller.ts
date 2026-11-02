@@ -1,4 +1,4 @@
-import { deleteGuestSession, findAcademicFilters, findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity } from "./user-management.repository";
+import { createStudentNotification, deleteGuestSession, findAcademicFilters, findAllBranches, findGuestActivity, findGuestSessions, findStudentActivity, softDeleteStudentAccount, updateStudentAccountStatus } from "./user-management.repository";
 import { Response } from "express";
   
   import {
@@ -224,5 +224,93 @@ export async function listGuestActivity(
   } catch (error) {
     console.error("Failed to load guest activity:", error);
     return res.status(500).json({ message: "Failed to load guest activity." });
+  }
+}
+
+
+export async function updateStudentStatus(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const superAdminId = req.superAdmin?.superAdminId;
+  if (!superAdminId) return res.status(401).json({ message: "Super Admin authentication required." });
+  const { active } = req.body ?? {};
+  if (typeof active !== "boolean") return res.status(400).json({ message: "active must be a boolean." });
+  try {
+    const updated = await updateStudentAccountStatus(
+      req.params.userId,
+      active,
+      superAdminId,
+      req.ip || req.socket.remoteAddress || null
+    );
+    if (!updated) return res.status(404).json({ message: "Student account was not found or has already been deleted." });
+    return res.status(200).json({
+      message: active ? "Student account reactivated." : "Student account disabled.",
+      student: updated,
+    });
+  } catch (error) {
+    console.error("Super Admin student status update failed:", error);
+    return res.status(500).json({ message: "Unable to update student account status." });
+  }
+}
+
+export async function deleteStudentAccount(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const superAdminId = req.superAdmin?.superAdminId;
+  if (!superAdminId) return res.status(401).json({ message: "Super Admin authentication required." });
+  try {
+    const deleted = await softDeleteStudentAccount(
+      req.params.userId,
+      superAdminId,
+      req.ip || req.socket.remoteAddress || null
+    );
+    if (!deleted) return res.status(404).json({ message: "Student account was not found or has already been deleted." });
+    return res.status(200).json({ message: "Student account soft-deleted. Academic records and audit history were preserved." });
+  } catch (error) {
+    console.error("Super Admin student deletion failed:", error);
+    return res.status(500).json({ message: "Unable to delete student account." });
+  }
+}
+
+export async function sendStudentNotification(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const superAdminId = req.superAdmin?.superAdminId;
+  if (!superAdminId) return res.status(401).json({ message: "Super Admin authentication required." });
+  const { title, message, notificationType, actionUrl } = req.body ?? {};
+  if (typeof title !== "string" || title.trim().length < 3 || title.trim().length > 160) {
+    return res.status(400).json({ message: "Notification title must be 3–160 characters." });
+  }
+  if (typeof message !== "string" || message.trim().length < 5 || message.trim().length > 4000) {
+    return res.status(400).json({ message: "Notification message must be 5–4,000 characters." });
+  }
+  const allowedTypes = new Set(["GENERAL", "IMPORTANT", "WARNING", "ACADEMIC"]);
+  const type = typeof notificationType === "string" && allowedTypes.has(notificationType)
+    ? notificationType
+    : "GENERAL";
+  if (actionUrl !== undefined && actionUrl !== null &&
+      (typeof actionUrl !== "string" || !actionUrl.startsWith("/") || actionUrl.startsWith("//"))) {
+    return res.status(400).json({ message: "actionUrl must be a safe Gradly-relative path." });
+  }
+  try {
+    const notification = await createStudentNotification(
+      req.params.userId,
+      superAdminId,
+      {
+        title: title.trim(),
+        message: message.trim(),
+        notificationType: type,
+        actionUrl: typeof actionUrl === "string" ? actionUrl.slice(0, 300) : null,
+      },
+      req.ip || req.socket.remoteAddress || null
+    );
+    if (!notification) return res.status(404).json({ message: "Active student account not found." });
+    return res.status(201).json({ message: "Notification sent to student.", notification });
+  } catch (error) {
+    console.error("Super Admin student notification failed:", error);
+    return res.status(500).json({ message: "Unable to send student notification." });
   }
 }
