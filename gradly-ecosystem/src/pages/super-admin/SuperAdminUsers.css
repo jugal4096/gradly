@@ -702,3 +702,31 @@
   .super-users-filter { flex: 1 1 180px; }
   .super-users-filter select { width: 100%; min-width: 0; max-width: none; }
 }
+
+
+/* Registered student lifecycle and direct notification controls */
+.super-users-table { min-width: 1080px; }
+.super-users-row-actions { gap: 5px; }
+.student-notify-action { color: #286f9b; background: #f1f8ff; border-color: #d9eaf8; }
+.student-notify-action:hover:not(:disabled) { color: #155783; background: #e8f4ff; border-color: #b8d9f2; }
+.student-status-action { color: #8a651c; background: #fffaf0; border-color: #f1e4c4; }
+.student-status-action:hover:not(:disabled) { color: #72500f; background: #fff4d9; border-color: #e9d39b; }
+.student-delete-action { color: #a83232; background: #fff7f7; border-color: #f0d2d2; }
+.student-delete-action:hover:not(:disabled) { color: #8e2020; background: #fff0f0; border-color: #e6b5b5; }
+.super-users-row-actions button:disabled { opacity: .45; cursor: wait; }
+.student-notification-form { display: grid; gap: 13px; }
+.student-notification-form label { display: grid; gap: 7px; color: #626c84; font-size: 11px; font-weight: 700; }
+.student-notification-form input,
+.student-notification-form textarea,
+.student-notification-form select {
+  width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #e3e6f0;
+  border-radius: 9px; outline: none; background: #fbfcff; color: #28314c;
+  font: inherit; font-size: 12px; font-weight: 400;
+}
+.student-notification-form textarea { resize: vertical; line-height: 1.5; }
+.student-notification-form input:focus,
+.student-notification-form textarea:focus,
+.student-notification-form select:focus { border-color: #a99af5; box-shadow: 0 0 0 3px #7558e814; background: #fff; }
+.student-notification-footer { display: flex; justify-content: flex-end; gap: 9px; padding-top: 5px; }
+.student-notification-footer button { display: inline-flex; align-items: center; gap: 7px; }
+.student-notification-footer button:disabled { opacity: .55; cursor: wait; }
