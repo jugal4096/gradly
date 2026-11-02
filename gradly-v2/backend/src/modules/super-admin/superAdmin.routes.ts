@@ -18,7 +18,7 @@ import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccou
 import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
 import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
 import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
-import { acknowledgePlatformRequest, listPlatformRequests, reviewPlatformRequest } from "../admin/platform-request.controller";
+import { acknowledgePlatformRequest, deleteRequestRecord, listPlatformRequests, reviewPlatformRequest } from "../admin/platform-request.controller";
 
 const router = Router();
 
@@ -65,6 +65,7 @@ router.post(
 router.get("/platform-requests", authenticateSuperAdminToken, listPlatformRequests);
 router.patch("/platform-requests/:requestId/acknowledge", authenticateSuperAdminToken, acknowledgePlatformRequest);
 router.patch("/platform-requests/:requestId/review", authenticateSuperAdminToken, reviewPlatformRequest);
+router.delete("/platform-requests/:source/:requestId", authenticateSuperAdminToken, deleteRequestRecord);
 router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
 router.get("/student-syllabus-feedback", authenticateSuperAdminToken, listForwardedStudentSyllabusFeedback);
 router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
