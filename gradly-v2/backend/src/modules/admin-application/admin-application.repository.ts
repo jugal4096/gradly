@@ -18,7 +18,7 @@ export interface CreateApplicationInput {
 
 export async function findUserByFirebaseUid(firebaseUid: string) {
   const result = await pool.query(
-    `SELECT id, firebase_uid, email, display_name, active
+    `SELECT id, firebase_uid, email, display_name, active, deleted_at
      FROM public.users
      WHERE firebase_uid = $1
      LIMIT 1`,
