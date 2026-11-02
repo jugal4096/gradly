@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { listStudentNotifications, markStudentNotificationRead } from "./student-notifications.controller";
 import { authenticateFirebaseToken } from "../../middleware/auth.middleware";
 import {
   getCurrentGradlyUser,
@@ -18,5 +19,8 @@ router.get(
   authenticateFirebaseToken,
   getCurrentGradlyUser
 );
+
+router.get("/notifications", authenticateFirebaseToken, listStudentNotifications);
+router.patch("/notifications/:notificationId/read", authenticateFirebaseToken, markStudentNotificationRead);
 
 export default router;
