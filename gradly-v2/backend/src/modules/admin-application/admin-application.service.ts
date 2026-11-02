@@ -42,9 +42,8 @@ export async function submitAdminApplication(
     );
   }
 
-  if (!user.active) {
-    throw new ApplicationError("Your account is inactive.", 403);
-  }
+  // Admin applications are requests for platform review, not account activation.
+  // A disabled user may submit a request; their Gradly account remains inactive.
 
   const institutionId = requiredString(
     body.institution_id,
