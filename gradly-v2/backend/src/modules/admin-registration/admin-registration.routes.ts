@@ -2,7 +2,7 @@
 import { Router } from "express";
 
 import {
-  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
 } from "../../middleware/auth.middleware";
 
 import {
@@ -13,7 +13,7 @@ const router = Router();
 
 router.post(
   "/complete",
-  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
   completeAdminRegistration
 );
 
