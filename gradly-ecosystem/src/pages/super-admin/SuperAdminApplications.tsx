@@ -435,7 +435,11 @@ export default function SuperAdminApplications() {
     setError("");
     setNotice("");
     setDepartmentId(application.branch_id || "");
-    setAdminshipExpiryDate(application.adminship_expiry_date?.slice(0, 10) || (application.graduation_date?.slice(0, 10) && application.graduation_date.slice(0, 10) >= new Date().toLocaleDateString("en-CA") ? application.graduation_date.slice(0, 10) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-CA")));
+    const today = new Date().toLocaleDateString("en-CA");
+    const savedExpiry = application.adminship_expiry_date?.slice(0, 10) || "";
+    const graduationDate = application.graduation_date?.slice(0, 10) || "";
+    const fallbackExpiry = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-CA");
+    setAdminshipExpiryDate(savedExpiry >= today ? savedExpiry : graduationDate >= today ? graduationDate : fallbackExpiry);
     setProgramId(application.program_id || institutions.find((institution) => institution.id === application.institution_id)?.branches.find((branch) => branch.id === application.branch_id)?.program_id || "");
 
     setApprovedPermissions(
@@ -1293,7 +1297,7 @@ export default function SuperAdminApplications() {
                       id="accepted-application-expiry"
                       type="date"
                       value={adminshipExpiryDate}
-                      min={new Date().toISOString().slice(0, 10)}
+                      min={new Date().toLocaleDateString("en-CA")}
                       onChange={(event) => {
                         setAdminshipExpiryDate(event.target.value);
                         setConfigurationSaved(false);
