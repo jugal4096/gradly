@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { RefreshCw, Search, Inbox, Eye, Filter, X, ExternalLink } from "lucide-react";
 import "./SuperAdminRequestCenter.css";
 
-const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/,"").replace(/\\/api$/i,""))+"/api";
+const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 type Row={id:string;source:string;requestType:string;title:string;description:string;targetUserId?:string|null;priority:string;status:string;reviewNote?:string|null;acknowledgedAt?:string|null;createdAt:string;adminCode?:string;adminName?:string;adminEmail?:string;institution?:string;program?:string;branch?:string};
-type Counts={unattended?:number;unacknowledged?:number;pending?:number};
+const label=(s:string)=>String(s||"").replace(/_/g," ").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 const label=(s:string)=>String(s||"").replace(/_/g," ").toLowerCase().replace(/\\b\\w/g,c=>c.toUpperCase());
 const date=(s:string)=>s?new Date(s).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}):"—";
 const legacyPath=(source:string)=>source==="PASSWORD_RESET"?"/super-admin/password-requests":source==="ADMIN_CURRICULUM"?"/super-admin/admin-requests":"/super-admin/feedback";
