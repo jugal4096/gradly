@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SuperAdminUsers.css";
 
@@ -327,7 +328,7 @@ export default function SuperAdminUsers() {
     }
   }
 
-  async function sendStudentNotification(event: React.FormEvent<HTMLFormElement>) {
+  async function sendStudentNotification(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!notificationTarget) return;
     const token = localStorage.getItem("gradly_super_admin_token");
