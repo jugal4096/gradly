@@ -255,6 +255,7 @@ export async function saveApplicationConfiguration(
           adminship_expiry_date: application.adminship_expiry_date
         }),
         JSON.stringify({
+          program_id: input.programId,
           branch_id: input.branchId,
           approved_permissions: permissions,
           adminship_expiry_date: input.adminshipExpiryDate
