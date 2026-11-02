@@ -73,7 +73,7 @@ interface GuestSession {
   metadata: Record<string, unknown> | null;
 }
 
-type DirectoryType = "registered" | "guest";
+type DirectoryType = "registered" | "guest" | "blacklist";
 type StatusFilter = "all" | "active" | "inactive";
 
 const PAGE_SIZE = 10;
@@ -178,7 +178,7 @@ export default function SuperAdminUsers() {
     try {
       const query = new URLSearchParams();
       if (search) query.set("search", search);
-      const endpoint = directoryType === "registered" ? "users" : "users/guests";
+      const endpoint = directoryType === "guest" ? "users/guests" : "users";
       const response = await fetch(`${getApiBaseUrl()}/api/super-admin/${endpoint}?${query.toString()}`, {
         headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       });
@@ -235,7 +235,7 @@ export default function SuperAdminUsers() {
     if (branchFilter !== "all" && student.branch_id !== branchFilter) return false;
     if (schemeFilter !== "all" && student.scheme_id !== schemeFilter) return false;
     return true;
-  }), [students, statusFilter, institutionFilter, programFilter, branchFilter, schemeFilter]);
+  }), [students, directoryType, statusFilter, institutionFilter, programFilter, branchFilter, schemeFilter]);
 
   const filteredGuests = useMemo(() => {
     if (statusFilter === "active") return guests.filter((guest) => guest.active);
@@ -461,24 +461,24 @@ export default function SuperAdminUsers() {
       <section className="super-users-directory">
         <div className="super-users-directory-heading">
           <div>
-            <h2>{directoryType === "registered" ? "Registered student directory" : "Guest session directory"}</h2>
-            <p>{directoryType === "registered" ? "Account and academic profile data. Guest sessions are not mixed into this list." : "Anonymous session activity. No guest password, token, or private credential is exposed."}</p>
+            <h2>{directoryType === "guest" ? "Guest session directory" : directoryType === "blacklist" ? "Blacklisted / disabled users" : "Registered student directory"}</h2>
+            <p>{directoryType === "guest" ? "Anonymous session activity. No guest password, token, or private credential is exposed." : directoryType === "blacklist" ? "Accounts disabled by a Super Admin. Reactivate an account here to restore Gradly access." : "Account and academic profile data. Guest sessions are not mixed into this list."}</p>
           </div>
           <span className="super-users-secure-badge"><ShieldCheck size={14} /> SUPER ADMIN ACCESS</span>
         </div>
 
         <div className="super-users-tabs" role="tablist" aria-label="User type">
-          <button type="button" role="tab" aria-selected={directoryType === "registered"} className={directoryType === "registered" ? "is-active" : ""} onClick={() => setDirectoryType("registered")}><UserRound size={16} /> Login users <span>{students.length}</span></button>
+          <button type="button" role="tab" aria-selected={directoryType === "registered"} className={directoryType === "registered" ? "is-active" : ""} onClick={() => setDirectoryType("registered")}><UserRound size={16} /> Login users <span>{students.length}</span></button>\n          <button type="button" role="tab" aria-selected={directoryType === "blacklist"} className={directoryType === "blacklist" ? "is-active" : ""} onClick={() => { setDirectoryType("blacklist"); setStatusFilter("all"); }}><ShieldCheck size={16} /> Blacklist <span>{students.filter((student) => !student.active).length}</span></button>
           <button type="button" role="tab" aria-selected={directoryType === "guest"} className={directoryType === "guest" ? "is-active" : ""} onClick={() => setDirectoryType("guest")}><Activity size={16} /> Guest users <span>{guests.length}</span></button>
         </div>
 
         <div className="super-users-toolbar">
           <label className="super-users-search">
             <Search size={18} aria-hidden="true" />
-            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search student name, email, enrollment no. or branch…" : "Search Guest ID or institution…"} aria-label="Search directory" />
+            <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType !== "guest" ? "Search student name, email, enrollment no. or branch…" : "Search Guest ID or institution…"} aria-label="Search directory" />
             {searchInput && <button type="button" className="super-users-clear" onClick={() => setSearchInput("")} aria-label="Clear search"><X size={15} /></button>}
           </label>
-          {directoryType === "registered" && <>
+          {directoryType !== "guest" && <>
             <label className="super-users-filter">
               <Filter size={15} />
               <select value={institutionFilter} onChange={(event) => { setInstitutionFilter(event.target.value); setProgramFilter("all"); setBranchFilter("all"); setPage(1); }} aria-label="Filter by institute">
@@ -537,7 +537,7 @@ export default function SuperAdminUsers() {
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
                     <td><span className={`super-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Inactive"}</span></td>
                     <td><span className="super-users-date">{formatDate(student.last_login_at)}</span></td>
-                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view student-notify-action" onClick={() => setNotificationTarget(student)} aria-label={`Send notification to ${student.display_name || student.email || "student"}`} title="Send notification" disabled={studentActionId === student.id}><Bell size={15} /></button><button type="button" className="super-users-view student-status-action" onClick={() => void updateStudentStatus(student)} aria-label={student.active ? "Disable student" : "Reactivate student"} title={student.active ? "Disable account" : "Reactivate account"} disabled={studentActionId === student.id}>{student.active ? <PauseCircle size={15} /> : <PlayCircle size={15} />}</button><button type="button" className="super-users-view student-delete-action" onClick={() => void deleteStudent(student)} aria-label="Delete student account" title="Soft-delete account" disabled={studentActionId === student.id}>{studentActionId === student.id ? "…" : <Trash2 size={15} />}</button></div></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view student-notify-action" onClick={() => setNotificationTarget(student)} aria-label={`Send notification to ${student.display_name || student.email || "student"}`} title="Send notification" disabled={studentActionId === student.id}><Bell size={15} /></button><button type="button" className="super-users-view student-status-action" onClick={() => void updateStudentStatus(student)} aria-label={student.active ? "Disable student" : "Reactivate student"} title={student.active ? "Disable account" : "Reactivate account"} disabled={studentActionId === student.id}>{student.active ? <PauseCircle size={15} /> : directoryType === "blacklist" ? "Reactivate" : <PlayCircle size={15} />}</button><button type="button" className="super-users-view student-delete-action" onClick={() => void deleteStudent(student)} aria-label="Delete student account" title="Soft-delete account" disabled={studentActionId === student.id}>{studentActionId === student.id ? "…" : <Trash2 size={15} />}</button></div></td>
                   </tr>)}
               </tbody>
             </table>
