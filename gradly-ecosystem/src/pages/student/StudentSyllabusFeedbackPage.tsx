@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { ArrowLeft, CheckCircle2, MessageSquareText, Send, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Bell, CheckCircle2, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { auth } from "../../config/firebase";
 const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, ""))+"/api";
@@ -29,7 +29,7 @@ export default function StudentSyllabusFeedbackPage(){
   }
   return <main style={{minHeight:"100vh",padding:"clamp(20px,5vw,56px)",background:"var(--page-bg,#f5f8f5)",color:"var(--text,#20382b)"}}>
     <div style={{maxWidth:760,margin:"0 auto"}}>
-      <Link to="/" style={{display:"inline-flex",alignItems:"center",gap:8,color:"inherit",textDecoration:"none",marginBottom:24}}><ArrowLeft size={16}/> Back to Gradly</Link>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",marginBottom:24}}><Link to="/" style={{display:"inline-flex",alignItems:"center",gap:8,color:"inherit",textDecoration:"none"}}><ArrowLeft size={16}/> Back to Gradly</Link><Link to="/student/notifications" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"9px 12px",border:"1px solid #d7e3da",borderRadius:9,color:"#124333",background:"white",textDecoration:"none",fontSize:12,fontWeight:700}}><Bell size={15}/> Notifications</Link></div>
       <section style={{background:"white",border:"1px solid #e2ebe4",borderRadius:20,padding:"clamp(20px,4vw,36px)",boxShadow:"0 16px 45px #173b2510"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}><span style={{width:46,height:46,borderRadius:14,display:"grid",placeItems:"center",background:"#e0f5e8",color:"#124333"}}><MessageSquareText size={22}/></span><div><p style={{margin:0,fontSize:11,fontWeight:800,letterSpacing:1.4,color:"#19744f"}}>STUDENT VOICE</p><h1 style={{margin:"4px 0 0",fontSize:28}}>Syllabus feedback</h1></div></div>
         <p style={{lineHeight:1.7,color:"#64756a"}}>Suggest a syllabus correction, missing subject, credit update or other academic improvement. Your request will be reviewed by your department; official curriculum changes require Super Admin approval.</p>
