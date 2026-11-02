@@ -37,10 +37,34 @@ export async function findAllBranches() {
   }>;
 }
 
+/** Academic filter options are loaded from master data, not inferred from students. */
+export async function findAcademicFilters() {
+  const [institutions, programs, branches, schemes] = await Promise.all([
+    pool.query(`SELECT id, name FROM institutions ORDER BY name ASC`),
+    pool.query(`SELECT id, name, institution_id FROM programs ORDER BY name ASC`),
+    pool.query(`SELECT b.id, b.name, b.program_id, p.institution_id
+                 FROM branches b
+                 INNER JOIN programs p ON p.id = b.program_id
+                 ORDER BY b.name ASC`),
+    pool.query(`SELECT DISTINCT s.id, s.name
+                 FROM schemes s
+                 INNER JOIN curricula c ON c.scheme_id = s.id
+                 ORDER BY s.name ASC`),
+  ]);
+  return {
+    institutions: institutions.rows,
+    programs: programs.rows,
+    branches: branches.rows,
+    schemes: schemes.rows,
+  };
+}
+
+
 export async function findAllStudents(search?: string) {
   const query = `
     SELECT
       u.id,
+      u.email,
       u.display_name,
       u.role,
       u.active,
@@ -48,6 +72,11 @@ export async function findAllStudents(search?: string) {
       u.created_at,
 
       sp.id AS student_profile_id,
+      sp.student_identifier,
+      sp.institution_id,
+      c.program_id,
+      c.branch_id,
+      c.scheme_id,
       sp.admission_year,
       sp.current_semester_number,
       sp.graduation_year,
@@ -371,4 +400,42 @@ export async function findGuestActivity(guestSessionId: string) {
     LIMIT 200;
   `, [guestSessionId]);
   return result.rows;
+}
+
+
+/**
+ * Permanently remove one guest session and its guest-generated activity records.
+ * A separate Super Admin audit event is retained to record the deletion action.
+ */
+export async function deleteGuestSession(guestSessionId: string, superAdminId: string) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT id FROM guest_sessions WHERE id::text = $1 FOR UPDATE`,
+      [guestSessionId]
+    );
+    if (!existing.rows.length) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    await client.query(
+      `DELETE FROM audit_logs WHERE actor_type = 'GUEST' AND actor_id::text = $1::text`,
+      [guestSessionId]
+    );
+    await client.query(`DELETE FROM guest_sessions WHERE id::text = $1`, [guestSessionId]);
+    await client.query(
+      `INSERT INTO audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata)
+       VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', 'SUPER_ADMIN_DELETED_GUEST_SESSION',
+               'guest_sessions', $2, $3::jsonb)`,
+      [superAdminId, guestSessionId, JSON.stringify({ deletedBy: "SUPER_ADMIN" })]
+    );
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
