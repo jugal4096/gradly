@@ -78,12 +78,9 @@ export async function registerApprovedAdmin(
       );
     }
 
-    if (!user.active) {
-      throw new RegistrationError(
-        "Your Gradly account is inactive.",
-        403
-      );
-    }
+    // A disabled or soft-deleted Gradly user may complete Admin registration
+    // only through an ACCEPTED application belonging to this exact Firebase user.
+    // This does not reactivate the Gradly student account.
 
     // 2. Lock the accepted application so concurrent registration
     // attempts cannot register the same application simultaneously.
