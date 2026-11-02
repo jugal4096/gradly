@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Search, Inbox, Eye, Filter, X, ExternalLink } from "lucide-react";
+import { RefreshCw, Search, Inbox, Eye, Filter, X, ExternalLink, Trash2 } from "lucide-react";
 import "./SuperAdminRequestCenter.css";
 const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 type Row={id:string;source:string;requestType:string;title:string;description:string;targetUserId?:string|null;priority:string;status:string;reviewNote?:string|null;acknowledgedAt?:string|null;createdAt:string;adminCode?:string;adminName?:string;adminEmail?:string;institution?:string;program?:string;branch?:string};
@@ -11,7 +11,7 @@ const legacyPath=(source:string)=>source==="PASSWORD_RESET"?"/super-admin/passwo
 
 export default function SuperAdminRequestCenter(){
  const navigate=useNavigate();
- const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[search,setSearch]=useState(""),[status,setStatus]=useState("ALL"),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false);
+ const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[search,setSearch]=useState(""),[status,setStatus]=useState("ALL"),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false),[requesterFilter,setRequesterFilter]=useState("ALL"),[deleting,setDeleting]=useState("");
  const token=()=>localStorage.getItem("gradly_super_admin_token")||"";
  const load=useCallback(async()=>{
   setLoading(true);
@@ -39,6 +39,28 @@ export default function SuperAdminRequestCenter(){
  },[search,status]);
  useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),45000);return()=>window.clearInterval(timer);},[load]);
  const open=useMemo(()=>rows.filter(r=>["PENDING","IN_REVIEW","NEEDS_INFO","FORWARDED","REVIEWED"].includes(r.status.toUpperCase())).length,[rows]);
+ const visibleRows=useMemo(()=>rows.filter(r=>{
+  const isAdmin=["ADMIN_REQUEST","PASSWORD_RESET","ADMIN_CURRICULUM"].includes(r.source);
+  if(requesterFilter==="ADMIN"&&!isAdmin)return false;
+  if(requesterFilter==="USER"&&isAdmin)return false;
+  const q=search.trim().toLowerCase();
+  return !q||[r.title,r.description,r.adminName,r.adminCode,r.adminEmail,r.institution,r.program,r.branch,r.targetUserId].some(v=>String(v||"").toLowerCase().includes(q));
+ }),[rows,requesterFilter,search]);
+ async function deleteRequest(row:Row){
+  const sourceMap:Record<string,string>={ADMIN_REQUEST:"platform",PASSWORD_RESET:"password",ADMIN_CURRICULUM:"curriculum",STUDENT_SYLLABUS:"student",USER_FEEDBACK:"feedback"};
+  const source=sourceMap[row.source];if(!source)return;
+  if(!window.confirm("Delete this request record? A deletion audit entry will be retained."))return;
+  const rawId=row.id.slice(row.id.indexOf("-")+1);
+  setDeleting(row.id);setError("");
+  try{
+   const r=await fetch(API_ROOT+"/super-admin/platform-requests/"+source+"/"+encodeURIComponent(rawId),{method:"DELETE",headers:{Authorization:"Bearer "+token()}});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok||d.success===false)throw new Error(d.message||"Unable to delete request.");
+   if(selected?.id===row.id)setSelected(null);
+   await load();
+  }catch(e){setError(e instanceof Error?e.message:"Unable to delete request.");}
+  finally{setDeleting("");}
+ }
  async function act(next:string){
   if(!selected)return;if(reviewNote.trim().length<3){setError("Add a short review note before updating this request.");return;}
   setBusy(true);
@@ -49,14 +71,14 @@ export default function SuperAdminRequestCenter(){
  return <main className="sa-requests">
   <header><div><span>OPERATIONS / UNIFIED INBOX</span><h1>Request Center</h1><p>Admin requests, password resets, student syllabus feedback and user feedback in one place.</p></div><button onClick={()=>void load()}><RefreshCw size={15}/> Refresh</button></header>
   <section className="sa-request-stats"><article><span>Unattended Admin requests</span><strong>{counts.unattended??open}</strong><small>New request workflow</small></article><article><span>New / unacknowledged</span><strong>{counts.unacknowledged??0}</strong><small>Not yet acknowledged</small></article><article><span>Pending</span><strong>{counts.pending??0}</strong><small>Awaiting first review</small></article></section>
-  <section className="sa-request-toolbar"><label><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title, Admin, user ID…"/></label><label><Filter size={15}/><select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">All statuses</option><option value="PENDING">Pending</option><option value="IN_REVIEW">In review</option><option value="NEEDS_INFO">Needs information</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="COMPLETED">Completed</option><option value="FORWARDED">Forwarded</option></select></label></section>
+  <section className="sa-request-toolbar"><label><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search title, Admin, user ID…"/></label><label><Filter size={15}/><select value={requesterFilter} onChange={e=>setRequesterFilter(e.target.value)}><option value="ALL">Admin + User requests</option><option value="ADMIN">Admin-wise requests</option><option value="USER">User-wise requests</option></select></label><label><Filter size={15}/><select value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">All statuses</option><option value="PENDING">Pending</option><option value="IN_REVIEW">In review</option><option value="NEEDS_INFO">Needs information</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="COMPLETED">Completed</option><option value="FORWARDED">Forwarded</option></select></label></section>
   {error&&<p className="sa-request-error">{error}</p>}
-  <section className="sa-request-table"><div className="sa-request-table-head"><strong><Inbox size={17}/> All incoming requests</strong><span>{rows.length} shown</span></div>
-   {loading?<p className="sa-request-empty">Loading requests…</p>:rows.length===0?<p className="sa-request-empty">No requests found for this filter.</p>:rows.map(row=><article key={row.id} className={row.source==="ADMIN_REQUEST"&&!row.acknowledgedAt?"is-new":""}><div className="sa-request-main"><div className="sa-request-title"><strong>{row.title}</strong><span className={"priority-"+row.priority.toLowerCase()}>{row.priority}</span></div><p>{row.description}</p><small>{label(row.source)} · {label(row.requestType)} · {row.adminName||row.adminCode||"User"} · {row.institution||"Institution not set"} / {row.program||"—"} / {row.branch||"—"}</small><small>{date(row.createdAt)}{row.targetUserId?" · User ID: "+row.targetUserId:""}</small></div><div className="sa-request-actions"><span className={"status-"+row.status.toLowerCase()}>{label(row.status)}</span><button onClick={()=>{setSelected(row);setReviewNote(row.reviewNote||"");void acknowledge(row);}}><Eye size={14}/> Review</button></div></article>)}
+  <section className="sa-request-table"><div className="sa-request-table-head"><strong><Inbox size={17}/> {requesterFilter==="ADMIN"?"Admin requests":requesterFilter==="USER"?"User requests":"All incoming requests"}</strong><span>{visibleRows.length} shown</span></div>
+   {loading?<p className="sa-request-empty">Loading requests…</p>:visibleRows.length===0?<p className="sa-request-empty">No requests found for this filter.</p>:visibleRows.map(row=><article key={row.id} className={row.source==="ADMIN_REQUEST"&&!row.acknowledgedAt?"is-new":""}><div className="sa-request-main"><div className="sa-request-title"><strong>{row.title}</strong><span className={"priority-"+row.priority.toLowerCase()}>{row.priority}</span></div><p>{row.description}</p><small>{label(row.source)} · {label(row.requestType)} · {row.adminName||row.adminCode||"User"} · {row.institution||"Institution not set"} / {row.program||"—"} / {row.branch||"—"}</small><small>{date(row.createdAt)}{row.targetUserId?" · User ID: "+row.targetUserId:""}</small></div><div className="sa-request-actions"><span className={"status-"+row.status.toLowerCase()}>{label(row.status)}</span><div className="sa-request-row-buttons"><button onClick={()=>{setSelected(row);setReviewNote(row.reviewNote||"");void acknowledge(row);}}><Eye size={14}/> Review</button><button className="sa-request-delete" disabled={deleting===row.id} onClick={()=>void deleteRequest(row)}><Trash2 size={14}/>{deleting===row.id?"Deleting…":"Delete"}</button></div></div></article>)}
   </section>
   {selected&&<div className="sa-request-overlay" onClick={()=>setSelected(null)}><section role="dialog" aria-modal="true" className="sa-request-drawer" onClick={e=>e.stopPropagation()}><header><div><span>REQUEST DETAIL / {label(selected.source)}</span><h2>{selected.title}</h2><p>{label(selected.requestType)} · {date(selected.createdAt)}</p></div><button onClick={()=>setSelected(null)} aria-label="Close"><X size={18}/></button></header>
    <dl><div><dt>Submitted by</dt><dd>{selected.adminName||selected.adminCode||"Student / user"} {selected.adminEmail?"("+selected.adminEmail+")":""}</dd></div><div><dt>Institution / scope</dt><dd>{[selected.institution,selected.program,selected.branch].filter(Boolean).join(" / ")||"—"}</dd></div><div><dt>Priority / status</dt><dd>{label(selected.priority)} · {label(selected.status)}</dd></div><div><dt>Target user ID</dt><dd>{selected.targetUserId||"—"}</dd></div><div><dt>Details</dt><dd className="request-description">{selected.description}</dd></div></dl>
-   {selected.source==="ADMIN_REQUEST"?<><label className="sa-request-review-note">Review note<textarea rows={4} value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="Explain the decision or next step…"/></label><div className="sa-request-decision"><button disabled={busy} onClick={()=>void act("IN_REVIEW")}>Mark in review</button><button disabled={busy} onClick={()=>void act("NEEDS_INFO")}>Request info</button><button disabled={busy} onClick={()=>void act("APPROVED")}>Approve</button><button disabled={busy} onClick={()=>void act("REJECTED")}>Reject</button><button disabled={busy} onClick={()=>void act("COMPLETED")}>Complete</button></div><p className="sa-request-safety">Approval records the decision and notifies the Admin. It does not automatically disable, reactivate or delete an account; perform the action through User Management after reviewing the target.</p></>:<><p className="sa-request-safety">This request retains its existing approval rules and audit history. Continue the review in its original workflow.</p><button onClick={()=>navigate(legacyPath(selected.source))}><ExternalLink size={14}/> Open existing review workflow</button></>}
+   {selected.source==="ADMIN_REQUEST"?<><label className="sa-request-review-note">Review note<textarea rows={4} value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="Explain the decision or next step…"/></label><div className="sa-request-decision"><button disabled={busy} onClick={()=>void act("IN_REVIEW")}>Mark in review</button><button disabled={busy} onClick={()=>void act("NEEDS_INFO")}>Request info</button><button disabled={busy} onClick={()=>void act("APPROVED")}>Approve</button><button disabled={busy} onClick={()=>void act("REJECTED")}>Reject</button><button disabled={busy} onClick={()=>void act("COMPLETED")}>Complete</button></div><p className="sa-request-safety">Approval records the decision and notifies the Admin. It does not automatically disable, reactivate or delete an account; perform the action through User Management after reviewing the target.</p></>:<><p className="sa-request-safety">This request retains its existing approval rules and audit history. Continue the review in its original workflow.</p><div className="sa-request-decision"><button onClick={()=>navigate(legacyPath(selected.source))}><ExternalLink size={14}/> Open existing review workflow</button><button className="sa-request-delete" disabled={deleting===selected.id} onClick={()=>void deleteRequest(selected)}><Trash2 size={14}/>{deleting===selected.id?"Deleting…":"Delete request"}</button></div></>}
   </section></div>}
  </main>;
 }
