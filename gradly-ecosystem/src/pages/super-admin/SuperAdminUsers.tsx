@@ -1,5 +1,10 @@
 import {
   Activity,
+  Bell,
+  PauseCircle,
+  PlayCircle,
+  Send,
+  Trash2,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
@@ -138,6 +143,13 @@ export default function SuperAdminUsers() {
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState("");
+  const [studentActionId, setStudentActionId] = useState<string | null>(null);
+  const [studentNotice, setStudentNotice] = useState("");
+  const [notificationTarget, setNotificationTarget] = useState<Student | null>(null);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("GENERAL");
+  const [notificationSending, setNotificationSending] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -261,6 +273,84 @@ export default function SuperAdminUsers() {
       setError(err instanceof Error ? err.message : "Could not delete this guest session.");
     } finally {
       setGuestDeleteId(null);
+    }
+  }
+
+
+  async function updateStudentStatus(student: Student) {
+    const nextActive = !student.active;
+    const label = student.display_name || student.email || "this student";
+    if (!window.confirm(`${nextActive ? "Reactivate" : "Disable"} ${label}'s Gradly account?${nextActive ? "" : " They will immediately lose access to Firebase-protected Gradly APIs."}`)) return;
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
+    setStudentActionId(student.id);
+    setStudentNotice("");
+    setError("");
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/${encodeURIComponent(student.id)}/status`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ active: nextActive }),
+      });
+      const data = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(data.message || "Could not update this student account.");
+      setStudents((current) => current.map((item) => item.id === student.id ? { ...item, active: nextActive } : item));
+      setStudentNotice(data.message || (nextActive ? "Student reactivated." : "Student disabled."));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update this student account.");
+    } finally {
+      setStudentActionId(null);
+    }
+  }
+
+  async function deleteStudent(student: Student) {
+    const label = student.display_name || student.email || "this student";
+    if (!window.confirm(`Soft-delete ${label}'s account? They will lose access. Academic records and audit history will be preserved, and the account will disappear from the active directory.`)) return;
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
+    setStudentActionId(student.id);
+    setStudentNotice("");
+    setError("");
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/${encodeURIComponent(student.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      const data = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(data.message || "Could not delete this student account.");
+      setStudents((current) => current.filter((item) => item.id !== student.id));
+      setStudentNotice(data.message || "Student account soft-deleted.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete this student account.");
+    } finally {
+      setStudentActionId(null);
+    }
+  }
+
+  async function sendStudentNotification(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!notificationTarget) return;
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
+    setNotificationSending(true);
+    setError("");
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/${encodeURIComponent(notificationTarget.id)}/notifications`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ title: notificationTitle, message: notificationMessage, notificationType }),
+      });
+      const data = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(data.message || "Could not send notification.");
+      setStudentNotice(`Notification sent to ${notificationTarget.display_name || notificationTarget.email || "student"}.`);
+      setNotificationTarget(null);
+      setNotificationTitle("");
+      setNotificationMessage("");
+      setNotificationType("GENERAL");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send notification.");
+    } finally {
+      setNotificationSending(false);
     }
   }
 
@@ -429,6 +519,7 @@ export default function SuperAdminUsers() {
 
         {error && <div className="super-users-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => void loadDirectory()}>Retry</button></div>}
         {guestNotice && <div className="super-users-success" role="status">{guestNotice}</div>}
+        {studentNotice && <div className="super-users-success" role="status">{studentNotice}</div>}
 
         <div className="super-users-table-wrap" key={directoryType}>
           {directoryType === "registered" ? (
@@ -445,7 +536,7 @@ export default function SuperAdminUsers() {
                     <td><strong className="super-users-cgpa">{student.current_cgpa == null ? "—" : Number(student.current_cgpa).toFixed(2)}</strong></td>
                     <td><span className={`super-users-status ${student.active ? "is-active" : "is-inactive"}`}><span />{student.active ? "Active" : "Inactive"}</span></td>
                     <td><span className="super-users-date">{formatDate(student.last_login_at)}</span></td>
-                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button></div></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => navigate(`/super-admin/users/${encodeURIComponent(student.id)}`)} aria-label={`View ${student.display_name || student.email || "student"} academic record`} title="Academic record"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openStudentActivity(student)} aria-label={`View activity for ${student.display_name || student.email || "student"}`} title="Activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view student-notify-action" onClick={() => setNotificationTarget(student)} aria-label={`Send notification to ${student.display_name || student.email || "student"}`} title="Send notification" disabled={studentActionId === student.id}><Bell size={15} /></button><button type="button" className="super-users-view student-status-action" onClick={() => void updateStudentStatus(student)} aria-label={student.active ? "Disable student" : "Reactivate student"} title={student.active ? "Disable account" : "Reactivate account"} disabled={studentActionId === student.id}>{student.active ? <PauseCircle size={15} /> : <PlayCircle size={15} />}</button><button type="button" className="super-users-view student-delete-action" onClick={() => void deleteStudent(student)} aria-label="Delete student account" title="Soft-delete account" disabled={studentActionId === student.id}>{studentActionId === student.id ? "…" : <Trash2 size={15} />}</button></div></td>
                   </tr>)}
               </tbody>
             </table>
@@ -481,6 +572,19 @@ export default function SuperAdminUsers() {
       </section>
 
       <p className="super-users-privacy-note"><ShieldCheck size={13} /> Admin tools: search, filter, refresh, inspect guest-session metadata, view registered academic records, and export the current filtered list. Guest sessions are anonymous and their session tokens are never displayed or exported.</p>
+
+
+      {notificationTarget && <div className="super-users-modal-backdrop" role="presentation" onClick={() => !notificationSending && setNotificationTarget(null)}>
+        <section className="super-users-modal student-notification-modal" role="dialog" aria-modal="true" aria-labelledby="student-notification-title" onClick={(event) => event.stopPropagation()}>
+          <div className="super-users-modal-heading"><div><span className="super-users-kicker">DIRECT STUDENT MESSAGE</span><h2 id="student-notification-title">Send notification</h2><p>To: {notificationTarget.display_name || notificationTarget.email || "Student"}</p></div><button type="button" onClick={() => setNotificationTarget(null)} disabled={notificationSending} aria-label="Close notification form"><X size={18} /></button></div>
+          <form className="student-notification-form" onSubmit={sendStudentNotification}>
+            <label><span>Notification type</span><select value={notificationType} onChange={(event) => setNotificationType(event.target.value)}><option value="GENERAL">General</option><option value="IMPORTANT">Important</option><option value="WARNING">Warning</option><option value="ACADEMIC">Academic</option></select></label>
+            <label><span>Title</span><input value={notificationTitle} onChange={(event) => setNotificationTitle(event.target.value)} minLength={3} maxLength={160} required placeholder="e.g. Semester results published" /></label>
+            <label><span>Message</span><textarea value={notificationMessage} onChange={(event) => setNotificationMessage(event.target.value)} minLength={5} maxLength={4000} rows={5} required placeholder="Write the message for this student…" /></label>
+            <div className="student-notification-footer"><button type="button" className="super-users-secondary-action" onClick={() => setNotificationTarget(null)} disabled={notificationSending}>Cancel</button><button type="submit" className="super-users-modal-close" disabled={notificationSending || notificationTitle.trim().length < 3 || notificationMessage.trim().length < 5}><Send size={14} /> {notificationSending ? "Sending…" : "Send notification"}</button></div>
+          </form>
+        </section>
+      </div>}
 
       {activityStudent && <div className="super-users-modal-backdrop" role="presentation" onClick={() => setActivityStudent(null)}>
         <section className="super-users-modal activity-modal" role="dialog" aria-modal="true" aria-labelledby="student-activity-title" onClick={(event) => event.stopPropagation()}>
