@@ -5,6 +5,7 @@ import {
   listGuests,
   listBranches,
   listStudents,
+  listDisabledAccounts,
   getStudent,
   listStudentActivity,
   listGuestActivity,
@@ -22,6 +23,7 @@ router.use(authenticateSuperAdminToken);
 
 // Keep the named route before /:userId so "guests" is not treated as a user ID.
 router.get("/guests", listGuests);
+router.get("/disabled", listDisabledAccounts);
 router.delete("/guests/:guestId", removeGuestSession);
 router.get("/guests/:guestId/activity", listGuestActivity);
 router.get("/filters", getAcademicFilters);
