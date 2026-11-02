@@ -125,6 +125,7 @@ const deletableRequestTables: Record<string, string> = {
   curriculum: "admin_subject_change_requests",
   student: "student_syllabus_feedback",
   feedback: "feedback_requests",
+  institution: "guest_institution_requests",
 };
 
 export async function deleteRequestRecord(req: SuperAdminAuthenticatedRequest, res: Response) {
