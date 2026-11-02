@@ -517,7 +517,7 @@ export default function SuperAdminApplications() {
       }
 
       setConfigurationSaved(true);
-      setNotice("Program, department and permissions saved.");
+      setNotice("Program, branch and permissions saved.");
 
       await loadApplications(false);
 
@@ -625,6 +625,7 @@ export default function SuperAdminApplications() {
         decision === "ACCEPTED"
           ? {
               decision,
+              programId,
               branchId: departmentId,
               permissions: approvedPermissions,
             }
@@ -696,7 +697,7 @@ export default function SuperAdminApplications() {
           <h1>Administrator Applications</h1>
 
           <p>
-            Review requests, assign a department, and grant
+            Review requests, assign or change the program and branch, and grant
             approved permissions.
           </p>
         </div>
@@ -941,7 +942,7 @@ export default function SuperAdminApplications() {
                         </h3>
 
                         <p>
-                          Choose the department and the exact
+                          Choose the program, department / branch, and exact
                           access this admin should receive.
                         </p>
                       </div>
