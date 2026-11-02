@@ -1,7 +1,7 @@
 -- Preserve a snapshot before Super Admin deletes a request from the unified inbox.
 CREATE TABLE IF NOT EXISTS public.request_record_deletion_audit (
   id BIGSERIAL PRIMARY KEY,
-  source TEXT NOT NULL CHECK (source IN ('platform','password','curriculum','student','feedback')),
+  source TEXT NOT NULL CHECK (source IN ('platform','password','curriculum','student','feedback','institution')),
   record_id TEXT NOT NULL,
   record_snapshot JSONB NOT NULL,
   event_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb,
