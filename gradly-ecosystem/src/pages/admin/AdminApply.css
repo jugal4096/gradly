@@ -1144,3 +1144,62 @@ body {
   opacity: .72;
   transform: none;
 }
+
+
+/* Prominent next step for applicants whose Admin application was accepted. */
+.admin-apply-page .accepted-registration-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 22px 0 26px;
+  padding: 24px 26px;
+  border: 1px solid #b9e8cb;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #f0fdf5 0%, #f7fffb 55%, #effaf5 100%);
+  box-shadow: 0 12px 30px rgba(22, 101, 52, .07);
+}
+.admin-apply-page .accepted-registration-copy { min-width: 0; }
+.admin-apply-page .accepted-registration-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .9px;
+}
+.admin-apply-page .accepted-registration-banner h2 {
+  margin: 0 0 8px;
+  color: #14532d;
+  font-size: clamp(18px, 2.4vw, 23px);
+  letter-spacing: -.45px;
+}
+.admin-apply-page .accepted-registration-banner p {
+  max-width: 690px;
+  margin: 0 0 10px;
+  color: #3f6950;
+  font-size: 13px;
+  line-height: 1.75;
+}
+.admin-apply-page .accepted-registration-id {
+  color: #52715c;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.admin-apply-page .accepted-registration-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 19px;
+  white-space: nowrap;
+}
+.admin-apply-page .accepted-registration-arrow { transform: rotate(180deg); }
+@media (max-width: 680px) {
+  .admin-apply-page .accepted-registration-banner { align-items: stretch; flex-direction: column; gap: 17px; padding: 20px; }
+  .admin-apply-page .accepted-registration-action { width: 100%; }
+}

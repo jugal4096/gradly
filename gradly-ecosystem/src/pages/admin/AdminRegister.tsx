@@ -4,9 +4,12 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../../config/firebase";
 import "./AdminRegister.css";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:5000/api";
+const configuredApiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api"
+).trim().replace(/\/+$/, "");
+const API_BASE_URL = /\/api$/i.test(configuredApiBaseUrl)
+  ? configuredApiBaseUrl
+  : `${configuredApiBaseUrl}/api`;
 
 export default function AdminRegister() {
   const navigate = useNavigate();

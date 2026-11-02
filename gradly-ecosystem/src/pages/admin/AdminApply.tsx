@@ -520,6 +520,24 @@ export default function AdminApply() {
                 </button>
               </section>
 
+              {latestApplication && canRegister(latestApplication) && (
+                <section className="accepted-registration-banner" aria-live="polite">
+                  <div className="accepted-registration-copy">
+                    <span className="accepted-registration-eyebrow"><CheckCircle2 size={15} /> APPLICATION ACCEPTED</span>
+                    <h2>Your application is accepted. Complete registration.</h2>
+                    <p>The Super Admin team has approved your request. Create your Admin ID and password to finish setting up your administrator account. Your Admin access starts only after registration is complete.</p>
+                    <span className="accepted-registration-id">Application ID: {latestApplication.id}</span>
+                  </div>
+                  <button
+                    className="system-button accepted-registration-action"
+                    type="button"
+                    onClick={() => navigate(`/admin/register?applicationId=${encodeURIComponent(latestApplication.id)}`)}
+                  >
+                    Complete registration <ArrowLeft size={16} className="accepted-registration-arrow" />
+                  </button>
+                </section>
+              )}
+
               {loadingApplications ? (
                 <section className="success-card"><p className="success-description">Checking whether this account has already submitted an application…</p></section>
               ) : applications.length > 0 ? (
