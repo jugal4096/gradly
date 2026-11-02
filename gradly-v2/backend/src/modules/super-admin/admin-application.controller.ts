@@ -268,6 +268,11 @@ export async function saveApplicationConfigurationController(
       });
     }
 
+    const adminshipExpiryDate = getStringField(req.body, ["adminshipExpiryDate", "adminship_expiry_date"])?.trim();
+    if (!adminshipExpiryDate || !/^\d{4}-\d{2}-\d{2}$/.test(adminshipExpiryDate) || Number.isNaN(Date.parse(`${adminshipExpiryDate}T00:00:00.000Z`))) {
+      return res.status(400).json({ success: false, message: "Choose a valid admin expiry date." });
+    }
+
     const rawPermissions =
       req.body?.approvedPermissions ??
       req.body?.approved_permissions ??
@@ -292,6 +297,7 @@ export async function saveApplicationConfigurationController(
       programId,
       branchId,
       approvedPermissions,
+      adminshipExpiryDate,
     });
 
     return res.status(200).json({
@@ -383,6 +389,7 @@ export async function reviewApplication(
 
     let branchId: string | undefined;
     let permissions: string[] = [];
+    let adminshipExpiryDate: string | undefined;
 
     if (decision === "ACCEPTED") {
       const programId = getStringField(req.body, [
@@ -408,6 +415,11 @@ export async function reviewApplication(
           message:
             "A valid department ID is required. Select a department and try again.",
         });
+      }
+
+      adminshipExpiryDate = getStringField(req.body, ["adminshipExpiryDate", "adminship_expiry_date"])?.trim();
+      if (!adminshipExpiryDate || !/^\d{4}-\d{2}-\d{2}$/.test(adminshipExpiryDate) || Number.isNaN(Date.parse(`${adminshipExpiryDate}T00:00:00.000Z`))) {
+        return res.status(400).json({ success: false, message: "Choose a valid admin expiry date before accepting." });
       }
 
       const rawPermissions =
@@ -443,6 +455,7 @@ export async function reviewApplication(
       programId: decision === "ACCEPTED" ? getStringField(req.body, ["programId", "program_id"])?.trim() : undefined,
       branchId,
       permissions,
+      adminshipExpiryDate,
     });
 
     return res.status(200).json({
