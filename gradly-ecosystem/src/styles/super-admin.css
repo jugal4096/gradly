@@ -623,3 +623,6 @@ html.sa-compact-tables .super-admin-page table td {
 .system-status-value { color: #6842c7; background: #f0eaff; }
 .super-admin-page { background: transparent; }
 .super-admin-footer { border-top-color: #e5dcf8; color: #8a7ba8; background: #faf8ff; }
+
+/* Request Center unread badge */
+.sidebar-request-badge{margin-left:auto;min-width:21px;height:21px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#e54868;color:#fff;font-size:10px;font-weight:800;line-height:1;box-shadow:0 2px 7px #e5486830}.sidebar-link-active .sidebar-request-badge{background:#6842c7;color:#fff}@media(max-width:650px){.sidebar-request-badge{position:absolute;top:2px;right:1px;min-width:16px;height:16px;padding:0 3px;font-size:8px}}

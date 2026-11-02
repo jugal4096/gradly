@@ -21,6 +21,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminApply from "./pages/admin/AdminApply";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
+import AdminRequestCenter from "./pages/admin/AdminRequestCenter";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminChangePassword from "./pages/admin/AdminChangePassword";
 import StudentSyllabusFeedbackPage from "./pages/student/StudentSyllabusFeedbackPage";
@@ -47,6 +48,7 @@ import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRe
 import SuperAdminSecurityAlerts from "./pages/super-admin/SuperAdminSecurityAlerts";
 import SuperAdminAdminMessages from "./pages/super-admin/SuperAdminAdminMessages";
 import SuperAdminAdminRequests from "./pages/super-admin/SuperAdminAdminRequests";
+import SuperAdminRequestCenter from "./pages/super-admin/SuperAdminRequestCenter";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -112,7 +114,7 @@ function App() {
         />
 
         <Route path="/admin/curriculum" element={<AdminWorkspacePage />} />
-        <Route path="/admin/requests" element={<AdminWorkspacePage />} />
+        <Route path="/admin/requests" element={<AdminRequestCenter />} />
         <Route path="/admin/notifications" element={<AdminWorkspacePage />} />
         <Route path="/admin/activity" element={<AdminWorkspacePage />} />
         <Route path="/admin/feedback" element={<AdminWorkspacePage />} />
@@ -192,6 +194,11 @@ function App() {
           <Route
             path="settings"
             element={<SuperAdminSettings />}
+          />
+
+          <Route
+            path="requests"
+            element={<SuperAdminRequestCenter />}
           />
 
           <Route
