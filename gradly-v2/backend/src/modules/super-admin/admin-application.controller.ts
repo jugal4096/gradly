@@ -94,6 +94,12 @@ function normalizePermissions(value: unknown): string[] | null {
 /**
  * Read the first string-valued field from a request body.
  */
+function isValidFutureDateOnly(value: string | undefined): value is string {
+  if (!value || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const expiry = new Date(`${value}T23:59:59.999Z`);
+  return !Number.isNaN(expiry.getTime()) && expiry.toISOString().slice(0, 10) === value && expiry > new Date();
+}
+
 function getStringField(
   body: unknown,
   keys: string[]
