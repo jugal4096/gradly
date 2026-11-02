@@ -9,6 +9,7 @@ import { listAdminCurriculum } from "./admin-curriculum.controller";
 import { getAdminWorkspaceProfile } from "./admin.repository";
 import { createSubjectChangeRequest, listSubjectChangeRequests, listWorkspaceNotifications, markWorkspaceNotificationRead } from "./admin-workspace.controller";
 import { getAdminPrivacyActivity, listDepartmentSyllabusFeedback, reviewDepartmentSyllabusFeedback } from "./admin-privacy.controller";
+import { createPlatformRequest, listAdminPlatformRequests } from "./platform-request.controller";
 
 const router = Router();
 
@@ -38,6 +39,8 @@ router.get(
   listAdminCurriculum
 );
 
+router.get("/platform-requests", authenticateAdminToken, listAdminPlatformRequests);
+router.post("/platform-requests", authenticateAdminToken, createPlatformRequest);
 router.get("/workspace-notifications", authenticateAdminToken, listWorkspaceNotifications);
 router.patch("/workspace-notifications/:notificationId/read", authenticateAdminToken, markWorkspaceNotificationRead);
 router.get("/subject-change-requests", authenticateAdminToken, listSubjectChangeRequests);
