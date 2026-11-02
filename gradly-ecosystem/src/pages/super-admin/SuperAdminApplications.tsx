@@ -444,7 +444,7 @@ export default function SuperAdminApplications() {
     setConfigurationSaved(false);
   }
 
-  // Save the selected department and permissions.
+  // Save the selected program, branch and permissions.
   async function saveConfiguration(): Promise<boolean> {
     if (!selected) return false;
 
@@ -476,7 +476,7 @@ export default function SuperAdminApplications() {
       )
     ) {
       setError(
-        "The selected department does not belong to this applicant's institution."
+        "The selected branch does not belong to the selected program and institution."
       );
       return false;
     }
@@ -517,7 +517,7 @@ export default function SuperAdminApplications() {
       }
 
       setConfigurationSaved(true);
-      setNotice("Program, department and permissions saved.");
+      setNotice("Program, branch and permissions saved.");
 
       await loadApplications(false);
 
@@ -590,7 +590,7 @@ export default function SuperAdminApplications() {
         )
       ) {
         setError(
-          "Select a valid department belonging to this institution."
+          "Select a valid branch belonging to the selected program and institution."
         );
         return;
       }
@@ -625,6 +625,7 @@ export default function SuperAdminApplications() {
         decision === "ACCEPTED"
           ? {
               decision,
+              programId,
               branchId: departmentId,
               permissions: approvedPermissions,
             }
@@ -696,7 +697,7 @@ export default function SuperAdminApplications() {
           <h1>Administrator Applications</h1>
 
           <p>
-            Review requests, assign a department, and grant
+            Review requests, assign or change the program and branch, and grant
             approved permissions.
           </p>
         </div>
@@ -937,11 +938,11 @@ export default function SuperAdminApplications() {
                         </div>
 
                         <h3>
-                          Department &amp; permissions
+                          Program, branch &amp; permissions
                         </h3>
 
                         <p>
-                          Choose the department and the exact
+                          Choose the program, department / branch, and exact
                           access this admin should receive.
                         </p>
                       </div>

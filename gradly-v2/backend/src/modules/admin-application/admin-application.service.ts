@@ -42,9 +42,8 @@ export async function submitAdminApplication(
     );
   }
 
-  if (!user.active) {
-    throw new ApplicationError("Your account is inactive.", 403);
-  }
+  // Admin applications are requests for platform review, not account activation.
+  // A disabled user may submit a request; their Gradly account remains inactive.
 
   const institutionId = requiredString(
     body.institution_id,
@@ -149,11 +148,11 @@ export async function submitAdminApplication(
     specializationId = specialization.id;
   }
 
-  const duplicate = await findDuplicateApplication(
-    user.id,
-    institutionId,
-    branchId
-  );
+  // A soft-deleted account is treated as a fresh Admin applicant.
+  // Keep its inactive/deleted state and historical records; simply allow a new request.
+  const duplicate = user.deleted_at
+    ? null
+    : await findDuplicateApplication(user.id, institutionId, branchId);
 
   if (duplicate) {
     throw new ApplicationError(
@@ -204,6 +203,13 @@ export async function getMyAdminApplications(firebaseUid: string) {
       "Your account has not been synchronized with Gradly.",
       403
     );
+  }
+
+  // Soft-deleted users start with a clean application screen. Their prior
+  // application records remain stored for audit/history, but are not reused
+  // to block or pre-populate a new application.
+  if (user.deleted_at) {
+    return [];
   }
 
   return findApplicationsForUser(user.id);

@@ -12,10 +12,11 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export async function authenticateFirebaseToken(
+async function authenticateFirebaseTokenWithOptions(
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
+  allowDisabledAccount = false
 ) {
   try {
     const authorization = req.headers.authorization;
@@ -27,17 +28,23 @@ export async function authenticateFirebaseToken(
     }
 
     const token = authorization.split("Bearer ")[1];
-
     const decodedToken = await firebaseAuth.verifyIdToken(token);
 
-    // Enforce the platform-level account switch for every Firebase-protected student API.
+    // Disabled users may still access the limited Admin application workflow.
+    // They are NOT reactivated: all normal student APIs keep enforcing active=true.
     // Unknown users are allowed through so first-time sign-in can complete /auth/sync.
     const account = await pool.query(
       "SELECT active FROM public.users WHERE firebase_uid = $1 LIMIT 1",
       [decodedToken.uid]
     );
-    if (account.rowCount && account.rows[0].active !== true) {
-      return res.status(403).json({ message: "This Gradly account is disabled. Contact the platform administrator." });
+    if (
+      !allowDisabledAccount &&
+      account.rowCount &&
+      account.rows[0].active !== true
+    ) {
+      return res.status(403).json({
+        message: "This Gradly account is disabled. Contact the platform administrator.",
+      });
     }
 
     req.firebaseUser = {
@@ -48,8 +55,11 @@ export async function authenticateFirebaseToken(
     };
 
     // Update aggregate-only activity tracking. Authentication must still work if telemetry fails.
-    try { await recordAuthenticatedActivity(decodedToken.uid); }
-    catch (activityError) { console.error("Authenticated activity tracking failed:", activityError); }
+    try {
+      await recordAuthenticatedActivity(decodedToken.uid);
+    } catch (activityError) {
+      console.error("Authenticated activity tracking failed:", activityError);
+    }
 
     next();
   } catch (error) {
@@ -59,4 +69,24 @@ export async function authenticateFirebaseToken(
       message: "Invalid or expired authentication token.",
     });
   }
+}
+
+export function authenticateFirebaseToken(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  return authenticateFirebaseTokenWithOptions(req, res, next, false);
+}
+
+/**
+ * Authentication variant for the Admin application only.
+ * It verifies Firebase identity but does not block disabled Gradly accounts.
+ */
+export function authenticateFirebaseTokenForAdminApplication(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  return authenticateFirebaseTokenWithOptions(req, res, next, true);
 }

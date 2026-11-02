@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { listStudentNotifications, markStudentNotificationRead } from "./student-notifications.controller";
-import { authenticateFirebaseToken } from "../../middleware/auth.middleware";
+import {
+  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
+} from "../../middleware/auth.middleware";
 import {
   getCurrentGradlyUser,
   syncAuthUser,
@@ -8,9 +11,11 @@ import {
 
 const router = Router();
 
+// Allow disabled or previously deleted users to establish their Firebase identity
+// for the Admin application flow. syncUser preserves active=false on existing users.
 router.post(
   "/sync",
-  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
   syncAuthUser
 );
 

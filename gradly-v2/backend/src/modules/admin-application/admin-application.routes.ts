@@ -1,8 +1,7 @@
-
 import { Router } from "express";
 
 import {
-  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
 } from "../../middleware/auth.middleware";
 
 import {
@@ -12,17 +11,18 @@ import {
 
 const router = Router();
 
-// Submit a new admin application.
+// The Admin application is a review-request workflow, not account access.
+// Disabled users may submit or track requests without regaining student access.
 router.post(
   "/",
-  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
   submitApplication
 );
 
-// Get applications belonging to the authenticated user.
+// Get applications belonging to the authenticated Firebase identity.
 router.get(
   "/mine",
-  authenticateFirebaseToken,
+  authenticateFirebaseTokenForAdminApplication,
   getMyApplications
 );
 
