@@ -1230,16 +1230,73 @@ export default function SuperAdminApplications() {
               )}
 
               {selected.status === "ACCEPTED" && (
-                <div className="completed-notice accepted">
-                  <CheckCircle2 size={20} />
-
-                  <div>
-                    <strong>Application accepted</strong>
-
-                    <span>
-                      The applicant can continue through the
-                      administrator registration workflow.
-                    </span>
+                <div className="application-configuration">
+                  <div className="completed-notice accepted">
+                    <CheckCircle2 size={20} />
+                    <div>
+                      <strong>Application accepted</strong>
+                      <span>
+                        If the applicant sees an expiry-date error, set a new
+                        future date here. The applicant can then retry registration.
+                      </span>
+                    </div>
+                  </div>
+                  <div className="configuration-field">
+                    <label htmlFor="accepted-application-expiry">Admin access expiry date</label>
+                    <input
+                      id="accepted-application-expiry"
+                      type="date"
+                      value={adminshipExpiryDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(event) => setAdminshipExpiryDate(event.target.value)}
+                      disabled={configurationSaving || actionLoading}
+                    />
+                    <small>Choose a date in the future. This updates the accepted application before registration.</small>
+                  </div>
+                  <div className="application-actions">
+                    <button
+                      type="button"
+                      className="action-button accept"
+                      disabled={configurationSaving || actionLoading || !adminshipExpiryDate}
+                      onClick={async () => {
+                        const token = getToken();
+                        if (!token) {
+                          setError("Your Super Admin session is missing. Please sign in again.");
+                          return;
+                        }
+                        setConfigurationSaving(true);
+                        setError("");
+                        setNotice("");
+                        try {
+                          const response = await fetch(
+                            `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(selected.id)}/expiry`,
+                            {
+                              method: "PATCH",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                                Accept: "application/json",
+                              },
+                              body: JSON.stringify({ adminshipExpiryDate }),
+                            }
+                          );
+                          const data = await readResponse<unknown>(response);
+                          if (!response.ok) {
+                            throw new Error(getErrorMessage(data, `Unable to update expiry date. HTTP ${response.status}.`));
+                          }
+                          setSelected((current) => current ? { ...current, adminship_expiry_date: adminshipExpiryDate } : current);
+                          setApplications((current) => current.map((item) => item.id === selected.id ? { ...item, adminship_expiry_date: adminshipExpiryDate } : item));
+                          setNotice("Admin expiry date updated. Ask the applicant to refresh and complete registration.");
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : "Unable to update admin expiry date.");
+                        } finally {
+                          setConfigurationSaving(false);
+                        }
+                      }}
+                    >
+                      <Save size={16} />
+                      {configurationSaving ? "Saving…" : "Save expiry date"}
+                    </button>
                   </div>
                 </div>
               )}
