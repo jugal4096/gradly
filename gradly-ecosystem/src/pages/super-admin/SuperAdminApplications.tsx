@@ -444,7 +444,7 @@ export default function SuperAdminApplications() {
     setConfigurationSaved(false);
   }
 
-  // Save the selected department and permissions.
+  // Save the selected program, branch and permissions.
   async function saveConfiguration(): Promise<boolean> {
     if (!selected) return false;
 
@@ -476,7 +476,7 @@ export default function SuperAdminApplications() {
       )
     ) {
       setError(
-        "The selected department does not belong to this applicant's institution."
+        "The selected branch does not belong to the selected program and institution."
       );
       return false;
     }
@@ -590,7 +590,7 @@ export default function SuperAdminApplications() {
         )
       ) {
         setError(
-          "Select a valid department belonging to this institution."
+          "Select a valid branch belonging to the selected program and institution."
         );
         return;
       }
@@ -938,7 +938,7 @@ export default function SuperAdminApplications() {
                         </div>
 
                         <h3>
-                          Department &amp; permissions
+                          Program, branch &amp; permissions
                         </h3>
 
                         <p>
