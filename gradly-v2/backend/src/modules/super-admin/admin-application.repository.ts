@@ -236,7 +236,7 @@ export async function saveApplicationConfiguration(
        )
        VALUES (
          'SUPER_ADMIN',
-         application.status === 'ACCEPTED' ? 'ACCEPTED_ADMIN_APPLICATION_EDITED' : 'ADMIN_APPLICATION_CONFIGURATION_SAVED',
+         'ADMIN_APPLICATION_CONFIGURATION_SAVED',
          'admin_applications',
          $1,
          $2::jsonb,
