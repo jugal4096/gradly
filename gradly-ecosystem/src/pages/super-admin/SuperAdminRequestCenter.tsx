@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { RefreshCw, Search, Inbox, Eye, Filter, X, ExternalLink } from "lucide-react";
 import "./SuperAdminRequestCenter.css";
 
-const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
+const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/,"").replace(/\\/api$/i,""))+"/api";
 type Row={id:string;source:string;requestType:string;title:string;description:string;targetUserId?:string|null;priority:string;status:string;reviewNote?:string|null;acknowledgedAt?:string|null;createdAt:string;adminCode?:string;adminName?:string;adminEmail?:string;institution?:string;program?:string;branch?:string};
-const label=(s:string)=>String(s||"").replace(/_/g," ").toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+type Counts={unattended?:number;unacknowledged?:number;pending?:number;[key:string]:number|undefined};
 const label=(s:string)=>String(s||"").replace(/_/g," ").toLowerCase().replace(/\\b\\w/g,c=>c.toUpperCase());
 const date=(s:string)=>s?new Date(s).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}):"—";
 const legacyPath=(source:string)=>source==="PASSWORD_RESET"?"/super-admin/password-requests":source==="ADMIN_CURRICULUM"?"/super-admin/admin-requests":"/super-admin/feedback";
@@ -27,7 +27,7 @@ export default function SuperAdminRequestCenter(){
    const pw=get("password");
    const password=(Array.isArray(pw?.requests)?pw.requests:[]).map((r:Record<string,unknown>)=>({id:"password-"+String(r.id),source:"PASSWORD_RESET",requestType:"PASSWORD_RESET",title:"Admin password reset · "+String(r.admin_code||"Admin"),description:"Password reset request from "+String(r.admin_email||"")+" · "+String(r.full_name||""),priority:"NORMAL",status:String(r.status||"PENDING"),createdAt:String(r.created_at||""),adminCode:String(r.admin_code||""),adminName:String(r.full_name||""),institution:String(r.institution_name||""),reviewNote:r.review_note?String(r.review_note):null}));
    const cr=get("curriculum");
-   const curriculum=(Array.isArray(cr?.requests)?cr.requests:[]).map((r:Record<string,unknown>)=>({id:"curriculum-"+String(r.id),source:"ADMIN_CURRICULUM",requestType:String(r.requestType||"CURRICULUM_CHANGE"),title:"Admin curriculum · "+String(r.requestType||"Change"),description:String(r.reason||"")+(r.proposedChanges?"\nProposed: "+JSON.stringify(r.proposedChanges):""),priority:"NORMAL",status:String(r.status||"PENDING"),createdAt:String(r.createdAt||""),adminCode:String(r.adminCode||""),adminName:String(r.adminName||""),institution:String(r.institution||""),program:String(r.program||""),branch:String(r.department||""),reviewNote:r.reviewNote?String(r.reviewNote):null}));
+   const curriculum=(Array.isArray(cr?.requests)?cr.requests:[]).map((r:Record<string,unknown>)=>({id:"curriculum-"+String(r.id),source:"ADMIN_CURRICULUM",requestType:String(r.requestType||"CURRICULUM_CHANGE"),title:"Admin curriculum · "+String(r.requestType||"Change"),description:String(r.reason||"")+(r.proposedChanges?"\\nProposed: "+JSON.stringify(r.proposedChanges):""),priority:"NORMAL",status:String(r.status||"PENDING"),createdAt:String(r.createdAt||""),adminCode:String(r.adminCode||""),adminName:String(r.adminName||""),institution:String(r.institution||""),program:String(r.program||""),branch:String(r.department||""),reviewNote:r.reviewNote?String(r.reviewNote):null}));
    const sf=get("student");
    const student=(Array.isArray(sf?.feedback)?sf.feedback:[]).map((r:Record<string,unknown>)=>({id:"student-"+String(r.id),source:"STUDENT_SYLLABUS",requestType:String(r.requestType||"SYLLABUS_FEEDBACK"),title:"Student syllabus · "+String(r.subjectName||"Feedback"),description:String(r.message||""),priority:"NORMAL",status:String(r.status||"FORWARDED"),createdAt:String(r.createdAt||""),institution:String(r.institutionName||""),program:String(r.programName||""),branch:String(r.branchName||""),reviewNote:r.adminReviewNote?String(r.adminReviewNote):null}));
    const fb=get("feedback");
