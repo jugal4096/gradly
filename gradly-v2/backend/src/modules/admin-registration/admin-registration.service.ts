@@ -169,6 +169,14 @@ export async function registerApprovedAdmin(
       throw new RegistrationError("Admin expiry date is missing. Contact the Super Admin.", 409);
     }
 
+    const adminshipExpiryDate = String(application.adminship_expiry_date || application.graduation_date || "").slice(0, 10);
+    const expiryAt = /^\\d{4}-\\d{2}-\\d{2}$/.test(adminshipExpiryDate)
+      ? new Date(`${adminshipExpiryDate}T23:59:59.999Z`)
+      : new Date(Number.NaN);
+    if (Number.isNaN(expiryAt.getTime()) || expiryAt.toISOString().slice(0, 10) !== adminshipExpiryDate || expiryAt <= new Date()) {
+      throw new RegistrationError("A valid future admin expiry date is required. Contact the Super Admin.", 409);
+    }
+
     // 6. Create the administrator using the approved institution,
     // department, role, and application details.
     const adminResult = await client.query(
@@ -242,7 +250,7 @@ export async function registerApprovedAdmin(
           .trim()
           .toUpperCase()
           .replace(/\s+/g, ""),
-        application.adminship_expiry_date || application.graduation_date
+        adminshipExpiryDate
       ]
     );
 
