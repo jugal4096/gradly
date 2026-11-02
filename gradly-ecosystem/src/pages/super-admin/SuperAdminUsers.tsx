@@ -30,11 +30,22 @@ interface Student {
   current_semester_number: number | null;
   current_cgpa: number | null;
   branch_name: string | null;
-  institution_name?: string | null;
-  program_name?: string | null;
+  institution_id: string | null;
+  program_id: string | null;
+  branch_id: string | null;
+  scheme_id: string | null;
+  institution_name: string | null;
+  program_name: string | null;
+  scheme_name: string | null;
 }
 
-interface BranchOption { id: string; name: string; }
+interface AcademicOption { id: string; name: string; institution_id?: string; program_id?: string; }
+interface AcademicFilters {
+  institutions: AcademicOption[];
+  programs: AcademicOption[];
+  branches: AcademicOption[];
+  schemes: AcademicOption[];
+}
 
 interface ActivityEvent {
   id: string | number;
@@ -106,7 +117,7 @@ export default function SuperAdminUsers() {
   const navigate = useNavigate();
   const [directoryType, setDirectoryType] = useState<DirectoryType>("registered");
   const [students, setStudents] = useState<Student[]>([]);
-  const [branchOptions, setBranchOptions] = useState<BranchOption[]>([]);
+  const [academicFilters, setAcademicFilters] = useState<AcademicFilters>({ institutions: [], programs: [], branches: [], schemes: [] });
   const [guests, setGuests] = useState<GuestSession[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -117,8 +128,12 @@ export default function SuperAdminUsers() {
   const [page, setPage] = useState(1);
   const [selectedGuest, setSelectedGuest] = useState<GuestSession | null>(null);
   const [guestActivityTarget, setGuestActivityTarget] = useState<GuestSession | null>(null);
+  const [institutionFilter, setInstitutionFilter] = useState("all");
+  const [programFilter, setProgramFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
-  const [courseFilter, setCourseFilter] = useState("all");
+  const [schemeFilter, setSchemeFilter] = useState("all");
+  const [guestDeleteId, setGuestDeleteId] = useState<string | null>(null);
+  const [guestNotice, setGuestNotice] = useState("");
   const [activityStudent, setActivityStudent] = useState<Student | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -163,14 +178,18 @@ export default function SuperAdminUsers() {
       const data = await response.json() as { students?: Student[]; guests?: GuestSession[] };
       if (directoryType === "registered") {
         setStudents(Array.isArray(data.students) ? data.students : []);
-        // Load the branch catalogue independently of whether any students are assigned to a branch.
-        const branchResponse = await fetch(`${getApiBaseUrl()}/api/super-admin/users/branches`, {
+        // Load master-data filters independently of student assignments.
+        const filtersResponse = await fetch(`${getApiBaseUrl()}/api/super-admin/users/filters`, {
           headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
         });
-        if (branchResponse.ok) {
-          const branchData = await branchResponse.json() as { branches?: BranchOption[] };
-          setBranchOptions(Array.isArray(branchData.branches) ? branchData.branches : []);
-        }
+        if (!filtersResponse.ok) throw new Error("Could not load institution, program, branch and scheme filters.");
+        const filtersData = await filtersResponse.json() as Partial<AcademicFilters>;
+        setAcademicFilters({
+          institutions: Array.isArray(filtersData.institutions) ? filtersData.institutions : [],
+          programs: Array.isArray(filtersData.programs) ? filtersData.programs : [],
+          branches: Array.isArray(filtersData.branches) ? filtersData.branches : [],
+          schemes: Array.isArray(filtersData.schemes) ? filtersData.schemes : [],
+        });
       } else setGuests(Array.isArray(data.guests) ? data.guests : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load directory records.");
@@ -191,16 +210,19 @@ export default function SuperAdminUsers() {
     setSelectedGuest(null);
   }, [directoryType, statusFilter]);
 
-  const branches = useMemo(() => [...new Set([...branchOptions.map((branch) => branch.name), ...students.map((student) => student.branch_name).filter((value): value is string => Boolean(value))])].sort(), [branchOptions, students]);
-  const courses = useMemo(() => [...new Set(students.map((student) => student.program_name).filter((value): value is string => Boolean(value)))].sort(), [students]);
+  const branches = useMemo(() => academicFilters.branches, [academicFilters.branches]);
+  const programs = useMemo(() => academicFilters.programs.filter((program) => institutionFilter === "all" || program.institution_id === institutionFilter), [academicFilters.programs, institutionFilter]);
+  const filteredBranches = useMemo(() => academicFilters.branches.filter((branch) => programFilter === "all" || branch.program_id === programFilter), [academicFilters.branches, programFilter]);
 
   const filteredStudents = useMemo(() => students.filter((student) => {
     if (statusFilter === "active" && !student.active) return false;
     if (statusFilter === "inactive" && student.active) return false;
-    if (branchFilter !== "all" && student.branch_name !== branchFilter) return false;
-    if (courseFilter !== "all" && student.program_name !== courseFilter) return false;
+    if (institutionFilter !== "all" && student.institution_id !== institutionFilter) return false;
+    if (programFilter !== "all" && student.program_id !== programFilter) return false;
+    if (branchFilter !== "all" && student.branch_id !== branchFilter) return false;
+    if (schemeFilter !== "all" && student.scheme_id !== schemeFilter) return false;
     return true;
-  }), [students, statusFilter, branchFilter, courseFilter]);
+  }), [students, statusFilter, institutionFilter, programFilter, branchFilter, schemeFilter]);
 
   const filteredGuests = useMemo(() => {
     if (statusFilter === "active") return guests.filter((guest) => guest.active);
@@ -215,6 +237,32 @@ export default function SuperAdminUsers() {
   const visibleGuests = filteredGuests.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const activeStudents = students.filter((student) => student.active).length;
   const activeGuests = guests.filter((guest) => guest.active).length;
+
+  async function deleteGuestSession(guest: GuestSession) {
+    const guestLabel = String(guest.metadata?.guest_id || guest.metadata?.display_id || guest.id);
+    if (!window.confirm(`Permanently delete guest session ${guestLabel} and its saved guest workspace and recorded guest activity? This cannot be undone.`)) return;
+    const token = localStorage.getItem("gradly_super_admin_token");
+    if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
+    setGuestDeleteId(guest.id);
+    setGuestNotice("");
+    setError("");
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/guests/${encodeURIComponent(guest.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      });
+      const data = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(data.message || "Could not delete this guest session.");
+      setGuests((current) => current.filter((item) => item.id !== guest.id));
+      setSelectedGuest((current) => current?.id === guest.id ? null : current);
+      setGuestActivityTarget((current) => current?.id === guest.id ? null : current);
+      setGuestNotice(`Guest session ${guestLabel} and its recorded guest activity were deleted.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete this guest session.");
+    } finally {
+      setGuestDeleteId(null);
+    }
+  }
 
   async function openGuestActivity(guest: GuestSession) {
     setGuestActivityTarget(guest);
@@ -302,8 +350,8 @@ export default function SuperAdminUsers() {
           <button type="button" className={`super-users-branch-card ${branchFilter === "all" ? "is-selected" : ""}`} onClick={() => { setBranchFilter("all"); setPage(1); }}>
             <span>All branches</span><strong>{students.length}</strong><small>Students</small>
           </button>
-          {branches.map((branch) => <button type="button" key={branch} className={`super-users-branch-card ${branchFilter === branch ? "is-selected" : ""}`} onClick={() => { setBranchFilter(branch); setPage(1); }}>
-            <span>{branch}</span><strong>{students.filter((student) => student.branch_name === branch).length}</strong><small>Students</small>
+          {branches.map((branch) => <button type="button" key={branch.id} className={`super-users-branch-card ${branchFilter === branch.id ? "is-selected" : ""}`} onClick={() => { setBranchFilter(branch.id); setPage(1); }}>
+            <span>{branch.name}</span><strong>{students.filter((student) => student.branch_id === branch.id).length}</strong><small>Students</small>
           </button>)}
         </div>
       </section>}
@@ -339,20 +387,36 @@ export default function SuperAdminUsers() {
             <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={directoryType === "registered" ? "Search student name, email, enrollment no. or branch…" : "Search Guest ID or institution…"} aria-label="Search directory" />
             {searchInput && <button type="button" className="super-users-clear" onClick={() => setSearchInput("")} aria-label="Clear search"><X size={15} /></button>}
           </label>
-          {directoryType === "registered" && <label className="super-users-filter">
-            <Filter size={15} />
-            <select value={branchFilter} onChange={(event) => { setBranchFilter(event.target.value); setPage(1); }} aria-label="Filter by branch">
-              <option value="all">All branches</option>
-              {branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
-            </select>
-          </label>}
-          {directoryType === "registered" && <label className="super-users-filter">
-            <Filter size={15} />
-            <select value={courseFilter} onChange={(event) => { setCourseFilter(event.target.value); setPage(1); }} aria-label="Filter by course or program">
-              <option value="all">All courses / programs</option>
-              {courses.map((course) => <option key={course} value={course}>{course}</option>)}
-            </select>
-          </label>}
+          {directoryType === "registered" && <>
+            <label className="super-users-filter">
+              <Filter size={15} />
+              <select value={institutionFilter} onChange={(event) => { setInstitutionFilter(event.target.value); setProgramFilter("all"); setBranchFilter("all"); setPage(1); }} aria-label="Filter by institute">
+                <option value="all">All institutes</option>
+                {academicFilters.institutions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <label className="super-users-filter">
+              <Filter size={15} />
+              <select value={programFilter} onChange={(event) => { setProgramFilter(event.target.value); setBranchFilter("all"); setPage(1); }} aria-label="Filter by program">
+                <option value="all">All programs</option>
+                {programs.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <label className="super-users-filter">
+              <Filter size={15} />
+              <select value={branchFilter} onChange={(event) => { setBranchFilter(event.target.value); setPage(1); }} aria-label="Filter by branch">
+                <option value="all">All branches</option>
+                {filteredBranches.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <label className="super-users-filter">
+              <Filter size={15} />
+              <select value={schemeFilter} onChange={(event) => { setSchemeFilter(event.target.value); setPage(1); }} aria-label="Filter by scheme">
+                <option value="all">All schemes</option>
+                {academicFilters.schemes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+          </>}
           <label className="super-users-filter">
             <Filter size={15} />
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} aria-label="Filter by status">
@@ -364,6 +428,7 @@ export default function SuperAdminUsers() {
         </div>
 
         {error && <div className="super-users-error" role="alert"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={() => void loadDirectory()}>Retry</button></div>}
+        {guestNotice && <div className="super-users-success" role="status">{guestNotice}</div>}
 
         <div className="super-users-table-wrap" key={directoryType}>
           {directoryType === "registered" ? (
@@ -398,7 +463,7 @@ export default function SuperAdminUsers() {
                     <td><span className="super-users-date">{formatDate(guest.last_seen_at)}</span></td>
                     <td><span className="super-users-date">{guest.expires_at ? formatDate(guest.expires_at) : "No expiry set"}</span></td>
                     <td><span className={`super-users-status ${guest.active ? "is-active" : "is-inactive"}`}><span />{guest.active ? "Active" : "Expired"}</span></td>
-                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button></div></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view guest-delete-action" onClick={() => void deleteGuestSession(guest)} disabled={guestDeleteId === guest.id} aria-label="Delete guest data" title="Delete guest data">{guestDeleteId === guest.id ? "…" : "Delete"}</button></div></td>
                   </tr>)}
               </tbody>
             </table>
