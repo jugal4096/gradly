@@ -385,6 +385,17 @@ export async function reviewApplication(
     let permissions: string[] = [];
 
     if (decision === "ACCEPTED") {
+      const programId = getStringField(req.body, [
+        "programId",
+        "program_id",
+      ])?.trim();
+      if (!isUuid(programId)) {
+        return res.status(400).json({
+          success: false,
+          message: "A valid program ID is required.",
+        });
+      }
+
       branchId = getStringField(req.body, [
         "branchId",
         "branch_id",
@@ -429,6 +440,7 @@ export async function reviewApplication(
         decision === "REJECTED"
           ? rejectionReason
           : undefined,
+      programId: decision === "ACCEPTED" ? getStringField(req.body, ["programId", "program_id"])?.trim() : undefined,
       branchId,
       permissions,
     });
@@ -437,7 +449,7 @@ export async function reviewApplication(
       success: true,
       message:
         decision === "ACCEPTED"
-          ? "Application accepted with the approved department and permissions."
+          ? "Application accepted with the approved program, department and permissions."
           : "Application rejected.",
       application,
     });
