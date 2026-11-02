@@ -11,6 +11,7 @@ export interface ReviewApplicationInput {
   programId?: string;
   branchId?: string;
   permissions?: string[];
+  adminshipExpiryDate?: string;
 }
 
 export interface SaveApplicationConfigurationInput {
@@ -19,6 +20,7 @@ export interface SaveApplicationConfigurationInput {
   programId: string;
   branchId: string;
   approvedPermissions: string[];
+  adminshipExpiryDate: string;
 }
 
 function httpError(message: string, statusCode: number): Error {
@@ -74,6 +76,7 @@ export async function listApplications(status?: string) {
        aa.mobile_number,
        aa.email,
        aa.graduation_date,
+       aa.adminship_expiry_date,
        aa.qualification,
        aa.requested_role,
        aa.reason,
@@ -145,6 +148,7 @@ export async function saveApplicationConfiguration(
       `SELECT
          id,
          institution_id,
+         program_id,
          branch_id,
          approved_permissions,
          status
@@ -202,8 +206,9 @@ export async function saveApplicationConfiguration(
     const updatedResult = await client.query(
       `UPDATE public.admin_applications
        SET branch_id = $2,
-           program_id = (SELECT program_id FROM public.branches WHERE id = $2),
+           program_id = $4::uuid,
            approved_permissions = $3::jsonb,
+           adminship_expiry_date = $5::date,
            updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
@@ -211,7 +216,8 @@ export async function saveApplicationConfiguration(
         input.applicationId,
         input.branchId,
         JSON.stringify(permissions),
-        input.programId ?? null
+        input.programId,
+        input.adminshipExpiryDate
       ]
     );
 
@@ -245,15 +251,19 @@ export async function saveApplicationConfiguration(
         JSON.stringify({
           program_id: application.program_id,
           branch_id: application.branch_id,
-          approved_permissions: application.approved_permissions
+          approved_permissions: application.approved_permissions,
+          adminship_expiry_date: application.adminship_expiry_date
+        }),
+        JSON.stringify({
+          program_id: input.programId,
+          branch_id: input.branchId,
+          approved_permissions: permissions,
+          adminship_expiry_date: input.adminshipExpiryDate
         }),
         JSON.stringify({
           branch_id: input.branchId,
-          approved_permissions: permissions
-        }),
-        JSON.stringify({
-          branch_id: input.branchId,
-          approved_permissions: permissions
+          approved_permissions: permissions,
+          adminship_expiry_date: input.adminshipExpiryDate
         }),
         input.superAdminId
       ]
@@ -364,6 +374,7 @@ export async function reviewApplication(
            reviewed_at = NOW(),
            rejection_reason = $5,
            approved_permissions = $6::jsonb,
+           adminship_expiry_date = CASE WHEN $2 = 'ACCEPTED' THEN $8::date ELSE adminship_expiry_date END,
            updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
@@ -377,7 +388,8 @@ export async function reviewApplication(
             "Application rejected."
           : null,
         JSON.stringify(permissions),
-        input.programId ?? null
+        input.programId ?? null,
+        input.adminshipExpiryDate ?? null
       ]
     );
 
@@ -420,6 +432,7 @@ export async function reviewApplication(
           program_id: input.programId ?? application.program_id,
           branch_id: branchId,
           approved_permissions: permissions,
+          adminship_expiry_date: input.adminshipExpiryDate ?? application.adminship_expiry_date,
           reviewed_at: updatedResult.rows[0].reviewed_at
         }),
         JSON.stringify({
