@@ -456,3 +456,56 @@ export async function reviewApplication(
     client.release();
   }
 }
+
+/**
+ * Update the expiry date of an already accepted application.
+ * This lets Super Admin correct an expired graduation-date default before
+ * the applicant completes registration.
+ */
+export async function updateAcceptedApplicationExpiry(
+  applicationId: string,
+  superAdminId: string,
+  adminshipExpiryDate: string
+) {
+  const client: PoolClient = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT id, status, adminship_expiry_date
+       FROM public.admin_applications
+       WHERE id = $1
+       FOR UPDATE`,
+      [applicationId]
+    );
+    if (existing.rowCount !== 1) throw httpError("Application not found.", 404);
+    if (existing.rows[0].status !== "ACCEPTED") {
+      throw httpError("Only accepted applications can have their expiry date changed here.", 409);
+    }
+    const updated = await client.query(
+      `UPDATE public.admin_applications
+       SET adminship_expiry_date = $2::date, updated_at = NOW()
+       WHERE id = $1 AND status = 'ACCEPTED'
+       RETURNING id, adminship_expiry_date, status`,
+      [applicationId, adminshipExpiryDate]
+    );
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_role, action, entity_table, entity_id, before_data, after_data, metadata, actor_type, actor_id, created_at)
+       VALUES ('SUPER_ADMIN', 'ADMIN_APPLICATION_EXPIRY_UPDATED', 'admin_applications', $1, $2::jsonb, $3::jsonb, $4::jsonb, 'SUPER_ADMIN', $5, NOW())`,
+      [
+        applicationId,
+        JSON.stringify({ adminship_expiry_date: existing.rows[0].adminship_expiry_date }),
+        JSON.stringify({ adminship_expiry_date: adminshipExpiryDate }),
+        JSON.stringify({ reason: "Corrected accepted application expiry before registration" }),
+        superAdminId
+      ]
+    );
+    await client.query("COMMIT");
+    return updated.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
