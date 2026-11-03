@@ -512,8 +512,8 @@ export async function updateAcceptedApplicationExpiry(
 
 /**
  * Permanently remove an application record without deleting the applicant's
- * user account or any administrator account. The full record is retained
- * in the audit log before deletion.
+ * user account or any administrator account. Key application details are
+ * retained in the audit log before deletion.
  */
 export async function deleteApplicationRecord(
   applicationId: string,
