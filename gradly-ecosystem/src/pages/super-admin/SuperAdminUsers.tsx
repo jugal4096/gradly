@@ -530,7 +530,7 @@ export default function SuperAdminUsers() {
               <tbody>
                 {loading ? <tr><td colSpan={7}><div className="super-users-state"><span className="super-users-loader" />Loading registered users…</div></td></tr>
                   : error ? <tr><td colSpan={7}><div className="super-users-state">Directory could not be loaded.</div></td></tr>
-                  : visibleStudents.length === 0 ? <tr><td colSpan={8}><div className="super-users-state"><Users size={25} /><strong>No registered users found</strong><span>Try changing your search or status filter.</span></div></td></tr>
+                  : visibleStudents.length === 0 ? <tr><td colSpan={7}><div className="super-users-state"><Users size={25} /><strong>No registered users found</strong><span>Try changing your search or status filter.</span></div></td></tr>
                   : visibleStudents.map((student) => <tr key={student.id}>
                     <td><div className="super-users-person"><span className="super-users-avatar">{initials(student.display_name, null)}</span><span className="super-users-person-copy"><strong>{student.display_name || "Unnamed account"}</strong><small>{student.role || "Registered"} account</small></span></div></td>
                     <td><span className="super-users-branch">{student.branch_name || "Not provided"}</span><small className="super-users-subtext">{student.program_name || ""}</small></td>
