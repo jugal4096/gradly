@@ -89,8 +89,7 @@ export async function getAdministratorDetails(
   res: Response
 ) {
   try {
-    const adminId =
-      req.params.adminId;
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
 
     if (!adminId) {
       return res.status(400).json({
@@ -131,8 +130,7 @@ export async function updateAdministratorStatus(
   res: Response
 ) {
   try {
-    const adminId =
-      req.params.adminId;
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
 
     const {
       status,
@@ -200,8 +198,7 @@ export async function updateAdministratorDepartment(
   res: Response
 ) {
   try {
-    const adminId =
-      req.params.adminId;
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
 
     const {
       branchId,
@@ -268,8 +265,7 @@ export async function extendAdminship(
   res: Response
 ) {
   try {
-    const adminId =
-      req.params.adminId;
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
 
     const {
       expiresAt,
@@ -336,8 +332,7 @@ export async function updateGraduationDate(
   res: Response
 ) {
   try {
-    const adminId =
-      req.params.adminId;
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
 
     const {
       graduationDate,
