@@ -902,3 +902,187 @@ html[data-sa-theme="dark"] .super-admin-page [class*="success"],
 html[data-sa-theme="dark"] .super-admin-page [class*="Success"] {
   color: #8cddb0;
 }
+
+
+/* =========================================================
+   Unified Super Admin design tokens (all modules)
+   ========================================================= */
+.super-admin-shell {
+  --sa-accent: #6842c7;
+  --sa-accent-strong: #5030a8;
+  --sa-accent-soft: #eee8ff;
+  --sa-accent-border: #d8cafb;
+  --sa-canvas: #f7f7fb;
+  --sa-surface: #ffffff;
+  --sa-surface-raised: #ffffff;
+  --sa-surface-muted: #f3f1f8;
+  --sa-text: #242238;
+  --sa-text-muted: #716d80;
+  --sa-border: #e5e1ee;
+  --sa-shadow: 0 8px 28px rgba(35, 24, 65, .06);
+  background: var(--sa-canvas);
+  color: var(--sa-text);
+}
+html[data-sa-palette="green"] .super-admin-shell {
+  --sa-accent: #16845b;
+  --sa-accent-strong: #116b49;
+  --sa-accent-soft: #e4f5ed;
+  --sa-accent-border: #b9e4d0;
+}
+html[data-sa-palette="purple"] .super-admin-shell {
+  --sa-accent: #6842c7;
+  --sa-accent-strong: #5030a8;
+  --sa-accent-soft: #eee8ff;
+  --sa-accent-border: #d8cafb;
+}
+html[data-sa-theme="dark"] .super-admin-shell {
+  --sa-canvas: #101018;
+  --sa-surface: #191923;
+  --sa-surface-raised: #211f2c;
+  --sa-surface-muted: #262332;
+  --sa-text: #f2eff8;
+  --sa-text-muted: #b6afc5;
+  --sa-border: #393446;
+  --sa-shadow: 0 10px 30px rgba(0,0,0,.24);
+  color-scheme: dark;
+  background: var(--sa-canvas) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"][data-sa-palette="purple"] .super-admin-shell {
+  --sa-accent: #ad91ff;
+  --sa-accent-strong: #c3afff;
+  --sa-accent-soft: #302644;
+  --sa-accent-border: #594875;
+}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell {
+  --sa-accent: #63d6a6;
+  --sa-accent-strong: #8be7bf;
+  --sa-accent-soft: #18372b;
+  --sa-accent-border: #326c54;
+}
+
+/* Fonts are applied to every descendant, including nested page components,
+   controls, dialogs and tables that otherwise declare their own family. */
+html[data-sa-font="system"] .super-admin-shell,
+html[data-sa-font="system"] .super-admin-shell *,
+html[data-sa-font="system"] .super-admin-shell *::before,
+html[data-sa-font="system"] .super-admin-shell *::after { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
+html[data-sa-font="segoe"] .super-admin-shell,
+html[data-sa-font="segoe"] .super-admin-shell *,
+html[data-sa-font="segoe"] .super-admin-shell *::before,
+html[data-sa-font="segoe"] .super-admin-shell *::after { font-family: "Segoe UI", Tahoma, sans-serif !important; }
+html[data-sa-font="inter"] .super-admin-shell,
+html[data-sa-font="inter"] .super-admin-shell *,
+html[data-sa-font="inter"] .super-admin-shell *::before,
+html[data-sa-font="inter"] .super-admin-shell *::after { font-family: Inter, system-ui, sans-serif !important; }
+html[data-sa-font="roboto"] .super-admin-shell,
+html[data-sa-font="roboto"] .super-admin-shell *,
+html[data-sa-font="roboto"] .super-admin-shell *::before,
+html[data-sa-font="roboto"] .super-admin-shell *::after { font-family: Roboto, Arial, sans-serif !important; }
+html[data-sa-font="arial"] .super-admin-shell,
+html[data-sa-font="arial"] .super-admin-shell *,
+html[data-sa-font="arial"] .super-admin-shell *::before,
+html[data-sa-font="arial"] .super-admin-shell *::after { font-family: Arial, Helvetica, sans-serif !important; }
+html[data-sa-font="verdana"] .super-admin-shell,
+html[data-sa-font="verdana"] .super-admin-shell *,
+html[data-sa-font="verdana"] .super-admin-shell *::before,
+html[data-sa-font="verdana"] .super-admin-shell *::after { font-family: Verdana, Geneva, sans-serif !important; }
+html[data-sa-font="tahoma"] .super-admin-shell,
+html[data-sa-font="tahoma"] .super-admin-shell *,
+html[data-sa-font="tahoma"] .super-admin-shell *::before,
+html[data-sa-font="tahoma"] .super-admin-shell *::after { font-family: Tahoma, Geneva, sans-serif !important; }
+html[data-sa-font="trebuchet"] .super-admin-shell,
+html[data-sa-font="trebuchet"] .super-admin-shell *,
+html[data-sa-font="trebuchet"] .super-admin-shell *::before,
+html[data-sa-font="trebuchet"] .super-admin-shell *::after { font-family: "Trebuchet MS", sans-serif !important; }
+html[data-sa-font="georgia"] .super-admin-shell,
+html[data-sa-font="georgia"] .super-admin-shell *,
+html[data-sa-font="georgia"] .super-admin-shell *::before,
+html[data-sa-font="georgia"] .super-admin-shell *::after { font-family: Georgia, "Times New Roman", serif !important; }
+html[data-sa-font="mono"] .super-admin-shell,
+html[data-sa-font="mono"] .super-admin-shell *,
+html[data-sa-font="mono"] .super-admin-shell *::before,
+html[data-sa-font="mono"] .super-admin-shell *::after { font-family: Consolas, "Courier New", monospace !important; }
+
+/* Recolour common accents across every Super Admin page, not just Settings. */
+html[data-sa-palette] .super-admin-shell .sidebar-link-active,
+html[data-sa-palette] .super-admin-shell .sidebar-logout,
+html[data-sa-palette] .super-admin-shell .super-admin-mobile-menu,
+html[data-sa-palette] .super-admin-shell .content-system-left svg,
+html[data-sa-palette] .super-admin-shell .super-admin-page a,
+html[data-sa-palette] .super-admin-shell .super-admin-page [role="tab"][aria-selected="true"] {
+  color: var(--sa-accent) !important;
+}
+html[data-sa-palette] .super-admin-shell .sidebar-link-active {
+  background: var(--sa-accent-soft) !important;
+  border-color: var(--sa-accent-border) !important;
+  box-shadow: inset 3px 0 var(--sa-accent) !important;
+}
+html[data-sa-palette] .super-admin-shell .brand-mark,
+html[data-sa-palette] .super-admin-shell .super-admin-page button[class*="primary"],
+html[data-sa-palette] .super-admin-shell .super-admin-page button[class*="Primary"],
+html[data-sa-palette] .super-admin-shell .super-admin-page [class*="btn-primary"],
+html[data-sa-palette] .super-admin-shell .super-admin-page [class*="button-primary"] {
+  background: var(--sa-accent) !important;
+  border-color: var(--sa-accent-strong) !important;
+  color: #fff !important;
+}
+html[data-sa-palette] .super-admin-shell .super-admin-page input:focus,
+html[data-sa-palette] .super-admin-shell .super-admin-page select:focus,
+html[data-sa-palette] .super-admin-shell .super-admin-page textarea:focus {
+  border-color: var(--sa-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sa-accent) 18%, transparent) !important;
+}
+html[data-sa-palette] .super-admin-shell :focus-visible { outline-color: var(--sa-accent) !important; }
+
+/* Consistent dark surfaces and readable text for the full routed workspace. */
+html[data-sa-theme="dark"] .super-admin-shell,
+html[data-sa-theme="dark"] .super-admin-content,
+html[data-sa-theme="dark"] .super-admin-page { background: var(--sa-canvas) !important; color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-topbar,
+html[data-sa-theme="dark"] .content-system-strip,
+html[data-sa-theme="dark"] .super-admin-footer,
+html[data-sa-theme="dark"] .super-admin-sidebar {
+  background: var(--sa-surface) !important;
+  border-color: var(--sa-border) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link { color: var(--sa-text-muted) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link:hover,
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link-active {
+  background: var(--sa-accent-soft) !important;
+  color: var(--sa-accent-strong) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-page :is(
+  [class*="card"], [class*="Card"], [class*="panel"], [class*="Panel"],
+  [class*="section"], [class*="Section"], [class*="modal"], [class*="Modal"],
+  [class*="drawer"], [class*="Drawer"], [class*="dropdown"], [class*="Dropdown"],
+  [class*="popover"], [class*="Popover"], [class*="table-wrap"], [class*="tableWrap"],
+  [class*="widget"], [class*="Widget"], [class*="stat"], [class*="Stat"]
+) {
+  background-color: var(--sa-surface-raised) !important;
+  border-color: var(--sa-border) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"] .super-admin-page :is(h1,h2,h3,h4,h5,strong,label) { color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-page :is(p,small,[class*="muted"],[class*="subtitle"],[class*="description"],[class*="helper"]) { color: var(--sa-text-muted) !important; }
+html[data-sa-theme="dark"] .super-admin-page :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-page :is(th) { background: var(--sa-surface-muted) !important; color: var(--sa-text) !important; border-color: var(--sa-border) !important; }
+html[data-sa-theme="dark"] .super-admin-page :is(td) { background: var(--sa-surface-raised) !important; color: var(--sa-text) !important; border-color: var(--sa-border) !important; }
+html[data-sa-theme="dark"] .super-admin-page tr:hover td { background: var(--sa-surface-muted) !important; }
+html[data-sa-theme="dark"] .super-admin-page :is(hr,[class*="divider"],[class*="Divider"]) { border-color: var(--sa-border) !important; }
+html[data-sa-theme="dark"] .super-admin-page a { color: var(--sa-accent-strong) !important; }
+html[data-sa-theme="dark"] .super-admin-page :is(button,[role="button"]) { color: inherit; }
+html[data-sa-theme="dark"] .super-admin-page :is(button[class*="primary"],button[class*="Primary"],[class*="btn-primary"],[class*="button-primary"]) {
+  background: var(--sa-accent) !important; border-color: var(--sa-accent) !important; color: #fff !important;
+}
+
+/* Global sizing preference: preserve component proportions while scaling text. */
+html[data-sa-font-size="small"] .super-admin-shell { font-size: 13px !important; }
+html[data-sa-font-size="normal"] .super-admin-shell { font-size: 14px !important; }
+html[data-sa-font-size="large"] .super-admin-shell { font-size: 16px !important; }
