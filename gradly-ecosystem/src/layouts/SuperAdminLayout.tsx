@@ -120,19 +120,17 @@ export default function SuperAdminLayout() {
     const readPreference = (key: string, fallback: string) => {
       try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
     };
-    const theme = readPreference("gradly_sa_theme", "light");
-    const palette = readPreference("gradly_sa_palette", "purple");
     const deviceDark = window.matchMedia("(prefers-color-scheme: dark)");
     const applyTheme = () => {
-      const effectiveTheme = theme === "system" ? (deviceDark.matches ? "dark" : "light") : theme;
+      const preference = readPreference("gradly_sa_theme", "light");
+      const effectiveTheme = preference === "system" ? (deviceDark.matches ? "dark" : "light") : preference === "dark" ? "dark" : "light";
       root.dataset.saTheme = effectiveTheme;
-      root.dataset.saThemePreference = theme;
+      root.dataset.saThemePreference = preference;
       root.style.colorScheme = effectiveTheme;
     };
     applyTheme();
-    if (theme === "system") {
-      deviceDark.addEventListener("change", applyTheme);
-    }
+    deviceDark.addEventListener("change", applyTheme);
+    window.addEventListener("gradly:appearance-updated", applyTheme);
     const font = readPreference("gradly_sa_font", "system");
     const fontSize = readPreference("gradly_sa_font_size", "normal");
     const compact = readPreference("gradly_sa_compact_tables", "false") === "true";
@@ -142,6 +140,7 @@ export default function SuperAdminLayout() {
     root.dataset.saFontSize = fontSize;
     root.classList.toggle("sa-compact-tables", compact);
     root.classList.toggle("sa-reduced-motion", reducedMotion);
+    return () => { deviceDark.removeEventListener("change", applyTheme); window.removeEventListener("gradly:appearance-updated", applyTheme); };
   }, []);
 
   useEffect(() => {
