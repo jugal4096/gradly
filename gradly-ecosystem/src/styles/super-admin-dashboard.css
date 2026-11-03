@@ -2739,3 +2739,8 @@ html[data-sa-theme="dark"] .sd-selected-log-actions{background:#202b34;border-co
 html[data-sa-theme="dark"] .sd-selected-log-actions>span{color:#edf3f0}
 html[data-sa-theme="dark"] .sd-archive-action,html[data-sa-theme="dark"] .sd-archive-one{background:#202b34;border-color:#40505e;color:#d9e7df}
 html[data-sa-theme="dark"] .sd-archive-action:hover,html[data-sa-theme="dark"] .sd-archive-one:hover{background:#18392d;border-color:#28684d;color:#9be5c2}
+
+.sd-archived-log-list{display:grid;gap:10px}
+.sd-archived-log-list .sd-activity-item{display:flex;align-items:center}
+.sd-archived-log-list .sd-activity-copy{min-width:0;flex:1}
+html[data-sa-theme="dark"] .sd-archived-log-list .sd-activity-item{background:#1b242e;border-color:#354452;color:#edf3f0}
