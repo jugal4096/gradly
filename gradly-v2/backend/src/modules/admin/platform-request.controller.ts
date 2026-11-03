@@ -68,12 +68,19 @@ export async function listPlatformRequests(req: SuperAdminAuthenticatedRequest,r
       ((SELECT COUNT(*) FROM public.platform_requests WHERE status IN ('PENDING','IN_REVIEW','NEEDS_INFO')) +
        (SELECT COUNT(*) FROM public.admin_password_change_requests WHERE status='PENDING') +
        (SELECT COUNT(*) FROM public.admin_subject_change_requests WHERE status='PENDING') +
-       (SELECT COUNT(*) FROM public.student_syllabus_feedback WHERE status='FORWARDED'))::int AS unattended,
+       (SELECT COUNT(*) FROM public.student_syllabus_feedback WHERE status='FORWARDED') +
+       (SELECT COUNT(*) FROM public.feedback_requests fr
+         WHERE COALESCE(to_jsonb(fr)->>'status','') <> ''
+           AND LOWER(COALESCE(to_jsonb(fr)->>'status','')) NOT IN ('resolved','closed','rejected','completed','cancelled')) +
+       (SELECT COUNT(*) FROM public.guest_institution_requests WHERE status IN ('PENDING','IN_REVIEW')))::int AS unattended,
       (SELECT COUNT(*)::int FROM public.platform_requests WHERE acknowledged_at IS NULL AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO')) AS unacknowledged,
       ((SELECT COUNT(*) FROM public.platform_requests WHERE status='PENDING') +
        (SELECT COUNT(*) FROM public.admin_password_change_requests WHERE status='PENDING') +
        (SELECT COUNT(*) FROM public.admin_subject_change_requests WHERE status='PENDING') +
-       (SELECT COUNT(*) FROM public.student_syllabus_feedback WHERE status='FORWARDED'))::int AS pending`);
+       (SELECT COUNT(*) FROM public.student_syllabus_feedback WHERE status='FORWARDED') +
+       (SELECT COUNT(*) FROM public.feedback_requests fr
+         WHERE UPPER(REPLACE(COALESCE(to_jsonb(fr)->>'status',''),' ','_'))='PENDING') +
+       (SELECT COUNT(*) FROM public.guest_institution_requests WHERE status='PENDING'))::int AS pending`);
     return res.json({success:true,requests:result.rows,counts:counts.rows[0]});
   } catch(error) {
     console.error("Super Admin platform request list failed:",error);
