@@ -101,6 +101,7 @@ export async function getSuperAdminDashboardStats(
     }> = [];
 
     try {
+      await pool.query(`CREATE TABLE IF NOT EXISTS public.super_admin_archived_audit_logs (audit_log_id TEXT PRIMARY KEY, log_snapshot JSONB NOT NULL, archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), archived_by JSONB)`);
       const activityResult = await pool.query(`
         SELECT
           id,
