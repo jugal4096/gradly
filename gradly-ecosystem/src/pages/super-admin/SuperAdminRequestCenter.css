@@ -53,3 +53,21 @@
 .sa-request-decision button{font-weight:700}
 @media(max-width:760px){.sa-request-section{padding:0 12px 7px}.sa-request-section .sa-request-table-head{align-items:flex-start}.sa-request-section article{gap:12px}.sa-request-actions{width:100%;justify-content:space-between}.sa-request-row-buttons{flex-wrap:wrap}.sa-requests>header{align-items:flex-start}.sa-request-toolbar label{max-width:none}}
 @media(max-width:420px){.sa-request-section .sa-request-table-head{flex-direction:column}.sa-request-section .sa-request-table-head>span{align-self:flex-start}.sa-request-drawer{padding:20px}}
+
+
+/* Request Log follows the workspace palette and theme. */
+html[data-sa-palette="green"] .sa-requests{--request-accent:#16845b;color:#243a30}
+html[data-sa-palette="green"] .sa-requests :is(header span,.sa-request-stats strong,.sa-request-section-admin,.sa-request-table-head strong){--request-accent:#16845b}
+html[data-sa-palette="green"] .sa-requests>header>div>span{background:#e3f5ed;color:#116b49}
+html[data-sa-palette="green"] .sa-requests .sa-request-section-admin{border-top-color:#16845b}
+html[data-sa-palette="green"] .sa-requests .sa-request-section article.is-new{background:#eff9f3;border-left-color:#16845b}
+html[data-sa-palette="green"] .sa-requests :is(button,.status_in_review,.status-in_review){color:#116b49;border-color:#b9dfca}
+html[data-sa-theme="dark"] .sa-requests{color:#eeeaf5}
+html[data-sa-theme="dark"] .sa-requests :is(.sa-request-stats article,.sa-request-table,.sa-request-section,.sa-request-toolbar label,.sa-request-drawer){background:#1b242e!important;border-color:#35414c!important;color:#eeeaf5}
+html[data-sa-theme="dark"] .sa-requests :is(h1,h2,h3,strong,dt,dd,.sa-request-title strong){color:#f0edf5!important}
+html[data-sa-theme="dark"] .sa-requests :is(p,small,span,label,.sa-request-empty){color:#c0c5ce}
+html[data-sa-theme="dark"] .sa-requests :is(button,input,select,textarea){background:#121a23!important;border-color:#3b4652!important;color:#f0edf5!important}
+html[data-sa-theme="dark"] .sa-requests .sa-request-section article.is-new{background:#26352e!important}
+html[data-sa-theme="dark"] .sa-requests .sa-request-overlay{background:#080d12cc}
+html[data-sa-theme="dark"][data-sa-palette="green"] .sa-requests :is(button,.sa-request-stats strong,.sa-requests>header>div>span){color:#9be5c2!important}
+html[data-sa-theme="dark"][data-sa-palette="green"] .sa-requests>header>div>span{background:#18392d!important}
