@@ -11,6 +11,8 @@ import {
     updateAdminshipExpiry,
     updateAdminGraduationDate,
     deleteAdministratorAccount,
+    replaceAdministratorPermissions,
+    getAdministratorPermissionsForAdmin,
     type AdministratorListFilters,
     type UpdateAdminStatus,
   } from "./administrator.repository";
