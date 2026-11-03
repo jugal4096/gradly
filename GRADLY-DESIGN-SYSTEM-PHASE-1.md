@@ -165,4 +165,4 @@ Both application entry points import their local design-system index. No shared 
 - No global conversion of legacy hard-coded page colours.
 - No app-shell/navigation changes.
 - No auth, permissions, business logic, API, data or route changes.
-- No commit/push/merge/deployment was authorized by this phase request; the branch changes are prepared as a working commit only if a separate Git action is approved.
+- Implementation changes were committed incrementally on the authorized branch so the branch contains a reviewable snapshot. No push, merge, pull request or deployment was performed.
