@@ -47,7 +47,7 @@ export default function SuperAdminSettings(){
  useEffect(()=>{void runChecks();},[runChecks]);
  useEffect(()=>{
   const root=document.documentElement;
-  root.dataset.saTheme=theme;root.dataset.saPalette=palette;root.dataset.saFont=font;
+  root.dataset.saTheme=theme;root.style.colorScheme=theme==="dark"?"dark":"light";root.dataset.saPalette=palette;root.dataset.saFont=font;
   localStorage.setItem("gradly_sa_palette",palette);root.dataset.saFontSize=fontSize;
   root.classList.toggle("sa-compact-tables",compact);root.classList.toggle("sa-reduced-motion",reducedMotion);
   localStorage.setItem("gradly_sa_theme",theme);localStorage.setItem("gradly_sa_font",font);
