@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Search, Inbox, Eye, Filter, X, ExternalLink, Trash2 } from "lucide-react";
+import { RefreshCw, Search, Inbox, Eye, X, ExternalLink, Trash2 } from "lucide-react";
 import "./SuperAdminRequestCenter.css";
 const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 type Row={id:string;source:string;requestType:string;title:string;description:string;targetUserId?:string|null;priority:string;status:string;reviewNote?:string|null;acknowledgedAt?:string|null;createdAt:string;adminCode?:string;adminName?:string;adminEmail?:string;institution?:string;program?:string;branch?:string};
@@ -11,7 +11,7 @@ const legacyPath=(source:string)=>source==="PASSWORD_RESET"?"/super-admin/passwo
 
 export default function SuperAdminRequestCenter(){
  const navigate=useNavigate();
- const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[search,setSearch]=useState(""),[status,setStatus]=useState("ALL"),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState("");
+ const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[search,setSearch]=useState(""),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState("");
  const token=()=>localStorage.getItem("gradly_super_admin_token")||"";
  const load=useCallback(async()=>{
   setLoading(true);
@@ -32,11 +32,10 @@ export default function SuperAdminRequestCenter(){
    const fb=get("feedback");
    const feedback=(Array.isArray(fb?.feedback)?fb.feedback:[]).map((r:Record<string,unknown>)=>({id:(String(r.request_source)==="institution"?"institution-":"feedback-")+String(r.id),source:String(r.request_source)==="institution"?"INSTITUTION_REQUEST":"USER_FEEDBACK",requestType:String(r.category||r.type||"USER_FEEDBACK"),title:String(r.subject||r.title||"User feedback"),description:String(r.message||r.description||""),priority:"NORMAL",status:String(r.status||"PENDING"),createdAt:String(r.created_at||""),adminName:String(r.name||"Student / user"),adminEmail:String(r.email||"")}));
    const merged=[...platform,...password,...curriculum,...student,...feedback] as Row[];
-   const filtered=merged.filter(r=>status==="ALL"||r.status.toUpperCase()===status);
-   setRows(filtered.sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()));setCounts(core.counts||{});setError("");
+   setRows(merged.sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()));setCounts(core.counts||{});setError("");
   }catch(e){setError(e instanceof Error?e.message:"Unable to load Request Center.");}
   finally{setLoading(false);}
- },[search,status]);
+ },[search]);
  useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),45000);return()=>window.clearInterval(timer);},[load]);
  const open=useMemo(()=>rows.filter(r=>["PENDING","IN_REVIEW","NEEDS_INFO","FORWARDED","REVIEWED"].includes(r.status.toUpperCase())).length,[rows]);
  const isAdminRequest=(r:Row)=>["ADMIN_REQUEST","PASSWORD_RESET","ADMIN_CURRICULUM"].includes(r.source);
