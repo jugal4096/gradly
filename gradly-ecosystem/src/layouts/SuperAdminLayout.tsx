@@ -131,6 +131,7 @@ export default function SuperAdminLayout() {
     applyTheme();
     deviceDark.addEventListener("change", applyTheme);
     window.addEventListener("gradly:appearance-updated", applyTheme);
+    const palette = readPreference("gradly_sa_palette", "purple");
     const font = readPreference("gradly_sa_font", "system");
     const fontSize = readPreference("gradly_sa_font_size", "normal");
     const compact = readPreference("gradly_sa_compact_tables", "false") === "true";
