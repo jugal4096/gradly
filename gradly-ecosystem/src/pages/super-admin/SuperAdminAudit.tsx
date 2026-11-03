@@ -28,7 +28,8 @@ export default function SuperAdminAudit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<AuditEvent | null>(null);
-  const pageSize = 50;
+  const pageSize = routeAdminId ? 200 : 50;
+  const isAdminDetail = Boolean(routeAdminId);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -58,8 +59,16 @@ export default function SuperAdminAudit() {
   }, []);
 
   return <section className="admin-audit-page">
-    <header className="admin-audit-header"><div><span className="admin-audit-kicker">SECURITY / OVERSIGHT</span><h1>Admin Activity &amp; Audit Logs</h1><p>Review recorded administrator actions, decisions, and changes across Gradly.</p></div><button type="button" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button></header>
-    <div className="admin-audit-stats"><article><span>Matching events</span><strong>{total.toLocaleString()}</strong></article><article><span>Events on this page</span><strong>{events.length}</strong></article><article><span>Page</span><strong>{page + 1}</strong></article></div>
+    <header className="admin-audit-header"><div><span className="admin-audit-kicker">SECURITY / OVERSIGHT</span><h1>{isAdminDetail ? "Administrator activity" : "Admin Activity &amp; Audit Logs"}</h1><p>{isAdminDetail ? "A visual view of recorded activity, access events and recent administrator actions." : "Review recorded administrator actions, decisions, and changes across Gradly."}</p></div><div className="admin-audit-header-actions">{isAdminDetail && <button type="button" onClick={() => window.history.back()}>Back to admins</button>}<button type="button" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button></div></header>
+    <div className="admin-audit-stats"><article><span>{isAdminDetail ? "Total recorded activity" : "Matching events"}</span><strong>{total.toLocaleString()}</strong><small>Across the selected audit scope</small></article><article><span>Events loaded</span><strong>{events.length}</strong><small>Available for this view</small></article><article><span>Distinct action types</span><strong>{new Set(events.map(event => event.action)).size}</strong><small>Unique recorded actions</small></article></div>
+    {isAdminDetail && <div className="admin-activity-analytics">
+      <section className="admin-activity-chart-card"><div className="admin-activity-card-heading"><div><span className="admin-audit-kicker">ACTIVITY OVER TIME</span><h2>Last 7 days</h2><p>Recorded actions grouped by day</p></div><strong>{events.length} events</strong></div>
+        {(() => { const days = Array.from({length:7},(_,index)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-(6-index));const key=d.toLocaleDateString("en-CA");return {key,label:d.toLocaleDateString("en-IN",{weekday:"short"}),count:events.filter(event=>new Date(event.created_at).toLocaleDateString("en-CA")===key).length};}); const max=Math.max(1,...days.map(day=>day.count)); return <div className="admin-activity-bars">{days.map(day=><div className="admin-activity-bar-column" key={day.key}><strong>{day.count}</strong><div className="admin-activity-bar-track"><span style={{height:Math.max(5,day.count/max*100)+"%"}}/></div><small>{day.label}</small></div>)}</div>; })()}
+      </section>
+      <section className="admin-activity-breakdown"><div className="admin-audit-card-heading"><div><span className="admin-audit-kicker">ACTION MIX</span><h2>Most frequent actions</h2><p>Based on the events currently loaded</p></div></div>
+        {(() => {const groups=events.reduce<Record<string,number>>((acc,event)=>{acc[event.action]=(acc[event.action]||0)+1;return acc;},{});const rows=Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,6);const max=Math.max(1,...rows.map(row=>row[1]));return rows.length?rows.map(([name,count])=><div className="admin-activity-action-row" key={name}><div><span>{pretty(name)}</span><strong>{count}</strong></div><div className="admin-activity-action-track"><i style={{width:(count/max*100)+"%"}}/></div></div>):<p className="admin-activity-no-data">No recorded actions available for this administrator yet.</p>;})()}
+      </section>
+    </div>}
     <div className="admin-audit-filters">{adminId && <div className="admin-audit-admin-filter">Filtered to administrator ID: <strong>{adminId}</strong><button type="button" onClick={() => { setAdminId(""); window.history.replaceState({}, "", window.location.pathname); setPage(0); }}>Clear filter</button></div>}<label className="admin-audit-search"><Search size={16}/><input value={search} onChange={(e) => {setSearch(e.target.value);setPage(0);}} placeholder="Search action, request ID, record or metadata"/></label><label>Action<select value={action} onChange={(e) => {setAction(e.target.value);setPage(0);}}><option value="">All actions</option>{actions.map((a) => <option key={a} value={a}>{pretty(a)}</option>)}</select></label><label>From<input type="date" value={from} onChange={(e) => {setFrom(e.target.value);setPage(0);}}/></label><label>To<input type="date" value={to} onChange={(e) => {setTo(e.target.value);setPage(0);}}/></label></div>
     {error && <div className="admin-audit-error">{error}</div>}
     <div className="admin-audit-table-wrap"><table className="admin-audit-table"><thead><tr><th>Time</th><th>Administrator</th><th>Action</th><th>Target</th><th>Department</th><th>Details</th></tr></thead><tbody>
