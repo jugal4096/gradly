@@ -4,6 +4,7 @@ import { ArrowLeft, Check, Moon, Sun, ShieldCheck, UserRound, Bell, Palette, Typ
 import "./AdminDashboard.css";
 
 type Theme = "light" | "dark";
+type PaletteChoice = "green" | "blue" | "yellow";
 type FontChoice = "system" | "modern" | "serif";
 const getSetting = (key: string, fallback: string) => {
   try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
@@ -12,6 +13,10 @@ const getSetting = (key: string, fallback: string) => {
 export default function AdminSettings() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<Theme>(() => getSetting("gradly_admin_theme", "light") === "dark" ? "dark" : "light");
+  const [palette, setPalette] = useState<PaletteChoice>(() => {
+    const value = getSetting("gradly_admin_palette", "green");
+    return (["green", "blue", "yellow"].includes(value) ? value : "green") as PaletteChoice;
+  });
   const [font, setFont] = useState<FontChoice>(() => (["system","modern","serif"].includes(getSetting("gradly_admin_font","system")) ? getSetting("gradly_admin_font","system") : "system") as FontChoice);
   const [fontSize, setFontSize] = useState(() => getSetting("gradly_admin_font_size","normal"));
   const [compact, setCompact] = useState(() => getSetting("gradly_admin_compact","false") === "true");
@@ -20,6 +25,8 @@ export default function AdminSettings() {
 
   useEffect(() => {
     document.documentElement.dataset.adminTheme = theme;
+    document.documentElement.dataset.adminPalette = palette;
+    localStorage.setItem("gradly_admin_palette", palette);
     document.documentElement.dataset.adminFont = font;
     document.documentElement.dataset.adminFontSize = fontSize;
     document.documentElement.dataset.adminCompact = String(compact);
@@ -32,7 +39,7 @@ export default function AdminSettings() {
     setSaved(true);
     const timer = window.setTimeout(() => setSaved(false), 1500);
     return () => window.clearTimeout(timer);
-  }, [theme,font,fontSize,compact,reducedMotion]);
+  }, [theme,palette,font,fontSize,compact,reducedMotion]);
 
   const signOut = () => {
     if (!window.confirm("Sign out of your Gradly Admin account?")) return;
@@ -40,7 +47,7 @@ export default function AdminSettings() {
     navigate("/admin/login", { replace: true });
   };
   const reset = () => {
-    setTheme("light"); setFont("system"); setFontSize("normal"); setCompact(false); setReducedMotion(false);
+    setTheme("light"); setPalette("green"); setFont("system"); setFontSize("normal"); setCompact(false); setReducedMotion(false);
   };
 
   return <main className="admin-dashboard" data-theme={theme}>
@@ -64,10 +71,18 @@ export default function AdminSettings() {
       <div className="ad-content ad-settings-content">
         <section className="ad-page-heading"><div><span className="ad-section-kicker">PERSONALIZE YOUR WORKSPACE</span><h1>Settings</h1><p>Make Gradly comfortable to use. Your preferences are saved on this device.</p></div><button type="button" className="ad-secondary-button" onClick={reset}><RotateCcw size={14}/> Reset defaults</button></section>
         <section className="ad-panel">
-          <div className="ad-panel-heading"><div><span className="ad-section-kicker">APPEARANCE</span><h2><Palette size={19}/> Colour theme</h2><p>Choose the appearance that works best for you.</p></div></div>
+          <div className="ad-panel-heading"><div><span className="ad-section-kicker">APPEARANCE</span><h2><Palette size={19}/> Display mode</h2><p>Choose light or dark mode independently of your workspace colour.</p></div></div>
           <div className="ad-theme-options">
             <button type="button" className={"ad-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>Light mode</strong><span>Bright and clean</span>{theme==="light"&&<Check size={17}/>}</button>
             <button type="button" className={"ad-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark mode</strong><span>Gentler in low light</span>{theme==="dark"&&<Check size={17}/>}</button>
+          </div>
+        </section>
+        <section className="ad-panel">
+          <div className="ad-panel-heading"><div><span className="ad-section-kicker">WORKSPACE IDENTITY</span><h2><Palette size={19}/> Accent colour</h2><p>Choose the colour identity for your Admin workspace. This preference is saved on this device.</p></div></div>
+          <div className="ad-palette-options" role="group" aria-label="Admin workspace accent colour">
+            <button type="button" className={"ad-palette-option palette-green"+(palette==="green"?" selected":"")} aria-pressed={palette==="green"} onClick={()=>setPalette("green")}><span className="ad-palette-swatch" aria-hidden="true"/><strong>Academic green</strong><small>Calm and familiar</small>{palette==="green"&&<Check size={17}/>}</button>
+            <button type="button" className={"ad-palette-option palette-blue"+(palette==="blue"?" selected":"")} aria-pressed={palette==="blue"} onClick={()=>setPalette("blue")}><span className="ad-palette-swatch" aria-hidden="true"/><strong>Professional blue</strong><small>Clear and confident</small>{palette==="blue"&&<Check size={17}/>}</button>
+            <button type="button" className={"ad-palette-option palette-yellow"+(palette==="yellow"?" selected":"")} aria-pressed={palette==="yellow"} onClick={()=>setPalette("yellow")}><span className="ad-palette-swatch" aria-hidden="true"/><strong>Warm yellow</strong><small>Bright and focused</small>{palette==="yellow"&&<Check size={17}/>}</button>
           </div>
         </section>
         <section className="ad-panel">
