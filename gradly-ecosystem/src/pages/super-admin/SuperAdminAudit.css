@@ -23,3 +23,4 @@
 .admin-activity-no-data{color:#858da1;font-size:12px;padding:12px 0}
 @media(max-width:850px){.admin-activity-analytics{grid-template-columns:1fr}}
 @media(max-width:560px){.admin-activity-chart-card,.admin-activity-breakdown{padding:14px}.admin-activity-bars{gap:5px}}
+.admin-audit-filters input[type="date"]{color-scheme:light;background:#fff;color:#26314b;accent-color:#6d5bd0;font-family:inherit;font-size:12px}.admin-audit-filters input[type="date"]::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer;filter:invert(30%) sepia(16%) saturate(1500%) hue-rotate(211deg)}.admin-audit-filters input[type="date"]:focus{outline:3px solid #e8e2ff;border-color:#8c7add}
