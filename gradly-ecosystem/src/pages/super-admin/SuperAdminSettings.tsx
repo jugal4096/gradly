@@ -9,6 +9,7 @@ const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/ap
   .replace(/\/api$/i, "") + "/api";
 type CheckState={state:"checking"|"ok"|"error";detail:string};
 type Theme="light"|"dark";
+type PaletteChoice="purple"|"green";
 type FontChoice="system"|"modern"|"serif";
 const read=(key:string,fallback:string)=>{try{return localStorage.getItem(key)||fallback;}catch{return fallback;}};
 
@@ -16,6 +17,7 @@ export default function SuperAdminSettings(){
  const navigate=useNavigate();
  const [checks,setChecks]=useState<{session:CheckState;database:CheckState}>({session:{state:"checking",detail:"Not checked yet"},database:{state:"checking",detail:"Not checked yet"}});
  const [theme,setTheme]=useState<Theme>(()=>read("gradly_sa_theme","light")==="dark"?"dark":"light");
+ const [palette,setPalette]=useState<PaletteChoice>(()=>read("gradly_sa_palette","purple")==="green"?"green":"purple");
  const [font,setFont]=useState<FontChoice>(()=>{const v=read("gradly_sa_font","system");return (["system","modern","serif"].includes(v)?v:"system") as FontChoice;});
  const [fontSize,setFontSize]=useState(()=>read("gradly_sa_font_size","normal"));
  const [compact,setCompact]=useState(()=>read("gradly_sa_compact_tables","false")==="true");
@@ -35,14 +37,15 @@ export default function SuperAdminSettings(){
  useEffect(()=>{void runChecks();},[runChecks]);
  useEffect(()=>{
   const root=document.documentElement;
-  root.dataset.saTheme=theme;root.dataset.saFont=font;root.dataset.saFontSize=fontSize;
+  root.dataset.saTheme=theme;root.dataset.saPalette=palette;root.dataset.saFont=font;
+  localStorage.setItem("gradly_sa_palette",palette);root.dataset.saFontSize=fontSize;
   root.classList.toggle("sa-compact-tables",compact);root.classList.toggle("sa-reduced-motion",reducedMotion);
   localStorage.setItem("gradly_sa_theme",theme);localStorage.setItem("gradly_sa_font",font);
   localStorage.setItem("gradly_sa_font_size",fontSize);localStorage.setItem("gradly_sa_compact_tables",String(compact));
   localStorage.setItem("gradly_sa_reduced_motion",String(reducedMotion));
   setSaved(true);const timer=window.setTimeout(()=>setSaved(false),1400);return()=>window.clearTimeout(timer);
- },[theme,font,fontSize,compact,reducedMotion]);
- function reset(){setTheme("light");setFont("system");setFontSize("normal");setCompact(false);setReducedMotion(false);}
+ },[theme,palette,font,fontSize,compact,reducedMotion]);
+ function reset(){setTheme("light");setPalette("purple");setFont("system");setFontSize("normal");setCompact(false);setReducedMotion(false);}
  function logout(){localStorage.removeItem("gradly_super_admin_token");navigate("/super-admin/login",{replace:true});}
  const StatusIcon=({state}:{state:CheckState["state"]})=>state==="ok"?<CheckCircle2 size={18}/>:state==="error"?<AlertCircle size={18}/>:<RefreshCw size={18} className="sa-settings-spin"/>;
  return <main className="sa-settings" data-theme={theme}>
@@ -51,6 +54,13 @@ export default function SuperAdminSettings(){
    <div className="sa-settings-theme-options">
     <button type="button" className={"sa-settings-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>White / Light mode</strong><span>Clean bright workspace</span>{theme==="light"&&<Check size={17}/>}</button>
     <button type="button" className={"sa-settings-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark mode</strong><span>Comfortable in low light</span>{theme==="dark"&&<Check size={17}/>}</button>
+   </div>
+   <div className="sa-settings-palette-block">
+    <div className="sa-settings-palette-heading"><strong>Workspace accent colour</strong><span>Choose the identity colour used across Super Admin navigation and supported controls.</span></div>
+    <div className="sa-settings-palette-options" role="group" aria-label="Super Admin workspace accent colour">
+     <button type="button" className={"sa-settings-palette-option palette-purple"+(palette==="purple"?" selected":"")} aria-pressed={palette==="purple"} onClick={()=>setPalette("purple")}><span className="sa-settings-palette-swatch" aria-hidden="true"/><strong>Governance purple</strong><small>Platform identity</small>{palette==="purple"&&<Check size={17}/>}</button>
+     <button type="button" className={"sa-settings-palette-option palette-green"+(palette==="green"?" selected":"")} aria-pressed={palette==="green"} onClick={()=>setPalette("green")}><span className="sa-settings-palette-swatch" aria-hidden="true"/><strong>Enterprise green</strong><small>Alternative identity</small>{palette==="green"&&<Check size={17}/>}</button>
+    </div>
    </div>
    <div className="sa-settings-preference-grid">
     <label className="sa-settings-control"><span><Type size={15}/> Font family</span><select value={font} onChange={e=>setFont(e.target.value as FontChoice)}><option value="system">System default</option><option value="modern">Modern (DM Sans)</option><option value="serif">Classic (Georgia)</option></select><small>Applies to pages that use workspace typography.</small></label>
