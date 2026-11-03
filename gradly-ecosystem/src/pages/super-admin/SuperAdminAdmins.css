@@ -24,3 +24,22 @@
 .sa-admin-delete-button:disabled{opacity:.5;cursor:not-allowed}
 .sa-admins-error svg{vertical-align:middle;margin-right:6px}
 @media(max-width:640px){.sa-admin-permission-grid{grid-template-columns:1fr}.sa-admin-action-panel{padding:15px}.sa-admin-action-panel-heading{flex-direction:column}}
+
+.sa-admin-permission-help{margin:0 0 13px;color:#798198;font-size:12px;line-height:1.6}
+.sa-admin-permission-option{display:flex;align-items:flex-start;gap:11px;padding:13px;border:1px solid #e8eaf2;border-radius:12px;background:#fff;cursor:pointer;transition:border-color .18s,background .18s}
+.sa-admin-permission-option:has(input:checked){border-color:#c9bdf8;background:#faf8ff}
+.sa-admin-permission-option input{width:16px;height:16px;margin-top:2px;accent-color:#6d5bd0;flex-shrink:0}
+.sa-admin-permission-option span{display:grid;gap:5px}
+.sa-admin-permission-option strong{font-size:12px;color:#35405c}
+.sa-admin-permission-option small{font-size:11px;color:#81899e;line-height:1.45}
+.sa-admin-permission-option code{font-size:9px;color:#6555b8}
+.sa-admin-permission-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;color:#737d95;font-size:11px}
+.sa-admin-profile-permissions{margin:18px 0;padding:15px;border:1px solid #e7eaf2;border-radius:13px;background:#fff}
+.sa-admin-profile-permissions header{display:flex;align-items:center;gap:9px;color:#5b4baa}
+.sa-admin-profile-permissions header div{display:grid;gap:3px}
+.sa-admin-profile-permissions header strong{font-size:12px;color:#35405c}
+.sa-admin-profile-permissions header small{font-size:10px;color:#81899e}
+.sa-admin-profile-permissions>div{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.sa-admin-profile-permissions>div span{padding:6px 9px;border-radius:20px;background:#f2efff;color:#5b4baa;font-size:10px;font-weight:700}
+.sa-admin-profile-permissions em{font-size:11px;color:#81899e}
+@media(max-width:640px){.sa-admin-permission-footer{align-items:flex-start;flex-direction:column}}
