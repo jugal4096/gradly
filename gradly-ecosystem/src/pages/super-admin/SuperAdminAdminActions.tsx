@@ -34,7 +34,9 @@ export default function SuperAdminAdminActions() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+  const [permissionsExpanded, setPermissionsExpanded] = useState(true);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [permissionsBusy, setPermissionsBusy] = useState(false);
 
   const request = async (path: string, init: RequestInit = {}) => {
     const token = localStorage.getItem("gradly_super_admin_token");
@@ -56,6 +58,8 @@ export default function SuperAdminAdminActions() {
       const row = data.administrator || null;
       setAdmin(row);
       setExpiry(row?.adminship_expires_at ? new Date(row.adminship_expires_at).toISOString().slice(0, 10) : "");
+      const permissionData = await request("/super-admin/administrators/" + encodeURIComponent(adminId) + "/permissions");
+      setPermissions(Array.isArray(permissionData.permissions) ? permissionData.permissions.filter((item: { granted?: boolean }) => item.granted !== false).map((item: { permission_code?: string }) => item.permission_code).filter(Boolean) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load administrator.");
     } finally {
@@ -90,7 +94,7 @@ export default function SuperAdminAdminActions() {
       await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/adminship", {
         method: "PATCH", body: JSON.stringify({ expiresAt: new Date(expiry + "T23:59:59").toISOString() }),
       });
-      setMessage("Adminship expiry date extended successfully.");
+      setMessage("Adminship expiry date updated successfully.");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update adminship expiry.");
@@ -132,7 +136,14 @@ export default function SuperAdminAdminActions() {
 
       <div className="sa-admin-action-panel">
         <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ACCESS GOVERNANCE</span><h2>Manage permissions</h2><p>Review the permission set available to administrator accounts.</p></div><button className="sa-admins-view" type="button" onClick={() => setPermissionsExpanded(value => !value)}><ShieldCheck size={15}/>{permissionsExpanded ? "Hide permissions" : "View permissions"}</button></div>
-        {permissionsExpanded && <><div className="sa-admins-error"><LockKeyhole size={15}/> Permission changes are not yet supported by the current administrator API. These are the permission codes configured in Gradly; no changes will be submitted or saved from this panel.</div><div className="sa-admin-permission-grid">{PERMISSIONS.map(permission => <article key={permission.code}><strong>{permission.label}</strong><small>{permission.description}</small><code>{permission.code}</code></article>)}</div></>}
+        {permissionsExpanded && <>
+          <p className="sa-admin-permission-help">Choose the exact capabilities this administrator can access. Changes are saved to the permission records and written to the audit log.</p>
+          <div className="sa-admin-permission-grid">{PERMISSIONS.map(permission => <label className="sa-admin-permission-option" key={permission.code}>
+            <input type="checkbox" checked={permissions.includes(permission.code)} onChange={event => setPermissions(current => event.target.checked ? [...current, permission.code] : current.filter(code => code !== permission.code))}/>
+            <span><strong>{permission.label}</strong><small>{permission.description}</small><code>{permission.code}</code></span>
+          </label>)}</div>
+          <div className="sa-admin-permission-footer"><span>{permissions.length} permission(s) enabled</span><button className="sa-admins-view" type="button" disabled={busy || permissionsBusy} onClick={async () => { setPermissionsBusy(true); setMessage(""); setError(""); try { const result = await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/permissions", { method: "PATCH", body: JSON.stringify({ permissions }) }); setPermissions(Array.isArray(result.permissions) ? result.permissions.map((item: { permission_code?: string }) => item.permission_code).filter(Boolean) : permissions); setMessage("Administrator permissions saved successfully."); } catch (err) { setError(err instanceof Error ? err.message : "Unable to save permissions."); } finally { setPermissionsBusy(false); } }}><ShieldCheck size={15}/>{permissionsBusy ? "Saving…" : "Save permissions"}</button></div>
+        </>}
       </div>
 
       <div className="sa-admin-action-panel">
@@ -145,8 +156,8 @@ export default function SuperAdminAdminActions() {
       </div>
 
       <div className="sa-admin-action-panel">
-        <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ADMINSHIP</span><h2>Extend expiry date</h2><p>Choose a new date until which this administrator may access the admin workspace.</p></div></div>
-        <div className="sa-admins-expiry"><input aria-label="New adminship expiry date" type="date" min={new Date().toLocaleDateString("en-CA")} value={expiry} onChange={event => setExpiry(event.target.value)}/><button disabled={busy || !expiry} onClick={() => void saveExpiry()}><CalendarClock size={15}/> Extend expiry</button></div>
+        <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ADMINSHIP</span><h2>Change adminship expiry</h2><p>Move the expiry later to extend access, or earlier to bring the end date forward. The selected date must remain in the future.</p></div></div>
+        <div className="sa-admins-expiry"><input aria-label="New adminship expiry date" type="date" min={new Date().toLocaleDateString("en-CA")} value={expiry} onChange={event => setExpiry(event.target.value)}/><button disabled={busy || !expiry} onClick={() => void saveExpiry()}><CalendarClock size={15}/> Save expiry date</button></div>
       </div>
 
       <div className="sa-admin-action-panel sa-admin-danger-panel">
