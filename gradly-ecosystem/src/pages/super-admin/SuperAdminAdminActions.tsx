@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarClock, UserCheck, UserX, Trash2, ShieldCheck, LockKeyhole, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CalendarClock, UserCheck, UserX, Trash2, ShieldCheck, LockKeyhole } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./SuperAdminAdmins.css";
 
@@ -142,7 +142,7 @@ export default function SuperAdminAdminActions() {
             <input type="checkbox" checked={permissions.includes(permission.code)} onChange={event => setPermissions(current => event.target.checked ? [...current, permission.code] : current.filter(code => code !== permission.code))}/>
             <span><strong>{permission.label}</strong><small>{permission.description}</small><code>{permission.code}</code></span>
           </label>)}</div>
-          <div className="sa-admin-permission-footer"><span>{permissions.length} permission(s) enabled</span><button className="sa-admins-view" type="button" disabled={busy || permissionsBusy} onClick={async () => { setPermissionsBusy(true); setMessage(""); setError(""); try { const result = await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/permissions", { method: "PATCH", body: JSON.stringify({ permissions }) }); setPermissions(Array.isArray(result.permissions) ? result.permissions.map((item: { permission_code?: string }) => item.permission_code).filter(Boolean) : permissions); setMessage("Administrator permissions saved successfully."); } catch (err) { setError(err instanceof Error ? err.message : "Unable to save permissions."); } finally { setPermissionsBusy(false); } }}><ShieldCheck size={15}/>{permissionsBusy ? "Saving…" : "Save permissions"}</button></div>
+          <div className="sa-admin-permission-footer"><span>{permissions.length} permission(s) enabled</span><button className="sa-admins-view" type="button" disabled={busy || permissionsBusy} onClick={async () => { setPermissionsBusy(true); setMessage(""); setError(""); try { const result = await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/permissions", { method: "PATCH", body: JSON.stringify({ permissions }) }); setPermissions(Array.isArray(result.permissions) ? result.permissions.map((item: { permission_code?: string }) => item.permission_code).filter((code): code is string => Boolean(code)) : permissions); setMessage("Administrator permissions saved successfully."); } catch (err) { setError(err instanceof Error ? err.message : "Unable to save permissions."); } finally { setPermissionsBusy(false); } }}><ShieldCheck size={15}/>{permissionsBusy ? "Saving…" : "Save permissions"}</button></div>
         </>}
       </div>
 
