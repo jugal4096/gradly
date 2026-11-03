@@ -48,9 +48,12 @@ export default function SuperAdminAudit() {
       setEvents(Array.isArray(data.events) ? data.events : []); setTotal(Number(data.total) || 0);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not load audit events."); }
     finally { setLoading(false); }
-  }, [search, action, from, to, page, adminId]);
+  }, [search, action, from, to, page, adminId, pageSize]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
   useEffect(() => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
