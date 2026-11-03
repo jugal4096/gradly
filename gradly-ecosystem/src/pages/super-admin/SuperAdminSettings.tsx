@@ -55,6 +55,7 @@ export default function SuperAdminSettings(){
   localStorage.setItem("gradly_sa_palette",palette);root.dataset.saFontSize=fontSize;
   root.classList.toggle("sa-compact-tables",compact);root.classList.toggle("sa-reduced-motion",reducedMotion);
   localStorage.setItem("gradly_sa_theme",theme);localStorage.setItem("gradly_sa_font",font);
+  window.dispatchEvent(new Event("gradly:appearance-updated"));
   localStorage.setItem("gradly_sa_font_size",fontSize);localStorage.setItem("gradly_sa_compact_tables",String(compact));
   localStorage.setItem("gradly_sa_reduced_motion",String(reducedMotion));
   setSaved(true);const timer=window.setTimeout(()=>setSaved(false),1400);return()=>{window.clearTimeout(timer);if(theme==="system")window.matchMedia("(prefers-color-scheme: dark)").removeEventListener("change",applyTheme);};
