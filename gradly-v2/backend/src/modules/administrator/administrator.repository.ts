@@ -298,6 +298,17 @@ export async function updateAdministratorStatus(
   return result.rows[0] ?? null;
 }
 
+export async function getAdministratorPermissionsForAdmin(adminId: string) {
+  const result = await pool.query(
+    `SELECT permission_code, granted
+     FROM public.admin_permissions
+     WHERE admin_id = $1 AND granted = TRUE
+     ORDER BY permission_code`,
+    [adminId]
+  );
+  return result.rows;
+}
+
 /* =========================================================
    ADMIN PERMISSIONS
    ========================================================= */
