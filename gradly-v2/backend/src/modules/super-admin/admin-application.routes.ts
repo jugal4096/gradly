@@ -11,6 +11,7 @@ import {
   reviewApplication,
   saveApplicationConfigurationController,
   updateAcceptedApplicationExpiryController,
+  deleteApplicationRecordController,
 } from "./admin-application.controller";
 
 const router = Router();
@@ -31,6 +32,8 @@ const reviewHandler =
   reviewApplication as RequestHandler;
 const expiryHandler =
   updateAcceptedApplicationExpiryController as RequestHandler;
+const deleteApplicationHandler =
+  deleteApplicationRecordController as RequestHandler;
 
 /**
  * Validate all imported handlers during startup.
@@ -42,6 +45,7 @@ const handlers: Record<string, unknown> = {
   saveApplicationConfigurationController: configurationHandler,
   reviewApplication: reviewHandler,
   updateAcceptedApplicationExpiryController: expiryHandler,
+  deleteApplicationRecordController: deleteApplicationHandler,
 };
 
 for (const [name, handler] of Object.entries(handlers)) {
@@ -98,6 +102,15 @@ router.patch(
   "/:applicationId/review",
   authHandler,
   reviewHandler
+);
+
+/**
+ * DELETE /api/super-admin/applications/:applicationId
+ */
+router.delete(
+  "/:applicationId",
+  authHandler,
+  deleteApplicationHandler
 );
 
 export default router;
