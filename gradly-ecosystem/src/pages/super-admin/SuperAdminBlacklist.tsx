@@ -90,9 +90,9 @@ export default function SuperAdminBlacklist() {
     <div style={{ display: "grid", gap: 22 }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <div>
-          <div className="system-kicker">ACCOUNT RECOVERY</div>
-          <h1 style={{ margin: "8px 0" }}>Blacklist</h1>
-          <p style={{ margin: 0, opacity: 0.72 }}>Review disabled User and Admin accounts. Reactivating an account removes it from this list.</p>
+          <div className="system-kicker">ACCOUNT ACCESS / RECOVERY</div>
+          <h2 style={{ margin: "8px 0" }}>Disabled accounts</h2>
+          <p style={{ margin: 0, opacity: 0.72 }}>Review disabled User and Admin accounts. Reactivating an account restores access and removes it from this list.</p>
         </div>
         <button type="button" className="hardware-button" onClick={() => void load()} disabled={loading}>
           <RefreshCw size={16} /> {loading ? "Refreshing…" : "Refresh"}
