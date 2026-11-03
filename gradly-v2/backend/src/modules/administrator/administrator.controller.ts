@@ -8,6 +8,8 @@ import {
   extendAdministratorShip,
   changeAdministratorGraduationDate,
   deleteAdministrator,
+  changeAdministratorPermissions,
+  getAdministratorPermissions,
 } from "./administrator.service";
 
 import {
