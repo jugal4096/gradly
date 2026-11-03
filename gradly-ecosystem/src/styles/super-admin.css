@@ -1505,3 +1505,75 @@ html[data-sa-theme="dark"] .sidebar-section-menu { box-shadow: 0 16px 40px rgba(
   .super-admin-sidebar .sidebar-link-wrap > .sidebar-link { justify-content: flex-start; padding: 0 32px 0 10px; }
   .super-admin-sidebar .sidebar-link-more { right: 3px; }
 }
+
+
+/* Green palette: remove legacy purple accents from every module in light and dark modes. */
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-dashboard {
+  --sd-purple: var(--sa-accent);
+  background:
+    radial-gradient(ellipse at 88% 2%, color-mix(in srgb, var(--sa-accent) 10%, transparent), transparent 30%),
+    var(--sa-canvas) !important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-eyebrow,.sd-hero-label,.sd-hero-summary strong,.sd-metric-icon,
+  .sd-tone-violet .sd-metric-icon,.sd-tone-blue .sd-metric-icon,
+  .sd-tone-amber .sd-metric-icon,.sd-queue-count.has-pending,
+  .sd-panel-badge,.sd-panel-note,.sd-action-icon,.sd-governance-action,
+  .sd-governance-icon.governance-violet,.sd-governance-icon.governance-blue,
+  .sd-side-link.is-active,.sd-side-link:hover,.sd-side-link.is-active>svg,
+  .sd-side-link:hover>svg,.sd-side-count,.sd-brand-mark
+) { color: var(--sa-accent) !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-hero,.sd-hero-symbol,.sd-tone-violet .sd-metric-icon,
+  .sd-tone-blue .sd-metric-icon,.sd-tone-amber .sd-metric-icon,
+  .sd-action-icon,.sd-governance-icon.governance-violet,
+  .sd-governance-icon.governance-blue,.sd-side-count
+) {
+  background: var(--sa-accent-soft) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-metric-card::before,.sd-brand-mark
+) { background: linear-gradient(90deg, var(--sa-accent), #58b88b) !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-filter-tabs button.is-active,.sd-side-link.is-active
+) {
+  background: var(--sa-accent-soft) !important;
+  border-color: var(--sa-accent-border) !important;
+  color: var(--sa-accent-strong) !important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-users-page :is(
+  .super-users-kicker,.super-users-tabs button.is-active,.super-users-cgpa,
+  .super-users-view:hover,.super-users-secure-badge
+) { color: var(--sa-accent) !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-users-page :is(
+  .super-users-branch-card:hover,.super-users-branch-card.is-selected,
+  .super-users-stat-card:hover,.super-users-stat-card.is-selected,
+  .super-users-tabs button.is-active span,.super-users-avatar,
+  .super-users-stat-icon:not(.guest)
+) {
+  background: var(--sa-accent-soft) !important;
+  border-color: var(--sa-accent-border) !important;
+  color: var(--sa-accent-strong) !important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .super-users-page .super-users-refresh {
+  background: var(--sa-accent) !important;
+  border-color: var(--sa-accent) !important;
+  color: #fff !important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .sa-admins :is(
+  .sa-admins-kicker,.sa-admins-view,.sa-admins-audit,
+  .sa-admins-menu button svg,.sa-admin-current-permissions>div span,
+  .sa-admin-current-permissions li,.sa-admin-profile-permissions header
+) { color: var(--sa-accent) !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page .sa-admins :is(
+  .sa-admins-avatar,.sa-admins-more:hover,.sa-admins-more[aria-expanded="true"],
+  .sa-admin-current-permissions,.sa-admin-current-permissions li,
+  .sa-admin-profile-permissions>div span,.sa-admin-permission-option:has(input:checked)
+) {
+  background: var(--sa-accent-soft) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  .sa-settings-theme-option.selected,.sa-settings-palette-option.selected
+) { border-color: var(--sa-accent) !important; }
