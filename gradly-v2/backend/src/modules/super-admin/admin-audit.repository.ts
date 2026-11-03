@@ -44,7 +44,7 @@ export async function findAdminAuditEvents(filters: AdminAuditFilters = {}) {
             a.full_name AS administrator_name, a.admin_code,
             a.branch_id, b.name AS branch_name, i.name AS institution_name
      FROM public.audit_logs al
-     LEFT JOIN public.admins a ON a.id::text = al.actor_id::text
+     LEFT JOIN public.admins a ON a.id::text = CASE WHEN al.entity_table = 'admins' THEN al.entity_id::text ELSE al.actor_id::text END
      LEFT JOIN public.branches b ON b.id = a.branch_id
      LEFT JOIN public.institutions i ON i.id = a.institution_id
      WHERE ${where.join(" AND ")}
