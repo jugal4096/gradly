@@ -127,6 +127,7 @@ export default function SuperAdminLayout() {
     const compact = readPreference("gradly_sa_compact_tables", "false") === "true";
     const reducedMotion = readPreference("gradly_sa_reduced_motion", "false") === "true";
     root.dataset.saTheme = theme === "dark" ? "dark" : "light";
+    root.style.colorScheme = theme === "dark" ? "dark" : "light";
     root.dataset.saPalette = palette === "green" ? "green" : "purple";
     root.dataset.saFont = font;
     root.dataset.saFontSize = fontSize;
