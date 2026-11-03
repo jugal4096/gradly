@@ -9,6 +9,7 @@ type Admin = {
 };
 type Permission = { code: string; label: string; description: string };
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "") + "/api";
+const localDateInputValue = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`; };
 const PERMISSIONS: Permission[] = [
   { code: "FEEDBACK_VIEW", label: "View feedback", description: "Review student and platform feedback." },
   { code: "FEEDBACK_MANAGE", label: "Manage feedback", description: "Process and update feedback records." },
@@ -140,7 +141,8 @@ export default function SuperAdminAdminActions() {
       <div className="sa-admin-action-panel">
         <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ACCESS GOVERNANCE</span><h2>Manage permissions</h2><p>Review the permission set available to administrator accounts.</p></div><button className="sa-admins-view" type="button" onClick={() => setPermissionsExpanded(value => !value)}><ShieldCheck size={15}/>{permissionsExpanded ? "Hide permissions" : "View permissions"}</button></div>
         {permissionsExpanded && <>
-          <p className="sa-admin-permission-help">Choose the exact capabilities this administrator can access. Changes are saved to the permission records and written to the audit log.</p>
+          <p className="sa-admin-permission-help">The checked items below are the permissions currently granted to this administrator. Select or clear capabilities and save to update access.</p>
+          <section className="sa-admin-current-permissions" aria-label="Currently granted permissions"><div><strong>Currently granted permissions</strong><span>{permissions.length} active</span></div><ul>{permissions.length ? permissions.map(code => <li key={code}><ShieldCheck size={13}/>{PERMISSIONS.find(item => item.code === code)?.label || code.replace(/_/g," ").toLowerCase().replace(/\b\w/g,letter=>letter.toUpperCase())}</li>) : <li className="empty">No permissions are currently granted.</li>}</ul></section>
           <div className="sa-admin-permission-grid">{PERMISSIONS.map(permission => <label className="sa-admin-permission-option" key={permission.code}>
             <input type="checkbox" checked={permissions.includes(permission.code)} onChange={event => setPermissions(current => event.target.checked ? [...current, permission.code] : current.filter(code => code !== permission.code))}/>
             <span><strong>{permission.label}</strong><small>{permission.description}</small><code>{permission.code}</code></span>
@@ -160,7 +162,7 @@ export default function SuperAdminAdminActions() {
 
       <div className="sa-admin-action-panel">
         <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ADMINSHIP</span><h2>Change adminship expiry</h2><p>Move the expiry later to extend access, or earlier to bring the end date forward. The selected date must remain in the future.</p></div></div>
-        <div className="sa-admins-expiry"><input aria-label="New adminship expiry date" type="date" min={new Date().toLocaleDateString("en-CA")} value={expiry} onChange={event => setExpiry(event.target.value)}/><button disabled={busy || !expiry} onClick={() => void saveExpiry()}><CalendarClock size={15}/> Save expiry date</button></div>
+        <div className="sa-admins-expiry"><input aria-label="New adminship expiry date" type="date" min={localDateInputValue()} value={expiry} onChange={event => setExpiry(event.target.value)}/><button disabled={busy || !expiry} onClick={() => void saveExpiry()}><CalendarClock size={15}/> Save expiry date</button></div>
       </div>
 
       <div className="sa-admin-action-panel sa-admin-danger-panel">
