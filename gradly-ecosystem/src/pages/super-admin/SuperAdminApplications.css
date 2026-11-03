@@ -1078,3 +1078,29 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+
+/* Application record deletion */
+.application-details-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.application-delete-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .application-details-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .application-delete-button {
+    width: 100%;
+  }
+}
