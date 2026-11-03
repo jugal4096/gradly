@@ -14,7 +14,8 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
-  Users
+  Users,
+  MoreVertical
 } from "lucide-react";
 
 import { useCallback, useEffect, useState } from "react";
@@ -102,6 +103,7 @@ export default function SuperAdminLayout() {
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sectionMenuPath, setSectionMenuPath] = useState<string | null>(null);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -146,7 +148,7 @@ export default function SuperAdminLayout() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMobileNavOpen(false);
+      if (event.key === "Escape") { setMobileNavOpen(false); setSectionMenuPath(null); }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -260,43 +262,32 @@ export default function SuperAdminLayout() {
                   item.icon;
 
                 return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.end}
-                    onClick={() => setMobileNavOpen(false)}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-                    {item.path === "/super-admin/requests" && unattendedCount > 0 && (
-                      <span className="sidebar-request-badge" title={unattendedCount + " unattended requests" + (newCount ? " · " + newCount + " unacknowledged" : "")}>
-                        {unattendedCount > 99 ? "99+" : unattendedCount}
-                      </span>
+                  <div className="sidebar-link-wrap" key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      end={item.end}
+                      onClick={() => { setMobileNavOpen(false); setSectionMenuPath(null); }}
+                      className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}
+                    >
+                      <Icon size={17} strokeWidth={1.8} />
+                      <span>{item.label}</span>
+                      {item.path === "/super-admin/requests" && unattendedCount > 0 && (
+                        <span className="sidebar-request-badge" title={unattendedCount + " unattended requests" + (newCount ? " · " + newCount + " unacknowledged" : "")}>
+                          {unattendedCount > 99 ? "99+" : unattendedCount}
+                        </span>
+                      )}
+                      <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
+                    </NavLink>
+                    <button type="button" className="sidebar-link-more" aria-label={item.label + " workspace options"} aria-expanded={sectionMenuPath === item.path} onClick={(event) => { event.stopPropagation(); setSectionMenuPath(current => current === item.path ? null : item.path); }}>
+                      <MoreVertical size={16} />
+                    </button>
+                    {sectionMenuPath === item.path && (
+                      <div className="sidebar-section-menu" role="menu">
+                        <a href={item.path} target="_blank" rel="noreferrer" role="menuitem" onClick={() => setSectionMenuPath(null)}>Open workspace in new tab</a>
+                        <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(window.location.origin + item.path); setSectionMenuPath(null); }}>Copy workspace link</button>
+                      </div>
                     )}
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
+                  </div>
                 );
 
               }
@@ -323,37 +314,22 @@ export default function SuperAdminLayout() {
                   item.icon;
 
                 return (
-
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileNavOpen(false)}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
+                  <div className="sidebar-link-wrap" key={item.path}>
+                    <NavLink to={item.path} onClick={() => { setMobileNavOpen(false); setSectionMenuPath(null); }} className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}>
+                      <Icon size={17} strokeWidth={1.8} />
+                      <span>{item.label}</span>
+                      <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
+                    </NavLink>
+                    <button type="button" className="sidebar-link-more" aria-label={item.label + " workspace options"} aria-expanded={sectionMenuPath === item.path} onClick={(event) => { event.stopPropagation(); setSectionMenuPath(current => current === item.path ? null : item.path); }}>
+                      <MoreVertical size={16} />
+                    </button>
+                    {sectionMenuPath === item.path && (
+                      <div className="sidebar-section-menu" role="menu">
+                        <a href={item.path} target="_blank" rel="noreferrer" role="menuitem" onClick={() => setSectionMenuPath(null)}>Open workspace in new tab</a>
+                        <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(window.location.origin + item.path); setSectionMenuPath(null); }}>Copy workspace link</button>
+                      </div>
+                    )}
+                  </div>
                 );
 
               }
