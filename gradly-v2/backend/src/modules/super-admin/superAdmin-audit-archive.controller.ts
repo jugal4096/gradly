@@ -57,3 +57,58 @@ export async function archiveSuperAdminAuditLogs(
     return res.status(500).json({ success: false, message: "Unable to archive audit logs." });
   }
 }
+
+
+export async function listArchivedSuperAdminAuditLogs(
+  _req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    await ensureArchiveTable();
+    const result = await pool.query(`
+      SELECT audit_log_id AS id, log_snapshot AS "logSnapshot", archived_at AS "archivedAt"
+      FROM public.super_admin_archived_audit_logs
+      ORDER BY archived_at DESC
+      LIMIT 200
+    `);
+    return res.status(200).json({ success: true, logs: result.rows });
+  } catch (error) {
+    console.error("Failed to list archived audit logs:", error);
+    return res.status(500).json({ success: false, message: "Unable to load archived audit logs." });
+  }
+}
+
+export async function restoreSuperAdminAuditLog(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const id = String(req.params.logId ?? "").trim();
+  if (!id) return res.status(400).json({ success: false, message: "A log id is required." });
+  const client = await pool.connect();
+  try {
+    await ensureArchiveTable();
+    await client.query("BEGIN");
+    const restored = await client.query(`
+      INSERT INTO public.audit_logs
+      SELECT (jsonb_populate_record(NULL::public.audit_logs, archived.log_snapshot)).*
+      FROM public.super_admin_archived_audit_logs archived
+      WHERE archived.audit_log_id = $1
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `, [id]);
+    if (restored.rowCount) {
+      await client.query("DELETE FROM public.super_admin_archived_audit_logs WHERE audit_log_id = $1", [id]);
+    }
+    await client.query("COMMIT");
+    if (!restored.rowCount) {
+      return res.status(404).json({ success: false, message: "Archived log was not found or could not be restored." });
+    }
+    return res.status(200).json({ success: true, message: "Audit log restored to Quick Logs." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Failed to restore Super Admin audit log:", error);
+    return res.status(500).json({ success: false, message: "Unable to restore archived audit log." });
+  } finally {
+    client.release();
+  }
+}
