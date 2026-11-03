@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, CalendarClock, UserCheck, UserX, Trash2, ShieldCheck, LockKeyhole } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./SuperAdminAdmins.css";
@@ -50,7 +50,7 @@ export default function SuperAdminAdminActions() {
     return data;
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -65,9 +65,12 @@ export default function SuperAdminAdminActions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminId]);
 
-  useEffect(() => { void load(); }, [adminId]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const changeStatus = async (status: "ACTIVE" | "SUSPENDED" | "DISABLED") => {
     if (!admin) return;
