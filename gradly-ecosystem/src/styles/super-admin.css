@@ -1254,5 +1254,3 @@ html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="backgro
   color: var(--sa-text) !important;
   border-color: var(--sa-border) !important;
 }
-html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="color: rgb("] { color: var(--sa-text) !important; }
-html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="color: #"] { color: var(--sa-text) !important; }
