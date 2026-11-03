@@ -84,31 +84,20 @@ export async function restoreSuperAdminAuditLog(
 ) {
   const id = String(req.params.logId ?? "").trim();
   if (!id) return res.status(400).json({ success: false, message: "A log id is required." });
-  const client = await pool.connect();
   try {
     await ensureArchiveTable();
-    await client.query("BEGIN");
-    const restored = await client.query(`
-      INSERT INTO public.audit_logs
-      SELECT (jsonb_populate_record(NULL::public.audit_logs, archived.log_snapshot)).*
-      FROM public.super_admin_archived_audit_logs archived
-      WHERE archived.audit_log_id = $1
-      ON CONFLICT DO NOTHING
-      RETURNING id
-    `, [id]);
-    if (restored.rowCount) {
-      await client.query("DELETE FROM public.super_admin_archived_audit_logs WHERE audit_log_id = $1", [id]);
-    }
-    await client.query("COMMIT");
+    // The original audit_logs row is never deleted; restoring simply removes
+    // its archive marker so it becomes visible in the active Quick Logs feed.
+    const restored = await pool.query(
+      "DELETE FROM public.super_admin_archived_audit_logs WHERE audit_log_id = $1 RETURNING audit_log_id",
+      [id]
+    );
     if (!restored.rowCount) {
-      return res.status(404).json({ success: false, message: "Archived log was not found or could not be restored." });
+      return res.status(404).json({ success: false, message: "Archived log was not found." });
     }
     return res.status(200).json({ success: true, message: "Audit log restored to Quick Logs." });
   } catch (error) {
-    await client.query("ROLLBACK");
     console.error("Failed to restore Super Admin audit log:", error);
     return res.status(500).json({ success: false, message: "Unable to restore archived audit log." });
-  } finally {
-    client.release();
   }
 }
