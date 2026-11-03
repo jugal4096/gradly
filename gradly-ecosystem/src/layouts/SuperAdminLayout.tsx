@@ -9,7 +9,6 @@ import {
   KeyRound,
   LogOut,
   Menu,
-  X,
   MessageSquare,
   ScrollText,
   Settings,
