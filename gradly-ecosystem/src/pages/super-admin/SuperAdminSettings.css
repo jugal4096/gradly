@@ -12,3 +12,84 @@ html[data-sa-palette="green"] .sa-settings-theme-option.selected{border-color:#1
 html[data-sa-palette="green"] .sa-settings-palette-option.selected{border-color:#16845b}
 html[data-sa-palette="green"][data-sa-theme="dark"] .sa-settings-theme-option.selected{background:#18392d}
 html[data-sa-palette="green"][data-sa-theme="dark"] .sa-settings-info{background:#18392d;border-color:#286b4f;color:#a7e5c7}
+
+
+/* Settings controls use the same workspace tokens as every other module. */
+.sa-settings {
+  color: var(--sa-text, #242238);
+  font-family: inherit !important;
+}
+.sa-settings-section {
+  background: var(--sa-surface, #fff);
+  border-color: var(--sa-border, #e5e1ee);
+  color: var(--sa-text, #242238);
+  box-shadow: var(--sa-shadow, 0 8px 28px rgba(35,24,65,.06));
+}
+.sa-settings-section-title,
+.sa-settings-control>span,
+.sa-settings-kicker { color: var(--sa-accent, #6842c7); }
+.sa-settings-theme-option.selected,
+.sa-settings-palette-option.selected {
+  border-color: var(--sa-accent, #6842c7) !important;
+  background: var(--sa-accent-soft, #eee8ff) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sa-accent) 16%, transparent) !important;
+}
+.sa-settings-control select,
+.sa-settings-refresh,
+.sa-settings-reset {
+  color: var(--sa-text, #242238);
+  border-color: var(--sa-border, #e5e1ee);
+  background: var(--sa-surface-raised, #fff);
+}
+.sa-settings-toggle-row input { accent-color: var(--sa-accent, #6842c7); }
+.sa-settings-info {
+  color: var(--sa-accent, #6842c7);
+  background: var(--sa-accent-soft, #eee8ff);
+  border: 1px solid var(--sa-accent-border, #d8cafb);
+}
+html[data-sa-theme="dark"] .sa-settings-section,
+html[data-sa-theme="dark"] .sa-settings-theme-option,
+html[data-sa-theme="dark"] .sa-settings-palette-option {
+  background: var(--sa-surface-raised, #211f2c) !important;
+  border-color: var(--sa-border, #393446) !important;
+  color: var(--sa-text, #f2eff8) !important;
+}
+html[data-sa-theme="dark"] .sa-settings-theme-option.selected,
+html[data-sa-theme="dark"] .sa-settings-palette-option.selected {
+  background: var(--sa-accent-soft, #302644) !important;
+  border-color: var(--sa-accent, #ad91ff) !important;
+}
+html[data-sa-theme="dark"] .sa-settings-section-title h2,
+html[data-sa-theme="dark"] .sa-settings-theme-option strong,
+html[data-sa-theme="dark"] .sa-settings-toggle-row strong,
+html[data-sa-theme="dark"] .sa-settings-check-copy strong { color: var(--sa-text, #f2eff8) !important; }
+html[data-sa-theme="dark"] .sa-settings-head p,
+html[data-sa-theme="dark"] .sa-settings-section-title p,
+html[data-sa-theme="dark"] .sa-settings-toggle-row span,
+html[data-sa-theme="dark"] .sa-settings-theme-option span,
+html[data-sa-theme="dark"] .sa-settings-check-copy span { color: var(--sa-text-muted, #b6afc5) !important; }
+html[data-sa-theme="dark"] .sa-settings-control select,
+html[data-sa-theme="dark"] .sa-settings-refresh,
+html[data-sa-theme="dark"] .sa-settings-reset {
+  background: var(--sa-surface-muted, #262332) !important;
+  border-color: var(--sa-border, #393446) !important;
+  color: var(--sa-text, #f2eff8) !important;
+}
+html[data-sa-theme="dark"] .sa-settings-info {
+  background: var(--sa-accent-soft, #302644) !important;
+  border-color: var(--sa-accent-border, #594875) !important;
+  color: var(--sa-accent-strong, #c3afff) !important;
+}
+html[data-sa-theme="dark"] .sa-settings-info p { color: var(--sa-text-muted, #b6afc5) !important; }
+html[data-sa-palette="green"] .sa-settings-section-title,
+html[data-sa-palette="green"] .sa-settings-control>span,
+html[data-sa-palette="green"] .sa-settings-kicker { color: var(--sa-accent, #16845b) !important; }
+html[data-sa-palette="green"] .sa-settings-theme-option.selected,
+html[data-sa-palette="green"] .sa-settings-palette-option.selected {
+  border-color: var(--sa-accent, #16845b) !important;
+  background: var(--sa-accent-soft, #e4f5ed) !important;
+}
+html[data-sa-theme="dark"][data-sa-palette="green"] .sa-settings-theme-option.selected,
+html[data-sa-theme="dark"][data-sa-palette="green"] .sa-settings-palette-option.selected {
+  background: var(--sa-accent-soft, #18372b) !important;
+}
