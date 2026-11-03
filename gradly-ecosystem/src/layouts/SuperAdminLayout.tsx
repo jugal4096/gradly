@@ -277,10 +277,7 @@ export default function SuperAdminLayout() {
                       )}
                       <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
                     </NavLink>
->Open workspace in new tab</a>
-                        <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(window.location.origin + item.path); setSectionMenuPath(null); }}>Copy workspace link</button>
-                      </div>
-                    )}
+
                   </div>
                 );
 
@@ -314,10 +311,7 @@ export default function SuperAdminLayout() {
                       <span>{item.label}</span>
                       <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
                     </NavLink>
->Open workspace in new tab</a>
-                        <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(window.location.origin + item.path); setSectionMenuPath(null); }}>Copy workspace link</button>
-                      </div>
-                    )}
+
                   </div>
                 );
 
