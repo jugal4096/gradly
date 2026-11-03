@@ -13,7 +13,10 @@ export interface AdminAuditFilters {
 
 export async function findAdminAuditEvents(filters: AdminAuditFilters = {}) {
   const values: unknown[] = [];
-  const add = (value: unknown) => { values.push(value); return `${values.length}`; };
+  const add = (value: unknown) => {
+    values.push(value);
+    return `$${values.length}`;
+  };
   const adminActorCondition = "(LOWER(COALESCE(al.actor_role, '')) LIKE '%admin%' OR LOWER(COALESCE(al.actor_type, '')) IN ('admin','administrator'))";
   const where: string[] = [];
   if (filters.adminId) {
