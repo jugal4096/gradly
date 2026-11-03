@@ -541,10 +541,22 @@ export async function deleteApplicationRecord(
     await client.query(
       `INSERT INTO public.audit_logs
        (actor_role, action, entity_table, entity_id, before_data, after_data, metadata, actor_type, actor_id, created_at)
-       VALUES ('SUPER_ADMIN', 'ADMIN_APPLICATION_DELETED', 'admin_applications', $1, $2::jsonb, NULL, $3::jsonb, 'SUPER_ADMIN', $4, NOW())`,
+       VALUES ('SUPER_ADMIN', 'ADMIN_APPLICATION_DELETED', 'admin_applications', $1, $2::jsonb, $3::jsonb, $4::jsonb, 'SUPER_ADMIN', $5, NOW())`,
       [
         applicationId,
-        JSON.stringify(application),
+        JSON.stringify({
+          id: application.id,
+          user_id: application.user_id,
+          full_name: application.full_name,
+          email: application.email,
+          enrollment_number: application.enrollment_number,
+          institution_id: application.institution_id,
+          program_id: application.program_id,
+          branch_id: application.branch_id,
+          status: application.status,
+          created_at: application.created_at
+        }),
+        JSON.stringify({ deleted: true }),
         JSON.stringify({
           applicant_name: application.full_name,
           applicant_email: application.email,
