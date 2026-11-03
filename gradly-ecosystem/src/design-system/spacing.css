@@ -1,0 +1,17 @@
+:root {
+  --g-page-inline: clamp(1rem, 3.2vw, 2.5rem);
+  --g-page-block: clamp(1.25rem, 3vw, 2.5rem);
+  --g-section-gap: clamp(1.5rem, 3vw, 2.25rem);
+  --g-card-padding: clamp(1rem, 2vw, 1.5rem);
+  --g-form-gap: 1rem;
+  --g-nav-gap: 0.25rem;
+  --g-table-cell-x: 1rem;
+  --g-table-cell-y: 0.75rem;
+  --g-dialog-padding: clamp(1.25rem, 3vw, 2rem);
+}
+.g-container { width: min(100% - 2 * var(--g-page-inline), var(--g-content-width)); margin-inline: auto; }
+.g-stack { display: flex; flex-direction: column; gap: var(--g-section-gap); }
+.g-grid { display: grid; gap: var(--g-space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+@media (max-width: 480px) {
+  :root { --g-page-inline: 1rem; --g-section-gap: 1.25rem; --g-card-padding: 1rem; --g-table-cell-x: 0.75rem; --g-table-cell-y: 0.625rem; }
+}
