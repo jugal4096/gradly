@@ -59,7 +59,7 @@ export default function SuperAdminAdminActions() {
       setAdmin(row);
       setExpiry(row?.adminship_expires_at ? new Date(row.adminship_expires_at).toISOString().slice(0, 10) : "");
       const permissionData = await request("/super-admin/administrators/" + encodeURIComponent(adminId) + "/permissions");
-      setPermissions(Array.isArray(permissionData.permissions) ? permissionData.permissions.filter((item: { granted?: boolean }) => item.granted !== false).map((item: { permission_code?: string }) => item.permission_code).filter(Boolean) : []);
+      setPermissions(Array.isArray(permissionData.permissions) ? permissionData.permissions.filter((item: { granted?: boolean }) => item.granted !== false).map((item: { permission_code?: string }) => item.permission_code).filter((code): code is string => Boolean(code)) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load administrator.");
     } finally {
