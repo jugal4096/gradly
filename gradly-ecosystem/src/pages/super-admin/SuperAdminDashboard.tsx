@@ -365,6 +365,8 @@ export default function SuperAdminDashboard() {
     useState<ActivityFilter>("all");
   const [selectedActivityIds, setSelectedActivityIds] = useState<string[]>([]);
   const [archivingLogs, setArchivingLogs] = useState(false);
+  const [archivedLogsOpen, setArchivedLogsOpen] = useState(false);
+  const [archivedLogs, setArchivedLogs] = useState<Array<{ id: string; logSnapshot: Record<string, unknown>; archivedAt?: string }>>([]);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -471,6 +473,34 @@ export default function SuperAdminDashboard() {
       setLoading(false);
     }
   }, [navigate]);
+
+  const loadArchivedLogs = useCallback(async () => {
+    const token = localStorage.getItem("gradly_super_admin_token");
+    const response = await fetch(`${API_BASE_URL}/api/super-admin/audit-logs/archived`, {
+      credentials: "include",
+      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result?.success === false) throw new Error(result?.message || "Unable to load archived logs.");
+    setArchivedLogs(Array.isArray(result.logs) ? result.logs : []);
+  }, []);
+
+  const restoreArchivedLog = useCallback(async (id: string) => {
+    if (!window.confirm("Restore this archived log to the active Quick Logs feed?")) return;
+    try {
+      const token = localStorage.getItem("gradly_super_admin_token");
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/audit-logs/${encodeURIComponent(id)}/restore`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) throw new Error(result?.message || "Unable to restore log.");
+      await Promise.all([loadArchivedLogs(), loadDashboard()]);
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "Unable to restore archived log.");
+    }
+  }, [loadArchivedLogs, loadDashboard]);
 
   const archiveActivityLogs = useCallback(async (ids?: string[], all = false) => {
     const label = all ? "all active quick logs" : ids?.length === 1 ? "this quick log" : `${ids?.length ?? 0} selected quick logs`;
@@ -1229,7 +1259,26 @@ export default function SuperAdminDashboard() {
                     <span className="sd-metric-label">{card.label}</span>
 
                     <span className="sd-metric-value">
-                      {loading ? (
+                      {archivedLogsOpen ? (
+                <div className="sd-archived-log-list">
+                  {archivedLogs.length ? archivedLogs.map((log) => {
+                    const snapshot = log.logSnapshot ?? {};
+                    const title = String(snapshot.action ?? snapshot.title ?? "Administrative activity");
+                    const created = snapshot.created_at ?? snapshot.createdAt;
+                    return <article className="sd-activity-item" key={log.id}>
+                      <div className="sd-activity-icon"><Archive size={16} /></div>
+                      <div className="sd-activity-copy">
+                        <strong>{title}</strong>
+                        <p>{String(snapshot.entity_table ?? snapshot.entityTable ?? snapshot.actor_role ?? "Archived audit event")}</p>
+                        <span>Archived {formatDate(log.archivedAt)} · Event {formatDate(created ? String(created) : undefined)}</span>
+                      </div>
+                      <button type="button" className="sd-archive-action" onClick={() => void restoreArchivedLog(log.id)}>Restore</button>
+                    </article>;
+                  }) : <div className="sd-activity-empty"><strong>No archived logs</strong><span>Archived events will appear here and can be restored.</span></div>}
+                </div>
+              ) : null}
+
+              {!archivedLogsOpen && (loading ? (
                         <span className="sd-skeleton" />
                       ) : (
                         formatCount(value)
@@ -1471,9 +1520,12 @@ export default function SuperAdminDashboard() {
 
                 <div className="sd-quick-log-actions">
                   <span className="sd-panel-badge">{activities.length} EVENTS</span>
-                  <button type="button" className="sd-archive-action" disabled={archivingLogs || activities.length === 0} onClick={() => void archiveActivityLogs(undefined, true)}>
-                    <Archive size={14} /> Archive all
+                  <button type="button" className="sd-archive-action" onClick={() => { setArchivedLogsOpen((open) => !open); if (!archivedLogsOpen) void loadArchivedLogs(); }}>
+                    <Archive size={14} /> {archivedLogsOpen ? "Active logs" : "View archive"}
                   </button>
+                  {!archivedLogsOpen && <button type="button" className="sd-archive-action" disabled={archivingLogs || activities.length === 0} onClick={() => void archiveActivityLogs(undefined, true)}>
+                    <Archive size={14} /> Archive all
+                  </button>}
                 </div>
               </div>
 
@@ -1616,7 +1668,7 @@ export default function SuperAdminDashboard() {
                     </button>
                   )}
                 </div>
-              )}
+              ))}
             </section>
           </div>
 
