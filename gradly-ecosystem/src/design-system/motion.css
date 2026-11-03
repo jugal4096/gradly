@@ -1,0 +1,14 @@
+:root {
+  --g-motion-fast: 120ms;
+  --g-motion-standard: 180ms;
+  --g-motion-slow: 240ms;
+  --g-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
