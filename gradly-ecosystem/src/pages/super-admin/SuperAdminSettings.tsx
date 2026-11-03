@@ -30,7 +30,8 @@ export default function SuperAdminSettings(){
   const token=localStorage.getItem("gradly_super_admin_token");
   if(!token){setChecks({session:{state:"error",detail:"No Super Admin token found"},database:{state:"error",detail:"Sign in to test API connectivity"},security:{state:"error",detail:"Sign in to run authenticated security checks"}});return;}
   setChecks({session:{state:"checking",detail:"Validating session…"},database:{state:"checking",detail:"Contacting backend…"},security:{state:"checking",detail:"Reviewing transport and response security headers…"}});
-  try{const response=await fetch(API_ROOT+"/super-admin/me",{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Session validation failed");setChecks(prev=>({...prev,session:{state:"ok",detail:"Authenticated Super Admin session is valid"}}));\n   const apiUrl = new URL(API_ROOT);
+  try{const response=await fetch(API_ROOT+"/super-admin/me",{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Session validation failed");setChecks(prev=>({...prev,session:{state:"ok",detail:"Authenticated Super Admin session is valid"}}));
+   const apiUrl = new URL(API_ROOT);
    const localHosts = ["localhost", "127.0.0.1", "::1"];
    const appTransportSecure = window.location.protocol === "https:" || localHosts.includes(window.location.hostname);
    const apiTransportSecure = apiUrl.protocol === "https:" || localHosts.includes(apiUrl.hostname);
