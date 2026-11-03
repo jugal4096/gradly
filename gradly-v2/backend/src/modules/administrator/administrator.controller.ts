@@ -391,6 +391,48 @@ export async function updateGraduationDate(
 }
 
 /* =========================================================
+   ADMINISTRATOR PERMISSIONS
+   ========================================================= */
+
+export async function getAdminPermissions(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
+    if (!adminId) return res.status(400).json({ message: "Administrator ID is required." });
+    const permissions = await getAdministratorPermissions(adminId);
+    return res.status(200).json({ permissions });
+  } catch (error) {
+    return res.status(400).json({ message: error instanceof Error ? error.message : "Unable to load administrator permissions." });
+  }
+}
+
+export async function updateAdminPermissions(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  try {
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
+    if (!adminId) return res.status(400).json({ message: "Administrator ID is required." });
+    if (!req.superAdmin?.superAdminId) return res.status(401).json({ message: "Super Admin authentication required." });
+    const permissions = req.body?.permissions;
+    if (!Array.isArray(permissions) || permissions.some((item: unknown) => typeof item !== "string")) {
+      return res.status(400).json({ message: "Permissions must be an array of permission codes." });
+    }
+    const updated = await changeAdministratorPermissions(
+      adminId,
+      permissions,
+      req.superAdmin.superAdminId,
+      req.ip
+    );
+    return res.status(200).json({ message: "Administrator permissions updated successfully.", permissions: updated });
+  } catch (error) {
+    return res.status(400).json({ message: error instanceof Error ? error.message : "Unable to update administrator permissions." });
+  }
+}
+
+/* =========================================================
    DELETE ADMINISTRATOR
    ========================================================= */
 
@@ -399,7 +441,7 @@ export async function deleteAdministratorAccount(
   res: Response
 ) {
   try {
-    const adminId = req.params.adminId;
+    const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
 
     if (!adminId) {
       return res.status(400).json({
