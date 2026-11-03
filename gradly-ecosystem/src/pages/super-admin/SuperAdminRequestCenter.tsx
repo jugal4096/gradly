@@ -37,7 +37,7 @@ export default function SuperAdminRequestCenter(){
   finally{setLoading(false);}
  },[search]);
  useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),45000);return()=>window.clearInterval(timer);},[load]);
- const open=useMemo(()=>rows.filter(r=>["PENDING","IN_REVIEW","NEEDS_INFO","FORWARDED","REVIEWED"].includes(r.status.toUpperCase())).length,[rows]);
+ const open=useMemo(()=>rows.filter(r=>["PENDING","IN_REVIEW","NEEDS_INFO","FORWARDED"].includes(r.status.toUpperCase())).length,[rows]);
  const isAdminRequest=(r:Row)=>["ADMIN_REQUEST","PASSWORD_RESET","ADMIN_CURRICULUM"].includes(r.source);
  const matchesSearch=(r:Row)=>{const q=search.trim().toLowerCase();return !q||[r.title,r.description,r.adminName,r.adminCode,r.adminEmail,r.institution,r.program,r.branch,r.targetUserId].some(v=>String(v||"").toLowerCase().includes(q));};
  const adminRows=useMemo(()=>rows.filter(r=>isAdminRequest(r)&&matchesSearch(r)),[rows,search]);
