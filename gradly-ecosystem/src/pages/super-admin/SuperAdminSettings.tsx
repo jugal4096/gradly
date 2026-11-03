@@ -9,7 +9,7 @@ const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/ap
   .replace(/\/+$/, "")
   .replace(/\/api$/i, "") + "/api";
 type CheckState={state:"checking"|"ok"|"warning"|"error";detail:string};
-type Theme="light"|"dark";
+type Theme="light"|"dark"|"system";
 type PaletteChoice="purple"|"green";
 type FontChoice="system"|"segoe"|"inter"|"roboto"|"arial"|"verdana"|"tahoma"|"trebuchet"|"georgia"|"mono";
 const read=(key:string,fallback:string)=>{try{return localStorage.getItem(key)||fallback;}catch{return fallback;}};
@@ -17,7 +17,7 @@ const read=(key:string,fallback:string)=>{try{return localStorage.getItem(key)||
 export default function SuperAdminSettings(){
  const navigate=useNavigate();
  const [checks,setChecks]=useState<{session:CheckState;database:CheckState;security:CheckState}>({session:{state:"checking",detail:"Not checked yet"},database:{state:"checking",detail:"Not checked yet"},security:{state:"checking",detail:"Not checked yet"}});
- const [theme,setTheme]=useState<Theme>(()=>read("gradly_sa_theme","light")==="dark"?"dark":"light");
+ const [theme,setTheme]=useState<Theme>(()=>{const v=read("gradly_sa_theme","light");return v==="dark"||v==="system"?v:"light";});
  const [palette,setPalette]=useState<PaletteChoice>(()=>read("gradly_sa_palette","purple")==="green"?"green":"purple");
  const [font,setFont]=useState<FontChoice>(()=>{const v=read("gradly_sa_font","system");return (["system","segoe","inter","roboto","arial","verdana","tahoma","trebuchet","georgia","mono"].includes(v)?v:"system") as FontChoice;});
  const [fontSize,setFontSize]=useState(()=>read("gradly_sa_font_size","normal"));
@@ -47,23 +47,28 @@ export default function SuperAdminSettings(){
  useEffect(()=>{void runChecks();},[runChecks]);
  useEffect(()=>{
   const root=document.documentElement;
-  root.dataset.saTheme=theme;root.style.colorScheme=theme==="dark"?"dark":"light";root.dataset.saPalette=palette;root.dataset.saFont=font;
+  const media=window.matchMedia("(prefers-color-scheme: dark)");
+  const applyTheme=()=>{const effective=theme==="system"?(media.matches?"dark":"light"):theme;root.dataset.saTheme=effective;root.dataset.saThemePreference=theme;root.style.colorScheme=effective;};
+  applyTheme();
+  if(theme==="system"){media.addEventListener("change",applyTheme);}
+  root.dataset.saPalette=palette;root.dataset.saFont=font;
   localStorage.setItem("gradly_sa_palette",palette);root.dataset.saFontSize=fontSize;
   root.classList.toggle("sa-compact-tables",compact);root.classList.toggle("sa-reduced-motion",reducedMotion);
   localStorage.setItem("gradly_sa_theme",theme);localStorage.setItem("gradly_sa_font",font);
   localStorage.setItem("gradly_sa_font_size",fontSize);localStorage.setItem("gradly_sa_compact_tables",String(compact));
   localStorage.setItem("gradly_sa_reduced_motion",String(reducedMotion));
-  setSaved(true);const timer=window.setTimeout(()=>setSaved(false),1400);return()=>window.clearTimeout(timer);
+  setSaved(true);const timer=window.setTimeout(()=>setSaved(false),1400);return()=>{window.clearTimeout(timer);if(theme==="system")window.matchMedia("(prefers-color-scheme: dark)").removeEventListener("change",applyTheme);};
  },[theme,palette,font,fontSize,compact,reducedMotion]);
- function reset(){setTheme("light");setPalette("purple");setFont("system");setFontSize("normal");setCompact(false);setReducedMotion(false);}
+ function reset(){setTheme("system");setPalette("purple");setFont("system");setFontSize("normal");setCompact(false);setReducedMotion(false);}
  function logout(){localStorage.removeItem("gradly_super_admin_token");navigate("/super-admin/login",{replace:true});}
  const StatusIcon=({state}:{state:CheckState["state"]})=>state==="ok"?<CheckCircle2 size={18}/>:state==="error"||state==="warning"?<AlertCircle size={18}/>:<RefreshCw size={18} className="sa-settings-spin"/>;
  return <main className="sa-settings" data-theme={theme}>
   <header className="sa-settings-head"><div><span className="sa-settings-kicker">WORKSPACE / PREFERENCES</span><h1>Settings</h1><p>Personalize the Super Admin workspace and check your current session and API connectivity.</p></div><button onClick={()=>void runChecks()} className="sa-settings-refresh"><RefreshCw size={15}/> Run security scan</button></header>
   <section className="sa-settings-section"><div className="sa-settings-section-title"><Palette size={19}/><div><h2>Appearance</h2><p>Choose the workspace appearance. Changes apply across the Super Admin application, not only this page.</p></div></div>
    <div className="sa-settings-theme-options">
-    <button type="button" className={"sa-settings-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>White / Light mode</strong><span>Clean bright workspace</span>{theme==="light"&&<Check size={17}/>}</button>
-    <button type="button" className={"sa-settings-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark mode</strong><span>Comfortable in low light</span>{theme==="dark"&&<Check size={17}/>}</button>
+    <button type="button" className={"sa-settings-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>Light</strong><span>Bright, neutral surfaces</span>{theme==="light"&&<Check size={17}/>}</button>
+    <button type="button" className={"sa-settings-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark</strong><span>Balanced low-light surfaces</span>{theme==="dark"&&<Check size={17}/>}</button>
+    <button type="button" className={"sa-settings-theme-option"+(theme==="system"?" selected":"")} aria-pressed={theme==="system"} onClick={()=>setTheme("system")}><MonitorCog size={22}/><strong>Use device setting</strong><span>Follow Windows / device appearance</span>{theme==="system"&&<Check size={17}/>}</button>
    </div>
    <div className="sa-settings-palette-block">
     <div className="sa-settings-palette-heading"><strong>Workspace accent colour</strong><span>Choose the accent colour used by navigation, buttons, links, focus states and status highlights.</span></div>
