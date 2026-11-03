@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./SuperAdminAdmins.css";
 type Admin = { id:string; admin_code?:string|null; admin_username?:string|null; full_name?:string|null; email?:string|null; phone_number?:string|null; role?:string|null; status?:string|null; registration_status?:string|null; institution_name?:string|null; branch_name?:string|null; adminship_started_at?:string|null; adminship_expires_at?:string|null; last_login_at?:string|null; user_id?:string|null; registered_at?:string|null; created_at?:string|null; updated_at?:string|null };
