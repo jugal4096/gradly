@@ -1,5 +1,6 @@
 import {
   Activity,
+  Archive,
   AlertCircle,
   ArrowDownRight,
   ArrowRight,
@@ -362,6 +363,8 @@ export default function SuperAdminDashboard() {
   const [activitySearch, setActivitySearch] = useState("");
   const [activityFilter, setActivityFilter] =
     useState<ActivityFilter>("all");
+  const [selectedActivityIds, setSelectedActivityIds] = useState<string[]>([]);
+  const [archivingLogs, setArchivingLogs] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -468,6 +471,33 @@ export default function SuperAdminDashboard() {
       setLoading(false);
     }
   }, [navigate]);
+
+  const archiveActivityLogs = useCallback(async (ids?: string[], all = false) => {
+    const label = all ? "all active quick logs" : ids?.length === 1 ? "this quick log" : `${ids?.length ?? 0} selected quick logs`;
+    if (!window.confirm(`Archive ${label}? They will disappear from Quick Logs, but remain preserved and recoverable in the archive.`)) return;
+    setArchivingLogs(true);
+    try {
+      const token = localStorage.getItem("gradly_super_admin_token");
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/audit-logs/archive`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(all ? { all: true } : { ids }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.success === false) throw new Error(result?.message || `Archive failed (${response.status}).`);
+      setSelectedActivityIds([]);
+      await loadDashboard();
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "Unable to archive quick logs.");
+    } finally {
+      setArchivingLogs(false);
+    }
+  }, [loadDashboard]);
 
   useEffect(() => {
     void loadDashboard();
@@ -1439,9 +1469,12 @@ export default function SuperAdminDashboard() {
                   <h2>Recent activity</h2>
                 </div>
 
-                <span className="sd-panel-badge">
-                  {activities.length} EVENTS
-                </span>
+                <div className="sd-quick-log-actions">
+                  <span className="sd-panel-badge">{activities.length} EVENTS</span>
+                  <button type="button" className="sd-archive-action" disabled={archivingLogs || activities.length === 0} onClick={() => void archiveActivityLogs(undefined, true)}>
+                    <Archive size={14} /> Archive all
+                  </button>
+                </div>
               </div>
 
               <div className="sd-activity-controls">
@@ -1496,6 +1529,16 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
 
+              {selectedActivityIds.length > 0 && (
+                <div className="sd-selected-log-actions">
+                  <span>{selectedActivityIds.length} selected</span>
+                  <button type="button" className="sd-archive-action" disabled={archivingLogs} onClick={() => void archiveActivityLogs(selectedActivityIds)}>
+                    <Archive size={14} /> Archive selected
+                  </button>
+                  <button type="button" className="sd-clear-filters" onClick={() => setSelectedActivityIds([])}>Clear selection</button>
+                </div>
+              )}
+
               {loading ? (
                 <div className="sd-activity-empty">
                   <RefreshCw size={20} className="sd-spin" />
@@ -1511,6 +1554,13 @@ export default function SuperAdminDashboard() {
                       className="sd-activity-item"
                       key={item.id}
                     >
+                      <input
+                        className="sd-activity-select"
+                        type="checkbox"
+                        checked={selectedActivityIds.includes(item.id)}
+                        onChange={(event) => setSelectedActivityIds((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))}
+                        aria-label={`Select log: ${item.title}`}
+                      />
                       <div className="sd-activity-icon">
                         <Clock3 size={16} />
                       </div>
@@ -1525,10 +1575,9 @@ export default function SuperAdminDashboard() {
                         <span>{formatDate(item.createdAt)}</span>
                       </div>
 
-                      <ArrowDownRight
-                        size={15}
-                        className="sd-activity-trail"
-                      />
+                      <button type="button" className="sd-archive-one" disabled={archivingLogs} onClick={() => void archiveActivityLogs([item.id])} aria-label={`Archive log: ${item.title}`} title="Archive this log">
+                        <Archive size={15} />
+                      </button>
                     </article>
                   ))}
                 </div>
