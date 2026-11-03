@@ -509,3 +509,82 @@ export async function updateAcceptedApplicationExpiry(
     client.release();
   }
 }
+
+/**
+ * Permanently remove an application record without deleting the applicant's
+ * user account or any administrator account. The full record is retained
+ * in the audit log before deletion.
+ */
+export async function deleteApplicationRecord(
+  applicationId: string,
+  superAdminId: string
+) {
+  const client: PoolClient = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await client.query(
+      `SELECT *
+       FROM public.admin_applications
+       WHERE id = $1
+       FOR UPDATE`,
+      [applicationId]
+    );
+
+    if (existing.rowCount !== 1) {
+      throw httpError("Application not found.", 404);
+    }
+
+    const application = existing.rows[0];
+
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_role, action, entity_table, entity_id, before_data, after_data, metadata, actor_type, actor_id, created_at)
+       VALUES ('SUPER_ADMIN', 'ADMIN_APPLICATION_DELETED', 'admin_applications', $1, $2::jsonb, NULL, $3::jsonb, 'SUPER_ADMIN', $4, NOW())`,
+      [
+        applicationId,
+        JSON.stringify(application),
+        JSON.stringify({
+          applicant_name: application.full_name,
+          applicant_email: application.email,
+          previous_status: application.status,
+          deletion_scope: "application_record_only"
+        }),
+        superAdminId
+      ]
+    );
+
+    await client.query(
+      `DELETE FROM public.admin_applications
+       WHERE id = $1`,
+      [applicationId]
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      id: applicationId,
+      full_name: application.full_name,
+      status: application.status
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "23503"
+    ) {
+      throw httpError(
+        "This application is linked to another record and cannot be deleted until that relationship is resolved.",
+        409
+      );
+    }
+
+    throw error;
+  } finally {
+    client.release();
+  }
+}
