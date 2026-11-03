@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { useParams } from "react-router-dom";
 import "./SuperAdminAudit.css";
 
 type AuditEvent = {
@@ -14,10 +15,11 @@ const pretty = (value: string) => value.replace(/_/g, " ").toLowerCase().replace
 const jsonText = (value: unknown) => { if (value == null) return "—"; try { return JSON.stringify(value, null, 2); } catch { return String(value); } };
 
 export default function SuperAdminAudit() {
+  const { adminId: routeAdminId } = useParams();
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [actions, setActions] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [adminId, setAdminId] = useState(() => new URLSearchParams(window.location.search).get("adminId") || "");
+  const [adminId, setAdminId] = useState(() => routeAdminId || new URLSearchParams(window.location.search).get("adminId") || "");
   const [action, setAction] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
