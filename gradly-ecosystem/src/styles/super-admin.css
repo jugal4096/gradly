@@ -1577,3 +1577,25 @@ html[data-sa-palette="green"] .super-admin-shell .super-admin-page .sa-admins :i
 html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
   .sa-settings-theme-option.selected,.sa-settings-palette-option.selected
 ) { border-color: var(--sa-accent) !important; }
+
+
+/* Workspace navigation toggle: collapsible on desktop, off-canvas on mobile. */
+.super-admin-workspace-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;margin:0 12px 0 auto;border:1px solid var(--sa-border,#dfe3ea);border-radius:10px;background:var(--sa-surface,#fff);color:var(--sa-accent,#6842c7);cursor:pointer}
+.super-admin-workspace-toggle:hover{background:var(--sa-accent-soft,#f0ebff);border-color:var(--sa-accent,#6842c7)}
+.super-admin-workspace-toggle:focus-visible{outline:3px solid var(--sa-accent,#6842c7);outline-offset:2px}
+.super-admin-sidebar.is-workspace-collapsed{width:76px;min-width:76px;padding-left:10px;padding-right:10px}
+.super-admin-sidebar.is-workspace-collapsed .sidebar-heading,.super-admin-sidebar.is-workspace-collapsed .sidebar-link span,.super-admin-sidebar.is-workspace-collapsed .sidebar-link .sidebar-arrow,.super-admin-sidebar.is-workspace-collapsed .sidebar-version,.super-admin-sidebar.is-workspace-collapsed .sidebar-logout span{display:none}
+.super-admin-sidebar.is-workspace-collapsed .sidebar-link,.super-admin-sidebar.is-workspace-collapsed .sidebar-logout{justify-content:center;padding-left:0;padding-right:0}
+.super-admin-sidebar.is-workspace-collapsed .sidebar-link{gap:0}
+.super-admin-sidebar.is-workspace-collapsed .sidebar-link-more{display:none}
+@media(max-width:850px){.super-admin-workspace-toggle{display:inline-flex}.super-admin-sidebar.is-workspace-collapsed{width:min(320px,86vw);min-width:0}.super-admin-sidebar.is-workspace-collapsed .sidebar-heading,.super-admin-sidebar.is-workspace-collapsed .sidebar-link span,.super-admin-sidebar.is-workspace-collapsed .sidebar-link .sidebar-arrow,.super-admin-sidebar.is-workspace-collapsed .sidebar-version,.super-admin-sidebar.is-workspace-collapsed .sidebar-logout span{display:initial}.super-admin-sidebar.is-workspace-collapsed .sidebar-heading{display:block}.super-admin-sidebar.is-workspace-collapsed .sidebar-link,.super-admin-sidebar.is-workspace-collapsed .sidebar-logout{justify-content:flex-start;padding-left:10px;padding-right:10px}}
+@media(min-width:851px){.super-admin-mobile-menu{display:none!important}}
+
+/* Apply the selected palette to common page-level accents across every Super Admin route. */
+html[data-sa-palette="green"] .super-admin-page :is(button,a,[role="tab"],[aria-selected="true"],.active,.selected,[class*="active"],[class*="selected"]){--page-accent:#16845b}
+html[data-sa-palette="green"] .super-admin-page :is(button[class*="primary"],[class*="btn-primary"],[class*="button-primary"],[class*="primary-button"]){background:#16845b!important;border-color:#16845b!important;color:#fff!important}
+html[data-sa-palette="green"] .super-admin-page :is([class*="purple"],[class*="violet"],[class*="indigo"]){--sa-primary:#16845b!important;--sa-primary-dark:#116b49!important;--sa-primary-soft:#e3f5ed!important;color:inherit}
+html[data-sa-palette="green"] .super-admin-page :is([class*="purple"],[class*="violet"],[class*="indigo"]):is(button,[role="button"],[role="tab"],.active,.selected,[aria-selected="true"]){background:#e3f5ed!important;border-color:#a9ddc2!important;color:#116b49!important}
+html[data-sa-palette="green"] .super-admin-page :is(a,button,[role="button"],[role="tab"]):focus-visible{outline-color:#16845b!important}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-page :is([class*="purple"],[class*="violet"],[class*="indigo"]):is(button,[role="button"],[role="tab"],.active,.selected,[aria-selected="true"]){background:#18392d!important;border-color:#28684d!important;color:#9be5c2!important}
+html[data-sa-theme="dark"] .super-admin-page :is([class*="card"],[class*="panel"],[class*="section"],[class*="table"],[class*="drawer"],[class*="modal"],[class*="toolbar"],[class*="stats"]){color:var(--sa-text,#eeeaf5)}
