@@ -1086,3 +1086,161 @@ html[data-sa-theme="dark"] .super-admin-page :is(button[class*="primary"],button
 html[data-sa-font-size="small"] .super-admin-shell { font-size: 13px !important; }
 html[data-sa-font-size="normal"] .super-admin-shell { font-size: 14px !important; }
 html[data-sa-font-size="large"] .super-admin-shell { font-size: 16px !important; }
+
+
+/* =========================================================
+   Gradly Super Admin — final workspace-wide theme contract
+   These tokens intentionally override legacy page-level colours.
+   ========================================================= */
+.super-admin-shell {
+  --sa-canvas: #f5f6fa;
+  --sa-surface: #ffffff;
+  --sa-surface-raised: #ffffff;
+  --sa-surface-muted: #f0f1f6;
+  --sa-text: #202337;
+  --sa-text-muted: #697087;
+  --sa-border: #e1e4ed;
+  --sa-accent: #6746c7;
+  --sa-accent-strong: #5034a5;
+  --sa-accent-soft: #f0ebff;
+  --sa-accent-border: #d8cdf7;
+  --sa-success: #16845b;
+  --sa-warning: #a96c12;
+  --sa-danger: #bd454c;
+  background: var(--sa-canvas) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-palette="green"] .super-admin-shell {
+  --sa-accent: #167b55;
+  --sa-accent-strong: #105c40;
+  --sa-accent-soft: #e7f5ee;
+  --sa-accent-border: #bfe2d0;
+}
+html[data-sa-theme="dark"] .super-admin-shell {
+  --sa-canvas: #11131a;
+  --sa-surface: #191c25;
+  --sa-surface-raised: #20242f;
+  --sa-surface-muted: #292e3a;
+  --sa-text: #f1f3f8;
+  --sa-text-muted: #b2bac9;
+  --sa-border: #363d4b;
+  --sa-success: #75d6a5;
+  --sa-warning: #f1c46d;
+  --sa-danger: #ff9298;
+  color-scheme: dark;
+  background: var(--sa-canvas) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"][data-sa-palette="purple"] .super-admin-shell {
+  --sa-accent: #b49aff;
+  --sa-accent-strong: #d0c0ff;
+  --sa-accent-soft: #302943;
+  --sa-accent-border: #574b72;
+}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell {
+  --sa-accent: #72d9aa;
+  --sa-accent-strong: #a0edc7;
+  --sa-accent-soft: #1d382e;
+  --sa-accent-border: #3b6c56;
+}
+
+/* Main application chrome */
+html[data-sa-theme] .super-admin-shell,
+html[data-sa-theme] .super-admin-shell .super-admin-content,
+html[data-sa-theme] .super-admin-shell .super-admin-page {
+  background: var(--sa-canvas) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme] .super-admin-shell .super-admin-topbar,
+html[data-sa-theme] .super-admin-shell .super-admin-sidebar,
+html[data-sa-theme] .super-admin-shell .content-system-strip,
+html[data-sa-theme] .super-admin-shell .super-admin-footer {
+  background: var(--sa-surface) !important;
+  color: var(--sa-text-muted) !important;
+  border-color: var(--sa-border) !important;
+  box-shadow: none !important;
+}
+html[data-sa-theme] .super-admin-shell .sidebar-link { color: var(--sa-text-muted) !important; }
+html[data-sa-theme] .super-admin-shell .sidebar-link:hover,
+html[data-sa-theme] .super-admin-shell .sidebar-link-active {
+  background: var(--sa-accent-soft) !important;
+  color: var(--sa-accent-strong) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-theme] .super-admin-shell .sidebar-link-active { box-shadow: inset 3px 0 var(--sa-accent) !important; }
+html[data-sa-theme] .super-admin-shell .brand-mark {
+  background: var(--sa-accent) !important;
+  border-color: var(--sa-accent-strong) !important;
+  color: #fff !important;
+}
+html[data-sa-theme] .super-admin-shell .system-status-value,
+html[data-sa-theme] .super-admin-shell .topbar-status { color: var(--sa-accent) !important; }
+html[data-sa-theme] .super-admin-shell .sidebar-logout,
+html[data-sa-theme] .super-admin-shell .super-admin-mobile-menu {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+}
+
+/* Normalize legacy page cards, panels, tables, overlays and form surfaces.
+   More specific than old module CSS, but limited to semantic surface classes. */
+html[data-sa-theme="light"] .super-admin-shell .super-admin-page :is(
+  [class*="card"],[class*="Card"],[class*="panel"],[class*="Panel"],
+  [class*="modal"],[class*="Modal"],[class*="drawer"],[class*="Drawer"],
+  [class*="popover"],[class*="Popover"],[class*="dropdown"],[class*="Dropdown"],
+  [class*="widget"],[class*="Widget"],[class*="stat-card"],[class*="StatCard"]
+) {
+  color: var(--sa-text);
+  border-color: var(--sa-border);
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(
+  [class*="card"],[class*="Card"],[class*="panel"],[class*="Panel"],
+  [class*="modal"],[class*="Modal"],[class*="drawer"],[class*="Drawer"],
+  [class*="popover"],[class*="Popover"],[class*="dropdown"],[class*="Dropdown"],
+  [class*="widget"],[class*="Widget"],[class*="stat-card"],[class*="StatCard"],
+  [class*="surface"],[class*="Surface"],[class*="container-card"]
+) {
+  background-color: var(--sa-surface-raised) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+  box-shadow: none;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(h1,h2,h3,h4,h5,h6,strong,label,th) { color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(p,small,caption,[class*="muted"],[class*="subtitle"],[class*="description"],[class*="helper"],[class*="hint"]) { color: var(--sa-text-muted); }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+  box-shadow: none;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(input,textarea)::placeholder { color: #929bad !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page table { color: var(--sa-text) !important; border-color: var(--sa-border) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page th { background: var(--sa-surface-muted) !important; color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page td { background: var(--sa-surface-raised) !important; color: var(--sa-text) !important; border-color: var(--sa-border) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page tr:hover td { background: #2b3140 !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(hr,[class*="divider"],[class*="Divider"]) { border-color: var(--sa-border) !important; }
+
+/* Selected accent is used consistently for links, tabs, controls and primary actions. */
+html[data-sa-theme] .super-admin-shell .super-admin-page a,
+html[data-sa-theme] .super-admin-shell .super-admin-page [role="tab"][aria-selected="true"],
+html[data-sa-theme] .super-admin-shell .super-admin-page [aria-current="page"] { color: var(--sa-accent) !important; }
+html[data-sa-theme] .super-admin-shell .super-admin-page :is(button[class*="primary"],button[class*="Primary"],[class*="btn-primary"],[class*="button-primary"],[data-variant="primary"]) {
+  background: var(--sa-accent) !important;
+  border-color: var(--sa-accent) !important;
+  color: #fff !important;
+}
+html[data-sa-theme] .super-admin-shell .super-admin-page :is(input,select,textarea):focus {
+  border-color: var(--sa-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sa-accent) 20%, transparent) !important;
+}
+html[data-sa-theme] .super-admin-shell :focus-visible { outline-color: var(--sa-accent) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is([class*="success"],[class*="Success"]) { color: var(--sa-success); }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is([class*="warning"],[class*="Warning"]) { color: var(--sa-warning); }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is([class*="danger"],[class*="Danger"],[class*="error"],[class*="Error"]) { color: var(--sa-danger); }
+
+/* Keep the active palette on light-mode module controls too. */
+html[data-sa-theme="light"] .super-admin-shell .super-admin-page :is(button[class*="primary"],button[class*="Primary"],[class*="btn-primary"],[class*="button-primary"]) {
+  background: var(--sa-accent) !important;
+  border-color: var(--sa-accent) !important;
+  color: #fff !important;
+}
