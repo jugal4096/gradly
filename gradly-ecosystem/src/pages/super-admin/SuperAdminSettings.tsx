@@ -35,7 +35,11 @@ export default function SuperAdminSettings(){
    const localHosts = ["localhost", "127.0.0.1", "::1"];
    const appTransportSecure = window.location.protocol === "https:" || localHosts.includes(window.location.hostname);
    const apiTransportSecure = apiUrl.protocol === "https:" || localHosts.includes(apiUrl.hostname);
-   const secureTransport = appTransportSecure && apiTransportSecure;\n   const headerNames = ["content-security-policy","x-content-type-options","referrer-policy"];\n   const missingHeaders = headerNames.filter(name => !response.headers.get(name));\n   const securityIssues = [...(!secureTransport ? ["Workspace is not using HTTPS"] : []), ...(missingHeaders.length ? ["Missing or browser-hidden response headers: " + missingHeaders.join(", ")] : [])];\n   setChecks(prev=>({...prev,security:{state:securityIssues.length?"warning":"ok",detail:securityIssues.length?securityIssues.join(" · "):"HTTPS/local development transport and baseline security response headers detected"}}));}
+   const secureTransport = appTransportSecure && apiTransportSecure;
+   const headerNames = ["content-security-policy","x-content-type-options","referrer-policy"];
+   const missingHeaders = headerNames.filter(name => !response.headers.get(name));
+   const securityIssues = [...(!secureTransport ? ["Workspace is not using HTTPS"] : []), ...(missingHeaders.length ? ["Missing or browser-hidden response headers: " + missingHeaders.join(", ")] : [])];
+   setChecks(prev=>({...prev,security:{state:securityIssues.length?"warning":"ok",detail:securityIssues.length?securityIssues.join(" · "):"HTTPS/local development transport and baseline security response headers detected"}}));}
   catch(e){setChecks(prev=>({...prev,session:{state:"error",detail:e instanceof Error?e.message:"Session validation failed"},security:{state:"error",detail:"Could not inspect authenticated response security headers"}}));}
   try{const response=await fetch(API_ROOT+"/super-admin/dashboard/stats",{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Backend health check failed");setChecks(prev=>({...prev,database:{state:"ok",detail:"Authenticated API responded successfully"}}));}
   catch(e){setChecks(prev=>({...prev,database:{state:"error",detail:e instanceof Error?e.message:"API health check failed"}}));}
