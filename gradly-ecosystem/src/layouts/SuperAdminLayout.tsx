@@ -115,6 +115,26 @@ export default function SuperAdminLayout() {
     } catch { /* Keep the last known badge count while offline. */ }
   }, []);
   useEffect(() => {
+    // Restore workspace preferences before the first page interaction.
+    const root = document.documentElement;
+    const readPreference = (key: string, fallback: string) => {
+      try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
+    };
+    const theme = readPreference("gradly_sa_theme", "light");
+    const palette = readPreference("gradly_sa_palette", "purple");
+    const font = readPreference("gradly_sa_font", "system");
+    const fontSize = readPreference("gradly_sa_font_size", "normal");
+    const compact = readPreference("gradly_sa_compact_tables", "false") === "true";
+    const reducedMotion = readPreference("gradly_sa_reduced_motion", "false") === "true";
+    root.dataset.saTheme = theme === "dark" ? "dark" : "light";
+    root.dataset.saPalette = palette === "green" ? "green" : "purple";
+    root.dataset.saFont = font;
+    root.dataset.saFontSize = fontSize;
+    root.classList.toggle("sa-compact-tables", compact);
+    root.classList.toggle("sa-reduced-motion", reducedMotion);
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileNavOpen(false);
     };
