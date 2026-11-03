@@ -746,10 +746,10 @@ export default function SuperAdminDashboard() {
             <button
               type="button"
               className="sd-side-link"
-              onClick={() => navigate("/super-admin/admin-requests")}
+              onClick={() => navigate("/super-admin/requests")}
             >
               <ClipboardList size={18} />
-              <span>Admin subject requests</span>
+              <span>Request Log</span>
               {governanceCounts.pendingAdminSubjectRequests !== null && governanceCounts.pendingAdminSubjectRequests > 0 && (
                 <span className="sd-side-count">{governanceCounts.pendingAdminSubjectRequests}</span>
               )}
@@ -958,10 +958,10 @@ export default function SuperAdminDashboard() {
                   <button
                     type="button"
                     className="sd-drawer-link"
-                    onClick={() => navigate("/super-admin/admin-requests")}
+                    onClick={() => navigate("/super-admin/requests")}
                   >
                     <ClipboardList size={18} />
-                    <span>Admin subject requests</span>
+                    <span>Request Log</span>
                     <ArrowRight size={15} />
                   </button>
 
@@ -1225,11 +1225,11 @@ export default function SuperAdminDashboard() {
               <span className="sd-muted-note">Review Admin activity and student requests</span>
             </div>
             <div className="sd-governance-grid">
-              <button type="button" className="sd-governance-card" onClick={() => navigate("/super-admin/admin-requests")}>
+              <button type="button" className="sd-governance-card" onClick={() => navigate("/super-admin/requests")}>
                 <span className="sd-governance-icon governance-violet"><ClipboardList size={20} /></span>
                 <span className="sd-governance-copy">
-                  <strong>Admin subject requests</strong>
-                  <small>Approve or reject department-scoped curriculum proposals.</small>
+                  <strong>Request Log</strong>
+                  <small>Review Admin subject requests alongside all other Admin and User requests.</small>
                 </span>
                 <span className="sd-governance-count">{loading ? "—" : governanceCounts.pendingAdminSubjectRequests === null ? "—" : formatNumber(governanceCounts.pendingAdminSubjectRequests)}<small>pending</small></span>
                 <ArrowRight size={16} />
