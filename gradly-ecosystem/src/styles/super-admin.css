@@ -709,3 +709,162 @@ html.sa-compact-tables .super-admin-page table td {
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+
+/* =========================================================
+   Super Admin display preferences — applied at application root
+   ========================================================= */
+html[data-sa-font="system"] .super-admin-shell { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
+html[data-sa-font="segoe"] .super-admin-shell { font-family: "Segoe UI", Tahoma, sans-serif !important; }
+html[data-sa-font="inter"] .super-admin-shell { font-family: Inter, "Segoe UI", sans-serif !important; }
+html[data-sa-font="roboto"] .super-admin-shell { font-family: Roboto, Arial, sans-serif !important; }
+html[data-sa-font="arial"] .super-admin-shell { font-family: Arial, Helvetica, sans-serif !important; }
+html[data-sa-font="verdana"] .super-admin-shell { font-family: Verdana, Geneva, sans-serif !important; }
+html[data-sa-font="tahoma"] .super-admin-shell { font-family: Tahoma, Geneva, sans-serif !important; }
+html[data-sa-font="trebuchet"] .super-admin-shell { font-family: "Trebuchet MS", sans-serif !important; }
+html[data-sa-font="georgia"] .super-admin-shell { font-family: Georgia, "Times New Roman", serif !important; }
+html[data-sa-font="mono"] .super-admin-shell { font-family: Consolas, "Courier New", monospace !important; }
+html[data-sa-font-size="small"] .super-admin-shell { font-size: 13px; }
+html[data-sa-font-size="normal"] .super-admin-shell { font-size: 14px; }
+html[data-sa-font-size="large"] .super-admin-shell { font-size: 16px; }
+html[data-sa-font-size="small"] .super-admin-shell .super-admin-page { font-size: .93em; }
+html[data-sa-font-size="large"] .super-admin-shell .super-admin-page { font-size: 1.08em; }
+
+/* Accent palette is centralized so active navigation, controls and focus states
+   move together rather than leaving purple fragments behind. */
+html[data-sa-palette="green"] .super-admin-shell {
+  --sa-accent: #16845b;
+  --sa-accent-strong: #116b49;
+  --sa-accent-soft: #e3f5ed;
+  --sa-accent-border: #b9e4d0;
+}
+html[data-sa-palette="purple"] .super-admin-shell {
+  --sa-accent: #6842c7;
+  --sa-accent-strong: #5030a8;
+  --sa-accent-soft: #eee8ff;
+  --sa-accent-border: #d8cafb;
+}
+html[data-sa-palette="green"] .super-admin-shell .brand-mark { background: linear-gradient(145deg,#36b985,#147b55); border-color: #147b55; }
+html[data-sa-palette="green"] .super-admin-shell .topbar-status,
+html[data-sa-palette="green"] .super-admin-shell .sidebar-link-active,
+html[data-sa-palette="green"] .super-admin-shell .sidebar-link:hover,
+html[data-sa-palette="green"] .super-admin-shell .sidebar-logout,
+html[data-sa-palette="green"] .super-admin-shell .content-system-left svg { color: #16845b; }
+html[data-sa-palette="green"] .super-admin-shell .status-light { background: #20a875; box-shadow: 0 0 0 3px #ddf4e9; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-sidebar { background: linear-gradient(180deg,#f1fbf6,#eaf7f0); border-right-color: #cde9da; }
+html[data-sa-palette="green"] .super-admin-shell .sidebar-link:hover,
+html[data-sa-palette="green"] .super-admin-shell .sidebar-link-active { background: #ddf3e7; }
+html[data-sa-palette="green"] .super-admin-shell .sidebar-link-active { box-shadow: inset 3px 0 #16845b; }
+html[data-sa-palette="green"] .super-admin-shell .sidebar-logout { border-color: #cde9da; }
+html[data-sa-palette="green"] .super-admin-shell .system-status-value { color: #16845b; background: #e3f5ed; }
+html[data-sa-palette="green"] .super-admin-shell a:focus-visible,
+html[data-sa-palette="green"] .super-admin-shell button:focus-visible,
+html[data-sa-palette="green"] .super-admin-shell input:focus-visible,
+html[data-sa-palette="green"] .super-admin-shell select:focus-visible { outline-color: #16845b; }
+
+/* Dark mode covers the shared application chrome and common page surfaces,
+   tables, forms, menus and overlays used by the Super Admin modules. */
+html[data-sa-theme="dark"] .super-admin-shell {
+  color-scheme: dark;
+  background: #11101a !important;
+  color: #eeeaf8 !important;
+}
+html[data-sa-theme="dark"] .super-admin-topbar,
+html[data-sa-theme="dark"] .content-system-strip,
+html[data-sa-theme="dark"] .super-admin-footer {
+  background: #191625 !important;
+  border-color: #302941 !important;
+  color: #c8bfdc !important;
+}
+html[data-sa-theme="dark"] .super-admin-sidebar {
+  background: #171422 !important;
+  border-color: #302941 !important;
+  box-shadow: none !important;
+}
+html[data-sa-theme="dark"] .super-admin-content,
+html[data-sa-theme="dark"] .super-admin-page {
+  background: #11101a !important;
+  color: #eeeaf8 !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .brand-product,
+html[data-sa-theme="dark"] .super-admin-shell .system-path,
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-heading,
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-version,
+html[data-sa-theme="dark"] .super-admin-shell .content-system-left,
+html[data-sa-theme="dark"] .super-admin-shell .content-system-right {
+  color: #a99fbd !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link {
+  color: #d2cbe0 !important;
+  border-color: transparent !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link:hover,
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link-active {
+  color: #fff !important;
+  background: #302543 !important;
+  border-color: #493765 !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-link-active { box-shadow: inset 3px 0 var(--sa-accent, #9b7afa) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-logout,
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-mobile-menu {
+  background: #211c2e !important;
+  border-color: #403451 !important;
+  color: #e7def8 !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .sidebar-logout:hover { background: #302543 !important; }
+html[data-sa-theme="dark"] .super-admin-page [class*="card"],
+html[data-sa-theme="dark"] .super-admin-page [class*="panel"],
+html[data-sa-theme="dark"] .super-admin-page [class*="section"],
+html[data-sa-theme="dark"] .super-admin-page [class*="modal"],
+html[data-sa-theme="dark"] .super-admin-page [class*="drawer"],
+html[data-sa-theme="dark"] .super-admin-page [class*="dropdown"],
+html[data-sa-theme="dark"] .super-admin-page [class*="popover"] {
+  background-color: #1c1928;
+  border-color: #393149;
+  color: #eeeaf8;
+}
+html[data-sa-theme="dark"] .super-admin-page h1,
+html[data-sa-theme="dark"] .super-admin-page h2,
+html[data-sa-theme="dark"] .super-admin-page h3,
+html[data-sa-theme="dark"] .super-admin-page h4,
+html[data-sa-theme="dark"] .super-admin-page strong,
+html[data-sa-theme="dark"] .super-admin-page label { color: #f1ecfb; }
+html[data-sa-theme="dark"] .super-admin-page p,
+html[data-sa-theme="dark"] .super-admin-page small,
+html[data-sa-theme="dark"] .super-admin-page [class*="muted"],
+html[data-sa-theme="dark"] .super-admin-page [class*="subtitle"],
+html[data-sa-theme="dark"] .super-admin-page [class*="description"] { color: #b9b0ca; }
+html[data-sa-theme="dark"] .super-admin-page table { color: #e9e3f4; border-color: #393149; }
+html[data-sa-theme="dark"] .super-admin-page th { background: #292338 !important; color: #d9cffa !important; border-color: #393149 !important; }
+html[data-sa-theme="dark"] .super-admin-page td { background: #1c1928; color: #e5deef; border-color: #393149 !important; }
+html[data-sa-theme="dark"] .super-admin-page tr:hover td { background: #282238; }
+html[data-sa-theme="dark"] .super-admin-page input:not([type="checkbox"]):not([type="radio"]),
+html[data-sa-theme="dark"] .super-admin-page select,
+html[data-sa-theme="dark"] .super-admin-page textarea {
+  background: #211c2e !important;
+  color: #f0eafa !important;
+  border-color: #4a3e5c !important;
+}
+html[data-sa-theme="dark"] .super-admin-page input::placeholder,
+html[data-sa-theme="dark"] .super-admin-page textarea::placeholder { color: #968ba9 !important; }
+html[data-sa-theme="dark"] .super-admin-page button:not(.sidebar-link),
+html[data-sa-theme="dark"] .super-admin-page [role="button"] {
+  border-color: #493d5b;
+}
+html[data-sa-theme="dark"] .super-admin-page hr,
+html[data-sa-theme="dark"] .super-admin-page [class*="divider"] { border-color: #393149 !important; }
+html[data-sa-theme="dark"] .super-admin-shell a { color: #c7b5ff; }
+html[data-sa-theme="dark"] .super-admin-shell :focus-visible { outline-color: #b39aff; }
+html[data-sa-theme="dark"] .super-admin-nav-backdrop { background: #08060dcc; }
+
+/* Green accent in dark mode keeps contrast without forcing a light surface. */
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .sidebar-link-active,
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .sidebar-link:hover { background: #18392d !important; }
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .sidebar-link-active { box-shadow: inset 3px 0 #45c995 !important; }
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .brand-mark { background: linear-gradient(145deg,#36b985,#147b55); }
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .topbar-status,
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .sidebar-link-active { color: #8ce0bb !important; }
+
+/* Keep the selected accent visible on keyboard focus and interactive controls. */
+html[data-sa-theme="light"] .super-admin-shell :focus-visible { outline-color: var(--sa-accent, #6842c7); }
+html[data-sa-palette="green"] .super-admin-shell .sidebar-request-badge { background: #16845b; }
