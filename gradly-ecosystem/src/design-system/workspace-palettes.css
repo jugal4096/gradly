@@ -120,6 +120,20 @@ html[data-sa-palette="green"] .sd-drawer-link:hover,
 html[data-sa-palette="green"] .sd-drawer-link.is-current { color:#116b42; background:#e4f5e9; }
 html[data-sa-palette="green"] .sd-brand-mark { background:linear-gradient(145deg,#59b98a,#168653); box-shadow:0 7px 16px #16865330; }
 
+/* Defaults match the existing workspace identities before a preference is selected. */
+:root:not([data-admin-palette]) {
+  --g-workspace-accent:#168653;
+  --g-workspace-accent-hover:#116b42;
+  --g-workspace-accent-soft:#eaf7ef;
+  --g-workspace-accent-border:#b9dfc7;
+}
+:root:not([data-sa-palette]) {
+  --g-workspace-accent:#6941c6;
+  --g-workspace-accent-hover:#53389e;
+  --g-workspace-accent-soft:#f4f3ff;
+  --g-workspace-accent-border:#d9d2fe;
+}
+
 /* Palette controls are deliberately separate from light/dark mode. */
 .ad-palette-options,.sa-settings-palette-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
 .ad-palette-option,.sa-settings-palette-option {
