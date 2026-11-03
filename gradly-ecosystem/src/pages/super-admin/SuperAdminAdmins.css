@@ -9,3 +9,18 @@
 .sa-admins-menu button.danger{color:#b33f45}
 .sa-admins-menu button.danger:hover{background:#fff0f0;color:#a52f36}
 .sa-admins-menu-divider{height:1px;margin:5px 4px;background:#edf0f5}
+
+.sa-admin-action-panel{background:#fff;border:1px solid #e7eaf2;border-radius:16px;padding:20px;margin:16px 0}
+.sa-admin-action-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.sa-admin-action-panel-heading h2{margin:6px 0;font-size:18px;color:#202944}
+.sa-admin-action-panel-heading p{margin:0;color:#798198;font-size:12px;line-height:1.6}
+.sa-admin-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sa-admin-permission-grid article{display:grid;gap:5px;padding:12px;border:1px solid #eceef5;border-radius:10px}
+.sa-admin-permission-grid strong{font-size:12px;color:#35405c}
+.sa-admin-permission-grid small{font-size:11px;color:#81899e}
+.sa-admin-permission-grid code{font-size:10px;color:#6555b8}
+.sa-admin-danger-panel{border-color:#f1dada;background:#fffdfd}
+.sa-admin-delete-button{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #f1cccc;border-radius:9px;background:#fff2f1;color:#ad3535;font-weight:700;font-size:12px;cursor:pointer}
+.sa-admin-delete-button:disabled{opacity:.5;cursor:not-allowed}
+.sa-admins-error svg{vertical-align:middle;margin-right:6px}
+@media(max-width:640px){.sa-admin-permission-grid{grid-template-columns:1fr}.sa-admin-action-panel{padding:15px}.sa-admin-action-panel-heading{flex-direction:column}}
