@@ -868,3 +868,37 @@ html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .sidebar-
 /* Keep the selected accent visible on keyboard focus and interactive controls. */
 html[data-sa-theme="light"] .super-admin-shell :focus-visible { outline-color: var(--sa-accent, #6842c7); }
 html[data-sa-palette="green"] .super-admin-shell .sidebar-request-badge { background: #16845b; }
+
+/* Typography is inherited consistently, including nested controls and dialogs. */
+html[data-sa-font] .super-admin-shell :where(*) { font-family: inherit !important; }
+html[data-sa-font="mono"] .super-admin-shell { letter-spacing: 0; }
+
+/* Bring common primary actions and active controls into the selected accent palette. */
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page button[class*="primary"],
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page button[class*="Primary"],
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page [class*="btn-primary"],
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page [class*="button-primary"] {
+  background: #16845b;
+  border-color: #116b49;
+  color: #fff;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page a,
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page [role="tab"][aria-selected="true"] {
+  color: #16845b;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page input:focus,
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page select:focus,
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page textarea:focus {
+  border-color: #16845b !important;
+  box-shadow: 0 0 0 3px #16845b20;
+}
+
+/* Preserve contrast for warning/status panels in dark mode. */
+html[data-sa-theme="dark"] .super-admin-page [class*="warning"],
+html[data-sa-theme="dark"] .super-admin-page [class*="Warning"] {
+  color: #f4cf83;
+}
+html[data-sa-theme="dark"] .super-admin-page [class*="success"],
+html[data-sa-theme="dark"] .super-admin-page [class*="Success"] {
+  color: #8cddb0;
+}
