@@ -7,6 +7,7 @@ import {
   saveApplicationConfiguration,
   reviewApplication as reviewApplicationInDb,
   updateAcceptedApplicationExpiry,
+  deleteApplicationRecord,
 } from "./admin-application.repository";
 
 interface SuperAdminRequest extends Request {
@@ -509,5 +510,53 @@ export async function updateAcceptedApplicationExpiryController(
   } catch (error) {
     console.error("Could not update accepted application expiry:", error);
     return res.status(getErrorStatus(error)).json({ success: false, message: error instanceof Error ? error.message : "Could not update admin expiry date." });
+  }
+}
+
+
+/**
+ * DELETE /api/super-admin/applications/:applicationId
+ * Deletes only the application row; applicant and administrator accounts
+ * are not deleted by this operation.
+ */
+export async function deleteApplicationRecordController(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const superAdminId = getSuperAdminId(req);
+
+    if (!superAdminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Super Admin authentication required."
+      });
+    }
+
+    const applicationId = req.params.applicationId?.trim();
+
+    if (!isUuid(applicationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid application ID is required."
+      });
+    }
+
+    const deleted = await deleteApplicationRecord(applicationId, superAdminId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Application record deleted successfully. Applicant and administrator accounts were not changed.",
+      application: deleted
+    });
+  } catch (error) {
+    console.error("Could not delete administrator application:", error);
+
+    return res.status(getErrorStatus(error)).json({
+      success: false,
+      message: error instanceof Error
+        ? error.message
+        : "Could not delete application record."
+    });
   }
 }
