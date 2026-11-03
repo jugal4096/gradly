@@ -1254,3 +1254,208 @@ html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="backgro
   color: var(--sa-text) !important;
   border-color: var(--sa-border) !important;
 }
+
+
+/* =========================================================
+   SUPER ADMIN — consistent dark/light + palette propagation
+   Applied after legacy page styles so routed modules share one contract.
+   ========================================================= */
+html[data-sa-theme] .super-admin-shell .super-admin-page .super-dashboard,
+html[data-sa-theme] .super-admin-shell .super-admin-page .super-users-page,
+html[data-sa-theme] .super-admin-shell .super-admin-page .sa-admins {
+  background: var(--sa-canvas) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard {
+  --sd-ink: var(--sa-text);
+  --sd-muted: var(--sa-text-muted);
+  --sd-border: var(--sa-border);
+  background:
+    radial-gradient(ellipse at 88% 2%, color-mix(in srgb, var(--sa-accent) 12%, transparent), transparent 30%),
+    var(--sa-canvas) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-hero,.sd-metric-card,.sd-queue-card,.sd-panel,.sd-detail-panel,
+  .sd-system-strip,.sd-governance-card,.sd-search,.sd-action-item:hover,
+  .sd-action-item.is-selected
+) {
+  background: var(--sa-surface-raised) !important;
+  background-image: none !important;
+  border-color: var(--sa-border) !important;
+  color: var(--sa-text) !important;
+  box-shadow: none !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  h1,h2,h3,h4,strong,.sd-metric-value,.sd-metric-label,.sd-queue-title,
+  .sd-hero-copy h2,.sd-hero-summary strong,.sd-panel-heading h2,.sd-action-copy strong
+) { color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  p,small,.sd-header p,.sd-hero-copy p,.sd-summary-caption,.sd-metric-description,
+  .sd-queue-description,.sd-queue-footer,.sd-action-copy span,.sd-section-kicker,
+  .sd-panel-note,.sd-panel-badge
+) { color: var(--sa-text-muted) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-metric-icon,.sd-queue-icon,.sd-hero-symbol,.sd-action-icon,.sd-governance-icon
+) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-accent-strong) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-refresh-button,.sd-filter-tabs button,.sd-side-link,.sd-sidebar-secure
+) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-side-link.is-active,.sd-side-link:hover,.sd-filter-tabs button.is-active
+) {
+  background: var(--sa-accent-soft) !important;
+  color: var(--sa-accent-strong) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-dashboard :is(
+  .sd-hero::after,.sd-metric-card::before
+) { opacity: .22; }
+
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page :is(
+  .super-users-branch-overview,.super-users-directory,.super-users-stat-card,
+  .super-users-table,.super-users-modal,.super-users-toolbar,.super-users-search,
+  .super-users-filter,.super-users-view,.super-users-pagination button,
+  .super-users-secondary-action,.super-users-refresh
+) {
+  background: var(--sa-surface-raised) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+  box-shadow: none !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page :is(
+  h1,h2,h3,strong,.super-users-stat-card strong,.super-users-person-copy strong,
+  .super-users-branch-card strong,.super-users-branch
+) { color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page :is(
+  p,small,.super-users-kicker,.super-users-header p,.super-users-stat-label,
+  .super-users-stat-card small,.super-users-person-copy small,.super-users-subtext,
+  .super-users-branch-card span,.super-users-branch-card small,.super-users-date,
+  .super-users-state,.super-users-privacy-note
+) { color: var(--sa-text-muted) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page :is(
+  .super-users-branch-card,.super-users-stat-icon,.super-users-avatar,
+  .super-users-secure-badge,.super-users-tabs button span
+) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-accent-strong) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page :is(
+  .super-users-branch-card.is-selected,.super-users-stat-card.is-selected,
+  .super-users-tabs button.is-active
+) {
+  background: var(--sa-accent-soft) !important;
+  color: var(--sa-accent-strong) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page :is(
+  .super-users-table th,.super-users-table td,.super-users-tabs,.super-users-pagination,
+  .super-users-toolbar
+) { border-color: var(--sa-border) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page .super-users-table th {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text-muted) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page .super-users-table td {
+  background: var(--sa-surface-raised) !important;
+  color: var(--sa-text) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .super-users-page .super-users-table tr:hover td {
+  background: var(--sa-surface-muted) !important;
+}
+
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins :is(
+  .sa-admins-stats article,.sa-admins-toolbar,.sa-admins-tablewrap,
+  .sa-admins-drawer,.sa-admins-profilegrid article,.sa-admin-action-panel,
+  .sa-admin-permission-option,.sa-admin-profile-permissions,
+  .sa-admin-current-permissions,.sa-admins-more,.sa-admins-menu
+) {
+  background: var(--sa-surface-raised) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+  box-shadow: none !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins :is(
+  h1,h2,h3,strong,.sa-admin-current-permissions>div strong,
+  .sa-admin-profile-permissions header strong,.sa-admin-permission-grid strong
+) { color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins :is(
+  p,small,span,dt,.sa-admins-header p,.sa-admins-hint,.sa-admin-permission-help,
+  .sa-admin-permission-grid small,.sa-admin-profile-permissions header small
+) { color: var(--sa-text-muted); }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins :is(
+  input,select,textarea,.sa-admins-menu button,.sa-admins-expiry input
+) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins .sa-admins-tablewrap :is(th,td) {
+  background: var(--sa-surface-raised) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins .sa-admins-tablewrap th {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-text-muted) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page .sa-admins .sa-admins-menu button:hover {
+  background: var(--sa-accent-soft) !important;
+  color: var(--sa-accent-strong) !important;
+}
+
+/* Palette is the single source of truth in both light and dark modes. */
+html[data-sa-theme] .super-admin-shell .super-admin-page :is(
+  .super-dashboard,.super-users-page,.sa-admins
+) {
+  --module-accent: var(--sa-accent);
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  .super-dashboard,.super-users-page,.sa-admins
+) :is(
+  .sd-eyebrow,.sd-section-kicker,.sd-hero-label,.sd-hero-summary strong,
+  .sd-metric-icon,.sd-queue-count.has-pending,.sd-governance-action,
+  .sd-side-link.is-active,.sd-side-link:hover,.super-users-kicker,
+  .super-users-tabs button.is-active,.super-users-cgpa,.super-users-view:hover,
+  .sa-admins-kicker,.sa-admins-view,.sa-admins-menu button svg
+) { color: var(--sa-accent) !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  .super-dashboard,.super-users-page,.sa-admins
+) :is(
+  .sd-metric-card::before,.sd-filter-tabs button.is-active,
+  .super-users-refresh,.super-users-tabs button.is-active,
+  .sa-admins-more[aria-expanded="true"]
+) { border-color: var(--sa-accent) !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  .super-users-refresh,.sd-filter-tabs button.is-active
+) { background: var(--sa-accent) !important; color: #fff !important; }
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  .super-dashboard,.super-users-page,.sa-admins
+) :is(.super-users-stat-icon:not(.guest),.super-users-avatar,.sa-admins-avatar) {
+  background: var(--sa-accent-soft) !important;
+  color: var(--sa-accent) !important;
+  border-color: var(--sa-accent-border) !important;
+}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  .super-dashboard,.super-users-page,.sa-admins
+) :is(.sd-tone-violet .sd-metric-icon,.sd-tone-blue .sd-metric-icon,.sd-tone-amber .sd-metric-icon,
+     .sd-governance-icon.governance-violet,.sd-governance-icon.governance-blue) {
+  background: var(--sa-surface-muted) !important;
+  color: var(--sa-accent-strong) !important;
+}
+
+/* Do not let legacy component styles force a light native date/select control. */
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page input,
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page select,
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page textarea {
+  color-scheme: dark;
+}
