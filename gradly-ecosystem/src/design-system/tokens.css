@@ -1,0 +1,75 @@
+/* Gradly design foundation — primitive colour and sizing tokens only. */
+:root {
+  color-scheme: light;
+  --g-font-sans: "Manrope", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --g-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --g-white: #ffffff;
+  --g-black: #101828;
+  --g-slate-25: #fcfcfd;
+  --g-slate-50: #f9fafb;
+  --g-slate-100: #f2f4f7;
+  --g-slate-200: #eaecf0;
+  --g-slate-300: #d0d5dd;
+  --g-slate-400: #98a2b3;
+  --g-slate-500: #667085;
+  --g-slate-600: #475467;
+  --g-slate-700: #344054;
+  --g-slate-800: #1d2939;
+  --g-slate-900: #101828;
+
+  --g-green-50: #ecfdf3;
+  --g-green-100: #d1fadf;
+  --g-green-600: #039855;
+  --g-green-700: #027a48;
+  --g-blue-50: #eff8ff;
+  --g-blue-100: #d1e9ff;
+  --g-blue-600: #1570ef;
+  --g-blue-700: #175cd3;
+  --g-purple-50: #f4f3ff;
+  --g-purple-100: #e9e7ff;
+  --g-purple-600: #6941c6;
+  --g-purple-700: #53389e;
+  --g-amber-50: #fffaeb;
+  --g-amber-100: #fef0c7;
+  --g-amber-700: #b54708;
+  --g-red-50: #fef3f2;
+  --g-red-100: #fee4e2;
+  --g-red-600: #d92d20;
+  --g-red-700: #b42318;
+  --g-cyan-50: #ecfdff;
+  --g-cyan-100: #cff9fe;
+  --g-cyan-700: #0e7090;
+
+  --g-space-0: 0;
+  --g-space-1: 0.25rem;
+  --g-space-2: 0.5rem;
+  --g-space-3: 0.75rem;
+  --g-space-4: 1rem;
+  --g-space-5: 1.25rem;
+  --g-space-6: 1.5rem;
+  --g-space-8: 2rem;
+  --g-space-10: 2.5rem;
+  --g-space-12: 3rem;
+  --g-space-16: 4rem;
+  --g-space-20: 5rem;
+  --g-space-24: 6rem;
+
+  --g-radius-xs: 0.25rem;
+  --g-radius-sm: 0.375rem;
+  --g-radius-md: 0.625rem;
+  --g-radius-lg: 0.875rem;
+  --g-radius-xl: 1.125rem;
+  --g-radius-2xl: 1.5rem;
+  --g-radius-full: 9999px;
+
+  --g-shadow-xs: 0 1px 2px rgb(16 24 40 / 5%);
+  --g-shadow-sm: 0 1px 3px rgb(16 24 40 / 8%), 0 1px 2px rgb(16 24 40 / 5%);
+  --g-shadow-md: 0 4px 8px -2px rgb(16 24 40 / 10%), 0 2px 4px -2px rgb(16 24 40 / 6%);
+  --g-shadow-lg: 0 12px 24px -8px rgb(16 24 40 / 14%), 0 4px 8px -4px rgb(16 24 40 / 7%);
+
+  --g-content-width: 90rem;
+  --g-page-gutter: clamp(1rem, 3vw, 2.5rem);
+  --g-control-height: 2.625rem;
+  --g-touch-target: 2.75rem;
+}

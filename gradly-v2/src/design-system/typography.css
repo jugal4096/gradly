@@ -1,0 +1,24 @@
+:root {
+  --g-text-xs: 0.75rem;
+  --g-text-sm: 0.875rem;
+  --g-text-md: 1rem;
+  --g-text-lg: 1.125rem;
+  --g-text-xl: 1.25rem;
+  --g-text-2xl: 1.5rem;
+  --g-text-3xl: clamp(1.75rem, 3vw, 2rem);
+  --g-text-4xl: clamp(2rem, 4vw, 2.5rem);
+  --g-leading-tight: 1.2;
+  --g-leading-heading: 1.3;
+  --g-leading-body: 1.55;
+  --g-leading-relaxed: 1.7;
+  --g-weight-regular: 400;
+  --g-weight-medium: 500;
+  --g-weight-semibold: 600;
+  --g-weight-bold: 700;
+  --g-weight-extrabold: 800;
+  --g-tracking-tight: -0.035em;
+  --g-tracking-normal: 0;
+  --g-tracking-wide: 0.06em;
+}
+:where(h1,h2,h3,h4,h5,h6) { font-family: var(--g-font-sans); text-wrap: balance; }
+:where(p,li,label,small) { text-wrap: pretty; }

@@ -1,0 +1,84 @@
+/* Semantic aliases. Components should consume these, not raw palette values. */
+:root,
+:root[data-admin-theme="light"],
+:root[data-sa-theme="light"] {
+  color-scheme: light;
+  --g-bg: #f8fafc;
+  --g-bg-subtle: #f2f4f7;
+  --g-surface: #ffffff;
+  --g-surface-raised: #ffffff;
+  --g-surface-sunken: #f9fafb;
+  --g-text: #101828;
+  --g-text-secondary: #475467;
+  --g-text-muted: #667085;
+  --g-text-inverse: #ffffff;
+  --g-border: #eaecf0;
+  --g-border-strong: #d0d5dd;
+  --g-input-bg: #ffffff;
+  --g-overlay: rgb(16 24 40 / 48%);
+  --g-focus-ring: #84adff;
+  --g-success: #027a48;
+  --g-success-bg: #ecfdf3;
+  --g-warning: #b54708;
+  --g-warning-bg: #fffaeb;
+  --g-danger: #b42318;
+  --g-danger-bg: #fef3f2;
+  --g-info: #175cd3;
+  --g-info-bg: #eff8ff;
+  --g-disabled-bg: #f2f4f7;
+  --g-disabled-text: #98a2b3;
+  --g-accent: #175cd3;
+  --g-accent-hover: #1849a9;
+  --g-accent-active: #153e90;
+  --g-accent-soft: #eff8ff;
+  --g-accent-soft-strong: #d1e9ff;
+  --g-accent-contrast: #ffffff;
+}
+:root[data-sa-theme="light"] {
+  --g-accent: #6941c6;
+  --g-accent-hover: #53389e;
+  --g-accent-active: #42307d;
+  --g-accent-soft: #f4f3ff;
+  --g-accent-soft-strong: #e9e7ff;
+}
+:root[data-admin-theme="dark"],
+:root[data-sa-theme="dark"] {
+  color-scheme: dark;
+  --g-bg: #101828;
+  --g-bg-subtle: #1d2939;
+  --g-surface: #1d2939;
+  --g-surface-raised: #243247;
+  --g-surface-sunken: #172334;
+  --g-text: #f2f4f7;
+  --g-text-secondary: #d0d5dd;
+  --g-text-muted: #98a2b3;
+  --g-text-inverse: #101828;
+  --g-border: #344054;
+  --g-border-strong: #475467;
+  --g-input-bg: #172334;
+  --g-overlay: rgb(3 7 18 / 68%);
+  --g-focus-ring: #84adff;
+  --g-success: #6ce9a6;
+  --g-success-bg: #063b2b;
+  --g-warning: #fec84b;
+  --g-warning-bg: #4a2d0b;
+  --g-danger: #fda29b;
+  --g-danger-bg: #55160c;
+  --g-info: #84caff;
+  --g-info-bg: #102a56;
+  --g-disabled-bg: #344054;
+  --g-disabled-text: #667085;
+  --g-accent: #84adff;
+  --g-accent-hover: #b2ccff;
+  --g-accent-active: #d1e0ff;
+  --g-accent-soft: #102a56;
+  --g-accent-soft-strong: #1849a9;
+  --g-accent-contrast: #101828;
+}
+:root[data-sa-theme="dark"] {
+  --g-accent: #bdb4fe;
+  --g-accent-hover: #d9d6fe;
+  --g-accent-active: #e9e7ff;
+  --g-accent-soft: #2d2460;
+  --g-accent-soft-strong: #42307d;
+}

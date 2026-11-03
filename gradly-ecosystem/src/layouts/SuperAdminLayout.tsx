@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   KeyRound,
   LogOut,
+  Menu,
+  X,
   MessageSquare,
   ScrollText,
   Settings,
@@ -110,6 +112,7 @@ export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -122,6 +125,14 @@ export default function SuperAdminLayout() {
       setNewCount(Number(data.counts?.unacknowledged) || 0);
     } catch { /* Keep the last known badge count while offline. */ }
   }, []);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   useEffect(() => {
     void loadRequestCounts();
     const timer = window.setInterval(() => void loadRequestCounts(), 45000);
@@ -183,6 +194,8 @@ export default function SuperAdminLayout() {
         </div>
 
 
+        <button type="button" className="super-admin-mobile-menu" aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileNavOpen} aria-controls="super-admin-navigation" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button>
+
         <div className="topbar-status">
 
           <span className="status-light" />
@@ -207,7 +220,8 @@ export default function SuperAdminLayout() {
             SIDEBAR
             =================================================== */}
 
-        <aside className="super-admin-sidebar">
+        {mobileNavOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
+        <aside id="super-admin-navigation" className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}`} aria-label="Super Admin navigation">
 
 
           <div className="sidebar-heading">
@@ -215,7 +229,7 @@ export default function SuperAdminLayout() {
           </div>
 
 
-          <nav className="sidebar-navigation">
+          <nav className="sidebar-navigation" aria-label="Control navigation">
 
             {controlNavigation.map(
               (item) => {
@@ -229,6 +243,7 @@ export default function SuperAdminLayout() {
                     key={item.path}
                     to={item.path}
                     end={item.end}
+                    onClick={() => setMobileNavOpen(false)}
                     className={({ isActive }) =>
                       `sidebar-link ${
                         isActive
@@ -277,7 +292,7 @@ export default function SuperAdminLayout() {
           </div>
 
 
-          <nav className="sidebar-navigation">
+          <nav className="sidebar-navigation" aria-label="System navigation">
 
             {systemNavigation.map(
               (item) => {
@@ -290,6 +305,7 @@ export default function SuperAdminLayout() {
                   <NavLink
                     key={item.path}
                     to={item.path}
+                    onClick={() => setMobileNavOpen(false)}
                     className={({ isActive }) =>
                       `sidebar-link ${
                         isActive
