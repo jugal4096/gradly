@@ -1,3 +1,4 @@
+import { isValidAdminPermission } from "../../config/permissions";
 import {
     createAdminAuditLog,
   } from "../admin-application/admin-application.repository";
@@ -46,6 +47,39 @@ import {
     return admin;
   }
   
+  /* =========================================================
+     UPDATE ADMIN PERMISSIONS
+     ========================================================= */
+
+  export async function changeAdministratorPermissions(
+    adminId: string,
+    permissionCodes: string[],
+    superAdminId: string,
+    ipAddress?: string | null
+  ) {
+    const admin = await findAdministratorById(adminId);
+    if (!admin) throw new Error("Administrator was not found.");
+    if (!Array.isArray(permissionCodes)) throw new Error("Permissions must be an array.");
+    const unique = [...new Set(permissionCodes)];
+    const invalid = unique.filter((code) => !isValidAdminPermission(code));
+    if (invalid.length) throw new Error("Invalid permission codes: " + invalid.join(", "));
+    const previous = await getAdministratorPermissionsForAdmin(adminId);
+    const permissions = await replaceAdministratorPermissions(adminId, unique);
+    await createAdminAuditLog({
+      superAdminId,
+      action: "ADMIN_PERMISSIONS_UPDATED",
+      entityTable: "admins",
+      entityId: adminId,
+      ipAddress,
+      metadata: { previousPermissions: previous, newPermissions: permissions },
+    });
+    return permissions;
+  }
+
+  export async function getAdministratorPermissions(adminId: string) {
+    return await getAdministratorPermissionsForAdmin(adminId);
+  }
+
   /* =========================================================
      CHANGE STATUS
      ========================================================= */
