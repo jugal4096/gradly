@@ -2723,3 +2723,19 @@
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Recoverable Quick Logs controls */
+.sd-quick-log-actions,.sd-selected-log-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sd-selected-log-actions{padding:10px 12px;margin:0 0 12px;border:1px solid var(--sa-border,#dfe3ea);border-radius:12px;background:var(--sa-surface-muted,#f5f6fa)}
+.sd-selected-log-actions>span{font-size:13px;font-weight:700;color:var(--sa-text,#242936);margin-right:auto}
+.sd-archive-action,.sd-archive-one{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--sa-border,#dfe3ea);border-radius:9px;background:var(--sa-surface,#fff);color:var(--sa-text,#242936);font-size:12px;font-weight:650;padding:8px 11px;cursor:pointer}
+.sd-archive-action:hover,.sd-archive-one:hover{border-color:#16845b;color:#16845b;background:#e3f5ed}
+.sd-archive-action:disabled,.sd-archive-one:disabled{opacity:.5;cursor:not-allowed}
+.sd-archive-one{flex:0 0 34px;width:34px;height:34px;padding:0}
+.sd-activity-select{flex:0 0 auto;width:16px;height:16px;accent-color:#16845b;cursor:pointer}
+.sd-activity-item{gap:12px}
+html[data-sa-theme="dark"] .sd-selected-log-actions{background:#202b34;border-color:#354452}
+html[data-sa-theme="dark"] .sd-selected-log-actions>span{color:#edf3f0}
+html[data-sa-theme="dark"] .sd-archive-action,html[data-sa-theme="dark"] .sd-archive-one{background:#202b34;border-color:#40505e;color:#d9e7df}
+html[data-sa-theme="dark"] .sd-archive-action:hover,html[data-sa-theme="dark"] .sd-archive-one:hover{background:#18392d;border-color:#28684d;color:#9be5c2}
