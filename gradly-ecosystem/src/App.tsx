@@ -37,7 +37,6 @@ import RequireSuperAdmin from "./components/RequireSuperAdmin";
 
 import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import SuperAdminUsers from "./pages/super-admin/SuperAdminUsers";
-import SuperAdminBlacklist from "./pages/super-admin/SuperAdminBlacklist";
 import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
@@ -162,9 +161,10 @@ function App() {
             element={<SuperAdminUsers />}
           />
 
+          {/* Preserve old bookmarks while keeping blacklist management inside Settings. */}
           <Route
             path="blacklist"
-            element={<SuperAdminBlacklist />}
+            element={<Navigate to="/super-admin/settings#account-restrictions" replace />}
           />
 
           <Route

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Settings2, ShieldCheck, Server, RefreshCw, CheckCircle2, AlertCircle, MonitorCog, LogOut, Sun, Moon, Type, Palette, Layout, RotateCcw, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./SuperAdminSettings.css";
+import SuperAdminBlacklist from "./SuperAdminBlacklist";
 
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api")
   .trim()
@@ -71,6 +72,7 @@ export default function SuperAdminSettings(){
    <div className="sa-settings-preference-footer">{saved&&<p className="sa-settings-saved" role="status"><Check size={15}/> Preferences saved automatically.</p>}<button className="sa-settings-reset" onClick={reset}><RotateCcw size={14}/> Reset defaults</button></div>
    <div className="sa-settings-info"><Settings2 size={17}/><p>These are local browser preferences for this device, not organization-wide settings. Some pages may need their theme styles wired to these preferences to reflect every change.</p></div>
   </section>
+  <section id="account-restrictions" className="sa-settings-section"><div className="sa-settings-section-title"><ShieldCheck size={19}/><div><h2>Account restrictions</h2><p>Review disabled accounts and restore access when appropriate. This replaces the separate Blacklist navigation page.</p></div></div><SuperAdminBlacklist /></section>
   <section className="sa-settings-section"><div className="sa-settings-section-title"><Server size={19}/><div><h2>System diagnostics</h2><p>Live checks against the authenticated Gradly API.</p></div></div><div className="sa-settings-checks">{([{key:"session",title:"Super Admin session",icon:ShieldCheck,check:checks.session},{key:"database",title:"Backend / dashboard API",icon:Server,check:checks.database}] as const).map(item=>{const Icon=item.icon;return <article className={"sa-settings-check "+item.check.state} key={item.key}><div className="sa-settings-check-icon"><Icon size={19}/></div><div className="sa-settings-check-copy"><strong>{item.title}</strong><span>{item.check.detail}</span></div><StatusIcon state={item.check.state}/></article>})}</div><p className="sa-settings-hint">A successful API response does not independently verify every database table or feature.</p></section>
   <section className="sa-settings-section sa-settings-danger"><div className="sa-settings-section-title"><LogOut size={19}/><div><h2>Session</h2><p>End the current Super Admin session on this device.</p></div></div>{!confirmLogout?<button className="sa-settings-logout" onClick={()=>setConfirmLogout(true)}>Sign out</button>:<div className="sa-settings-confirm"><span>Sign out of Gradly Super Admin?</span><button onClick={logout}>Confirm sign out</button><button onClick={()=>setConfirmLogout(false)}>Cancel</button></div>}</section>
  </main>;
