@@ -1,7 +1,27 @@
 import { isValidAdminPermission } from "../../config/permissions";
-import {
-    createAdminAuditLog,
-  } from "../admin-application/admin-application.repository";
+import { createAuditLog } from "../super-admin/user-management.repository";
+
+type AdminAuditInput = {
+  superAdminId: string;
+  action: string;
+  entityTable: string;
+  entityId: string;
+  ipAddress?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+async function createAdminAuditLog(input: AdminAuditInput) {
+  return createAuditLog({
+    actorType: "SUPER_ADMIN",
+    actorId: input.superAdminId,
+    actorRole: "SUPER_ADMIN",
+    action: input.action,
+    entityTable: input.entityTable,
+    entityId: input.entityId,
+    ipAddress: input.ipAddress,
+    metadata: input.metadata,
+  });
+}
   
   import {
     findAdministrators,
