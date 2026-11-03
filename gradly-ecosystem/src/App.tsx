@@ -41,6 +41,8 @@ import SuperAdminUserDetails from "./pages/super-admin/SuperAdminUserDetails";
 import SuperAdminApplications from "./pages/super-admin/SuperAdminApplications";
 import SuperAdminAudit from "./pages/super-admin/SuperAdminAudit";
 import SuperAdminAdmins from "./pages/super-admin/SuperAdminAdmins";
+import SuperAdminAdminProfile from "./pages/super-admin/SuperAdminAdminProfile";
+import SuperAdminAdminActions from "./pages/super-admin/SuperAdminAdminActions";
 import SuperAdminFeedback from "./pages/super-admin/SuperAdminFeedback";
 import SuperAdminCurriculum from "./pages/super-admin/SuperAdminCurriculum";
 import SuperAdminSettings from "./pages/super-admin/SuperAdminSettings";
@@ -171,6 +173,10 @@ function App() {
             path="admins"
             element={<SuperAdminAdmins />}
           />
+
+          <Route path="admins/:adminId/profile" element={<SuperAdminAdminProfile />} />
+          <Route path="admins/:adminId/activity" element={<SuperAdminAudit />} />
+          <Route path="admins/:adminId/actions" element={<SuperAdminAdminActions />} />
 
           <Route
             path="users/:userId"
