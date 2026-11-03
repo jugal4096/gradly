@@ -1,0 +1,18 @@
+:root {
+  --g-surface-border: 1px solid var(--g-border);
+  --g-card-radius: var(--g-radius-xl);
+  --g-control-radius: var(--g-radius-md);
+  --g-dialog-radius: var(--g-radius-2xl);
+  --g-sidebar-width: 16rem;
+  --g-sidebar-collapsed-width: 4.5rem;
+  --g-topbar-height: 4rem;
+  --g-shadow-focus: 0 0 0 3px color-mix(in srgb, var(--g-focus-ring) 35%, transparent);
+}
+.g-card { background: var(--g-surface); border: var(--g-surface-border); border-radius: var(--g-card-radius); box-shadow: var(--g-shadow-xs); }
+.g-surface-raised { background: var(--g-surface-raised); border: var(--g-surface-border); box-shadow: var(--g-shadow-sm); }
+.g-control { min-height: var(--g-control-height); border: 1px solid var(--g-border-strong); border-radius: var(--g-control-radius); background: var(--g-input-bg); color: var(--g-text); }
+:where(button,a,input,select,textarea,[tabindex]):focus-visible { outline: 3px solid var(--g-focus-ring); outline-offset: 2px; }
+:where(button,input,select,textarea) { font: inherit; }
+@media (max-width: 480px) {
+  :root { --g-control-height: 2.75rem; }
+}
