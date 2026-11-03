@@ -122,12 +122,21 @@ export default function SuperAdminLayout() {
     };
     const theme = readPreference("gradly_sa_theme", "light");
     const palette = readPreference("gradly_sa_palette", "purple");
+    const deviceDark = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const effectiveTheme = theme === "system" ? (deviceDark.matches ? "dark" : "light") : theme;
+      root.dataset.saTheme = effectiveTheme;
+      root.dataset.saThemePreference = theme;
+      root.style.colorScheme = effectiveTheme;
+    };
+    applyTheme();
+    if (theme === "system") {
+      deviceDark.addEventListener("change", applyTheme);
+    }
     const font = readPreference("gradly_sa_font", "system");
     const fontSize = readPreference("gradly_sa_font_size", "normal");
     const compact = readPreference("gradly_sa_compact_tables", "false") === "true";
     const reducedMotion = readPreference("gradly_sa_reduced_motion", "false") === "true";
-    root.dataset.saTheme = theme === "dark" ? "dark" : "light";
-    root.style.colorScheme = theme === "dark" ? "dark" : "light";
     root.dataset.saPalette = palette === "green" ? "green" : "purple";
     root.dataset.saFont = font;
     root.dataset.saFontSize = fontSize;
