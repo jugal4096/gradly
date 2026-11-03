@@ -1599,3 +1599,138 @@ html[data-sa-palette="green"] .super-admin-page :is([class*="purple"],[class*="v
 html[data-sa-palette="green"] .super-admin-page :is(a,button,[role="button"],[role="tab"]):focus-visible{outline-color:#16845b!important}
 html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-page :is([class*="purple"],[class*="violet"],[class*="indigo"]):is(button,[role="button"],[role="tab"],.active,.selected,[aria-selected="true"]){background:#18392d!important;border-color:#28684d!important;color:#9be5c2!important}
 html[data-sa-theme="dark"] .super-admin-page :is([class*="card"],[class*="panel"],[class*="section"],[class*="table"],[class*="drawer"],[class*="modal"],[class*="toolbar"],[class*="stats"]){color:var(--sa-text,#eeeaf5)}
+
+
+/* =========================================================
+   Super Admin final workspace appearance contract
+   This is intentionally last in the stylesheet so page-level
+   legacy styles cannot reintroduce purple or white surfaces.
+   ========================================================= */
+html[data-sa-palette="green"] .super-admin-shell {
+  --sa-accent:#16845b!important;
+  --sa-accent-strong:#35b77f!important;
+  --sa-accent-soft:#e3f5ed!important;
+  --sa-accent-border:#a9ddc2!important;
+  --sa-primary:#16845b!important;
+  --sa-primary-dark:#116b49!important;
+  --sa-primary-soft:#e3f5ed!important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  [class*="purple"],[class*="Purple"],[class*="violet"],[class*="Violet"],
+  [class*="indigo"],[class*="Indigo"],[class*="primary"],[class*="Primary"]
+):not([class*="priority"]):not([class*="status"]):not([class*="danger"]):not([class*="error"]) {
+  --sa-primary:#16845b!important;
+  --sa-primary-dark:#116b49!important;
+  --sa-primary-soft:#e3f5ed!important;
+  --sa-accent:#16845b!important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  button[class*="primary"],button[class*="Primary"],[class*="btn-primary"],
+  [class*="button-primary"],[data-variant="primary"],[role="tab"][aria-selected="true"],
+  [aria-current="page"],.is-active,.active,.selected
+):not([class*="danger"]):not([class*="delete"]) {
+  background-color:#16845b!important;
+  border-color:#16845b!important;
+  color:#fff!important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  [class*="purple"],[class*="Purple"],[class*="violet"],[class*="Violet"],
+  [class*="indigo"],[class*="Indigo"]
+):not(button):not([role="button"]):not([role="tab"]) {
+  border-color:#c9e8d7!important;
+}
+html[data-sa-palette="green"] .super-admin-shell .super-admin-page :is(a,[role="tab"][aria-selected="true"],[aria-current="page"]) {
+  color:#16845b!important;
+}
+html[data-sa-theme="dark"] .super-admin-shell {
+  --sa-canvas:#111820!important;
+  --sa-surface:#1b242e!important;
+  --sa-surface-raised:#222d38!important;
+  --sa-surface-muted:#293642!important;
+  --sa-border:#354452!important;
+  --sa-text:#edf3f0!important;
+  --sa-text-muted:#b5c1bc!important;
+  background:#111820!important;
+  color:#edf3f0!important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page,
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-content {
+  background:#111820!important;
+  color:#edf3f0!important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(
+  [class*="card"],[class*="Card"],[class*="panel"],[class*="Panel"],
+  [class*="section"],[class*="Section"],[class*="table"],[class*="Table"],
+  [class*="drawer"],[class*="Drawer"],[class*="modal"],[class*="Modal"],
+  [class*="toolbar"],[class*="Toolbar"],[class*="filter"],[class*="Filter"],
+  [class*="stat"],[class*="Stat"],[class*="list"],[class*="List"],
+  [class*="item"],[class*="Item"],[class*="empty"],[class*="Empty"],
+  [class*="form"],[class*="Form"],[class*="box"],[class*="Box"]
+):not([class*="badge"]):not([class*="icon"]):not([class*="status"]):not([class*="success"]):not([class*="warning"]):not([class*="danger"]):not([class*="error"]) {
+  background-color:#1b242e!important;
+  border-color:#354452!important;
+  color:#edf3f0!important;
+  box-shadow:none;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(
+  h1,h2,h3,h4,h5,h6,strong,label,th,dt,dd
+) { color:#f0f5f2!important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(
+  p,small,caption,[class*="muted"],[class*="subtitle"],[class*="description"],[class*="hint"]
+) { color:#b5c1bc!important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(
+  input:not([type="checkbox"]):not([type="radio"]),select,textarea
+) {
+  background:#121a22!important;
+  border-color:#40505e!important;
+  color:#edf3f0!important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(th) {background:#263440!important;color:#edf3f0!important}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(td) {background:#1b242e!important;color:#e2ebe6!important;border-color:#354452!important}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page tr:hover td {background:#263440!important}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page :is(
+  [style*="background: white"],[style*="background:white"],
+  [style*="background-color: white"],[style*="background-color:white"],
+  [style*="background: #fff"],[style*="background:#fff"],
+  [style*="background-color: #fff"],[style*="background-color:#fff"],
+  [style*="background: rgb(255"],[style*="background-color: rgb(255"]
+) {background:#1b242e!important;color:#edf3f0!important;border-color:#354452!important}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .super-admin-page :is(
+  [class*="purple"],[class*="Purple"],[class*="violet"],[class*="Violet"],
+  [class*="indigo"],[class*="Indigo"],button[class*="primary"],[class*="btn-primary"],
+  [role="tab"][aria-selected="true"],[aria-current="page"],.is-active,.active,.selected
+):not([class*="danger"]):not([class*="delete"]):not([class*="priority"]) {
+  background-color:#18392d!important;
+  border-color:#28684d!important;
+  color:#9be5c2!important;
+}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .super-admin-page button[class*="primary"],
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-admin-shell .super-admin-page [class*="btn-primary"] {
+  background:#16845b!important;color:#fff!important;border-color:#16845b!important;
+}
+
+/* Three-line workspace drawer control; no per-section overflow menus. */
+.super-admin-workspace-toggle{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;margin:0 14px 0 auto;border:1px solid var(--sa-border,#dfe3ea)!important;border-radius:10px;background:var(--sa-surface,#fff)!important;color:var(--sa-accent,#16845b)!important;cursor:pointer}
+.super-admin-workspace-toggle:hover{background:var(--sa-accent-soft,#e3f5ed)!important;border-color:var(--sa-accent,#16845b)!important}
+.super-admin-workspace-toggle svg{width:21px;height:21px}
+.super-admin-sidebar{transition:width 180ms ease,transform 180ms ease}
+.super-admin-sidebar.is-workspace-collapsed{width:76px!important;min-width:76px!important}
+.super-admin-sidebar.is-workspace-collapsed .sidebar-heading,
+.super-admin-sidebar.is-workspace-collapsed .sidebar-link span,
+.super-admin-sidebar.is-workspace-collapsed .sidebar-link .sidebar-arrow,
+.super-admin-sidebar.is-workspace-collapsed .sidebar-version,
+.super-admin-sidebar.is-workspace-collapsed .sidebar-logout span{display:none!important}
+.super-admin-sidebar.is-workspace-collapsed .sidebar-link,
+.super-admin-sidebar.is-workspace-collapsed .sidebar-logout{justify-content:center!important;padding-left:0!important;padding-right:0!important}
+@media(max-width:850px){
+  .super-admin-workspace-toggle{margin-left:auto}
+  .super-admin-sidebar.is-workspace-collapsed{width:min(320px,86vw)!important;min-width:0!important}
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-heading,
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-link span,
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-link .sidebar-arrow,
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-version,
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-logout span{display:initial!important}
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-heading{display:block!important}
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-link,
+  .super-admin-sidebar.is-workspace-collapsed .sidebar-logout{justify-content:flex-start!important;padding-left:10px!important;padding-right:10px!important}
+}
