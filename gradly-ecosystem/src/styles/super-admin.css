@@ -1244,3 +1244,15 @@ html[data-sa-theme="light"] .super-admin-shell .super-admin-page :is(button[clas
   border-color: var(--sa-accent) !important;
   color: #fff !important;
 }
+
+
+/* Catch remaining legacy inline white surfaces inside routed admin pages. */
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="background"][style*="white"],
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="background"][style*="#fff"],
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="background"][style*="rgb(255"] {
+  background: var(--sa-surface-raised) !important;
+  color: var(--sa-text) !important;
+  border-color: var(--sa-border) !important;
+}
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="color: rgb("] { color: var(--sa-text) !important; }
+html[data-sa-theme="dark"] .super-admin-shell .super-admin-page [style*="color: #"] { color: var(--sa-text) !important; }
