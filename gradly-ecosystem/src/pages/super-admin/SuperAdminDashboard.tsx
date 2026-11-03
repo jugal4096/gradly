@@ -512,12 +512,13 @@ export default function SuperAdminDashboard() {
       if (!response.ok || result?.success === false) throw new Error(result?.message || `Archive failed (${response.status}).`);
       setSelectedActivityIds([]);
       await loadDashboard();
+      if (archivedLogsOpen) await loadArchivedLogs();
     } catch (caught) {
       window.alert(caught instanceof Error ? caught.message : "Unable to archive quick logs.");
     } finally {
       setArchivingLogs(false);
     }
-  }, [loadDashboard]);
+  }, [loadDashboard, archivedLogsOpen, loadArchivedLogs]);
 
   useEffect(() => {
     void loadDashboard();
@@ -1491,7 +1492,7 @@ export default function SuperAdminDashboard() {
 
                 <div className="sd-quick-log-actions">
                   <span className="sd-panel-badge">{activities.length} EVENTS</span>
-                  <button type="button" className="sd-archive-action" onClick={() => { setArchivedLogsOpen((open) => !open); if (!archivedLogsOpen) void loadArchivedLogs(); }}><Archive size={14} /> {archivedLogsOpen ? "Hide archive" : "View archive"}</button>
+                  <button type="button" className="sd-archive-action" onClick={() => { setArchivedLogsOpen((open) => !open); if (!archivedLogsOpen) void loadArchivedLogs().catch((caught) => window.alert(caught instanceof Error ? caught.message : "Unable to load archived logs.")); }}><Archive size={14} /> {archivedLogsOpen ? "Hide archive" : "View archive"}</button>
                   <button type="button" className="sd-archive-action" disabled={archivingLogs || activities.length === 0} onClick={() => void archiveActivityLogs(undefined, true)}><Archive size={14} /> Archive all</button>
                 </div>
               </div>
