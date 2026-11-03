@@ -51,7 +51,7 @@ const controlNavigation = [
     icon: ClipboardList,
   },
   {
-    label: "Request Center",
+    label: "Request Log",
     path: "/super-admin/requests",
     icon: ClipboardList,
   },
@@ -69,11 +69,6 @@ const controlNavigation = [
     label: "Admin Announcements",
     path: "/super-admin/admin-announcements",
     icon: Send,
-  },
-  {
-    label: "Admin Subject Requests",
-    path: "/super-admin/admin-requests",
-    icon: ClipboardList,
   },
   {
     label: "Feedback",
@@ -129,8 +124,11 @@ export default function SuperAdminLayout() {
 
   useEffect(() => {
     void loadRequestCounts();
-    const timer = window.setInterval(() => void loadRequestCounts(), 45000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => void loadRequestCounts(), 20000);
+    const refreshOnFocus = () => { if (document.visibilityState === "visible") void loadRequestCounts(); };
+    window.addEventListener("focus", refreshOnFocus);
+    window.addEventListener("gradly:request-counts-updated", refreshOnFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", refreshOnFocus); window.removeEventListener("gradly:request-counts-updated", refreshOnFocus); };
   }, [loadRequestCounts]);
 
 
@@ -256,7 +254,7 @@ export default function SuperAdminLayout() {
                       {item.label}
                     </span>
                     {item.path === "/super-admin/requests" && unattendedCount > 0 && (
-                      <span className="sidebar-request-badge" title={newCount + " new, " + unattendedCount + " unattended"}>
+                      <span className="sidebar-request-badge" title={unattendedCount + " unattended requests" + (newCount ? " · " + newCount + " unacknowledged" : "")}>
                         {unattendedCount > 99 ? "99+" : unattendedCount}
                       </span>
                     )}
