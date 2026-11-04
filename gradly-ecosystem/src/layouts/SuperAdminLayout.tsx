@@ -9,12 +9,12 @@ import {
   KeyRound,
   LogOut,
   Menu,
-  X,
   MessageSquare,
   ScrollText,
   Settings,
   ShieldCheck,
-  Users
+  Users,
+
 } from "lucide-react";
 
 import { useCallback, useEffect, useState } from "react";
@@ -51,7 +51,7 @@ const controlNavigation = [
     icon: ClipboardList,
   },
   {
-    label: "Request Center",
+    label: "Request Log",
     path: "/super-admin/requests",
     icon: ClipboardList,
   },
@@ -69,11 +69,6 @@ const controlNavigation = [
     label: "Admin Announcements",
     path: "/super-admin/admin-announcements",
     icon: Send,
-  },
-  {
-    label: "Admin Subject Requests",
-    path: "/super-admin/admin-requests",
-    icon: ClipboardList,
   },
   {
     label: "Feedback",
@@ -107,6 +102,7 @@ export default function SuperAdminLayout() {
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -120,6 +116,36 @@ export default function SuperAdminLayout() {
     } catch { /* Keep the last known badge count while offline. */ }
   }, []);
   useEffect(() => {
+    // Restore workspace preferences before the first page interaction.
+    const root = document.documentElement;
+    const readPreference = (key: string, fallback: string) => {
+      try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
+    };
+    const deviceDark = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const preference = readPreference("gradly_sa_theme", "light");
+      const effectiveTheme = preference === "system" ? (deviceDark.matches ? "dark" : "light") : preference === "dark" ? "dark" : "light";
+      root.dataset.saTheme = effectiveTheme;
+      root.dataset.saThemePreference = preference;
+      root.style.colorScheme = effectiveTheme;
+    };
+    applyTheme();
+    deviceDark.addEventListener("change", applyTheme);
+    window.addEventListener("gradly:appearance-updated", applyTheme);
+    const palette = readPreference("gradly_sa_palette", "purple");
+    const font = readPreference("gradly_sa_font", "system");
+    const fontSize = readPreference("gradly_sa_font_size", "normal");
+    const compact = readPreference("gradly_sa_compact_tables", "false") === "true";
+    const reducedMotion = readPreference("gradly_sa_reduced_motion", "false") === "true";
+    root.dataset.saPalette = palette === "green" ? "green" : "purple";
+    root.dataset.saFont = font;
+    root.dataset.saFontSize = fontSize;
+    root.classList.toggle("sa-compact-tables", compact);
+    root.classList.toggle("sa-reduced-motion", reducedMotion);
+    return () => { deviceDark.removeEventListener("change", applyTheme); window.removeEventListener("gradly:appearance-updated", applyTheme); };
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileNavOpen(false);
     };
@@ -129,8 +155,11 @@ export default function SuperAdminLayout() {
 
   useEffect(() => {
     void loadRequestCounts();
-    const timer = window.setInterval(() => void loadRequestCounts(), 45000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => void loadRequestCounts(), 20000);
+    const refreshOnFocus = () => { if (document.visibilityState === "visible") void loadRequestCounts(); };
+    window.addEventListener("focus", refreshOnFocus);
+    window.addEventListener("gradly:request-counts-updated", refreshOnFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", refreshOnFocus); window.removeEventListener("gradly:request-counts-updated", refreshOnFocus); };
   }, [loadRequestCounts]);
 
 
@@ -188,7 +217,7 @@ export default function SuperAdminLayout() {
         </div>
 
 
-        <button type="button" className="super-admin-mobile-menu" aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileNavOpen} aria-controls="super-admin-navigation" onClick={() => setMobileNavOpen((open) => !open)}>{mobileNavOpen ? <X size={20}/> : <Menu size={20}/>}</button>
+        <button type="button" className="super-admin-workspace-toggle" aria-label={mobileNavOpen || !workspaceCollapsed ? "Close workspace navigation" : "Open workspace navigation"} aria-expanded={mobileNavOpen || !workspaceCollapsed} aria-controls="super-admin-navigation" onClick={() => { if (window.matchMedia("(max-width: 850px)").matches) setMobileNavOpen((open) => !open); else setWorkspaceCollapsed((collapsed) => !collapsed); }}><Menu size={20}/></button>
 
         <div className="topbar-status">
 
@@ -215,7 +244,7 @@ export default function SuperAdminLayout() {
             =================================================== */}
 
         {mobileNavOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
-        <aside id="super-admin-navigation" className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}`} aria-label="Super Admin navigation">
+        <aside id="super-admin-navigation" className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}${workspaceCollapsed ? " is-workspace-collapsed" : ""}`} aria-label="Super Admin navigation">
 
 
           <div className="sidebar-heading">
@@ -232,43 +261,24 @@ export default function SuperAdminLayout() {
                   item.icon;
 
                 return (
+                  <div className="sidebar-link-wrap" key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      end={item.end}
+                      onClick={() => setMobileNavOpen(false)}
+                      className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}
+                    >
+                      <Icon size={17} strokeWidth={1.8} />
+                      <span>{item.label}</span>
+                      {item.path === "/super-admin/requests" && unattendedCount > 0 && (
+                        <span className="sidebar-request-badge" title={unattendedCount + " unattended requests" + (newCount ? " · " + newCount + " unacknowledged" : "")}>
+                          {unattendedCount > 99 ? "99+" : unattendedCount}
+                        </span>
+                      )}
+                      <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
+                    </NavLink>
 
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.end}
-                    onClick={() => setMobileNavOpen(false)}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-                    {item.path === "/super-admin/requests" && unattendedCount > 0 && (
-                      <span className="sidebar-request-badge" title={newCount + " new, " + unattendedCount + " unattended"}>
-                        {unattendedCount > 99 ? "99+" : unattendedCount}
-                      </span>
-                    )}
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
+                  </div>
                 );
 
               }
@@ -295,37 +305,14 @@ export default function SuperAdminLayout() {
                   item.icon;
 
                 return (
+                  <div className="sidebar-link-wrap" key={item.path}>
+                    <NavLink to={item.path} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}>
+                      <Icon size={17} strokeWidth={1.8} />
+                      <span>{item.label}</span>
+                      <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
+                    </NavLink>
 
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileNavOpen(false)}
-                    className={({ isActive }) =>
-                      `sidebar-link ${
-                        isActive
-                          ? "sidebar-link-active"
-                          : ""
-                      }`
-                    }
-                  >
-
-                    <Icon
-                      size={17}
-                      strokeWidth={1.8}
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      className="sidebar-arrow"
-                      size={14}
-                      strokeWidth={1.7}
-                    />
-
-                  </NavLink>
-
+                  </div>
                 );
 
               }
