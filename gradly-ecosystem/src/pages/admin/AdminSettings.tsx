@@ -23,8 +23,18 @@ export default function AdminSettings() {
   const [reducedMotion, setReducedMotion] = useState(() => getSetting("gradly_admin_reduced_motion","false") === "true");
   const [saved, setSaved] = useState(false);
 
+  const [systemDark,setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const effectiveTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   useEffect(() => {
-    document.documentElement.dataset.adminTheme = theme;
+    const media=window.matchMedia("(prefers-color-scheme: dark)");
+    const update=()=>setSystemDark(media.matches);
+    update();
+    media.addEventListener("change",update);
+    return()=>media.removeEventListener("change",update);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.adminTheme = effectiveTheme;
     document.documentElement.dataset.adminPalette = palette;
     localStorage.setItem("gradly_admin_palette", palette);
     document.documentElement.dataset.adminFont = font;
@@ -73,8 +83,9 @@ export default function AdminSettings() {
         <section className="ad-panel">
           <div className="ad-panel-heading"><div><span className="ad-section-kicker">APPEARANCE</span><h2><Palette size={19}/> Appearance</h2><p>Choose the workspace appearance. Changes apply across the entire Admin application, not only this page.</p></div></div>
           <div className="ad-theme-options">
-            <button type="button" className={"ad-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>Light mode</strong><span>Bright and clean</span>{theme==="light"&&<Check size={17}/>}</button>
-            <button type="button" className={"ad-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark mode</strong><span>Gentler in low light</span>{theme==="dark"&&<Check size={17}/>}</button>
+            <button type="button" className={"ad-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>Light</strong><span>Bright, neutral surfaces</span>{theme==="light"&&<Check size={17}/>}</button>
+            <button type="button" className={"ad-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark</strong><span>Balanced low-light surfaces</span>{theme==="dark"&&<Check size={17}/>}</button>
+            <button type="button" className={"ad-theme-option"+(theme==="system"?" selected":"")} aria-pressed={theme==="system"} onClick={()=>setTheme("system")}><Layout size={22}/><strong>Use device setting</strong><span>Follow Windows / device appearance</span>{theme==="system"&&<Check size={17}/>}</button>
           </div>
         </section>
         <section className="ad-panel">
