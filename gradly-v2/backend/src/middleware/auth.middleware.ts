@@ -83,10 +83,33 @@ export function authenticateFirebaseToken(
  * Authentication variant for the Admin application only.
  * It verifies Firebase identity but does not block disabled Gradly accounts.
  */
-export function authenticateFirebaseTokenForAdminApplication(
+export async function authenticateFirebaseTokenForAdminApplication(
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) {
-  return authenticateFirebaseTokenWithOptions(req, res, next, true);
+  try {
+    const authorization = req.headers.authorization;
+    if (!authorization?.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "Missing Firebase authentication token." });
+    }
+
+    const decodedToken = await firebaseAuth.verifyIdToken(authorization.slice("Bearer ".length));
+    req.firebaseUser = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name,
+      emailVerified: decodedToken.email_verified === true,
+    };
+
+    // This limited workflow verifies identity only. Each password-request route
+    // independently checks the matching active administrator record before access.
+    return next();
+  } catch (error) {
+    console.error("Admin application Firebase authentication failed:", error);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired Google sign-in session. Sign in again and retry.",
+    });
+  }
 }
