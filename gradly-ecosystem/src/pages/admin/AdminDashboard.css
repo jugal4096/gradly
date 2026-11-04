@@ -112,3 +112,37 @@ html[data-admin-compact="true"] .admin-dashboard .ad-table td,html[data-admin-co
     min-height: 0;
   }
 }
+
+/* Shared Admin accent palettes: apply the selected identity to every workspace section. */
+.admin-dashboard[data-palette="blue"]{--forest:#173d70;--green:#2865b0;--mint:#e2efff;--ink:#203750;--muted:#71839a;--line:#dce8f7}
+.admin-dashboard[data-palette="blue"] .ad-sidebar{background:linear-gradient(180deg,#173d70,#102c50)}
+.admin-dashboard[data-palette="blue"] .ad-brand-mark{color:#173d70;background:linear-gradient(145deg,#e8f2ff,#9fc6f5)}
+.admin-dashboard[data-palette="blue"] .ad-sidebar-label{color:#9fc7f5}
+.admin-dashboard[data-palette="blue"] .ad-nav-link{color:#c1d8f2}
+.admin-dashboard[data-palette="blue"] .ad-nav-link.active{background:linear-gradient(100deg,#3478c4,#245c9e)}
+.admin-dashboard[data-palette="blue"] .ad-nav-link em{color:#173d70;background:#d7e9ff}
+.admin-dashboard[data-palette="blue"] .ad-hero{background:radial-gradient(ellipse at 82% 12%,#5a9de870,transparent 42%),linear-gradient(115deg,#173d70,#2865b0)}
+.admin-dashboard[data-palette="blue"] .ad-primary-action{color:#173d70;background:#d7e9ff;border-color:#b9d5f5}
+.admin-dashboard[data-palette="blue"] .ad-section-kicker,.admin-dashboard[data-palette="blue"] .ad-metric-card>a,.admin-dashboard[data-palette="blue"] .ad-quick-card>b,.admin-dashboard[data-palette="blue"] .ad-panel-heading h2 svg,.admin-dashboard[data-palette="blue"] .ad-icon-button{color:#2865b0}
+.admin-dashboard[data-palette="blue"] .ad-metric-icon,.admin-dashboard[data-palette="blue"] .ad-quick-card>span{color:#2865b0;background:#e2efff}
+.admin-dashboard[data-palette="blue"] .ad-theme-option.selected{border-color:#2865b0;box-shadow:0 0 0 2px #2865b018}
+.admin-dashboard[data-palette="blue"] .ad-setting-toggle>span,.admin-dashboard[data-palette="blue"] .ad-settings-saved{color:#2865b0}
+.admin-dashboard[data-palette="blue"] .ad-setting-toggle input{accent-color:#2865b0}
+.admin-dashboard[data-palette="yellow"]{--forest:#68490b;--green:#a87916;--mint:#fff1c7;--ink:#493a1e;--muted:#897b5b;--line:#f0e5c8}
+.admin-dashboard[data-palette="yellow"] .ad-sidebar{background:linear-gradient(180deg,#68490b,#493306)}
+.admin-dashboard[data-palette="yellow"] .ad-brand-mark{color:#68490b;background:linear-gradient(145deg,#fff7dc,#f1d27e)}
+.admin-dashboard[data-palette="yellow"] .ad-sidebar-label{color:#e7ce87}
+.admin-dashboard[data-palette="yellow"] .ad-nav-link{color:#f0dfb0}
+.admin-dashboard[data-palette="yellow"] .ad-nav-link.active{color:#fff9e9;background:linear-gradient(100deg,#a87916,#80600f)}
+.admin-dashboard[data-palette="yellow"] .ad-nav-link em{color:#68490b;background:#fff0bd}
+.admin-dashboard[data-palette="yellow"] .ad-hero{background:radial-gradient(ellipse at 82% 12%,#e7bd5470,transparent 42%),linear-gradient(115deg,#68490b,#a87916)}
+.admin-dashboard[data-palette="yellow"] .ad-primary-action{color:#68490b;background:#fff0bd;border-color:#ead8a8}
+.admin-dashboard[data-palette="yellow"] .ad-section-kicker,.admin-dashboard[data-palette="yellow"] .ad-metric-card>a,.admin-dashboard[data-palette="yellow"] .ad-quick-card>b,.admin-dashboard[data-palette="yellow"] .ad-panel-heading h2 svg,.admin-dashboard[data-palette="yellow"] .ad-icon-button{color:#a87916}
+.admin-dashboard[data-palette="yellow"] .ad-metric-icon,.admin-dashboard[data-palette="yellow"] .ad-quick-card>span{color:#a87916;background:#fff1c7}
+.admin-dashboard[data-palette="yellow"] .ad-theme-option.selected{border-color:#a87916;box-shadow:0 0 0 2px #a8791618}
+.admin-dashboard[data-palette="yellow"] .ad-setting-toggle>span,.admin-dashboard[data-palette="yellow"] .ad-settings-saved{color:#a87916}
+.admin-dashboard[data-palette="yellow"] .ad-setting-toggle input{accent-color:#a87916}
+.admin-dashboard[data-palette="blue"][data-theme="dark"] .ad-sidebar{background:linear-gradient(180deg,#122f56,#0c2340)}
+.admin-dashboard[data-palette="yellow"][data-theme="dark"] .ad-sidebar{background:linear-gradient(180deg,#493306,#302204)}
+.admin-dashboard[data-palette="blue"][data-theme="dark"] .ad-nav-link.active{background:linear-gradient(100deg,#2865b0,#1b4d86)}
+.admin-dashboard[data-palette="yellow"][data-theme="dark"] .ad-nav-link.active{background:linear-gradient(100deg,#8e6814,#68490b)}
