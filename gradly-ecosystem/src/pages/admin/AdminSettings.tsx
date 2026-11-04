@@ -3,22 +3,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, Moon, Sun, ShieldCheck, UserRound, Bell, Palette, Type, LogOut, Layout, RotateCcw } from "lucide-react";
 import "./AdminDashboard.css";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "system";
 type PaletteChoice = "green" | "blue" | "yellow";
-type FontChoice = "system" | "modern" | "serif";
+type FontChoice = "system" | "inter" | "roboto" | "lato" | "poppins" | "nunito" | "serif" | "mono";
 const getSetting = (key: string, fallback: string) => {
   try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
 };
 
 export default function AdminSettings() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState<Theme>(() => getSetting("gradly_admin_theme", "light") === "dark" ? "dark" : "light");
+  const [theme, setTheme] = useState<Theme>(() => (["light","dark","system"].includes(getSetting("gradly_admin_theme","light")) ? getSetting("gradly_admin_theme","light") : "light") as Theme);
   const [palette, setPalette] = useState<PaletteChoice>(() => {
     const value = getSetting("gradly_admin_palette", "green");
     return (["green", "blue", "yellow"].includes(value) ? value : "green") as PaletteChoice;
   });
-  const [font, setFont] = useState<FontChoice>(() => (["system","modern","serif"].includes(getSetting("gradly_admin_font","system")) ? getSetting("gradly_admin_font","system") : "system") as FontChoice);
-  const [fontSize, setFontSize] = useState(() => getSetting("gradly_admin_font_size","normal"));
+  const [font, setFont] = useState<FontChoice>(() => (["system","inter","roboto","lato","poppins","nunito","serif","mono"].includes(getSetting("gradly_admin_font","system")) ? getSetting("gradly_admin_font","system") : "system") as FontChoice);
+  const [fontSize, setFontSize] = useState(() => (["xs","small","normal","large","xlarge","xxlarge"].includes(getSetting("gradly_admin_font_size","normal"))?getSetting("gradly_admin_font_size","normal"):"normal"));
   const [compact, setCompact] = useState(() => getSetting("gradly_admin_compact","false") === "true");
   const [reducedMotion, setReducedMotion] = useState(() => getSetting("gradly_admin_reduced_motion","false") === "true");
   const [saved, setSaved] = useState(false);
@@ -39,7 +39,7 @@ export default function AdminSettings() {
     setSaved(true);
     const timer = window.setTimeout(() => setSaved(false), 1500);
     return () => window.clearTimeout(timer);
-  }, [theme,palette,font,fontSize,compact,reducedMotion]);
+  }, [theme,effectiveTheme,palette,font,fontSize,compact,reducedMotion]);
 
   const signOut = () => {
     if (!window.confirm("Sign out of your Gradly Admin account?")) return;
@@ -50,7 +50,7 @@ export default function AdminSettings() {
     setTheme("light"); setPalette("green"); setFont("system"); setFontSize("normal"); setCompact(false); setReducedMotion(false);
   };
 
-  return <main className="admin-dashboard" data-theme={theme} data-palette={palette} data-font={font} data-font-size={fontSize} data-compact={String(compact)} data-reduced-motion={String(reducedMotion)}>
+  return <main className="admin-dashboard" data-theme={effectiveTheme} data-palette={palette} data-font={font} data-font-size={fontSize} data-compact={String(compact)} data-reduced-motion={String(reducedMotion)}>
     <aside className="ad-sidebar">
       <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
       <p className="ad-sidebar-label">PREFERENCES</p>
@@ -71,7 +71,7 @@ export default function AdminSettings() {
       <div className="ad-content ad-settings-content">
         <section className="ad-page-heading"><div><span className="ad-section-kicker">PERSONALIZE YOUR WORKSPACE</span><h1>Settings</h1><p>Make Gradly comfortable to use. Your preferences are saved on this device.</p></div><button type="button" className="ad-secondary-button" onClick={reset}><RotateCcw size={14}/> Reset defaults</button></section>
         <section className="ad-panel">
-          <div className="ad-panel-heading"><div><span className="ad-section-kicker">APPEARANCE</span><h2><Palette size={19}/> Display mode</h2><p>Choose light or dark mode independently of your workspace colour.</p></div></div>
+          <div className="ad-panel-heading"><div><span className="ad-section-kicker">APPEARANCE</span><h2><Palette size={19}/> Appearance</h2><p>Choose the workspace appearance. Changes apply across the entire Admin application, not only this page.</p></div></div>
           <div className="ad-theme-options">
             <button type="button" className={"ad-theme-option"+(theme==="light"?" selected":"")} aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={22}/><strong>Light mode</strong><span>Bright and clean</span>{theme==="light"&&<Check size={17}/>}</button>
             <button type="button" className={"ad-theme-option"+(theme==="dark"?" selected":"")} aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={22}/><strong>Dark mode</strong><span>Gentler in low light</span>{theme==="dark"&&<Check size={17}/>}</button>
@@ -88,8 +88,8 @@ export default function AdminSettings() {
         <section className="ad-panel">
           <div className="ad-panel-heading"><div><span className="ad-section-kicker">READABILITY</span><h2><Type size={19}/> Font and layout</h2><p>Adjust typography and page density to your preference.</p></div></div>
           <div className="ad-settings-grid">
-            <label className="ad-setting-control"><span>Font family</span><select value={font} onChange={e=>setFont(e.target.value as FontChoice)}><option value="system">System default</option><option value="modern">Modern (DM Sans)</option><option value="serif">Classic (Georgia)</option></select><small>Applies across Admin workspace pages.</small></label>
-            <label className="ad-setting-control"><span>Text size</span><select value={fontSize} onChange={e=>setFontSize(e.target.value)}><option value="small">Small</option><option value="normal">Default</option><option value="large">Large</option></select><small>Changes general workspace text size.</small></label>
+            <label className="ad-setting-control"><span>Font family</span><select value={font} onChange={e=>setFont(e.target.value as FontChoice)}><option value="system">System default</option><option value="inter">Inter</option><option value="roboto">Roboto</option><option value="lato">Lato</option><option value="poppins">Poppins</option><option value="nunito">Nunito</option><option value="serif">Georgia / serif</option><option value="mono">Monospace</option></select><small>Applies across Admin workspace pages.</small></label>
+            <label className="ad-setting-control"><span>Text size</span><select value={fontSize} onChange={e=>setFontSize(e.target.value)}><option value="xs">Extra small</option><option value="small">Small</option><option value="normal">Default</option><option value="large">Large</option><option value="xlarge">Extra large</option><option value="xxlarge">XXL / Very large</option></select><small>Changes general workspace text size.</small></label>
           </div>
           <label className="ad-setting-toggle"><span><Layout size={18}/><span><strong>Compact layout</strong><small>Reduce spacing so more content fits on screen.</small></span></span><input type="checkbox" checked={compact} onChange={e=>setCompact(e.target.checked)}/></label>
           <label className="ad-setting-toggle"><span><Palette size={18}/><span><strong>Reduce animations</strong><small>Limit decorative movement and transitions.</small></span></span><input type="checkbox" checked={reducedMotion} onChange={e=>setReducedMotion(e.target.checked)}/></label>
