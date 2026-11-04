@@ -101,6 +101,7 @@ export async function getSuperAdminDashboardStats(
     }> = [];
 
     try {
+      await pool.query(`CREATE TABLE IF NOT EXISTS public.super_admin_archived_audit_logs (audit_log_id TEXT PRIMARY KEY, log_snapshot JSONB NOT NULL, archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), archived_by JSONB)`);
       const activityResult = await pool.query(`
         SELECT
           id,
@@ -108,8 +109,12 @@ export async function getSuperAdminDashboardStats(
           actor_role AS "actorRole",
           entity_table AS "entityTable",
           created_at AS "createdAt"
-        FROM audit_logs
-        ORDER BY created_at DESC
+        FROM public.audit_logs a
+        WHERE NOT EXISTS (
+          SELECT 1 FROM public.super_admin_archived_audit_logs archived
+          WHERE archived.audit_log_id = a.id::text
+        )
+        ORDER BY a.created_at DESC
         LIMIT 10
       `);
 
