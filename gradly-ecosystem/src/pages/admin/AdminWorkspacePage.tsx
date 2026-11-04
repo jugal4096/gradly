@@ -91,6 +91,7 @@ export default function AdminWorkspacePage(){
       const response=await fetch(API_ROOT+"/admin/workspace-notifications/"+encodeURIComponent(item.id)+"/read",{method:"PATCH",headers:{Authorization:"Bearer "+localStorage.getItem("gradly_admin_token"),Accept:"application/json"}});
       const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Could not mark notification as read.");
       setNotifications(old=>old.map(n=>n.id===item.id?{...n,readAt:new Date().toISOString()}:n));
+      window.dispatchEvent(new Event("gradly-admin-notifications-updated"));
     }catch(e){setError(e instanceof Error?e.message:"Could not update notification.");}
   }
 
