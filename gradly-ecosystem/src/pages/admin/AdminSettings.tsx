@@ -50,7 +50,7 @@ export default function AdminSettings() {
     setTheme("light"); setPalette("green"); setFont("system"); setFontSize("normal"); setCompact(false); setReducedMotion(false);
   };
 
-  return <main className="admin-dashboard" data-theme={theme}>
+  return <main className="admin-dashboard" data-theme={theme} data-palette={palette}>
     <aside className="ad-sidebar">
       <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
       <p className="ad-sidebar-label">PREFERENCES</p>
