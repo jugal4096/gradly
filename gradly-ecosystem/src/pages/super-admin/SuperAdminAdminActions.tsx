@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarClock, UserCheck, UserX, Trash2, ShieldCheck, LockKeyhole, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CalendarClock, UserCheck, UserX, Trash2, ShieldCheck, LockKeyhole } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom";
 import "./SuperAdminAdmins.css";
 
