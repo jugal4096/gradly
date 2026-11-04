@@ -2,7 +2,6 @@ import {
   Activity,
   Archive,
   AlertCircle,
-  ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
   BookOpen,
