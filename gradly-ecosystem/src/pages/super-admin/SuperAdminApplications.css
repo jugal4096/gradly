@@ -1078,3 +1078,40 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+
+/* Application record deletion */
+.application-details-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.application-delete-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .application-details-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .application-delete-button {
+    width: 100%;
+  }
+}
+
+
+/* Theme-aware Applications workspace */
+html[data-sa-palette="green"] .super-applications{--sa-primary:#16845b;--sa-primary-dark:#116b49;--sa-primary-soft:#e3f5ed;background:radial-gradient(circle at 92% 0%,rgba(22,132,91,.10),transparent 25rem),#f5f8f6}
+html[data-sa-theme="dark"] .super-applications{--sa-ink:#eeeaf5;--sa-muted:#b5b0c2;--sa-border:#343b46;--sa-primary-soft:#263b32;background:#111820;color:#eeeaf5}
+html[data-sa-theme="dark"] .super-applications :is(.applications-workspace,.applications-header,.application-card,.applications-card,.application-panel,.applications-panel,[class*="card"],[class*="panel"],[class*="section"],[class*="table"],[class*="filter"],[class*="toolbar"]){background-color:#1b242e!important;border-color:#35414c!important;color:#eeeaf5}
+html[data-sa-theme="dark"] .super-applications :is(h1,h2,h3,h4,strong,label,th){color:#f0edf5}
+html[data-sa-theme="dark"] .super-applications :is(p,small,span,td, .muted){color:#c0c5ce}
+html[data-sa-theme="dark"] .super-applications :is(input,select,textarea){background:#121a23!important;border-color:#3b4652!important;color:#f0edf5!important}
+html[data-sa-theme="dark"] .super-applications :is(button,a){color:#d6f5e5}
+html[data-sa-theme="dark"][data-sa-palette="green"] .super-applications :is(button[class*="primary"],[class*="btn-primary"]){background:#16845b!important;border-color:#16845b!important;color:#fff!important}
