@@ -298,6 +298,58 @@ export async function updateAdministratorStatus(
   return result.rows[0] ?? null;
 }
 
+export async function getAdministratorPermissionsForAdmin(adminId: string) {
+  const result = await pool.query(
+    `SELECT permission_code, granted
+     FROM public.admin_permissions
+     WHERE admin_id = $1 AND granted = TRUE
+     ORDER BY permission_code`,
+    [adminId]
+  );
+  return result.rows;
+}
+
+/* =========================================================
+   ADMIN PERMISSIONS
+   ========================================================= */
+
+export async function replaceAdministratorPermissions(
+  adminId: string,
+  permissionCodes: string[]
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "UPDATE public.admin_permissions SET granted = FALSE WHERE admin_id = $1",
+      [adminId]
+    );
+    for (const code of permissionCodes) {
+      await client.query(
+        `INSERT INTO public.admin_permissions (admin_id, permission_code, granted)
+         VALUES ($1, $2, TRUE)
+         ON CONFLICT (admin_id, permission_code)
+         DO UPDATE SET granted = TRUE`,
+        [adminId, code]
+      );
+    }
+    const result = await client.query(
+      `SELECT permission_code, granted
+       FROM public.admin_permissions
+       WHERE admin_id = $1 AND granted = TRUE
+       ORDER BY permission_code`,
+      [adminId]
+    );
+    await client.query("COMMIT");
+    return result.rows;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 /* =========================================================
    CHANGE ADMIN DEPARTMENT / BRANCH
    ========================================================= */
