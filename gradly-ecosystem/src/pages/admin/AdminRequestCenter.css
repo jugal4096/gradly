@@ -331,3 +331,54 @@
  .admin-request-system-strip { min-height:36px; padding:0 14px; font-size:8px; }
 }
 @media(prefers-reduced-motion:reduce) { .admin-request-drawer,.admin-request-menu-toggle { transition:none; } }
+
+/* Request Log inherits the Admin appearance preferences saved in Settings. */
+.admin-request-shell{--admin-accent:#19744f;--admin-accent-dark:#124333;--admin-accent-soft:#e0f5e8;--admin-accent-tint:#f0faf3;font-family:"DM Sans","Segoe UI",sans-serif}
+.admin-request-shell[data-palette="blue"]{--admin-accent:#2865b0;--admin-accent-dark:#173d70;--admin-accent-soft:#e2efff;--admin-accent-tint:#f2f7ff}
+.admin-request-shell[data-palette="yellow"]{--admin-accent:#a87916;--admin-accent-dark:#68490b;--admin-accent-soft:#fff1c7;--admin-accent-tint:#fffaf0}
+.admin-request-menu-toggle{margin-left:0;flex:0 0 auto}
+.admin-request-brand{min-width:205px}
+.admin-request-shell[data-font="system"]{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.admin-request-shell[data-font="modern"]{font-family:"DM Sans","Segoe UI",sans-serif}
+.admin-request-shell[data-font="serif"]{font-family:Georgia,"Times New Roman",serif}
+.admin-request-shell[data-font-size="small"] .ad-workspace{font-size:92%}
+.admin-request-shell[data-font-size="large"] .ad-workspace{font-size:110%}
+.admin-request-shell[data-compact="true"] .ad-workspace{padding-top:16px}
+.admin-request-shell[data-reduced-motion="true"] *, .admin-request-shell[data-reduced-motion="true"] *::before, .admin-request-shell[data-reduced-motion="true"] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+.admin-request-shell[data-palette="green"] .admin-request-drawer{background:linear-gradient(180deg,#124333,#0c3026)}
+.admin-request-shell[data-palette="green"] .admin-request-nav-link.is-active{background:linear-gradient(100deg,#287e58,#1a6547)}
+.admin-request-shell[data-palette="green"] .admin-request-menu-toggle{color:#176343;border-color:#cfe5d5}
+.admin-request-shell[data-palette="green"] .admin-request-brand-mark{color:#124333;background:linear-gradient(145deg,#e5fff0,#8fe0b7)}
+.admin-request-shell[data-palette="blue"] .admin-request-topbar{border-color:#dce8f7}
+.admin-request-shell[data-palette="blue"] .admin-request-brand-mark{color:#173d70;background:linear-gradient(145deg,#e8f2ff,#9fc6f5)}
+.admin-request-shell[data-palette="blue"] .admin-request-menu-toggle{color:#205894;border-color:#c9dcf4}
+.admin-request-shell[data-palette="blue"] .admin-request-menu-toggle:hover{background:#edf5ff;border-color:#91b8e8}
+.admin-request-shell[data-palette="blue"] .admin-request-drawer{background:linear-gradient(180deg,#173d70,#102c50)}
+.admin-request-shell[data-palette="blue"] .admin-request-drawer-heading{color:#9fc7f5}
+.admin-request-shell[data-palette="blue"] .admin-request-nav-link{color:#c1d8f2}
+.admin-request-shell[data-palette="blue"] .admin-request-nav-link.is-active{background:linear-gradient(100deg,#3478c4,#245c9e)}
+.admin-request-shell[data-palette="yellow"] .admin-request-topbar{border-color:#f0e5c8}
+.admin-request-shell[data-palette="yellow"] .admin-request-brand-mark{color:#68490b;background:linear-gradient(145deg,#fff7dc,#f1d27e)}
+.admin-request-shell[data-palette="yellow"] .admin-request-menu-toggle{color:#805b12;border-color:#ead8a8}
+.admin-request-shell[data-palette="yellow"] .admin-request-menu-toggle:hover{background:#fff8e6;border-color:#d8bd75}
+.admin-request-shell[data-palette="yellow"] .admin-request-drawer{background:linear-gradient(180deg,#68490b,#493306)}
+.admin-request-shell[data-palette="yellow"] .admin-request-drawer-heading{color:#e7ce87}
+.admin-request-shell[data-palette="yellow"] .admin-request-nav-link{color:#f0dfb0}
+.admin-request-shell[data-palette="yellow"] .admin-request-nav-link.is-active{background:linear-gradient(100deg,#a87916,#80600f)}
+.admin-request-shell .ad-workspace{font-family:inherit}
+.admin-request-shell .ad-workspace .ad-page-head .ad-section-kicker,.admin-request-shell .ad-workspace .ad-section-kicker{color:var(--admin-accent)}
+.admin-request-shell .ad-workspace .ad-panel-heading h2 svg{color:var(--admin-accent)}
+.admin-request-shell .ad-workspace .ad-scope-pill{border-color:color-mix(in srgb,var(--admin-accent) 18%,white);color:var(--admin-accent);background:var(--admin-accent-tint)}
+.admin-request-shell .ad-workspace .ad-primary-btn{border-color:var(--admin-accent);background:linear-gradient(115deg,color-mix(in srgb,var(--admin-accent) 82%,white),var(--admin-accent));box-shadow:0 7px 16px color-mix(in srgb,var(--admin-accent) 20%,transparent)}
+.admin-request-shell .ad-workspace .ad-secondary-btn{border-color:color-mix(in srgb,var(--admin-accent) 18%,white);color:var(--admin-accent)}
+.admin-request-shell .ad-workspace .ad-secondary-btn:hover{background:var(--admin-accent-tint)}
+.admin-request-shell .ad-workspace .ad-request-form input:focus,.admin-request-shell .ad-workspace .ad-request-form select:focus,.admin-request-shell .ad-workspace .ad-request-form textarea:focus{border-color:var(--admin-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--admin-accent) 14%,transparent)}
+.admin-request-shell .ad-workspace .ad-request-status{border-color:color-mix(in srgb,var(--admin-accent) 18%,white);color:var(--admin-accent);background:var(--admin-accent-tint)}
+.admin-request-shell .ad-workspace .ad-footer a{color:var(--admin-accent)}
+.admin-request-shell[data-theme="dark"] .admin-request-menu-toggle{color:var(--admin-accent-soft);border-color:color-mix(in srgb,var(--admin-accent) 55%,#30463a);background:#20362a}
+.admin-request-shell[data-theme="dark"] .admin-request-drawer{background:linear-gradient(180deg,var(--admin-accent-dark),color-mix(in srgb,var(--admin-accent-dark) 78%,#07130d))}
+.admin-request-shell[data-theme="dark"] .admin-request-nav-link.is-active{background:linear-gradient(100deg,var(--admin-accent),color-mix(in srgb,var(--admin-accent) 72%,#07130d))}
+.admin-request-shell[data-theme="dark"] .admin-request-system-strip b{color:var(--admin-accent-soft);background:color-mix(in srgb,var(--admin-accent) 22%,#182720)}
+.admin-request-shell[data-theme="dark"] .ad-workspace .ad-panel-heading h2 svg{color:var(--admin-accent-soft)}
+.admin-request-shell[data-theme="dark"] .ad-workspace .ad-scope-pill,.admin-request-shell[data-theme="dark"] .ad-workspace .ad-request-status{color:var(--admin-accent-soft);border-color:color-mix(in srgb,var(--admin-accent) 38%,#30463a);background:color-mix(in srgb,var(--admin-accent) 20%,#182720)}
+@media(max-width:650px){.admin-request-topbar{justify-content:flex-start}.admin-request-menu-toggle{order:0}.admin-request-brand{order:1}}
