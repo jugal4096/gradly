@@ -81,12 +81,25 @@ router.post("/", authenticateFirebaseTokenForAdminApplication, async (req, res) 
 router.get("/mine", authenticateFirebaseTokenForAdminApplication, async (req, res) => {
   try {
     const identity = firebaseIdentity(req);
+    const admin = await pool.query(
+      `SELECT id FROM public.admins
+       WHERE LOWER(email) = $1 AND UPPER(status) = 'ACTIVE'
+       LIMIT 1`,
+      [identity.email]
+    );
+    if (!admin.rowCount) {
+      return res.status(403).json({
+        success: false,
+        message: "No active administrator account is linked to this Google account.",
+      });
+    }
+
     const result = await pool.query(
       `SELECT r.id, r.admin_code, r.admin_email, r.status, r.created_at, r.reviewed_at, r.review_note, r.completed_at
        FROM public.admin_password_change_requests r
-       WHERE r.firebase_uid = $1 AND LOWER(r.admin_email) = $2
+       WHERE r.admin_id = $1 AND r.firebase_uid = $2 AND LOWER(r.admin_email) = $3
        ORDER BY r.created_at DESC LIMIT 20`,
-      [identity.uid, identity.email]
+      [admin.rows[0].id, identity.uid, identity.email]
     );
     return res.json({ success: true, requests: result.rows });
   } catch (error) {
