@@ -24,8 +24,6 @@ import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
 import AdminRequestCenter from "./pages/admin/AdminRequestCenter";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminChangePassword from "./pages/admin/AdminChangePassword";
-import StudentSyllabusFeedbackPage from "./pages/student/StudentSyllabusFeedbackPage";
-import StudentNotificationsPage from "./pages/student/StudentNotificationsPage";
 
 // =====================================================
 // SUPER ADMIN
