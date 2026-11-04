@@ -81,6 +81,33 @@ export async function getAdminPermissions(adminId: string) {
   return result.rows;
 }
 export async function getAdminWorkspaceProfile(adminId: string) {
-  const result = await pool.query(`SELECT a.id, a.admin_code, a.full_name, a.email, a.role, a.status, a.institution_id, i.name AS institution_name, COALESCE(a.program_id, b.program_id) AS program_id, p.name AS program_name, a.branch_id, b.name AS branch_name, a.password_expires_at, a.graduation_completion_date, a.admin_expires_at FROM public.admins a JOIN public.institutions i ON i.id = a.institution_id LEFT JOIN public.branches b ON b.id = a.branch_id LEFT JOIN public.programs p ON p.id = COALESCE(a.program_id, b.program_id) WHERE a.id = $1 LIMIT 1`, [adminId]);
+  // Registration stores the approved adminship end date in admins.adminship_expires_at.
+  // Keep the newer admin_expires_at field as a fallback for records created by other flows.
+  // Graduation date is retained on the accepted application and surfaced on the Admin profile.
+  const result = await pool.query(`
+    SELECT
+      a.id,
+      a.admin_code,
+      a.full_name,
+      a.email,
+      a.role,
+      a.status,
+      a.institution_id,
+      i.name AS institution_name,
+      COALESCE(a.program_id, b.program_id) AS program_id,
+      p.name AS program_name,
+      a.branch_id,
+      b.name AS branch_name,
+      a.password_expires_at,
+      COALESCE(a.graduation_completion_date, app.graduation_date) AS graduation_completion_date,
+      COALESCE(a.admin_expires_at, a.adminship_expires_at, app.adminship_expiry_date, app.graduation_date) AS admin_expires_at
+    FROM public.admins a
+    JOIN public.institutions i ON i.id = a.institution_id
+    LEFT JOIN public.branches b ON b.id = a.branch_id
+    LEFT JOIN public.programs p ON p.id = COALESCE(a.program_id, b.program_id)
+    LEFT JOIN public.admin_applications app ON app.id = a.application_id
+    WHERE a.id = $1
+    LIMIT 1
+  `, [adminId]);
   return result.rows[0] ?? null;
 }
