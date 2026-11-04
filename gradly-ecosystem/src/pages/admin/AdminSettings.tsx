@@ -46,6 +46,7 @@ export default function AdminSettings() {
     localStorage.setItem("gradly_admin_font_size", fontSize);
     localStorage.setItem("gradly_admin_compact", String(compact));
     localStorage.setItem("gradly_admin_reduced_motion", String(reducedMotion));
+    window.dispatchEvent(new Event("gradly-admin-settings-change"));
     setSaved(true);
     const timer = window.setTimeout(() => setSaved(false), 1500);
     return () => window.clearTimeout(timer);
