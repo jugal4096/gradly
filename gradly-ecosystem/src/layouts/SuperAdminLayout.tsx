@@ -101,8 +101,7 @@ export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -147,7 +146,7 @@ export default function SuperAdminLayout() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMobileNavOpen(false);
+      if (event.key === "Escape") setWorkspaceOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -217,7 +216,7 @@ export default function SuperAdminLayout() {
         </div>
 
 
-        <button type="button" className="super-admin-workspace-toggle" aria-label={mobileNavOpen || !workspaceCollapsed ? "Close workspace navigation" : "Open workspace navigation"} aria-expanded={mobileNavOpen || !workspaceCollapsed} aria-controls="super-admin-navigation" onClick={() => { if (window.matchMedia("(max-width: 850px)").matches) setMobileNavOpen((open) => !open); else setWorkspaceCollapsed((collapsed) => !collapsed); }}><Menu size={20}/></button>
+        <button type="button" className="super-admin-workspace-toggle" aria-label={workspaceOpen ? "Close workspace navigation" : "Open workspace navigation"} aria-expanded={workspaceOpen} aria-controls="super-admin-navigation" onClick={() => setWorkspaceOpen((open) => !open)}><Menu size={20}/><span>Workspace</span></button>
 
         <div className="topbar-status">
 
@@ -243,8 +242,8 @@ export default function SuperAdminLayout() {
             SIDEBAR
             =================================================== */}
 
-        {mobileNavOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
-        <aside id="super-admin-navigation" className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}${workspaceCollapsed ? " is-workspace-collapsed" : ""}`} aria-label="Super Admin navigation">
+        {workspaceOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close workspace navigation" onClick={() => setWorkspaceOpen(false)} />}
+        <aside id="super-admin-navigation" className={`super-admin-sidebar${workspaceOpen ? " is-workspace-open" : ""}`} aria-label="Super Admin navigation">
 
 
           <div className="sidebar-heading">
@@ -265,7 +264,7 @@ export default function SuperAdminLayout() {
                     <NavLink
                       to={item.path}
                       end={item.end}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={() => setWorkspaceOpen(false)}
                       className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}
                     >
                       <Icon size={17} strokeWidth={1.8} />
