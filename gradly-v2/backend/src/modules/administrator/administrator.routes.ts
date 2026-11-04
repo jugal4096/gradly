@@ -12,6 +12,8 @@ import {
   extendAdminship,
   updateGraduationDate,
   deleteAdministratorAccount,
+  getAdminPermissions,
+  updateAdminPermissions,
 } from "./administrator.controller";
 
 const router = Router();
@@ -54,6 +56,9 @@ router.get(
   "/:adminId",
   getAdministratorDetails
 );
+
+router.get("/:adminId/permissions", getAdminPermissions);
+router.patch("/:adminId/permissions", updateAdminPermissions);
 
 router.delete(
   "/:adminId",
