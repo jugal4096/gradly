@@ -72,7 +72,6 @@ html[data-sa-theme="dark"] .sa-requests .sa-request-overlay{background:#080d12cc
 html[data-sa-theme="dark"][data-sa-palette="green"] .sa-requests :is(button,.sa-request-stats strong,.sa-requests>header>div>span){color:#9be5c2!important}
 html[data-sa-theme="dark"][data-sa-palette="green"] .sa-requests>header>div>span{background:#18392d!important}
 
-
 /* Request Centre visual refresh: stronger hierarchy, clearer workload and calmer density. */
 .sa-requests {
   max-width: 1480px;
