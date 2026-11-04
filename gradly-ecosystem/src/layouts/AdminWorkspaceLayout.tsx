@@ -22,10 +22,12 @@ export default function AdminWorkspaceLayout(){
  const location=useLocation(),navigate=useNavigate();
  const [open,setOpen]=useState(false);
  const [unreadCount,setUnreadCount]=useState(0);
+ const [settingsTick,setSettingsTick]=useState(0);
  const [systemDark,setSystemDark]=useState(()=>window.matchMedia?.("(prefers-color-scheme: dark)").matches??false);
  const themePreference=localStorage.getItem("gradly_admin_theme")||"light";
  const effectiveTheme=themePreference==="system"?(systemDark?"dark":"light"):themePreference;
  useEffect(()=>{setOpen(false);},[location.pathname]);
+ useEffect(()=>{const refreshSettings=()=>setSettingsTick(v=>v+1);window.addEventListener("gradly-admin-settings-change",refreshSettings);return()=>window.removeEventListener("gradly-admin-settings-change",refreshSettings);},[]);
  useEffect(()=>{
   const media=window.matchMedia("(prefers-color-scheme: dark)");
   const update=()=>setSystemDark(media.matches);
@@ -47,7 +49,8 @@ export default function AdminWorkspaceLayout(){
   void refreshUnread();
   const interval=window.setInterval(refreshUnread,60000);
   window.addEventListener("focus",refreshUnread);
-  return()=>{active=false;window.clearInterval(interval);window.removeEventListener("focus",refreshUnread);};
+  window.addEventListener("gradly-admin-notifications-updated",refreshUnread);
+  return()=>{active=false;window.clearInterval(interval);window.removeEventListener("focus",refreshUnread);window.removeEventListener("gradly-admin-notifications-updated",refreshUnread);};
  },[location.pathname]);
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[]);
  useEffect(()=>{if(!localStorage.getItem("gradly_admin_token")&&!localStorage.getItem("admin_token"))navigate("/admin/login",{replace:true});},[navigate]);
