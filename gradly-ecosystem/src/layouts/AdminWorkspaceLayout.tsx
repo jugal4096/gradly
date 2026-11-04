@@ -3,6 +3,8 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Activity, Bell, BookOpen, Building2, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Settings, ShieldCheck, UserRound, Users, X, ChevronRight } from "lucide-react";
 import "./AdminWorkspaceLayout.css";
 
+const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
+
 const navigation=[
  {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard},
  {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
@@ -36,7 +38,7 @@ export default function AdminWorkspaceLayout(){
    const token=localStorage.getItem("gradly_admin_token");
    if(!token){if(active)setUnreadCount(0);return;}
    try{
-    const response=await fetch(((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/,"").replace(/\\/api$/i,""))+"/api/admin/workspace-notifications",{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});
+    const response=await fetch(API_ROOT+"/admin/workspace-notifications",{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});
     if(!response.ok)return;
     const data=await response.json().catch(()=>({}));
     if(active)setUnreadCount(Array.isArray(data.notifications)?data.notifications.filter((item:any)=>!item.readAt).length:0);
