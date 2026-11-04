@@ -4,6 +4,7 @@ import { Router, Response } from "express";
 import { loginSuperAdmin } from "./superAdmin.controller";
 import { createAdmin } from "./admin-management.controller";
 import { getSuperAdminDashboardStats } from "./superAdmin-dashboard.controller";
+import { archiveSuperAdminAuditLogs, listArchivedSuperAdminAuditLogs, restoreSuperAdminAuditLog } from "./superAdmin-audit-archive.controller";
 
 import {
   authenticateSuperAdminToken,
@@ -49,6 +50,9 @@ router.get(
   authenticateSuperAdminToken,
   getSuperAdminDashboardStats
 );
+router.post("/audit-logs/archive", authenticateSuperAdminToken, archiveSuperAdminAuditLogs);
+router.get("/audit-logs/archived", authenticateSuperAdminToken, listArchivedSuperAdminAuditLogs);
+router.post("/audit-logs/:logId/restore", authenticateSuperAdminToken, restoreSuperAdminAuditLog);
 
 /*
  * ADMIN MANAGEMENT
