@@ -22,3 +22,47 @@
 .auw-page{min-height:calc(100vh - 66px)}.admin-unified-workspace .admin-dashboard{min-height:calc(100vh - 66px);background:transparent}.admin-unified-workspace .ad-sidebar,.admin-unified-workspace .ad-topbar{display:none!important}.admin-unified-workspace .ad-main-column{width:100%;min-width:0}.admin-unified-workspace .admin-request-topbar,.admin-unified-workspace .admin-request-drawer,.admin-unified-workspace .admin-request-backdrop,.admin-unified-workspace .admin-request-system-strip{display:none!important}.admin-unified-workspace .admin-request-shell{min-height:calc(100vh - 66px);background:transparent}.admin-unified-workspace .admin-request-main{width:100%;min-height:calc(100vh - 66px);padding:0;background:transparent}.admin-unified-workspace .ad-workspace{min-height:calc(100vh - 66px);max-width:none;padding:clamp(20px,3vw,38px) clamp(16px,4vw,48px);background:transparent}.admin-unified-workspace .admin-change-password-page{min-height:calc(100vh - 66px);padding:30px 18px;background:transparent}.admin-unified-workspace [data-theme="dark"]{color-scheme:dark}
 .admin-unified-workspace[data-font="modern"]{font-family:"DM Sans",sans-serif}.admin-unified-workspace[data-font="serif"]{font-family:Georgia,serif}.admin-unified-workspace[data-font-size="small"]{font-size:14px}.admin-unified-workspace[data-font-size="large"]{font-size:17px}.admin-unified-workspace[data-compact="true"] .auw-link{min-height:37px}.admin-unified-workspace[data-reduced-motion="true"] *{transition:none!important;animation:none!important}
 @media(max-width:650px){.auw-header{gap:9px;padding:0 10px}.auw-menu{padding:0 9px}.auw-menu span,.auw-context span,.auw-context i{display:none}.auw-context{font-size:8px}.auw-signout span{display:none}.auw-signout{padding:9px}.auw-brand small{font-size:7px}}
+
+/* Shared Admin appearance preferences and notification badge */
+.auw-unread-badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;margin-left:auto;border-radius:999px;background:#e34d59;color:#fff;font-size:10px;font-weight:850;font-style:normal;line-height:1}
+.auw-link .auw-chevron{margin-left:0}
+.auw-link .auw-unread-badge+.auw-chevron{margin-left:0}
+.admin-unified-workspace[data-font="system"]{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.admin-unified-workspace[data-font="inter"]{font-family:Inter,"Segoe UI",sans-serif}
+.admin-unified-workspace[data-font="roboto"]{font-family:Roboto,Arial,sans-serif}
+.admin-unified-workspace[data-font="lato"]{font-family:Lato,Arial,sans-serif}
+.admin-unified-workspace[data-font="poppins"]{font-family:Poppins,"Segoe UI",sans-serif}
+.admin-unified-workspace[data-font="nunito"]{font-family:Nunito,"Segoe UI",sans-serif}
+.admin-unified-workspace[data-font="serif"]{font-family:Georgia,"Times New Roman",serif}
+.admin-unified-workspace[data-font="mono"]{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.admin-unified-workspace[data-font-size="xs"]{font-size:12px}
+.admin-unified-workspace[data-font-size="small"]{font-size:14px}
+.admin-unified-workspace[data-font-size="normal"]{font-size:16px}
+.admin-unified-workspace[data-font-size="large"]{font-size:18px}
+.admin-unified-workspace[data-font-size="xlarge"]{font-size:20px}
+.admin-unified-workspace[data-font-size="xxlarge"]{font-size:22px}
+.admin-unified-workspace .admin-dashboard{font-family:inherit}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-panel,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-theme-option,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-metric-card,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-quick-card,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-request-item,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-notification-item,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-detail-grid article{background:#182720;color:#e2eee6;border-color:#30463a}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-panel-heading h2,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-request-item h3,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-notification-item h3,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-detail-grid article strong{color:#e2eee6}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-notification-item.unread{background:#1d3327;border-color:#47785a}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-theme-option{color:#e2eee6}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-secondary-button,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-mark-read{background:#20362a;color:#d5e7db;border-color:#3a5545}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-request-banner,
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-assignment-banner{background:#1b3024;border-color:#304d39}
+.admin-unified-workspace[data-theme="dark"] .admin-dashboard .ad-content{color:#e2eee6}
+.admin-unified-workspace[data-font-size="xs"] .admin-dashboard .ad-content{font-size:12px}
+.admin-unified-workspace[data-font-size="small"] .admin-dashboard .ad-content{font-size:14px}
+.admin-unified-workspace[data-font-size="normal"] .admin-dashboard .ad-content{font-size:16px}
+.admin-unified-workspace[data-font-size="large"] .admin-dashboard .ad-content{font-size:18px}
+.admin-unified-workspace[data-font-size="xlarge"] .admin-dashboard .ad-content{font-size:20px}
+.admin-unified-workspace[data-font-size="xxlarge"] .admin-dashboard .ad-content{font-size:22px}
