@@ -32,6 +32,7 @@ import StudentNotificationsPage from "./pages/student/StudentNotificationsPage";
 // =====================================================
 
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
+import AdminWorkspaceLayout from "./layouts/AdminWorkspaceLayout";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import RequireSuperAdmin from "./components/RequireSuperAdmin";
 
@@ -105,30 +106,19 @@ function App() {
           element={<AdminRegister />}
         />
 
-        {/* =============================================
-            ADMIN DASHBOARD
-            ============================================= */}
-
-        <Route
-          path="/admin/dashboard"
-          element={<AdminDashboard />}
-        />
-
-        <Route path="/admin/curriculum" element={<AdminWorkspacePage />} />
-        <Route path="/admin/requests" element={<AdminRequestCenter />} />
-        <Route path="/admin/notifications" element={<AdminWorkspacePage />} />
-        <Route path="/admin/activity" element={<AdminWorkspacePage />} />
-        <Route path="/admin/feedback" element={<AdminWorkspacePage />} />
-        <Route path="/student/syllabus-feedback" element={<StudentSyllabusFeedbackPage />} />
-        <Route path="/student/notifications" element={<StudentNotificationsPage />} />
-        <Route path="/admin/department" element={<AdminWorkspacePage />} />
-        <Route path="/admin/profile" element={<AdminWorkspacePage />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-
-        <Route
-          path="/admin/change-password"
-          element={<AdminChangePassword />}
-        />
+        {/* Authenticated Admin workspace: one shared shell for every section. */}
+        <Route path="/admin" element={<AdminWorkspaceLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="curriculum" element={<AdminWorkspacePage />} />
+          <Route path="requests" element={<AdminRequestCenter />} />
+          <Route path="notifications" element={<AdminWorkspacePage />} />
+          <Route path="activity" element={<AdminWorkspacePage />} />
+          <Route path="feedback" element={<AdminWorkspacePage />} />
+          <Route path="department" element={<AdminWorkspacePage />} />
+          <Route path="profile" element={<AdminWorkspacePage />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="change-password" element={<AdminChangePassword />} />
+        </Route>
 
         {/* =============================================
             SUPER ADMIN LOGIN
