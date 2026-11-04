@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Send, RefreshCw, ClipboardList, Bell } from "lucide-react";
 import "./AdminDashboard.css";
+import "./AdminRequestCenter.css";
 
 const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 type RequestRow={id:string;requestType:string;title:string;description:string;targetUserId?:string|null;priority:string;status:string;reviewNote?:string|null;createdAt:string};
