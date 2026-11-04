@@ -305,7 +305,7 @@ export default function SuperAdminLayout() {
 
                 return (
                   <div className="sidebar-link-wrap" key={item.path}>
-                    <NavLink to={item.path} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}>
+                    <NavLink to={item.path} onClick={() => setWorkspaceOpen(false)} className={({ isActive }) => `sidebar-link ${isActive ? "sidebar-link-active" : ""}`}>
                       <Icon size={17} strokeWidth={1.8} />
                       <span>{item.label}</span>
                       <ChevronRight className="sidebar-arrow" size={14} strokeWidth={1.7} />
