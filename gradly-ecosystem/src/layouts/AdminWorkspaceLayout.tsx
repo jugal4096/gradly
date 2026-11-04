@@ -56,7 +56,7 @@ export default function AdminWorkspaceLayout(){
  useEffect(()=>{if(!localStorage.getItem("gradly_admin_token")&&!localStorage.getItem("admin_token"))navigate("/admin/login",{replace:true});},[navigate]);
  const logout=()=>{localStorage.removeItem("gradly_admin_token");localStorage.removeItem("admin_token");navigate("/admin/login",{replace:true});};
  const title=titles[location.pathname]||"Admin workspace";
- return <div className="admin-unified-workspace" data-theme={effectiveTheme} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
+ return <div className="admin-unified-workspace" data-settings-version={settingsTick} data-theme={effectiveTheme} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
   <header className="auw-header">
    <button className="auw-menu" type="button" onClick={()=>setOpen(v=>!v)} aria-label={open?"Close workspace menu":"Open workspace menu"} aria-expanded={open}>{open?<X size={20}/>:<Menu size={20}/>}<span>Workspace</span></button>
    <Link to="/admin/dashboard" className="auw-brand"><span className="auw-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
