@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, CalendarClock, UserCheck, UserX, Trash2, ShieldCheck, LockKeyhole } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom";
 import "./SuperAdminAdmins.css";
@@ -9,6 +9,7 @@ type Admin = {
 };
 type Permission = { code: string; label: string; description: string };
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "") + "/api";
+const localDateInputValue = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`; };
 const PERMISSIONS: Permission[] = [
   { code: "FEEDBACK_VIEW", label: "View feedback", description: "Review student and platform feedback." },
   { code: "FEEDBACK_MANAGE", label: "Manage feedback", description: "Process and update feedback records." },
@@ -34,7 +35,9 @@ export default function SuperAdminAdminActions() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+  const [permissionsExpanded, setPermissionsExpanded] = useState(true);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [permissionsBusy, setPermissionsBusy] = useState(false);
 
   const request = async (path: string, init: RequestInit = {}) => {
     const token = localStorage.getItem("gradly_super_admin_token");
@@ -48,7 +51,7 @@ export default function SuperAdminAdminActions() {
     return data;
   };
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -56,14 +59,19 @@ export default function SuperAdminAdminActions() {
       const row = data.administrator || null;
       setAdmin(row);
       setExpiry(row?.adminship_expires_at ? new Date(row.adminship_expires_at).toISOString().slice(0, 10) : "");
+      const permissionData = await request("/super-admin/administrators/" + encodeURIComponent(adminId) + "/permissions");
+      setPermissions(Array.isArray(permissionData.permissions) ? permissionData.permissions.filter((item: { granted?: boolean }) => item.granted !== false).map((item: { permission_code?: string }) => item.permission_code).filter((code: string | undefined): code is string => Boolean(code)) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load administrator.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminId]);
 
-  useEffect(() => { void load(); }, [adminId]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const changeStatus = async (status: "ACTIVE" | "SUSPENDED" | "DISABLED") => {
     if (!admin) return;
@@ -90,7 +98,7 @@ export default function SuperAdminAdminActions() {
       await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/adminship", {
         method: "PATCH", body: JSON.stringify({ expiresAt: new Date(expiry + "T23:59:59").toISOString() }),
       });
-      setMessage("Adminship expiry date extended successfully.");
+      setMessage("Adminship expiry date updated successfully.");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update adminship expiry.");
@@ -132,7 +140,15 @@ export default function SuperAdminAdminActions() {
 
       <div className="sa-admin-action-panel">
         <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ACCESS GOVERNANCE</span><h2>Manage permissions</h2><p>Review the permission set available to administrator accounts.</p></div><button className="sa-admins-view" type="button" onClick={() => setPermissionsExpanded(value => !value)}><ShieldCheck size={15}/>{permissionsExpanded ? "Hide permissions" : "View permissions"}</button></div>
-        {permissionsExpanded && <><div className="sa-admins-error"><LockKeyhole size={15}/> Permission changes are not yet supported by the current administrator API. These are the permission codes configured in Gradly; no changes will be submitted or saved from this panel.</div><div className="sa-admin-permission-grid">{PERMISSIONS.map(permission => <article key={permission.code}><strong>{permission.label}</strong><small>{permission.description}</small><code>{permission.code}</code></article>)}</div></>}
+        {permissionsExpanded && <>
+          <p className="sa-admin-permission-help">The checked items below are the permissions currently granted to this administrator. Select or clear capabilities and save to update access.</p>
+          <section className="sa-admin-current-permissions" aria-label="Currently granted permissions"><div><strong>Currently granted permissions</strong><span>{permissions.length} active</span></div><ul>{permissions.length ? permissions.map(code => <li key={code}><ShieldCheck size={13}/>{PERMISSIONS.find(item => item.code === code)?.label || code.replace(/_/g," ").toLowerCase().replace(/\b\w/g,letter=>letter.toUpperCase())}</li>) : <li className="empty">No permissions are currently granted.</li>}</ul></section>
+          <div className="sa-admin-permission-grid">{PERMISSIONS.map(permission => <label className="sa-admin-permission-option" key={permission.code}>
+            <input type="checkbox" checked={permissions.includes(permission.code)} onChange={event => setPermissions(current => event.target.checked ? [...current, permission.code] : current.filter(code => code !== permission.code))}/>
+            <span><strong>{permission.label}</strong><small>{permission.description}</small><code>{permission.code}</code></span>
+          </label>)}</div>
+          <div className="sa-admin-permission-footer"><span>{permissions.length} permission(s) enabled</span><button className="sa-admins-view" type="button" disabled={busy || permissionsBusy} onClick={async () => { setPermissionsBusy(true); setMessage(""); setError(""); try { const result = await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/permissions", { method: "PATCH", body: JSON.stringify({ permissions }) }); setPermissions(Array.isArray(result.permissions) ? result.permissions.map((item: { permission_code?: string }) => item.permission_code).filter((code: string | undefined): code is string => Boolean(code)) : permissions); setMessage("Administrator permissions saved successfully."); } catch (err) { setError(err instanceof Error ? err.message : "Unable to save permissions."); } finally { setPermissionsBusy(false); } }}><ShieldCheck size={15}/>{permissionsBusy ? "Saving…" : "Save permissions"}</button></div>
+        </>}
       </div>
 
       <div className="sa-admin-action-panel">
@@ -145,8 +161,8 @@ export default function SuperAdminAdminActions() {
       </div>
 
       <div className="sa-admin-action-panel">
-        <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ADMINSHIP</span><h2>Extend expiry date</h2><p>Choose a new date until which this administrator may access the admin workspace.</p></div></div>
-        <div className="sa-admins-expiry"><input aria-label="New adminship expiry date" type="date" min={new Date().toLocaleDateString("en-CA")} value={expiry} onChange={event => setExpiry(event.target.value)}/><button disabled={busy || !expiry} onClick={() => void saveExpiry()}><CalendarClock size={15}/> Extend expiry</button></div>
+        <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">ADMINSHIP</span><h2>Change adminship expiry</h2><p>Move the expiry later to extend access, or earlier to bring the end date forward. The selected date must remain in the future.</p></div></div>
+        <div className="sa-admins-expiry"><input aria-label="New adminship expiry date" type="date" min={localDateInputValue()} value={expiry} onChange={event => setExpiry(event.target.value)}/><button disabled={busy || !expiry} onClick={() => void saveExpiry()}><CalendarClock size={15}/> Save expiry date</button></div>
       </div>
 
       <div className="sa-admin-action-panel sa-admin-danger-panel">

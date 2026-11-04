@@ -6,6 +6,7 @@ import {
   RefreshCw,
   Save,
   ShieldBan,
+  Trash2,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -701,6 +702,65 @@ export default function SuperAdminApplications() {
     }
   }
 
+  // Permanently delete only the selected application record.
+  async function deleteSelectedApplication() {
+    if (!selected) return;
+
+    const confirmed = window.confirm(
+      `Permanently delete the application record for ${selected.full_name || "this applicant"}? This cannot be undone. The applicant's user account and any administrator account will not be deleted.`
+    );
+
+    if (!confirmed) return;
+
+    const token = getToken();
+    if (!token) {
+      setError("Your Super Admin session is missing. Please sign in again.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setError("");
+      setNotice("");
+
+      const response = await fetch(
+        `${API_BASE_URL}/super-admin/applications/${encodeURIComponent(selected.id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json"
+          }
+        }
+      );
+
+      const data = await readResponse<unknown>(response);
+      if (!response.ok) {
+        throw new Error(
+          getErrorMessage(data, `Unable to delete application. HTTP ${response.status}.`)
+        );
+      }
+
+      setSelected(null);
+      setReason("");
+      setDepartmentId("");
+      setProgramId("");
+      setAdminshipExpiryDate("");
+      setApprovedPermissions([]);
+      setConfigurationSaved(false);
+      setNotice("Application record deleted. Applicant and administrator accounts were not changed.");
+
+      await loadApplications(false);
+    } catch (err) {
+      console.error("Application record deletion failed:", err);
+      setError(
+        err instanceof Error ? err.message : "Could not delete application record."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   return (
     <div className="super-applications">
       <div className="super-applications-header">
@@ -880,13 +940,25 @@ export default function SuperAdminApplications() {
                   </p>
                 </div>
 
-                <div
-                  className={`large-status ${statusClass(
-                    selected.status
-                  )}`}
-                >
-                  <StatusIcon status={selected.status} />
-                  {statusLabel(selected.status)}
+                <div className="application-details-header-actions">
+                  <div
+                    className={`large-status ${statusClass(
+                      selected.status
+                    )}`}
+                  >
+                    <StatusIcon status={selected.status} />
+                    {statusLabel(selected.status)}
+                  </div>
+                  <button
+                    type="button"
+                    className="action-button reject application-delete-button"
+                    onClick={() => void deleteSelectedApplication()}
+                    disabled={actionLoading || configurationSaving}
+                    title="Permanently delete this application record"
+                  >
+                    <Trash2 size={16} />
+                    {actionLoading ? "Working…" : "Delete application"}
+                  </button>
                 </div>
               </div>
 

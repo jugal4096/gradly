@@ -13,12 +13,18 @@ export interface AdminAuditFilters {
 
 export async function findAdminAuditEvents(filters: AdminAuditFilters = {}) {
   const values: unknown[] = [];
-  const where: string[] = [
-    "(LOWER(COALESCE(al.actor_role, '')) LIKE '%admin%' OR LOWER(COALESCE(al.actor_type, '')) = 'admin' OR LOWER(COALESCE(al.actor_type, '')) = 'administrator')",
-  ];
-  const add = (value: unknown) => { values.push(value); return `$${values.length}`; };
-
-  if (filters.adminId) where.push(`al.actor_id::text = ${add(filters.adminId)}`);
+  const add = (value: unknown) => {
+    values.push(value);
+    return `$${values.length}`;
+  };
+  const adminActorCondition = "(LOWER(COALESCE(al.actor_role, '')) LIKE '%admin%' OR LOWER(COALESCE(al.actor_type, '')) IN ('admin','administrator'))";
+  const where: string[] = [];
+  if (filters.adminId) {
+    const adminIdParam = add(filters.adminId);
+    where.push(`((${adminActorCondition} AND al.actor_id::text = ${adminIdParam}) OR (al.entity_table = 'admins' AND al.entity_id::text = ${adminIdParam}))`);
+  } else {
+    where.push(adminActorCondition);
+  }
   if (filters.action) where.push(`al.action = ${add(filters.action)}`);
   if (filters.from) where.push(`al.created_at >= ${add(filters.from)}::timestamptz`);
   if (filters.to) where.push(`al.created_at < (${add(filters.to)}::date + INTERVAL '1 day')`);
@@ -41,7 +47,7 @@ export async function findAdminAuditEvents(filters: AdminAuditFilters = {}) {
             a.full_name AS administrator_name, a.admin_code,
             a.branch_id, b.name AS branch_name, i.name AS institution_name
      FROM public.audit_logs al
-     LEFT JOIN public.admins a ON a.id::text = al.actor_id::text
+     LEFT JOIN public.admins a ON a.id::text = CASE WHEN al.entity_table = 'admins' THEN al.entity_id::text ELSE al.actor_id::text END
      LEFT JOIN public.branches b ON b.id = a.branch_id
      LEFT JOIN public.institutions i ON i.id = a.institution_id
      WHERE ${where.join(" AND ")}

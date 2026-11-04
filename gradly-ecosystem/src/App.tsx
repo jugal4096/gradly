@@ -49,7 +49,6 @@ import SuperAdminSettings from "./pages/super-admin/SuperAdminSettings";
 import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRequests";
 import SuperAdminSecurityAlerts from "./pages/super-admin/SuperAdminSecurityAlerts";
 import SuperAdminAdminMessages from "./pages/super-admin/SuperAdminAdminMessages";
-import SuperAdminAdminRequests from "./pages/super-admin/SuperAdminAdminRequests";
 import SuperAdminRequestCenter from "./pages/super-admin/SuperAdminRequestCenter";
 
 // =====================================================
@@ -230,7 +229,7 @@ function App() {
 
           <Route
             path="admin-requests"
-            element={<SuperAdminAdminRequests />}
+            element={<Navigate to="/super-admin/requests" replace />}
           />
         </Route>
 

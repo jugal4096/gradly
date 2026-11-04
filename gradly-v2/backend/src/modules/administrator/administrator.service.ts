@@ -1,6 +1,27 @@
-import {
-    createAdminAuditLog,
-  } from "../admin-application/admin-application.repository";
+import { isValidAdminPermission } from "../../config/permissions";
+import { createAuditLog } from "../super-admin/user-management.repository";
+
+type AdminAuditInput = {
+  superAdminId: string;
+  action: string;
+  entityTable: string;
+  entityId: string;
+  ipAddress?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+async function createAdminAuditLog(input: AdminAuditInput) {
+  return createAuditLog({
+    actorType: "SUPER_ADMIN",
+    actorId: input.superAdminId,
+    actorRole: "SUPER_ADMIN",
+    action: input.action,
+    entityTable: input.entityTable,
+    entityId: input.entityId,
+    ipAddress: input.ipAddress,
+    metadata: input.metadata,
+  });
+}
   
   import {
     findAdministrators,
@@ -11,6 +32,8 @@ import {
     updateAdminshipExpiry,
     updateAdminGraduationDate,
     deleteAdministratorAccount,
+    replaceAdministratorPermissions,
+    getAdministratorPermissionsForAdmin,
     type AdministratorListFilters,
     type UpdateAdminStatus,
   } from "./administrator.repository";
@@ -44,6 +67,39 @@ import {
     return admin;
   }
   
+  /* =========================================================
+     UPDATE ADMIN PERMISSIONS
+     ========================================================= */
+
+  export async function changeAdministratorPermissions(
+    adminId: string,
+    permissionCodes: string[],
+    superAdminId: string,
+    ipAddress?: string | null
+  ) {
+    const admin = await findAdministratorById(adminId);
+    if (!admin) throw new Error("Administrator was not found.");
+    if (!Array.isArray(permissionCodes)) throw new Error("Permissions must be an array.");
+    const unique = [...new Set(permissionCodes)];
+    const invalid = unique.filter((code) => !isValidAdminPermission(code));
+    if (invalid.length) throw new Error("Invalid permission codes: " + invalid.join(", "));
+    const previous = await getAdministratorPermissionsForAdmin(adminId);
+    const permissions = await replaceAdministratorPermissions(adminId, unique);
+    await createAdminAuditLog({
+      superAdminId,
+      action: "ADMIN_PERMISSIONS_UPDATED",
+      entityTable: "admins",
+      entityId: adminId,
+      ipAddress,
+      metadata: { previousPermissions: previous, newPermissions: permissions },
+    });
+    return permissions;
+  }
+
+  export async function getAdministratorPermissions(adminId: string) {
+    return await getAdministratorPermissionsForAdmin(adminId);
+  }
+
   /* =========================================================
      CHANGE STATUS
      ========================================================= */
