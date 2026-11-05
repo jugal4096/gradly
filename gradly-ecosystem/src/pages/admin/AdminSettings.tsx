@@ -6,7 +6,7 @@ import "./AdminDashboard.css";
 
 type Theme = "light" | "dark" | "system";
 type PaletteChoice = "green" | "blue" | "yellow";
-type FontChoice = "system" | "inter" | "roboto" | "lato" | "poppins" | "nunito" | "serif" | "mono";
+type FontChoice = "system" | "inter" | "roboto" | "lato" | "poppins" | "nunito" | "opensans" | "montserrat" | "dm-sans" | "manrope" | "source-sans" | "raleway" | "ubuntu" | "georgia" | "times" | "verdana" | "tahoma" | "trebuchet" | "mono";
 const getSetting = (key: string, fallback: string) => {
   try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
 };
@@ -18,7 +18,7 @@ export default function AdminSettings() {
     const value = getSetting("gradly_admin_palette", "green");
     return (["green", "blue", "yellow"].includes(value) ? value : "green") as PaletteChoice;
   });
-  const [font, setFont] = useState<FontChoice>(() => (["system","inter","roboto","lato","poppins","nunito","serif","mono"].includes(getSetting("gradly_admin_font","system")) ? getSetting("gradly_admin_font","system") : "system") as FontChoice);
+  const [font, setFont] = useState<FontChoice>(() => (["system","inter","roboto","lato","poppins","nunito","opensans","montserrat","dm-sans","manrope","source-sans","raleway","ubuntu","georgia","times","verdana","tahoma","trebuchet","mono"].includes(getSetting("gradly_admin_font","system")) ? getSetting("gradly_admin_font","system") : "system") as FontChoice);
   const [fontSize, setFontSize] = useState(() => (["xs","small","normal","large","xlarge","xxlarge"].includes(getSetting("gradly_admin_font_size","normal"))?getSetting("gradly_admin_font_size","normal"):"normal"));
   const [compact, setCompact] = useState(() => getSetting("gradly_admin_compact","false") === "true");
   const [reducedMotion, setReducedMotion] = useState(() => getSetting("gradly_admin_reduced_motion","false") === "true");
@@ -36,6 +36,9 @@ export default function AdminSettings() {
 
   useEffect(() => {
     document.documentElement.dataset.adminTheme = effectiveTheme;
+    document.documentElement.dataset.adminFont = font;
+    document.documentElement.dataset.adminFontSize = fontSize;
+    document.documentElement.dataset.adminReducedMotion = String(reducedMotion);
     document.documentElement.dataset.adminPalette = palette;
     localStorage.setItem("gradly_admin_palette", palette);
     document.documentElement.dataset.adminFont = font;
@@ -101,7 +104,7 @@ export default function AdminSettings() {
         <section className="ad-panel">
           <div className="ad-panel-heading"><div><span className="ad-section-kicker">READABILITY</span><h2><Type size={19}/> Font and layout</h2><p>Adjust typography and page density to your preference.</p></div></div>
           <div className="ad-settings-grid">
-            <label className="ad-setting-control"><span>Font family</span><select value={font} onChange={e=>setFont(e.target.value as FontChoice)}><option value="system">System default</option><option value="inter">Inter</option><option value="roboto">Roboto</option><option value="lato">Lato</option><option value="poppins">Poppins</option><option value="nunito">Nunito</option><option value="serif">Georgia / serif</option><option value="mono">Monospace</option></select><small>Applies across Admin workspace pages.</small></label>
+            <label className="ad-setting-control"><span>Font family</span><select value={font} onChange={e=>setFont(e.target.value as FontChoice)}><option value="system">System default</option><option value="inter">Inter</option><option value="roboto">Roboto</option><option value="lato">Lato</option><option value="poppins">Poppins</option><option value="nunito">Nunito</option><option value="opensans">Open Sans</option><option value="montserrat">Montserrat</option><option value="dm-sans">DM Sans</option><option value="manrope">Manrope</option><option value="source-sans">Source Sans 3</option><option value="raleway">Raleway</option><option value="ubuntu">Ubuntu</option><option value="georgia">Georgia / serif</option><option value="times">Times New Roman</option><option value="verdana">Verdana</option><option value="tahoma">Tahoma</option><option value="trebuchet">Trebuchet MS</option><option value="mono">Monospace</option></select><small>Applies across Admin workspace pages.</small></label>
             <label className="ad-setting-control"><span>Text size</span><select value={fontSize} onChange={e=>setFontSize(e.target.value)}><option value="xs">Extra small</option><option value="small">Small</option><option value="normal">Default</option><option value="large">Large</option><option value="xlarge">Extra large</option><option value="xxlarge">XXL / Very large</option></select><small>Changes general workspace text size.</small></label>
           </div>
           <label className="ad-setting-toggle"><span><Layout size={18}/><span><strong>Compact layout</strong><small>Reduce spacing so more content fits on screen.</small></span></span><input type="checkbox" checked={compact} onChange={e=>setCompact(e.target.checked)}/></label>

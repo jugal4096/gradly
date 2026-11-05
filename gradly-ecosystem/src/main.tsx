@@ -12,8 +12,14 @@ try {
   const adminTheme = localStorage.getItem("gradly_admin_theme");
   const saPalette = localStorage.getItem("gradly_sa_palette");
   const saTheme = localStorage.getItem("gradly_sa_theme");
+  const adminFont = localStorage.getItem("gradly_admin_font");
+  const adminFontSize = localStorage.getItem("gradly_admin_font_size");
+  const adminReducedMotion = localStorage.getItem("gradly_admin_reduced_motion");
   if (adminPalette && ["green", "blue", "yellow"].includes(adminPalette)) root.dataset.adminPalette = adminPalette;
   if (adminTheme && ["light", "dark"].includes(adminTheme)) root.dataset.adminTheme = adminTheme;
+  if (adminFont) root.dataset.adminFont = adminFont;
+  if (adminFontSize) root.dataset.adminFontSize = adminFontSize;
+  if (adminReducedMotion) root.dataset.adminReducedMotion = adminReducedMotion;
   if (saPalette && ["purple", "green"].includes(saPalette)) root.dataset.saPalette = saPalette;
   if (saTheme && ["light", "dark"].includes(saTheme)) root.dataset.saTheme = saTheme;
 } catch {
