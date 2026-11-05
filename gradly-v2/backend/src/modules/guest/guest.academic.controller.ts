@@ -128,7 +128,14 @@ export async function addGuestSemesterCourse(
           : null,
       resultStatus,
       resultSource,
-    });
+    }, session.id);
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Guest semester not found.",
+      });
+    }
+
     await recordGuestActivity(session.id, "GUEST_COURSE_ADDED", { guestSemesterId, courseName: courseNameSnapshot, courseCode: courseCodeSnapshot });
 
     return res.status(201).json({
@@ -165,9 +172,25 @@ export async function getGuestSemesterCoursesController(
       });
     }
 
-    const { guestSemesterId } = req.params;
+    const guestSemesterId =
+      typeof req.params.guestSemesterId === "string"
+        ? req.params.guestSemesterId
+        : "";
 
-    const courses = await getGuestCourses(guestSemesterId);
+    if (!guestSemesterId) {
+      return res.status(400).json({
+        message: "Guest semester ID is required.",
+      });
+    }
+
+    const courses = await getGuestCourses(session.id, guestSemesterId);
+
+    if (!courses) {
+      return res.status(404).json({
+        message: "Guest semester not found.",
+      });
+    }
+
     await recordGuestActivity(session.id, "GUEST_COURSES_VIEWED", { guestSemesterId, count: courses.length });
 
     return res.status(200).json({
