@@ -213,6 +213,10 @@ export async function findAdministratorById(
       a.registered_at,
       a.setup_invitation_sent_at,
 
+      COALESCE(ls.failed_attempts, 0) AS login_failed_attempts,
+      COALESCE(ls.attempt_limit, 3) AS login_attempt_limit,
+      ls.locked_until AS login_locked_until,
+
       a.created_at,
       a.updated_at,
 
@@ -239,6 +243,10 @@ export async function findAdministratorById(
 
     LEFT JOIN branches b
       ON b.id = a.branch_id
+
+    LEFT JOIN public.login_security ls
+      ON ls.principal_type = 'ADMIN'
+     AND ls.principal_id = a.id::text
 
     WHERE a.id = $1
 

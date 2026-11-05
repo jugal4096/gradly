@@ -50,3 +50,14 @@
 .sa-admins-menu button:focus-visible,.sa-admins-more:focus-visible{outline:3px solid #dcd4ff;outline-offset:2px}
 
 .sa-admin-current-permissions{margin:12px 0 16px;padding:14px;border:1px solid #e5e1f7;border-radius:12px;background:#faf9ff}.sa-admin-current-permissions>div{display:flex;align-items:center;justify-content:space-between;gap:10px}.sa-admin-current-permissions>div strong{font-size:12px;color:#303a55}.sa-admin-current-permissions>div span{font-size:10px;font-weight:800;color:#5b4baa;background:#eeeaff;border-radius:20px;padding:5px 8px}.sa-admin-current-permissions ul{display:flex;flex-wrap:wrap;gap:7px;list-style:none;margin:11px 0 0;padding:0}.sa-admin-current-permissions li{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid #e5e0fa;border-radius:8px;background:#fff;color:#51458f;font-size:10px;font-weight:650}.sa-admin-current-permissions li svg{color:#6b5bc1}.sa-admin-current-permissions li.empty{color:#81899e;border-style:dashed;background:transparent}
+
+/* Admin profile security panel and explicit account-unlock action. */
+.sa-admins-security{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0 20px;padding:14px 15px;border:1px solid #e7e4f5;border-radius:12px;background:#faf9ff}
+.sa-admins-security>div{display:flex;align-items:center;gap:10px;min-width:0}
+.sa-admins-security-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#f0edff;color:#6654b5}
+.sa-admins-security>div>div{display:grid;gap:4px;min-width:0}
+.sa-admins-security strong{font-size:12px;color:#303a55}
+.sa-admins-security small{font-size:10px;line-height:1.5;color:#81899e;overflow-wrap:anywhere}
+.sa-admins-security button{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;min-height:36px;padding:8px 11px;border:1px solid #e7caca;border-radius:9px;background:#fff7f7;color:#a33d45;font-size:11px;font-weight:750;cursor:pointer}
+.sa-admins-security button:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:560px){.sa-admins-security{align-items:stretch;flex-direction:column}.sa-admins-security button{width:100%}}

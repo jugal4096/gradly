@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import { pool } from "../../config/database";
 
 import {
   listAdministrators,
@@ -469,5 +470,77 @@ export async function deleteAdministratorAccount(
         ? error.message
         : "Failed to delete administrator.",
     });
+  }
+}
+
+
+/* =========================================================
+   RESET ADMIN LOGIN ATTEMPT LIMIT
+   ========================================================= */
+
+export async function resetAdministratorLoginAttempts(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
+  const superAdminId = req.superAdmin?.superAdminId;
+  if (!adminId) return res.status(400).json({ success: false, message: "Administrator ID is required." });
+  if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const admin = await client.query(
+      "SELECT id, admin_code, full_name FROM public.admins WHERE id = $1 FOR UPDATE",
+      [adminId]
+    );
+    if (!admin.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ success: false, message: "Administrator was not found." });
+    }
+
+    const reset = await client.query(
+      `UPDATE public.login_security
+       SET failed_attempts = 0, attempt_limit = 3, lockout_level = 0, locked_until = NULL, updated_at = NOW()
+       WHERE principal_type = 'ADMIN' AND principal_id = $1 AND locked_until IS NOT NULL
+       RETURNING failed_attempts, attempt_limit, lockout_level`,
+      [adminId]
+    );
+    if (!reset.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ success: false, message: "This administrator does not currently have an active login lockout." });
+    }
+
+    await client.query(
+      `UPDATE public.security_notifications
+       SET status = 'REVOKED', reviewed_by_super_admin_id = $2, reviewed_at = NOW()
+       WHERE principal_type = 'ADMIN' AND principal_id = $1
+         AND event_type = 'ADMIN_LOCKOUT' AND status = 'OPEN'`,
+      [adminId, superAdminId]
+    );
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
+       VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', 'SUPER_ADMIN_RESET_ADMIN_LOGIN_ATTEMPTS',
+               'admins', $2, $3, $4::jsonb)`,
+      [superAdminId, adminId, req.ip ?? null, JSON.stringify({
+        adminCode: admin.rows[0].admin_code,
+        adminName: admin.rows[0].full_name,
+        failedAttemptsResetTo: 0,
+        attemptLimit: 3
+      })]
+    );
+    await client.query("COMMIT");
+    return res.status(200).json({
+      success: true,
+      message: "Login attempt limit reset. The administrator can sign in again.",
+      security: { failedAttempts: 0, attemptLimit: 3, lockedUntil: null }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    console.error("Administrator login-attempt reset failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to reset this administrator's login attempt limit." });
+  } finally {
+    client.release();
   }
 }

@@ -14,6 +14,7 @@ import {
   deleteAdministratorAccount,
   getAdminPermissions,
   updateAdminPermissions,
+  resetAdministratorLoginAttempts,
 } from "./administrator.controller";
 
 const router = Router();
@@ -58,6 +59,7 @@ router.get(
 );
 
 router.get("/:adminId/permissions", getAdminPermissions);
+router.patch("/:adminId/reset-login-attempts", resetAdministratorLoginAttempts);
 router.patch("/:adminId/permissions", updateAdminPermissions);
 
 router.delete(
