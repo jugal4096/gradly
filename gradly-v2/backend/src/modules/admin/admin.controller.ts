@@ -107,9 +107,17 @@ export async function loginAdmin(
       });
     }
 
-    return res.status(401).json({
-      message:
-        "Invalid admin credentials.",
+    // Only a genuine credential rejection should be reported as HTTP 401.
+    // Database, schema, JWT, and login-security failures must remain server errors
+    // so production issues are not disguised as incorrect passwords.
+    if (error instanceof Error && error.message === "Invalid admin credentials.") {
+      return res.status(401).json({
+        message: "Invalid admin credentials.",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Admin sign-in is temporarily unavailable. Please try again later.",
     });
   }
 }
