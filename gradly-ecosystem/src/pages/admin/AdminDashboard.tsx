@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, UserRound, Settings, Users, MessageSquareText } from "lucide-react";
+import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, Settings, Users, MessageSquareText } from "lucide-react";
 import "./AdminDashboard.css";
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
@@ -60,7 +60,6 @@ export default function AdminDashboard() {
     {to:"/admin/activity",label:"User activity",icon:Users},
     {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
     {to:"/admin/department",label:"My assignment",icon:Building2},
-    {to:"/admin/profile",label:"My profile",icon:UserRound},
     {to:"/admin/settings",label:"Settings",icon:Settings},
   ];
 
@@ -72,7 +71,7 @@ export default function AdminDashboard() {
       <div className="ad-sidebar-bottom"><div className="ad-secure-card"><ShieldCheck size={19}/><span><strong>Scoped access</strong><small>Assigned department only</small></span></div><Link to="/admin/change-password" className="ad-nav-link"><ShieldCheck size={17}/><span>Account security</span></Link><button type="button" className="ad-logout" onClick={logout}><LogOut size={16}/> Sign out</button></div>
     </aside>
     <section className="ad-main-column">
-      <header className="ad-topbar"><div className="ad-breadcrumb"><span>Admin workspace</span><span>/</span><strong>Overview</strong></div><div className="ad-topbar-right"><span className="ad-live-dot"/><span>Signed in as {adminName}</span><button type="button" className="ad-icon-button" onClick={()=>void load()} disabled={loading} aria-label="Refresh workspace"><RefreshCw size={16}/></button><span className="ad-avatar">{adminName.slice(0,1).toUpperCase()}</span></div></header>
+      <header className="ad-topbar"><div className="ad-breadcrumb"><span>Admin workspace</span><span>/</span><strong>Overview</strong></div><div className="ad-topbar-right"><span className="ad-live-dot"/><span>Signed in as {adminName}</span><button type="button" className="ad-icon-button" onClick={()=>void load()} disabled={loading} aria-label="Refresh workspace"><RefreshCw size={16}/></button><Link to="/admin/profile" className="ad-avatar" aria-label="Open my profile" title="My profile">{adminName.slice(0,1).toUpperCase()}</Link></div></header>
       <div className="ad-content">
         <section className="ad-hero"><div className="ad-hero-content"><span className="ad-eyebrow"><CheckCircle2 size={14}/> DEPARTMENT ADMINISTRATION</span><h1>Good to see you, <span>{adminName.split(" ")[0]}</span>.</h1><p>Your Gradly workspace, focused on the academic program and department assigned to you. Review curriculum, submit change requests and stay in touch with Super Admin.</p><div className="ad-assignment-line"><Building2 size={15}/><span>{institution}</span><i>·</i><span>{program}</span><i>·</i><span>{department}</span></div><Link to="/admin/curriculum" className="ad-primary-action">Review my curriculum <ArrowRight size={16}/></Link></div><div className="ad-hero-art" aria-hidden="true"><div className="ad-art-ring"/><div className="ad-art-card"><div className="ad-art-icon"><GraduationCap size={27}/></div><span className="ad-art-line wide"/><span className="ad-art-line"/><div className="ad-art-bars"><i/><i/><i/><i/><i/><i/></div><small>Academic workspace</small></div></div></section>
         {error&&<div className="ad-alert" role="alert"><ShieldCheck size={18}/><div><strong>Workspace data could not be fully loaded</strong><p>{error}</p><button type="button" onClick={()=>void load()}>Try again</button></div></div>}
