@@ -248,7 +248,7 @@ export async function findAdministratorById(
       ON ls.principal_type = 'ADMIN'
      AND ls.principal_id = a.id::text
 
-    WHERE a.id = $1
+    WHERE a.id = $1::uuid
 
     LIMIT 1;
   `;
@@ -276,7 +276,7 @@ export async function updateAdministratorStatus(
       status = $2,
       updated_at = NOW()
 
-    WHERE id = $1
+    WHERE id = $1::uuid
 
     RETURNING
       id,
@@ -310,7 +310,7 @@ export async function getAdministratorPermissionsForAdmin(adminId: string) {
   const result = await pool.query(
     `SELECT permission_code, granted
      FROM public.admin_permissions
-     WHERE admin_id = $1 AND granted = TRUE
+     WHERE admin_id = $1::uuid AND granted = TRUE
      ORDER BY permission_code`,
     [adminId]
   );
@@ -329,7 +329,7 @@ export async function replaceAdministratorPermissions(
   try {
     await client.query("BEGIN");
     await client.query(
-      "UPDATE public.admin_permissions SET granted = FALSE WHERE admin_id = $1",
+      "UPDATE public.admin_permissions SET granted = FALSE WHERE admin_id = $1::uuid",
       [adminId]
     );
     for (const code of permissionCodes) {
@@ -344,7 +344,7 @@ export async function replaceAdministratorPermissions(
     const result = await client.query(
       `SELECT permission_code, granted
        FROM public.admin_permissions
-       WHERE admin_id = $1 AND granted = TRUE
+       WHERE admin_id = $1::uuid AND granted = TRUE
        ORDER BY permission_code`,
       [adminId]
     );
@@ -373,7 +373,7 @@ export async function updateAdministratorBranch(
       branch_id = $2,
       updated_at = NOW()
 
-    WHERE id = $1
+    WHERE id = $1::uuid
 
     RETURNING
       id,
@@ -421,8 +421,8 @@ export async function findBranchForInstitution(
     JOIN institutions i
       ON i.id = p.institution_id
 
-    WHERE b.id = $1
-      AND i.id = $2
+    WHERE b.id = $1::uuid
+      AND i.id = $2::uuid
 
     LIMIT 1;
   `;
@@ -450,7 +450,7 @@ export async function updateAdminshipExpiry(
       adminship_expires_at = $2,
       updated_at = NOW()
 
-    WHERE id = $1
+    WHERE id = $1::uuid
 
     RETURNING
       id,
@@ -490,7 +490,7 @@ export async function findAdminGraduationDate(
 
     FROM admins a
 
-    WHERE a.id = $1
+    WHERE a.id = $1::uuid
 
     LIMIT 1;
   `;
@@ -525,7 +525,7 @@ export async function updateAdminGraduationDate(
         adminship_expires_at = $3,
         updated_at = NOW()
 
-      WHERE id = $1
+      WHERE id = $1::uuid
 
       RETURNING
         id,
@@ -575,7 +575,7 @@ export async function deleteAdministratorAccount(adminId: string) {
     const existing = await client.query(
       `SELECT id, admin_code, full_name, email, user_id, application_id
        FROM public.admins
-       WHERE id = $1
+       WHERE id = $1::uuid
        FOR UPDATE`,
       [adminId]
     );
@@ -593,14 +593,14 @@ export async function deleteAdministratorAccount(adminId: string) {
              rejection_reason = 'Administrator account removed by Super Admin. You may submit a fresh adminship application.',
              reviewed_at = NOW(),
              updated_at = NOW()
-         WHERE id = $1`,
+         WHERE id = $1::uuid`,
         [administrator.application_id]
       );
     }
 
     await client.query(
       `DELETE FROM public.admins
-       WHERE id = $1`,
+       WHERE id = $1::uuid`,
       [adminId]
     );
 

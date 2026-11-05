@@ -491,7 +491,7 @@ export async function resetAdministratorLoginAttempts(
   try {
     await client.query("BEGIN");
     const admin = await client.query(
-      "SELECT id, admin_code, full_name FROM public.admins WHERE id = $1 FOR UPDATE",
+      "SELECT id, admin_code, full_name FROM public.admins WHERE id = $1::uuid FOR UPDATE",
       [adminId]
     );
     if (!admin.rowCount) {
@@ -502,7 +502,7 @@ export async function resetAdministratorLoginAttempts(
     const reset = await client.query(
       `UPDATE public.login_security
        SET failed_attempts = 0, attempt_limit = 3, lockout_level = 0, locked_until = NULL, updated_at = NOW()
-       WHERE principal_type = 'ADMIN' AND principal_id = $1 AND locked_until IS NOT NULL
+       WHERE principal_type = 'ADMIN' AND principal_id = $1::uuid AND locked_until IS NOT NULL
        RETURNING failed_attempts, attempt_limit, lockout_level`,
       [adminId]
     );
@@ -513,15 +513,15 @@ export async function resetAdministratorLoginAttempts(
 
     await client.query(
       `UPDATE public.security_notifications
-       SET status = 'REVOKED', reviewed_by_super_admin_id = $2, reviewed_at = NOW()
-       WHERE principal_type = 'ADMIN' AND principal_id = $1
+       SET status = 'REVOKED', reviewed_by_super_admin_id = $2::uuid, reviewed_at = NOW()
+       WHERE principal_type = 'ADMIN' AND principal_id = $1::uuid
          AND event_type = 'ADMIN_LOCKOUT' AND status = 'OPEN'`,
       [adminId, superAdminId]
     );
     await client.query(
       `INSERT INTO public.audit_logs
        (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
-       VALUES ('SUPER_ADMIN', $1, 'SUPER_ADMIN', 'SUPER_ADMIN_RESET_ADMIN_LOGIN_ATTEMPTS',
+       VALUES ('SUPER_ADMIN', $1::uuid, 'SUPER_ADMIN', 'SUPER_ADMIN_RESET_ADMIN_LOGIN_ATTEMPTS',
                'admins', $2, $3, $4::jsonb)`,
       [superAdminId, adminId, req.ip ?? null, JSON.stringify({
         adminCode: admin.rows[0].admin_code,
