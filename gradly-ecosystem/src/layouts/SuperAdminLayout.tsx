@@ -103,7 +103,7 @@ export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
-  const [workspaceOpen, setWorkspaceOpen] = useState(() => window.matchMedia("(min-width: 851px)").matches);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -226,7 +226,7 @@ export default function SuperAdminLayout() {
           aria-controls="super-admin-navigation"
           onClick={() => setWorkspaceOpen((open) => !open)}
         >
-          {workspaceOpen ? <X size={20} /> : <Menu size={20} />}
+          <Menu size={20} />
           <span>Workspace</span>
         </button>
 
