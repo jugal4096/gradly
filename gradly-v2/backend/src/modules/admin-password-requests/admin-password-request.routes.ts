@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import { pool } from "../../config/database";
-import { authenticateFirebaseToken, type AuthenticatedRequest } from "../../middleware/auth.middleware";
+import { authenticateFirebaseTokenForAdminApplication, type AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { authenticateSuperAdminToken, type SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 
 const router = Router();
@@ -30,7 +30,7 @@ function fail(res: Response, error: unknown) {
   });
 }
 
-router.post("/", authenticateFirebaseToken, async (req, res) => {
+router.post("/", authenticateFirebaseTokenForAdminApplication, async (req, res) => {
   try {
     const identity = firebaseIdentity(req);
     const adminCode = typeof req.body?.admin_code === "string" ? req.body.admin_code.trim() : "";
@@ -78,7 +78,7 @@ router.post("/", authenticateFirebaseToken, async (req, res) => {
   }
 });
 
-router.get("/mine", authenticateFirebaseToken, async (req, res) => {
+router.get("/mine", authenticateFirebaseTokenForAdminApplication, async (req, res) => {
   try {
     const identity = firebaseIdentity(req);
     const result = await pool.query(
@@ -94,7 +94,7 @@ router.get("/mine", authenticateFirebaseToken, async (req, res) => {
   }
 });
 
-router.post("/:requestId/reset", authenticateFirebaseToken, async (req, res) => {
+router.post("/:requestId/reset", authenticateFirebaseTokenForAdminApplication, async (req, res) => {
   try {
     const identity = firebaseIdentity(req);
     const password = req.body?.password;
