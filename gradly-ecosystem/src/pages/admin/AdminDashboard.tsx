@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, UserRound, Settings, Users, MessageSquareText } from "lucide-react";
 import "./AdminDashboard.css";
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
     {to:"/admin/settings",label:"Settings",icon:Settings},
   ];
 
-  return <main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
+  return <><AdminWorkspaceMenu/><main className="admin-dashboard" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
     <aside className="ad-sidebar">
       <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
       <p className="ad-sidebar-label">WORKSPACE</p>
@@ -93,5 +94,5 @@ export default function AdminDashboard() {
         <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><span>Academic changes require Super Admin approval.</span></footer>
       </div>
     </section>
-  </main>;
+  </main></> ;
 }
