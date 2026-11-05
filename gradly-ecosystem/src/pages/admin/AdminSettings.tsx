@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, Moon, Sun, ShieldCheck, UserRound, Bell, Palette, Type, LogOut, Layout, RotateCcw } from "lucide-react";
 import "./AdminDashboard.css";
@@ -61,7 +62,7 @@ export default function AdminSettings() {
     setTheme("light"); setPalette("green"); setFont("system"); setFontSize("normal"); setCompact(false); setReducedMotion(false);
   };
 
-  return <main className="admin-dashboard" data-theme={effectiveTheme} data-palette={palette} data-font={font} data-font-size={fontSize} data-compact={String(compact)} data-reduced-motion={String(reducedMotion)}>
+  return <><AdminWorkspaceMenu/><main className="admin-dashboard" data-theme={effectiveTheme} data-palette={palette} data-font={font} data-font-size={fontSize} data-compact={String(compact)} data-reduced-motion={String(reducedMotion)}>
     <aside className="ad-sidebar">
       <Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link>
       <p className="ad-sidebar-label">PREFERENCES</p>
@@ -114,5 +115,5 @@ export default function AdminSettings() {
         </section>
       </div>
     </section>
-  </main>;
+  </main></> ;
 }
