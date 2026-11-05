@@ -246,7 +246,7 @@ export async function findAdministratorById(
 
     LEFT JOIN public.login_security ls
       ON ls.principal_type = 'ADMIN'
-     AND ls.principal_id = a.id::text
+     AND ls.principal_id::text = a.id::text
 
     WHERE a.id = $1::uuid
 
