@@ -186,7 +186,7 @@ export async function notifySecurityLockout(
        SELECT 'ADMIN_LOCKOUT', 'ADMIN', a.id, a.admin_code, a.full_name, a.email,
               'Administrator account locked after three failed password attempts.',
               jsonb_build_object('attempt_limit', 3), $2
-       FROM public.admins a WHERE a.id = $1`,
+       FROM public.admins a WHERE a.id = $1::uuid`,
       [principalId, lockedUntil]
     );
     return;
@@ -199,7 +199,7 @@ export async function notifySecurityLockout(
        SELECT 'SUPER_ADMIN_LOCKOUT', 'SUPER_ADMIN', s.id, s.admin_code, s.full_name, s.email,
               'Super Admin account locked after three failed password attempts.',
               jsonb_build_object('attempt_limit', 3), $2
-       FROM public.super_admins s WHERE s.id = $1`,
+       FROM public.super_admins s WHERE s.id = $1::uuid`,
       [principalId, lockedUntil]
     );
   }
