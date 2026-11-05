@@ -9,6 +9,7 @@ import {
   KeyRound,
   LogOut,
   Menu,
+  X,
   MessageSquare,
   ScrollText,
   Settings,
@@ -102,7 +103,7 @@ export default function SuperAdminLayout() {
   const navigate = useNavigate();
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -147,7 +148,7 @@ export default function SuperAdminLayout() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMobileNavOpen(false);
+      if (event.key === "Escape") setWorkspaceOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -219,13 +220,14 @@ export default function SuperAdminLayout() {
 
         <button
           type="button"
-          className="super-admin-mobile-menu"
-          aria-label={mobileNavOpen ? "Close workspace navigation" : "Open workspace navigation"}
-          aria-expanded={mobileNavOpen}
+          className="super-admin-workspace-toggle"
+          aria-label={workspaceOpen ? "Close workspace navigation" : "Open workspace navigation"}
+          aria-expanded={workspaceOpen}
           aria-controls="super-admin-navigation"
-          onClick={() => setMobileNavOpen((open) => !open)}
+          onClick={() => setWorkspaceOpen((open) => !open)}
         >
-          <Menu size={20} />
+          {workspaceOpen ? <X size={20} /> : <Menu size={20} />}
+          <span>Workspace</span>
         </button>
 
         <div className="topbar-status">
@@ -252,10 +254,10 @@ export default function SuperAdminLayout() {
             SIDEBAR
             =================================================== */}
 
-        {mobileNavOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
+        {workspaceOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
         <aside
           id="super-admin-navigation"
-          className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}`}
+          className={`super-admin-sidebar${workspaceOpen ? " is-workspace-open" : ""}`}
           aria-label="Super Admin navigation"
         >
 
