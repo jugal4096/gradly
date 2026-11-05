@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Bell, BookOpen, Building2, Check, CheckCheck, ClipboardList, Layers3, LogOut, RefreshCw, Search, ShieldCheck, Send, CircleAlert, X, Pencil, Settings, UserRound, Users, MessageSquareText } from "lucide-react";
@@ -95,7 +96,7 @@ export default function AdminWorkspacePage(){
     }catch(e){setError(e instanceof Error?e.message:"Could not update notification.");}
   }
 
-  return <main className="admin-dashboard" data-theme={(localStorage.getItem("gradly_admin_theme")==="system"?(window.matchMedia?.("(prefers-color-scheme: dark)").matches?"dark":"light"):localStorage.getItem("gradly_admin_theme"))==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
+  return <><AdminWorkspaceMenu/><main className="admin-dashboard" data-theme={(localStorage.getItem("gradly_admin_theme")==="system"?(window.matchMedia?.("(prefers-color-scheme: dark)").matches?"dark":"light"):localStorage.getItem("gradly_admin_theme"))==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
     <aside className="ad-sidebar"><Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link><p className="ad-sidebar-label">WORKSPACE</p><nav className="ad-sidebar-nav" aria-label="Admin navigation">{nav.map(item=><Link key={item.to} to={item.to} className={"ad-nav-link"+(item.to==="/admin/"+page?" active":"")}><item.icon size={17}/><span>{item.label}</span>{Boolean(item.badge)&&<em>{item.badge}</em>}</Link>)}</nav><div className="ad-sidebar-bottom"><div className="ad-secure-card"><ShieldCheck size={19}/><span><strong>Department-scoped</strong><small>Access is assigned by Super Admin</small></span></div><Link to="/admin/change-password" className="ad-nav-link"><ShieldCheck size={17}/><span>Account security</span></Link><button type="button" className="ad-logout" onClick={logout}><LogOut size={16}/> Sign out</button></div></aside>
     <section className="ad-main-column"><header className="ad-topbar"><div className="ad-breadcrumb"><Link to="/admin/dashboard">Admin workspace</Link><span>/</span><strong>{pageTitle}</strong></div><div className="ad-topbar-right"><span className="ad-live-dot"/><span>{clean(profile?.full_name||profile?.fullName||profile?.admin_code||profile?.adminCode)||"Administrator"}</span><Link to="/admin/profile" className="ad-icon-button" aria-label="My profile"><UserRound size={16}/></Link><Link to="/admin/settings" className="ad-icon-button" aria-label="Settings"><Settings size={16}/></Link><button type="button" className="ad-icon-button" onClick={()=>void load()} disabled={loading} aria-label="Refresh page"><RefreshCw size={16}/></button></div></header>
       <div className="ad-content">
@@ -112,5 +113,5 @@ export default function AdminWorkspacePage(){
         <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><Link to="/admin/dashboard"><ArrowLeft size={14}/> Back to overview</Link></footer>
       </div>
     </section>
-  </main>;
+  </main></> ;
 }
