@@ -12,9 +12,9 @@ type Admin = {
   user_id?:string|null; registered_at?:string|null; created_at?:string|null; updated_at?:string|null;
 };
 
-const root=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\\/+$/,"").replace(/\\/api$/i,"")+"/api";
+const root=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,"")+"/api";
 const date=(v?:string|null)=>v?new Date(v).toLocaleString():"—";
-const pretty=(v?:string|null)=>(v||"UNKNOWN").replace(/_/g," ").toLowerCase().replace(/\\b\\w/g,m=>m.toUpperCase());
+const pretty=(v?:string|null)=>(v||"UNKNOWN").replace(/_/g," ").toLowerCase().replace(/\b\w/g,m=>m.toUpperCase());
 
 export default function SuperAdminAdminProfile(){
   const {adminId=""}=useParams();
