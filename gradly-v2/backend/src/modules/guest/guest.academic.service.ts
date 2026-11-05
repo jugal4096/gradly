@@ -1,35 +1,55 @@
 import {
-    createGuestCourse,
-    createGuestSemester,
-    findGuestSemester,
-    getGuestSemesterCourses,
-    type CreateGuestCourseData,
-    type CreateGuestSemesterData,
-  } from "./guest.academic.repository";
-  
-  export async function getOrCreateGuestSemester(
-    data: CreateGuestSemesterData
-  ) {
-    const existing = await findGuestSemester(
-      data.guestSessionId,
-      data.semesterId
-    );
-  
-    if (existing) {
-      return existing;
-    }
-  
-    return await createGuestSemester(data);
+  createGuestCourse,
+  createGuestSemester,
+  findGuestSemester,
+  findGuestSemesterByIdAndSession,
+  getGuestSemesterCourses,
+  type CreateGuestCourseData,
+  type CreateGuestSemesterData,
+} from "./guest.academic.repository";
+
+export async function getOrCreateGuestSemester(
+  data: CreateGuestSemesterData
+) {
+  const existing = await findGuestSemester(
+    data.guestSessionId,
+    data.semesterId
+  );
+
+  if (existing) {
+    return existing;
   }
-  
-  export async function addGuestCourse(
-    data: CreateGuestCourseData
-  ) {
-    return await createGuestCourse(data);
+
+  return await createGuestSemester(data);
+}
+
+export async function addGuestCourse(
+  data: CreateGuestCourseData,
+  guestSessionId: string
+) {
+  if (!guestSessionId) {
+    return null;
   }
-  
-  export async function getGuestCourses(
-    guestSemesterId: string
-  ) {
-    return await getGuestSemesterCourses(guestSemesterId);
+
+  return await createGuestCourse(data, guestSessionId);
+}
+
+export async function getGuestCourses(
+  guestSessionId: string,
+  guestSemesterId: string
+) {
+  if (!guestSessionId || !guestSemesterId) {
+    return null;
   }
+
+  const semester = await findGuestSemesterByIdAndSession(
+    guestSemesterId,
+    guestSessionId
+  );
+
+  if (!semester) {
+    return null;
+  }
+
+  return await getGuestSemesterCourses(guestSessionId, guestSemesterId);
+}
