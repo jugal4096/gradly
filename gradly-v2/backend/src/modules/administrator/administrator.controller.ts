@@ -502,7 +502,7 @@ export async function resetAdministratorLoginAttempts(
     const reset = await client.query(
       `UPDATE public.login_security
        SET failed_attempts = 0, attempt_limit = 3, lockout_level = 0, locked_until = NULL, updated_at = NOW()
-       WHERE principal_type = 'ADMIN' AND principal_id = $1::text AND locked_until IS NOT NULL
+       WHERE principal_type = 'ADMIN' AND principal_id = $1::uuid AND locked_until IS NOT NULL
        RETURNING failed_attempts, attempt_limit, lockout_level`,
       [adminId]
     );
