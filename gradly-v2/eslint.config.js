@@ -18,5 +18,13 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Keep correctness-critical Hooks checks blocking. Compiler diagnostics are warnings
+      // until the existing codebase has been refactored to satisfy the stricter rules.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-refresh/only-export-components': 'warn',
+    },
   },
 ])

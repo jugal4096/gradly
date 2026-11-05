@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { pool } from "../../config/database";
 
 function hashGuestToken(token: string) {
