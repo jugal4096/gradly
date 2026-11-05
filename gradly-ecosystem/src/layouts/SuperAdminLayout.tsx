@@ -219,7 +219,7 @@ export default function SuperAdminLayout() {
 
         <button
           type="button"
-          className="super-admin-workspace-toggle"
+          className="super-admin-mobile-menu"
           aria-label={mobileNavOpen ? "Close workspace navigation" : "Open workspace navigation"}
           aria-expanded={mobileNavOpen}
           aria-controls="super-admin-navigation"
@@ -255,7 +255,7 @@ export default function SuperAdminLayout() {
         {mobileNavOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
         <aside
           id="super-admin-navigation"
-          className={`super-admin-sidebar${mobileNavOpen ? " is-workspace-open" : ""}`}
+          className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}`}
           aria-label="Super Admin navigation"
         >
 
