@@ -103,7 +103,6 @@ export default function SuperAdminLayout() {
   const [unattendedCount, setUnattendedCount] = useState(0);
   const [newCount, setNewCount] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
   const loadRequestCounts = useCallback(async () => {
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) return;
@@ -218,7 +217,16 @@ export default function SuperAdminLayout() {
         </div>
 
 
-        <button type="button" className="super-admin-workspace-toggle" aria-label={mobileNavOpen || !workspaceCollapsed ? "Close workspace navigation" : "Open workspace navigation"} aria-expanded={mobileNavOpen || !workspaceCollapsed} aria-controls="super-admin-navigation" onClick={() => { if (window.matchMedia("(max-width: 850px)").matches) setMobileNavOpen((open) => !open); else setWorkspaceCollapsed((collapsed) => !collapsed); }}><Menu size={20}/></button>
+        <button
+          type="button"
+          className="super-admin-workspace-toggle"
+          aria-label={mobileNavOpen ? "Close workspace navigation" : "Open workspace navigation"}
+          aria-expanded={mobileNavOpen}
+          aria-controls="super-admin-navigation"
+          onClick={() => setMobileNavOpen((open) => !open)}
+        >
+          <Menu size={20} />
+        </button>
 
         <div className="topbar-status">
 
@@ -245,7 +253,11 @@ export default function SuperAdminLayout() {
             =================================================== */}
 
         {mobileNavOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
-        <aside id="super-admin-navigation" className={`super-admin-sidebar${mobileNavOpen ? " is-mobile-open" : ""}${workspaceCollapsed ? " is-workspace-collapsed" : ""}`} aria-label="Super Admin navigation">
+        <aside
+          id="super-admin-navigation"
+          className={`super-admin-sidebar${mobileNavOpen ? " is-workspace-open" : ""}`}
+          aria-label="Super Admin navigation"
+        >
 
 
           <div className="sidebar-heading">
