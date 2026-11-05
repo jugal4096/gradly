@@ -1,0 +1,44 @@
+/* Admin-wide font, sizing and accessible dark-mode preferences. */
+:root[data-admin-font="system"]{--admin-font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+:root[data-admin-font="inter"]{--admin-font:"Inter",Arial,sans-serif}
+:root[data-admin-font="roboto"]{--admin-font:"Roboto",Arial,sans-serif}
+:root[data-admin-font="lato"]{--admin-font:"Lato",Arial,sans-serif}
+:root[data-admin-font="poppins"]{--admin-font:"Poppins",Arial,sans-serif}
+:root[data-admin-font="nunito"]{--admin-font:"Nunito",Arial,sans-serif}
+:root[data-admin-font="opensans"]{--admin-font:"Open Sans",Arial,sans-serif}
+:root[data-admin-font="montserrat"]{--admin-font:"Montserrat",Arial,sans-serif}
+:root[data-admin-font="dm-sans"]{--admin-font:"DM Sans",Arial,sans-serif}
+:root[data-admin-font="manrope"]{--admin-font:"Manrope",Arial,sans-serif}
+:root[data-admin-font="source-sans"]{--admin-font:"Source Sans 3",Arial,sans-serif}
+:root[data-admin-font="raleway"]{--admin-font:"Raleway",Arial,sans-serif}
+:root[data-admin-font="ubuntu"]{--admin-font:"Ubuntu",Arial,sans-serif}
+:root[data-admin-font="georgia"]{--admin-font:Georgia,serif}
+:root[data-admin-font="times"]{--admin-font:"Times New Roman",serif}
+:root[data-admin-font="verdana"]{--admin-font:Verdana,sans-serif}
+:root[data-admin-font="tahoma"]{--admin-font:Tahoma,sans-serif}
+:root[data-admin-font="trebuchet"]{--admin-font:"Trebuchet MS",sans-serif}
+:root[data-admin-font="mono"]{--admin-font:ui-monospace,Consolas,monospace}
+html[data-admin-font],html[data-admin-font] body,html[data-admin-font] button,html[data-admin-font] input,html[data-admin-font] select,html[data-admin-font] textarea{font-family:var(--admin-font)!important}
+html[data-admin-font-size="xs"]{font-size:13px}html[data-admin-font-size="small"]{font-size:14px}html[data-admin-font-size="normal"]{font-size:16px}html[data-admin-font-size="large"]{font-size:18px}html[data-admin-font-size="xlarge"]{font-size:20px}html[data-admin-font-size="xxlarge"]{font-size:22px}
+html[data-admin-theme="dark"]{color-scheme:dark;background:#101828}html[data-admin-theme="dark"] body{background:#101828;color:#f2f4f7}
+html[data-admin-theme="dark"] .admin-dashboard{--forest:#10251d;--green:#54c58b;--mint:#173b2b;--ink:#edf5ef;--muted:#b3c2b8;--line:#34483c;background:#101a15;color:#edf5ef}
+html[data-admin-theme="dark"] .admin-dashboard .ad-main-column,html[data-admin-theme="dark"] .admin-dashboard .ad-content{background:#101a15;color:#edf5ef}
+html[data-admin-theme="dark"] .admin-dashboard .ad-topbar{background:#17251de8;border-color:#34483c;color:#e7f0e9}
+html[data-admin-theme="dark"] .admin-dashboard .ad-breadcrumb,html[data-admin-theme="dark"] .admin-dashboard .ad-breadcrumb a,html[data-admin-theme="dark"] .admin-dashboard .ad-topbar-right{color:#bdcbbf}
+html[data-admin-theme="dark"] .admin-dashboard .ad-breadcrumb strong,html[data-admin-theme="dark"] .admin-dashboard .ad-page-heading h1,html[data-admin-theme="dark"] .admin-dashboard .ad-section-heading h2,html[data-admin-theme="dark"] .admin-dashboard .ad-panel-heading h2,html[data-admin-theme="dark"] .admin-dashboard .ad-metric-card>strong,html[data-admin-theme="dark"] .admin-dashboard .ad-quick-card strong,html[data-admin-theme="dark"] .admin-dashboard .ad-detail-grid article strong{color:#f1f7f2}
+html[data-admin-theme="dark"] .admin-dashboard .ad-panel,html[data-admin-theme="dark"] .admin-dashboard .ad-metric-card,html[data-admin-theme="dark"] .admin-dashboard .ad-quick-card,html[data-admin-theme="dark"] .admin-dashboard .ad-request-item,html[data-admin-theme="dark"] .admin-dashboard .ad-notification-item,html[data-admin-theme="dark"] .admin-dashboard .ad-theme-option,html[data-admin-theme="dark"] .admin-dashboard .ad-detail-grid article{background:#1b2a21;border-color:#3b5143;color:#e5eee7}
+html[data-admin-theme="dark"] .admin-dashboard .ad-panel p,html[data-admin-theme="dark"] .admin-dashboard .ad-quick-card p,html[data-admin-theme="dark"] .admin-dashboard .ad-metric-label,html[data-admin-theme="dark"] .admin-dashboard .ad-metric-card>small,html[data-admin-theme="dark"] .admin-dashboard .ad-page-heading p,html[data-admin-theme="dark"] .admin-dashboard .ad-panel-heading p,html[data-admin-theme="dark"] .admin-dashboard .ad-detail-grid article span,html[data-admin-theme="dark"] .admin-dashboard .ad-request-item p,html[data-admin-theme="dark"] .admin-dashboard .ad-notification-item p{color:#bdcbbf}
+html[data-admin-theme="dark"] .admin-dashboard input,html[data-admin-theme="dark"] .admin-dashboard select,html[data-admin-theme="dark"] .admin-dashboard textarea,html[data-admin-theme="dark"] .admin-dashboard .ad-search{background:#111d16!important;color:#f1f7f2!important;border-color:#506657!important}
+html[data-admin-theme="dark"] .admin-dashboard input::placeholder,html[data-admin-theme="dark"] .admin-dashboard textarea::placeholder{color:#9aab9e!important}
+html[data-admin-theme="dark"] .admin-dashboard .ad-table th{background:#223329;color:#d1ded4}html[data-admin-theme="dark"] .admin-dashboard .ad-table td{color:#d3dfd6;border-color:#35483b}html[data-admin-theme="dark"] .admin-dashboard .ad-table td strong{color:#f1f7f2}
+html[data-admin-theme="dark"] .admin-dashboard .ad-secondary-button,html[data-admin-theme="dark"] .admin-dashboard .ad-text-button,html[data-admin-theme="dark"] .admin-dashboard .ad-icon-button{background:#223329;color:#d9eee0;border-color:#4b6252}
+html[data-admin-theme="dark"] .admin-login-page{background:radial-gradient(ellipse at top,#203c2b,#101a15 65%);color:#f2f7f3}
+html[data-admin-theme="dark"] .admin-login-card{background:#1b2a21;border-color:#405747;color:#f2f7f3;box-shadow:0 22px 70px #0008}
+html[data-admin-theme="dark"] .admin-login-card h1,html[data-admin-theme="dark"] .admin-login-card form label,html[data-admin-theme="dark"] .admin-login-brand strong{color:#f2f7f3}
+html[data-admin-theme="dark"] .admin-login-back,html[data-admin-theme="dark"] .admin-login-subtitle,html[data-admin-theme="dark"] .admin-login-brand small,html[data-admin-theme="dark"] .admin-login-security{color:#c2d0c6}
+html[data-admin-theme="dark"] .admin-login-security{background:#24372a}
+html[data-admin-theme="dark"] .admin-login-card input,html[data-admin-theme="dark"] .admin-login-password{background:#111d16;color:#f2f7f3;border-color:#506657}
+html[data-admin-theme="dark"] .admin-login-card input::placeholder{color:#a8b7ac}
+html[data-admin-theme="dark"] .admin-login-forgot,html[data-admin-theme="dark"] .admin-login-apply{background:#263b2d;color:#d8f4e2;border-color:#557761}
+html[data-admin-theme="dark"] .admin-login-icon{background:#294333;color:#a8e7bd}
+html[data-admin-reduced-motion="true"] *,html[data-admin-reduced-motion="true"] *:before,html[data-admin-reduced-motion="true"] *:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
