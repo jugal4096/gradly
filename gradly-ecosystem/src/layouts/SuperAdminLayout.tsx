@@ -254,7 +254,7 @@ export default function SuperAdminLayout() {
             SIDEBAR
             =================================================== */}
 
-        {workspaceOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setMobileNavOpen(false)} />}
+        {workspaceOpen && <button type="button" className="super-admin-nav-backdrop" aria-label="Close navigation menu" onClick={() => setWorkspaceOpen(false)} />}
         <aside
           id="super-admin-navigation"
           className={`super-admin-sidebar${workspaceOpen ? " is-workspace-open" : ""}`}
