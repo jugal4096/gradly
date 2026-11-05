@@ -26,6 +26,7 @@ import {
 } from "react-router-dom";
 
 import "../styles/super-admin.css";
+import "../styles/super-admin-theme.css";
 
 
 const controlNavigation = [

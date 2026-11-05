@@ -9,6 +9,7 @@ import {
 } from "../../lib/superAdminSession";
 
 import "./SuperAdminLogin.css";
+import "../../styles/super-admin-theme.css";
 
 export default function SuperAdminLogin() {
   const navigate = useNavigate();
