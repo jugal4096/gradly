@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LayoutDashboard, BookOpen, ClipboardList, Bell, Users, MessageSquareText, Building2, UserRound, Settings, ShieldCheck, LogOut, ChevronRight } from "lucide-react";
+import { Menu, X, LayoutDashboard, BookOpen, ClipboardList, Bell, Users, MessageSquareText, Building2, Settings, ShieldCheck, LogOut, ChevronRight } from "lucide-react";
 import "./AdminWorkspaceMenu.css";
 
 const items=[
@@ -11,7 +11,6 @@ const items=[
  {to:"/admin/activity",label:"User activity",icon:Users},
  {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
  {to:"/admin/department",label:"My assignment",icon:Building2},
- {to:"/admin/profile",label:"My profile",icon:UserRound},
  {to:"/admin/settings",label:"Settings",icon:Settings},
  {to:"/admin/change-password",label:"Account security",icon:ShieldCheck},
 ];
