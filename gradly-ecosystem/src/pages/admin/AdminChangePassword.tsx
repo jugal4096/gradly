@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
 import type { FormEvent } from "react";
 import { AlertCircle, ArrowLeft, CheckCircle2, KeyRound, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -34,7 +35,7 @@ export default function AdminChangePassword() {
     finally { setLoading(false); }
   }
 
-  return <main className="admin-change-password-page" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}><section className="admin-change-password-card">
+  return <><AdminWorkspaceMenu/><main className="admin-change-password-page" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}><section className="admin-change-password-card">
     <button className="acp-back" type="button" onClick={() => navigate("/admin/dashboard")}><ArrowLeft size={16}/> Back to dashboard</button>
     <div className="acp-brand"><img src="/gradly-ecosystem-logo.png" alt="Gradly"/><span>GRADLY<small>Institution administration</small></span></div>
     <div className="acp-icon"><KeyRound size={23}/></div><p className="acp-kicker">ACCOUNT SECURITY</p><h1>Change your password</h1>
@@ -48,5 +49,5 @@ export default function AdminChangePassword() {
       <button type="submit" disabled={loading}>{loading ? "Updating password…" : "Change password"}</button>
     </form><p className="acp-footnote"><ShieldCheck size={15}/> Your new password is securely hashed and expires one month after this change.</p>
     {notice && <button className="acp-dashboard" type="button" onClick={() => navigate("/admin/dashboard")}>Continue to dashboard</button>}
-  </section></main>;
+  </section></main></> ;
 }
