@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import LoginPage from "../features/auth/LoginPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
-import DashboardPage from "../features/dashboard/DashboardPage";
+import StudentPlatform from "../features/dashboard/StudentPlatform";
 import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
@@ -73,7 +73,7 @@ export default function AppRoutes() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <StudentPlatform />
             </ProtectedRoute>
           }
         />
