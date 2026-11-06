@@ -239,7 +239,7 @@ export async function registerApprovedAdmin(
          $11,
          $12,
          NOW(),
-         NOW() + INTERVAL '1 month',
+         NULL,
          NOW(),
          NOW()
        )
