@@ -8,6 +8,12 @@ import {
 
 import { createAdminToken } from "../../config/jwt";
 
+export class AdminPasswordExpiredError extends Error {
+  public readonly code = "PASSWORD_EXPIRED";
+  public readonly skipFailedAttempt = true;
+  constructor() { super("Your password has been expired by the Super Admin. Submit a password-change request for approval."); this.name = "AdminPasswordExpiredError"; }
+}
+
 import {
   executeSecureLogin,
 } from "../auth-security/login-security.service";
@@ -83,6 +89,11 @@ export async function authenticateAdmin(
         });
 
         throw new Error("Invalid admin credentials.");
+      }
+
+      // Passwords expire only when a Super Admin explicitly sets password_expires_at.
+      if (admin.password_expires_at && new Date(admin.password_expires_at).getTime() <= Date.now()) {
+        throw new AdminPasswordExpiredError();
       }
 
       // Only active administrators may authenticate.
