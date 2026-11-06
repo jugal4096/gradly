@@ -14,9 +14,24 @@ const navItems: { id: Section; label: string; icon: string; group: string }[] = 
   { id: "services", label: "Student services", icon: "✧", group: "YOUR SPACE" },
 ];
 
+// GECA grading scale copied from the GECA Student Academic Planner reference.
 const gradePoints: Record<string, number> = {
-  "O": 10, "A+": 9, "A": 8, "B+": 7, "B": 6, "C": 5, "P": 4, "F": 0,
+  "A++": 10, "A+": 9, "A": 8, "B+": 7, "B": 6, "C+": 5, "C": 4, "D": 0,
 };
+const gradeOptions = Object.entries(gradePoints);
+type AdmissionMode = "Regular" | "Direct Second Year" | "Direct Third Year";
+type Program = "BTECH" | "MCA" | "MTECH";
+
+function getSemesterRange(program: Program, admissionMode: AdmissionMode) {
+  if (program === "MCA" || program === "MTECH") return { start: 1, end: 4 };
+  if (admissionMode === "Direct Second Year") return { start: 3, end: 8 };
+  if (admissionMode === "Direct Third Year") return { start: 5, end: 8 };
+  return { start: 1, end: 8 };
+}
+
+function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return <div className="student-section-heading"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>;
+}
 
 function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return <div className="student-section-heading"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>;
@@ -54,33 +69,85 @@ function Overview({ name, onNavigate }: { name: string; onNavigate: (section: Se
 }
 
 function SgpaCalculator() {
+  const [program, setProgram] = useState<Program>("BTECH");
+  const [admissionMode, setAdmissionMode] = useState<AdmissionMode>("Regular");
+  const [semester, setSemester] = useState(1);
   const [subjects, setSubjects] = useState<Subject[]>([{ id: 1, name: "", grade: "A", credits: 3 }]);
   const [showResult, setShowResult] = useState(false);
-  const totalCredits = subjects.reduce((sum, subject) => sum + (Number(subject.credits) || 0), 0);
-  const points = subjects.reduce((sum, subject) => sum + (gradePoints[subject.grade] ?? 0) * (Number(subject.credits) || 0), 0);
-  const result = totalCredits > 0 ? points / totalCredits : 0;
+  const range = getSemesterRange(program, admissionMode);
+  const validSemesters = Array.from({ length: range.end - range.start + 1 }, (_, index) => range.start + index);
+  const countedSubjects = subjects.filter(subject => subject.name.trim() && subject.credits > 0 && Number.isFinite(subject.credits) && gradePoints[subject.grade] !== undefined);
+  const totalCredits = countedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
+  const weightedPoints = countedSubjects.reduce((sum, subject) => sum + gradePoints[subject.grade] * subject.credits, 0);
+  const result = totalCredits > 0 ? weightedPoints / totalCredits : null;
   function updateSubject(id: number, patch: Partial<Subject>) {
     setSubjects(current => current.map(subject => subject.id === id ? { ...subject, ...patch } : subject));
     setShowResult(false);
   }
-  return <><SectionHeading eyebrow="ACADEMIC TOOLS" title="SGPA calculator" description="Calculate your Semester Grade Point Average using your subject grades and credits." />
-    <div className="calculator-layout"><section className="student-panel calculator-panel"><div className="panel-heading"><div><span className="student-eyebrow">SEMESTER DETAILS</span><h2>Enter your subjects</h2></div><span className="panel-chip">{subjects.length} subject{subjects.length===1?"":"s"}</span></div>
+  function resetSubjects() {
+    setSubjects([{ id: 1, name: "", grade: "A", credits: 3 }]);
+    setShowResult(false);
+  }
+  return <>
+    <SectionHeading eyebrow="GECA ACADEMIC ENGINE" title="SGPA calculator" description="Calculate your semester grade point average using the GECA grade scale and credit-weighted method." />
+    <div className="academic-rule-banner"><span>GECA GRADING STANDARD</span><p>Σ (Subject credits × Grade points) ÷ Σ Subject credits</p><small>Only subjects with a name, valid grade and positive credits are included.</small></div>
+    <div className="academic-config-row">
+      <label>Programme<select value={program} onChange={event => { const next = event.target.value as Program; setProgram(next); const nextRange = getSemesterRange(next, admissionMode); setSemester(nextRange.start); resetSubjects(); }}><option value="BTECH">B.Tech</option><option value="MCA">MCA</option><option value="MTECH">M.Tech</option></select></label>
+      {program === "BTECH" && <label>Admission mode<select value={admissionMode} onChange={event => { const next = event.target.value as AdmissionMode; setAdmissionMode(next); setSemester(getSemesterRange(program, next).start); resetSubjects(); }}><option>Regular</option><option>Direct Second Year</option><option>Direct Third Year</option></select></label>}
+      <label>Semester<select value={semester} onChange={event => setSemester(Number(event.target.value))}>{validSemesters.map(value => <option key={value} value={value}>Semester {value}</option>)}</select></label>
+    </div>
+    <div className="calculator-layout"><section className="student-panel calculator-panel"><div className="panel-heading"><div><span className="student-eyebrow">SEMESTER {semester} · SUBJECT RECORDS</span><h2>Enter your subject grades</h2></div><span className="panel-chip">{subjects.length} subject{subjects.length === 1 ? "" : "s"}</span></div>
       <div className="subject-table"><div className="subject-table-head"><span>SUBJECT NAME</span><span>GRADE</span><span>CREDITS</span><span /></div>
-        {subjects.map((subject,index)=><div className="subject-row" key={subject.id}><input aria-label={`Subject ${index+1} name`} value={subject.name} onChange={event=>updateSubject(subject.id,{name:event.target.value})} placeholder={`Subject ${index+1}`} /><select aria-label={`Subject ${index+1} grade`} value={subject.grade} onChange={event=>updateSubject(subject.id,{grade:event.target.value})}>{Object.keys(gradePoints).map(grade=><option key={grade} value={grade}>{grade} · {gradePoints[grade]}</option>)}</select><input aria-label={`Subject ${index+1} credits`} type="number" min="0" max="30" step="0.5" value={subject.credits} onChange={event=>updateSubject(subject.id,{credits:Number(event.target.value)})}/><button className="remove-subject" aria-label="Remove subject" disabled={subjects.length===1} onClick={()=>{setSubjects(current=>current.filter(item=>item.id!==subject.id));setShowResult(false);}}>×</button></div>)}
+        {subjects.map((subject,index)=><div className="subject-row" key={subject.id}><input aria-label={`Subject ${index+1} name`} value={subject.name} onChange={event=>updateSubject(subject.id,{name:event.target.value})} placeholder={`Subject ${index+1}`} /><select aria-label={`Subject ${index+1} grade`} value={subject.grade} onChange={event=>updateSubject(subject.id,{grade:event.target.value})}>{gradeOptions.map(([grade,point])=><option key={grade} value={grade}>{grade} · {point}</option>)}</select><input aria-label={`Subject ${index+1} credits`} type="number" min="0" step="0.5" value={subject.credits} onChange={event=>updateSubject(subject.id,{credits:Number(event.target.value)})}/><button className="remove-subject" aria-label="Remove subject" disabled={subjects.length===1} onClick={()=>{setSubjects(current=>current.filter(item=>item.id!==subject.id));setShowResult(false);}}>×</button></div>)}
       </div><button className="add-subject-btn" onClick={()=>setSubjects(current=>[...current,{id:Math.max(0,...current.map(item=>item.id))+1,name:"",grade:"A",credits:3}])}>＋ Add another subject</button>
-      <div className="calculator-actions"><button className="student-primary-btn" onClick={()=>setShowResult(true)}>Calculate SGPA <span>→</span></button><button className="student-quiet-btn" onClick={()=>{setSubjects([{id:1,name:"",grade:"A",credits:3}]);setShowResult(false);}}>Reset</button></div>
-    </section><aside className="student-panel result-panel"><span className="student-eyebrow">YOUR RESULT</span><div className="result-orb"><strong>{showResult && totalCredits>0 ? result.toFixed(2) : "—"}</strong><span>SGPA</span></div><h3>{showResult ? (totalCredits>0 ? "Calculation complete" : "Add valid credits") : "Your result will appear here"}</h3><p>{showResult ? (totalCredits>0 ? "Your semester grade point average, based on the grades and credits entered." : "Enter at least one subject with credits greater than zero.") : "Enter your subject grades and credits, then calculate your semester score."}</p><div className="result-detail"><span>Total credits</span><b>{showResult ? totalCredits : "—"}</b></div><div className="result-detail"><span>Weighted grade points</span><b>{showResult ? points.toFixed(1) : "—"}</b></div></aside></div>
-    <p className="calculator-note">Grade scale: O = 10, A+ = 9, A = 8, B+ = 7, B = 6, C = 5, P = 4, F = 0. Confirm your institution’s grading rules before using this result officially.</p>
+      <div className="calculator-actions"><button className="student-primary-btn" onClick={()=>setShowResult(true)}>Calculate SGPA <span>→</span></button><button className="student-quiet-btn" onClick={resetSubjects}>Reset subjects</button></div>
+    </section><aside className="student-panel result-panel"><span className="student-eyebrow">SEMESTER RESULT</span><div className="result-orb"><strong>{showResult && result !== null ? result.toFixed(2) : "—"}</strong><span>SGPA / 10</span></div><h3>{showResult ? (result !== null ? "Calculation complete" : "Complete subject details") : "Your result will appear here"}</h3><p>{showResult ? (result !== null ? "Calculated with the GECA credit-weighted grade point method." : "Add a subject name and positive credit value to calculate.") : "Enter the grades and credits from your semester marksheet."}</p><div className="result-detail"><span>Counted subjects</span><b>{showResult ? countedSubjects.length : "—"}</b></div><div className="result-detail"><span>Total credits</span><b>{showResult ? totalCredits : "—"}</b></div><div className="result-detail"><span>Weighted points</span><b>{showResult ? weightedPoints.toFixed(2) : "—"}</b></div></aside></div>
+    <section className="grade-reference-panel"><div><span className="student-eyebrow">OFFICIAL REFERENCE SCALE</span><h3>GECA grade points</h3></div><div className="grade-reference-grid">{gradeOptions.map(([grade,point])=><div key={grade}><b>{grade}</b><span>{point}</span></div>)}</div></section>
   </>;
 }
 
 function CgpaCalculator() {
-  const [semesters,setSemesters]=useState([{id:1,sgpa:"",credits:""}]);
+  const [program, setProgram] = useState<Program>("BTECH");
+  const [admissionMode, setAdmissionMode] = useState<AdmissionMode>("Regular");
+  const [semesters,setSemesters]=useState<{id:number;semester:number;sgpa:string;credits:string}[]>([{id:1,semester:1,sgpa:"",credits:""}]);
   const [calculated,setCalculated]=useState(false);
-  const totalCredits=semesters.reduce((sum,item)=>sum+(Number(item.credits)||0),0);
-  const weighted=semesters.reduce((sum,item)=>sum+(Number(item.sgpa)||0)*(Number(item.credits)||0),0);
-  const cgpa=totalCredits>0?weighted/totalCredits:0;
-  return <><SectionHeading eyebrow="ACADEMIC TOOLS" title="CGPA calculator" description="Combine semester performance using credit-weighted SGPA values for a cumulative result."/><div className="calculator-layout"><section className="student-panel calculator-panel"><div className="panel-heading"><div><span className="student-eyebrow">SEMESTER RECORDS</span><h2>Add your semester results</h2></div></div><div className="subject-table"><div className="cgpa-table-head"><span>SEMESTER</span><span>SGPA (0–10)</span><span>TOTAL CREDITS</span><span /></div>{semesters.map((item,index)=><div className="cgpa-row" key={item.id}><b>Semester {index+1}</b><input aria-label={`Semester ${index+1} SGPA`} type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.25" value={item.sgpa} onChange={event=>{setSemesters(current=>current.map(s=>s.id===item.id?{...s,sgpa:event.target.value}:s));setCalculated(false);}}/><input aria-label={`Semester ${index+1} credits`} type="number" min="0" max="100" placeholder="e.g. 22" value={item.credits} onChange={event=>{setSemesters(current=>current.map(s=>s.id===item.id?{...s,credits:event.target.value}:s));setCalculated(false);}}/><button className="remove-subject" aria-label="Remove semester" disabled={semesters.length===1} onClick={()=>{setSemesters(current=>current.filter(s=>s.id!==item.id));setCalculated(false);}}>×</button></div>)}</div><button className="add-subject-btn" onClick={()=>setSemesters(current=>[...current,{id:Math.max(0,...current.map(s=>s.id))+1,sgpa:"",credits:""}])}>＋ Add semester</button><div className="calculator-actions"><button className="student-primary-btn" onClick={()=>setCalculated(true)}>Calculate CGPA <span>→</span></button><button className="student-quiet-btn" onClick={()=>{setSemesters([{id:1,sgpa:"",credits:""}]);setCalculated(false);}}>Reset</button></div></section><aside className="student-panel result-panel"><span className="student-eyebrow">CUMULATIVE RESULT</span><div className="result-orb"><strong>{calculated&&totalCredits>0?cgpa.toFixed(2):"—"}</strong><span>CGPA</span></div><h3>{calculated&&totalCredits>0?"Your cumulative score":"Your result will appear here"}</h3><p>{calculated&&totalCredits>0?"Credit-weighted average across the semesters you entered.":"Enter each semester’s SGPA and total credits to calculate your CGPA."}</p><div className="result-detail"><span>Semesters entered</span><b>{calculated?semesters.length:"—"}</b></div><div className="result-detail"><span>Total credits</span><b>{calculated?totalCredits:"—"}</b></div></aside></div><p className="calculator-note">CGPA is calculated as Σ(SGPA × semester credits) ÷ Σ(semester credits). Use the credit totals shown on your official grade sheets.</p></>;
+  const range=getSemesterRange(program,admissionMode);
+  const validSemesters=Array.from({length:range.end-range.start+1},(_,index)=>range.start+index);
+  const usedSemesters=semesters.map(item=>item.semester);
+  const nextSemester=validSemesters.find(value=>!usedSemesters.includes(value));
+  const validRows=semesters.filter(item=>item.sgpa.trim()!==""&&item.credits.trim()!==""&&Number.isFinite(Number(item.sgpa))&&Number(item.sgpa)>=0&&Number(item.sgpa)<=10&&Number.isFinite(Number(item.credits))&&Number(item.credits)>0);
+  const totalCredits=validRows.reduce((sum,item)=>sum+Number(item.credits),0);
+  const weighted=validRows.reduce((sum,item)=>sum+Number(item.sgpa)*Number(item.credits),0);
+  const cgpa=totalCredits>0?weighted/totalCredits:null;
+  function updateSemester(id:number,patch:Partial<{semester:number;sgpa:string;credits:string}>){
+    setSemesters(current=>current.map(item=>item.id===id?{...item,...patch}:item));setCalculated(false);
+  }
+  function changeProgramme(nextProgram:Program,nextMode:AdmissionMode){
+    const nextRange=getSemesterRange(nextProgram,nextMode);
+    setProgram(nextProgram);setAdmissionMode(nextMode);
+    setSemesters([{id:1,semester:nextRange.start,sgpa:"",credits:""}]);setCalculated(false);
+  }
+  function addSemester(){
+    if(nextSemester===undefined)return;
+    setSemesters(current=>[...current,{id:Math.max(0,...current.map(item=>item.id))+1,semester:nextSemester,sgpa:"",credits:""}]);setCalculated(false);
+  }
+  return <>
+    <SectionHeading eyebrow="GECA ACADEMIC ENGINE" title="CGPA management" description="Build your semester-wise academic record and calculate your cumulative performance exactly by GECA's credit-weighted method." />
+    <div className="academic-rule-banner"><span>GECA CGPA STANDARD</span><p>Σ (Semester SGPA × Semester credits) ÷ Σ Semester credits</p><small>CGPA uses each semester's total credits. It is not the simple average of SGPAs.</small></div>
+    <div className="academic-config-row">
+      <label>Programme<select value={program} onChange={event=>changeProgramme(event.target.value as Program,admissionMode)}><option value="BTECH">B.Tech</option><option value="MCA">MCA</option><option value="MTECH">M.Tech</option></select></label>
+      {program==="BTECH"&&<label>Admission mode<select value={admissionMode} onChange={event=>changeProgramme(program,event.target.value as AdmissionMode)}><option>Regular</option><option>Direct Second Year</option><option>Direct Third Year</option></select></label>}
+      <div className="semester-limit-note"><span>ELIGIBLE SEMESTERS</span><b>{range.start}–{range.end}</b></div>
+    </div>
+    <div className="calculator-layout"><section className="student-panel calculator-panel"><div className="panel-heading"><div><span className="student-eyebrow">ACADEMIC HISTORY</span><h2>Your semester records</h2></div><span className="panel-chip">{semesters.length} entered</span></div>
+      <div className="subject-table"><div className="cgpa-table-head"><span>SEMESTER</span><span>SGPA (0–10)</span><span>TOTAL CREDITS</span><span /></div>{semesters.map(item=><div className="cgpa-row" key={item.id}><select aria-label="Semester" value={item.semester} onChange={event=>updateSemester(item.id,{semester:Number(event.target.value)})}>{validSemesters.map(value=><option key={value} value={value}>Sem {value}</option>)}</select><input aria-label={`Semester ${item.semester} SGPA`} type="number" min="0" max="10" step="0.01" placeholder="e.g. 8.25" value={item.sgpa} onChange={event=>updateSemester(item.id,{sgpa:event.target.value})}/><input aria-label={`Semester ${item.semester} credits`} type="number" min="1" step="0.5" placeholder="e.g. 22" value={item.credits} onChange={event=>updateSemester(item.id,{credits:event.target.value})}/><button className="remove-subject" aria-label="Remove semester" disabled={semesters.length===1} onClick={()=>{setSemesters(current=>current.filter(row=>row.id!==item.id));setCalculated(false);}}>×</button></div>)}</div>
+      <button className="add-subject-btn" onClick={addSemester} disabled={nextSemester===undefined}>＋ Add next eligible semester</button>
+      {nextSemester===undefined&&<p className="semester-complete-note">All semesters available for this programme and admission mode have been added.</p>}
+      <div className="calculator-actions"><button className="student-primary-btn" onClick={()=>setCalculated(true)}>Calculate CGPA <span>→</span></button><button className="student-quiet-btn" onClick={()=>{setSemesters([{id:1,semester:range.start,sgpa:"",credits:""}]);setCalculated(false);}}>Reset records</button></div>
+      {calculated&&validRows.length!==semesters.length&&<p className="academic-validation-note">Only rows with SGPA between 0 and 10 and positive total credits are included. Complete or correct the remaining rows.</p>}
+    </section><aside className="student-panel result-panel"><span className="student-eyebrow">CUMULATIVE RESULT</span><div className="result-orb"><strong>{calculated&&cgpa!==null?cgpa.toFixed(2):"—"}</strong><span>CGPA / 10</span></div><h3>{calculated&&cgpa!==null?"Your cumulative score":"Your result will appear here"}</h3><p>{calculated&&cgpa!==null?"Credit-weighted result across the valid semester records entered." :"Enter SGPA and total credits for each completed semester."}</p><div className="result-detail"><span>Valid semesters</span><b>{calculated?validRows.length:"—"}</b></div><div className="result-detail"><span>Total credits</span><b>{calculated?totalCredits:"—"}</b></div><div className="result-detail"><span>Weighted SGPA points</span><b>{calculated?weighted.toFixed(2):"—"}</b></div></aside></div>
+    <p className="calculator-note">GECA CGPA method: each semester SGPA is weighted by that semester's total credits. The result is displayed to two decimal places, matching the reference calculator.</p>
+  </>;
 }
 
 function SimpleSection({ section, onNavigate }: { section: Exclude<Section,"overview"|"sgpa"|"cgpa">; onNavigate:(section:Section)=>void }) {
