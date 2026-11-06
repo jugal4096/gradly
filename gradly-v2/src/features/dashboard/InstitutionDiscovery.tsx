@@ -4,6 +4,7 @@ import type { User } from "firebase/auth";
 import "./InstitutionDiscovery.css";
 
 const API=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000").replace(/\/+$/,"");
+const STATES_AND_UTS=["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
 export type DiscoveryInstitution={id:string;name:string;city?:string;state?:string;website?:string|null;type?:string;source?:string;isInGradly?:boolean;externalId?:string;branches?:Array<{id:string;name:string;code?:string|null;program_id:string;program_name:string;program_level?:string|null}>};
 type Props={isGuest:boolean;user:User|null;onSelect:(item:DiscoveryInstitution)=>void;selectedId?:string};
 
