@@ -10,7 +10,7 @@ type Props={isGuest:boolean;user:User|null;onSelect:(item:DiscoveryInstitution)=
 export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:Props){
  const [query,setQuery]=useState(""),[state,setState]=useState(""),[city,setCity]=useState(""),[district,setDistrict]=useState(""),[affiliation,setAffiliation]=useState(""),[type,setType]=useState("");
  const [items,setItems]=useState<DiscoveryInstitution[]>([]),[page,setPage]=useState(1),[hasMore,setHasMore]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState("");
- const [requestOpen,setRequestOpen]=useState(false),[submitting,setSubmitting]=useState(false),[requestError,setRequestError]=useState(""),[submitted,setSubmitted]=useState<{id:string;status:string}|null>(null),[statusChecking,setStatusChecking]=useState(false);
+ const [requestOpen,setRequestOpen]=useState(false),[submitting,setSubmitting]=useState(false),[requestError,setRequestError]=useState(""),[submitted,setSubmitted]=useState<{id:string;status:string;message:string}|null>(null),[statusChecking,setStatusChecking]=useState(false);
  const [form,setForm]=useState({institutionName:"",state:"",city:"",district:"",institutionType:"Engineering college",affiliation:"",website:"",additionalInfo:""});
  const search=useCallback(async(next:number)=>{
   if(query.trim().length<2&&!state&&!city&&!district&&!affiliation&&!type){setItems([]);setHasMore(false);setError("");return;}
@@ -29,7 +29,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
   setForm(f=>({...f,institutionName:prefill?.name||query,state:prefill?.state||state,city:prefill?.city||city,institutionType:prefill?.type||"Engineering college",website:prefill?.website||""}));
   setRequestError("");setSubmitted(null);setRequestOpen(true);
  }
- async function refreshStatus(){if(!submitted?.id)return;setStatusChecking(true);try{const r=await fetch(API+"/api/guest/institution-requests/"+encodeURIComponent(submitted.id));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Unable to check request status.");setSubmitted({id:submitted.id,status:String(d.request?.status||submitted.status)});}catch(e){setRequestError(e instanceof Error?e.message:"Unable to check status.");}finally{setStatusChecking(false);}}
+ async function refreshStatus(){if(!submitted?.id)return;setStatusChecking(true);try{const r=await fetch(API+"/api/guest/institution-requests/"+encodeURIComponent(submitted.id));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Unable to check request status.");setSubmitted({id:submitted.id,status:String(d.request?.status||submitted.status),message:d.message||submitted.message});}catch(e){setRequestError(e instanceof Error?e.message:"Unable to check status.");}finally{setStatusChecking(false);}}
  async function submit(e:FormEvent){
   e.preventDefault();setSubmitting(true);setRequestError("");
   try{
@@ -39,7 +39,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
    const d=await r.json().catch(()=>({}));
    if(!r.ok)throw new Error(d.message||"Unable to submit institution request.");
    const id=String(d.request?.id||"");
-   setSubmitted({id,status:String(d.request?.status||"PENDING")});
+   setSubmitted({id,status:String(d.request?.status||"PENDING"),message:d.message||"Your institution request has been received."});
   }catch(e){setRequestError(e instanceof Error?e.message:"Unable to submit request.");}
   finally{setSubmitting(false);}
  }
@@ -59,7 +59,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
   {!loading&&!error&&items.length===0&&(query.length>=2||state||city||district||affiliation||type)&&<div className="id-empty">No matching institution found. <button type="button" onClick={()=>openRequest()}>Request to add this institution</button></div>}
   <div className="id-discovery-foot"><span>Not listed?</span><button type="button" onClick={()=>openRequest()}>＋ Request to add institution</button></div>
   {requestOpen&&createPortal(<div className="id-modal-backdrop"><section className="id-modal" role="dialog" aria-modal="true" aria-labelledby="id-request-title"><header><div><span>INSTITUTION DIRECTORY</span><h3 id="id-request-title">Request an institution</h3><p>Submit verified details for the Gradly team to review.</p></div><button type="button" aria-label="Close" onClick={()=>setRequestOpen(false)}>×</button></header>
-   {submitted?<div className="id-success" role="status"><strong>Request submitted</strong><p>Your request is now in the Super Admin review queue.</p><code>{submitted.id}</code><small>Status: {submitted.status.replace(/_/g," ")}</small><button type="button" onClick={()=>void refreshStatus()} disabled={statusChecking}>{statusChecking?"Checking…":"Refresh request status"}</button><button type="button" onClick={()=>setRequestOpen(false)}>Done</button></div>:<form onSubmit={submit}>
+   {submitted?<div className="id-success" role="status"><strong>Request received</strong><p>{submitted.message}</p>{requestError&&<p className="id-error" role="alert">{requestError}</p>}<code>{submitted.id}</code><small>Status: {submitted.status.replace(/_/g," ")}</small><button type="button" onClick={()=>void refreshStatus()} disabled={statusChecking}>{statusChecking?"Checking…":"Refresh request status"}</button><button type="button" onClick={()=>setRequestOpen(false)}>Done</button></div>:<form onSubmit={submit}>
     <label>Institution name<input required minLength={2} maxLength={160} value={form.institutionName} onChange={e=>setForm({...form,institutionName:e.target.value})}/></label>
     <div className="id-form-grid"><label>State / UT<input required value={form.state} onChange={e=>setForm({...form,state:e.target.value})}/></label><label>City<input required value={form.city} onChange={e=>setForm({...form,city:e.target.value})}/></label><label>District<input value={form.district} onChange={e=>setForm({...form,district:e.target.value})}/></label><label>Institution type<select value={form.institutionType} onChange={e=>setForm({...form,institutionType:e.target.value})}><option>Engineering college</option><option>University</option><option>Autonomous college</option><option>College</option><option>Institute of national importance</option><option>Standalone institution</option><option>Other</option></select></label></div>
     <label>Affiliating university / body<input value={form.affiliation} onChange={e=>setForm({...form,affiliation:e.target.value})} placeholder="Optional"/></label>
