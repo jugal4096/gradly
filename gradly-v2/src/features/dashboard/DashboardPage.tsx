@@ -170,7 +170,7 @@ export default function DashboardPage() {
   function navigateTo(next:Section){setSection(next);setMobileNavOpen(false);}
   return <div className="student-app-shell">
     <aside className={`student-sidebar ${mobileNavOpen?"is-open":""}`}>
-      <a className="student-brand" href="/" onClick={event=>{event.preventDefault();navigateTo("overview");}}><span className="student-brand-mark">G<span>✦</span></span><span>Gradly<small>STUDENT SPACE</small></span></a>
+      <a className="student-brand" href="/" onClick={event=>{event.preventDefault();navigateTo(isGuest ? "sgpa" : "overview");}}><span className="student-brand-mark">G<span>✦</span></span><span>Gradly<small>STUDENT SPACE</small></span></a>
       <div className="sidebar-rule"/>
       {(isGuest ? ["ACADEMICS"] : ["WORKSPACE","ACADEMICS","YOUR SPACE"]).map(group=><div className="student-nav-group" key={group}><span className="student-nav-label">{group}</span>{navItems.filter(item=>(isGuest ? ["sgpa","cgpa"].includes(item.id) : true) && item.group===group).map(item=><button key={item.id} className={`student-nav-item ${section===item.id?"active":""}`} onClick={()=>navigateTo(item.id)}><span>{item.icon}</span>{item.label}{section===item.id&&<i/>}</button>)}</div>)}
       {!isGuest && <div className="sidebar-bottom"><div className="sidebar-help"><span>✦</span><b>Your next step starts here.</b><small>Keep learning. Keep growing.</small></div><button className={`student-nav-item profile-nav ${section==="profile"?"active":""}`} onClick={()=>navigateTo("profile")}><span>◎</span>Profile & settings</button></div>}{isGuest && <div className="sidebar-bottom guest-sidebar-note">GUEST ACCESS<br/><small>Manual calculations only</small></div>}
