@@ -44,7 +44,7 @@ export default function StudentPlatform() {
     try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem("gradly_student_profile") || "{}") }; }
     catch { return emptyProfile; }
   });
-  const [onboarding,setOnboarding] = useState(false);
+  const [onboarding,setOnboarding] = useState(() => !profile.institutionId);
   const [requestOpen,setRequestOpen] = useState(false);
   const [requestName,setRequestName] = useState("");
   const [requestReason,setRequestReason] = useState("");
