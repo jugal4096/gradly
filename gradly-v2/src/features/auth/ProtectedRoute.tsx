@@ -7,17 +7,15 @@ interface ProtectedRouteProps {
   children: ReactNode;
 }
 
-export default function ProtectedRoute({
-  children,
-}: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, isGuest, loading } = useAuth();
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <div className="route-loading" role="status">Preparing your Gradly workspace…</div>;
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (!user && !isGuest) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
