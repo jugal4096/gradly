@@ -133,7 +133,8 @@ function CgpaCalculator({ isGuest }: { isGuest: boolean }) {
   return <>
     <SectionHeading eyebrow={isGuest ? "GUEST · MANUAL CALCULATOR" : "GECA ACADEMIC ENGINE"} title="CGPA calculator" description={isGuest ? "Enter each semester SGPA and its total credits to calculate your cumulative result. No programme or branch details required." : "Build your semester-wise academic record and calculate your cumulative performance exactly by GECA's credit-weighted method."} />
     <div className="academic-rule-banner"><span>{isGuest ? "CREDIT-WEIGHTED CGPA" : "GECA CGPA STANDARD"}</span><p>Σ (Semester SGPA × Semester credits) ÷ Σ Semester credits</p><small>CGPA uses each semester's total credits. It is not the simple average of SGPAs.</small></div>
-    <div className="academic-config-row">
+    {isGuest && <div className="guest-institute-field"><label>INSTITUTE (OPTIONAL)<input value={institute} onChange={event => { setInstitute(event.target.value); localStorage.setItem("gradly_guest_institute", event.target.value); }} placeholder="Enter your institute name" /></label><span>Manual calculator · no programme or branch selection</span></div>}
+    <div className="academic-config-row" style={isGuest ? { display: "none" } : undefined}>
       <label>Programme<select value={program} onChange={event=>changeProgramme(event.target.value as Program,admissionMode)}><option value="BTECH">B.Tech</option><option value="MCA">MCA</option><option value="MTECH">M.Tech</option></select></label>
       {program==="BTECH"&&<label>Admission mode<select value={admissionMode} onChange={event=>changeProgramme(program,event.target.value as AdmissionMode)}><option>Regular</option><option>Direct Second Year</option><option>Direct Third Year</option></select></label>}
       <div className="semester-limit-note"><span>ELIGIBLE SEMESTERS</span><b>{range.start}–{range.end}</b></div>
