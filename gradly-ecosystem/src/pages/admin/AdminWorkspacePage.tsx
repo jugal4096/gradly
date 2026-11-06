@@ -63,7 +63,8 @@ export default function AdminWorkspacePage(){
     }catch(e){setError(e instanceof Error?e.message:"Unable to load this workspace page.");}
     finally{setLoading(false);}
   },[logout,navigate,page]);
-  useEffect(()=>{void load();},[load]);\n  useEffect(()=>{if(formOpen&&page==="curriculum"){window.requestAnimationFrame(()=>curriculumEditorRef.current?.scrollIntoView({behavior:"smooth",block:"start"}));}},[formOpen,page]);
+  useEffect(()=>{void load();},[load]);
+  useEffect(()=>{if(formOpen&&page==="curriculum"){window.requestAnimationFrame(()=>curriculumEditorRef.current?.scrollIntoView({behavior:"smooth",block:"start"}));}},[formOpen,page]);
   useEffect(()=>{const state=location.state as {openRequest?:boolean;requestType?:string;selectedCourse?:string}|null;if(state?.openRequest){setFormOpen(true);setRequestType(state.requestType||"MODIFY_SUBJECT");setSelectedCourse(state.selectedCourse||"");navigate(location.pathname,{replace:true,state:null});}},[location.pathname,location.state,navigate]);
   const schemes=useMemo(()=>Array.from(new Set(courses.map(c=>clean(c.scheme)).filter(Boolean))).sort(),[courses]);
   const semesters=useMemo(()=>Array.from(new Set(courses.map(c=>clean(c.semesterName||c.semester)).filter(Boolean))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),[courses]);
