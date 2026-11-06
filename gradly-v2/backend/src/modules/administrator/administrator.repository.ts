@@ -212,6 +212,7 @@ export async function findAdministratorById(
 
       a.last_login_at,
       a.password_changed_at,
+      a.password_expires_at,
       COALESCE(a.password_changed_at, a.created_at) AS password_review_started_at,
       (COALESCE(a.password_changed_at, a.created_at) + INTERVAL '30 days' <= NOW()) AS password_review_due,
 
