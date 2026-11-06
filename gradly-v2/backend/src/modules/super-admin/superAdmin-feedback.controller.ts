@@ -33,7 +33,7 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
     const addInstitutionValue = (value: unknown) => { institutionValues.push(value); return "$" + institutionValues.length; };
     if (search) {
       const p = addInstitutionValue(`%${search}%`);
-      institutionWhere.push(`concat_ws(' ', id::text, college_name, locality, guest_id, status) ILIKE ${p}`);
+      institutionWhere.push(`concat_ws(' ', id::text, college_name, locality, state, city, district, institution_type, affiliation, requester_email, status) ILIKE ${p}`);
     }
     if (status === "OPEN") {
       institutionWhere.push("status IN ('PENDING','IN_REVIEW')");
