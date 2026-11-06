@@ -434,3 +434,34 @@
 :root[data-admin-theme="dark"] .admin-request-shell .ad-workspace :where(.ad-section-kicker,.ad-panel-heading h2 svg,.ad-request-status,.ad-footer a){color:var(--arc-purple)!important}
 :root[data-admin-theme="dark"] .admin-request-shell .ad-workspace :where(.ad-scope-pill,.ad-request-status){background:var(--arc-soft);border-color:var(--arc-line);color:var(--arc-purple-dark)!important}
 :root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-panel{border-color:var(--arc-line)}
+
+
+/* Final palette pass: the Request Center rail, header and workspace all inherit
+   the exact accent selected in Admin Settings (including dark appearance). */
+.admin-request-shell[data-palette="green"]{--arc-accent:#19744f;--arc-accent-deep:#124333;--arc-accent-soft:#e0f5e8;--arc-accent-line:#cfe5d5}
+.admin-request-shell[data-palette="blue"]{--arc-accent:#2865b0;--arc-accent-deep:#173d70;--arc-accent-soft:#e2efff;--arc-accent-line:#c9dcf4}
+.admin-request-shell[data-palette="yellow"]{--arc-accent:#a87916;--arc-accent-deep:#68490b;--arc-accent-soft:#fff1c7;--arc-accent-line:#ead8a8}
+.admin-request-shell .admin-request-rail{background:linear-gradient(180deg,var(--arc-accent-deep),color-mix(in srgb,var(--arc-accent-deep) 78%,#07130d))!important;border-color:var(--arc-accent-line)!important}
+.admin-request-shell .admin-request-system-strip{border-color:var(--arc-accent-line);background:color-mix(in srgb,var(--arc-accent-soft) 38%,white);color:var(--arc-accent-deep)}
+.admin-request-shell .admin-request-system-strip svg{color:var(--arc-accent)}
+.admin-request-shell .admin-request-system-strip b{color:var(--arc-accent-deep);background:var(--arc-accent-soft)}
+.admin-request-shell .ad-workspace{--arc-purple:var(--arc-accent);--arc-purple-dark:var(--arc-accent-deep);--arc-line:var(--arc-accent-line);--arc-soft:var(--arc-accent-soft);--arc-tint:color-mix(in srgb,var(--arc-accent-soft) 35%,white);--arc-ink:#203044;background:radial-gradient(ellipse at 95% 0%,color-mix(in srgb,var(--arc-accent) 13%,transparent),transparent 36%),var(--arc-tint)}
+.admin-request-shell .ad-workspace .ad-panel{border-color:var(--arc-accent-line)}
+.admin-request-shell .ad-workspace .ad-primary-btn{background:linear-gradient(115deg,var(--arc-accent),var(--arc-accent-deep))!important;border-color:var(--arc-accent)!important}
+.admin-request-shell .ad-workspace .ad-secondary-btn{color:var(--arc-accent-deep);border-color:var(--arc-accent-line)}
+.admin-request-shell .ad-workspace .ad-section-kicker,.admin-request-shell .ad-workspace .ad-panel-heading h2 svg,.admin-request-shell .ad-workspace .ad-footer a{color:var(--arc-accent)!important}
+.admin-request-shell[data-palette="blue"] .admin-request-rail .ad-brand-mark{color:#173d70!important;background:linear-gradient(145deg,#e8f2ff,#9fc6f5)!important}
+.admin-request-shell[data-palette="yellow"] .admin-request-rail .ad-brand-mark{color:#68490b!important;background:linear-gradient(145deg,#fff7dc,#f1d27e)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-system-strip{background:#17251f;color:#d4e2d8;border-color:color-mix(in srgb,var(--arc-accent) 35%,#30463a)}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-system-strip b{color:var(--arc-accent);background:color-mix(in srgb,var(--arc-accent) 18%,#17251f)}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace{--arc-ink:#edf5ef;--arc-tint:#101a15;--arc-muted:#bdcbbf;background:radial-gradient(ellipse at 95% 0%,color-mix(in srgb,var(--arc-accent) 14%,transparent),transparent 36%),#101a15;color:#edf5ef}
+:root[data-admin-theme="dark"] .admin-request-shell[data-palette="green"]{--arc-accent:#65d39a;--arc-accent-deep:#174a33;--arc-accent-soft:#1c3528;--arc-accent-line:#3b5a46}
+:root[data-admin-theme="dark"] .admin-request-shell[data-palette="blue"]{--arc-accent:#83b9f4;--arc-accent-deep:#183b62;--arc-accent-soft:#1b3048;--arc-accent-line:#3b5675}
+:root[data-admin-theme="dark"] .admin-request-shell[data-palette="yellow"]{--arc-accent:#e8c56b;--arc-accent-deep:#4b3916;--arc-accent-soft:#382f1c;--arc-accent-line:#62502a}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-rail{background:linear-gradient(180deg,var(--arc-accent-deep),#0b1711)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-system-strip{background:#17251f}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-panel{background:#1b2a21;border-color:var(--arc-accent-line);color:#edf5ef}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-list article{background:#202f25;border-color:var(--arc-accent-line)}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-scope-pill,:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-status{background:var(--arc-accent-soft);border-color:var(--arc-accent-line);color:var(--arc-accent)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-primary-btn{color:#fff!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-secondary-btn{background:#223329;color:var(--arc-accent);border-color:var(--arc-accent-line)}
