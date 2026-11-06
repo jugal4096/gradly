@@ -8,7 +8,8 @@ import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
   const { user, isGuest, loading } = useAuth();
-  if (loading) return null;
+  // Keep a real fallback beneath the splash while Firebase restores its session.
+  if (loading) return <LoginPage />;
   if (user || isGuest) return <Navigate to="/dashboard" replace />;
   return <LoginPage />;
 }
@@ -26,7 +27,16 @@ function LaunchSplash() {
 
   return (
     <div className="launch-splash" role="status" aria-label="Gradly is loading">
-      <img src="/gradly-intro.gif" alt="Gradly logo animation" />
+      <img
+        src="/gradly-intro.gif"
+        alt="Gradly animated logo"
+        onError={(event) => {
+          event.currentTarget.style.display = "none";
+          const fallback = event.currentTarget.nextElementSibling;
+          if (fallback instanceof HTMLElement) fallback.hidden = false;
+        }}
+      />
+      <span className="launch-splash-fallback" hidden>Gradly<span>✦</span></span>
       <span className="sr-only">Loading Gradly</span>
     </div>
   );
@@ -46,7 +56,6 @@ export default function AppRoutes() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Keep route transitions predictable when the browser restores a nested URL.
     const onPageShow = () => {
       if (window.location.pathname === "/login") navigate("/", { replace: true });
     };
