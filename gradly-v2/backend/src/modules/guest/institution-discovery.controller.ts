@@ -92,8 +92,16 @@ export async function reviewInstitutionRequest(req:Request,res:Response) {
   const item=found.rows[0];if(["APPROVED","REJECTED"].includes(item.status)){await client.query("ROLLBACK");return res.status(409).json({success:false,message:"This request has already been closed."});}
   let directoryId:string|null=null;
   if(status==="APPROVED"){
+   const aisheCode=String(item.external_institution_id||"").startsWith("AISHE:")?String(item.external_institution_id).slice(6):null;
+   const metadata=[item.state||null,item.city||null,item.district||null,item.institution_type||null,item.affiliation||null,item.website||null,aisheCode];
    const duplicate=await client.query("SELECT id FROM public.institutions WHERE lower(regexp_replace(name,'[^a-zA-Z0-9]','','g'))=lower(regexp_replace($1,'[^a-zA-Z0-9]','','g')) LIMIT 1",[item.college_name]);
-   if(duplicate.rowCount)directoryId=duplicate.rows[0].id;else{const created=await client.query("INSERT INTO public.institutions(name) VALUES($1) RETURNING id",[item.college_name]);directoryId=created.rows[0].id;}
+   if(duplicate.rowCount){
+    const updatedDirectory=await client.query("UPDATE public.institutions SET state=COALESCE(NULLIF(state,''),$2),city=COALESCE(NULLIF(city,''),$3),district=COALESCE(NULLIF(district,''),$4),institution_type=COALESCE(NULLIF(institution_type,''),$5),affiliation=COALESCE(NULLIF(affiliation,''),$6),website=COALESCE(NULLIF(website,''),$7),aishe_code=COALESCE(NULLIF(aishe_code,''),$8) WHERE id=$1 RETURNING id",[duplicate.rows[0].id,...metadata]);
+    directoryId=updatedDirectory.rows[0].id;
+   }else{
+    const created=await client.query("INSERT INTO public.institutions(name,state,city,district,institution_type,affiliation,website,aishe_code) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id",[item.college_name,...metadata]);
+    directoryId=created.rows[0].id;
+   }
   }
   const updated=await client.query("UPDATE public.guest_institution_requests SET status=$2,reviewed_at=CASE WHEN $2 IN ('APPROVED','REJECTED') THEN NOW() ELSE reviewed_at END,reviewed_by_super_admin_id=$3,reviewed_note=$4,directory_institution_id=$5 WHERE id=$1 RETURNING id,status,reviewed_at,reviewed_note,directory_institution_id",[req.params.requestId,status,sa,note,directoryId]);
   await client.query("COMMIT");return res.json({success:true,message:status==="APPROVED"?"Institution approved and added to Gradly directory.":status==="REJECTED"?"Institution request rejected.":"Request moved to review.",request:updated.rows[0]});
