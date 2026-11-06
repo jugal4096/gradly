@@ -20,6 +20,7 @@ export async function discoverInstitutions(req:Request,res:Response) {
   if(city)where.push("COALESCE(to_jsonb(i)->>'city','') ILIKE "+add("%"+city+"%"));
   if(district)where.push("COALESCE(to_jsonb(i)->>'district','') ILIKE "+add("%"+district+"%"));
   if(affiliation)where.push("COALESCE(to_jsonb(i)->>'affiliation','') ILIKE "+add("%"+affiliation+"%"));
+  if(type)where.push("(COALESCE(to_jsonb(i)->>'institution_type','')||' '||COALESCE(to_jsonb(i)->>'type','')) ILIKE "+add("%"+type+"%"));
   const local=await pool.query(
    "SELECT i.id::text AS id,i.name,COALESCE(to_jsonb(i)->>'city','') AS city,COALESCE(to_jsonb(i)->>'state','') AS state,COALESCE(to_jsonb(i)->>'website',to_jsonb(i)->>'website_url') AS website,COALESCE(to_jsonb(i)->>'institution_type',to_jsonb(i)->>'type','') AS type,COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',b.id,'name',b.name,'code',b.code,'program_id',p.id,'program_name',p.name,'program_level',p.level)) FILTER(WHERE b.id IS NOT NULL),'[]'::jsonb) AS branches FROM public.institutions i LEFT JOIN public.programs p ON p.institution_id=i.id LEFT JOIN public.branches b ON b.program_id=p.id "+(where.length?"WHERE "+where.join(" AND "):"")+" GROUP BY i.id,i.name ORDER BY i.name LIMIT 8 OFFSET "+((page-1)*8),
    values
