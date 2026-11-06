@@ -2,3 +2,5 @@
 @media(max-width:680px){.id-search-grid{grid-template-columns:1fr 1fr}.id-search-main{grid-column:span 2}.id-result{align-items:flex-start}.id-result button{max-width:112px;white-space:normal}.id-modal{padding:17px}.id-discovery-foot{align-items:flex-start;flex-direction:column}}
 @media(max-width:420px){.id-search-grid{grid-template-columns:1fr}.id-search-main{grid-column:span 1}.id-form-grid{grid-template-columns:1fr}.id-result{flex-direction:column}.id-result button{max-width:none;width:100%}}
 @media(prefers-reduced-motion:reduce){.id-discovery *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+.id-discovery-foot>div{display:flex;gap:8px;flex-wrap:wrap}
