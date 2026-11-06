@@ -382,3 +382,30 @@
 .admin-request-shell[data-theme="dark"] .ad-workspace .ad-panel-heading h2 svg{color:var(--admin-accent-soft)}
 .admin-request-shell[data-theme="dark"] .ad-workspace .ad-scope-pill,.admin-request-shell[data-theme="dark"] .ad-workspace .ad-request-status{color:var(--admin-accent-soft);border-color:color-mix(in srgb,var(--admin-accent) 38%,#30463a);background:color-mix(in srgb,var(--admin-accent) 20%,#182720)}
 @media(max-width:650px){.admin-request-topbar{justify-content:flex-start}.admin-request-menu-toggle{order:0}.admin-request-brand{order:1}}
+
+/* Request Center now uses the exact shared Admin workspace launcher and drawer. */
+.admin-request-shell{min-height:100vh;margin-left:72px;width:calc(100% - 72px);background:var(--admin-page-bg,#f5f8f5);color:var(--admin-page-text,#20382b);font-family:var(--admin-font,inherit)}
+.admin-request-rail{position:fixed!important;inset:0 auto 0 0!important;width:72px!important;min-width:72px!important;height:100dvh!important;padding:18px 10px!important;align-items:center!important;z-index:1200!important}
+.admin-request-rail .ad-brand{justify-content:center!important;width:100%!important;padding:0 0 18px!important;margin:0!important;border-bottom:1px solid #ffffff20}
+.admin-request-rail .ad-brand>span:not(.ad-brand-mark),.admin-request-rail .ad-brand strong,.admin-request-rail .ad-brand small{display:none!important}
+.admin-request-rail .ad-brand-mark{width:42px!important;height:42px!important;margin:0!important}
+.admin-request-main{min-height:100vh}
+@media(max-width:820px){.admin-request-shell{margin-left:62px;width:calc(100% - 62px)}.admin-request-rail{width:62px!important;min-width:62px!important;padding:13px 7px!important}.admin-request-rail .ad-brand-mark{width:38px!important;height:38px!important}}
+
+/* Request Center light/dark surfaces follow the root Admin setting, including device mode. */
+:root[data-admin-theme="dark"] .admin-request-shell{--admin-page-bg:#101a15;--admin-page-text:#edf5ef;background:#101a15;color:#edf5ef}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace{background:radial-gradient(ellipse at 95% 0%,rgba(75,150,105,.10),transparent 34%),#101a15;color:#edf5ef}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-page-head h1,:root[data-admin-theme="dark"] .admin-request-shell .ad-panel-heading h2,:root[data-admin-theme="dark"] .admin-request-shell .ad-request-list article strong{color:#f3f8f4!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-page-head p,:root[data-admin-theme="dark"] .admin-request-shell .ad-request-list article p,:root[data-admin-theme="dark"] .admin-request-shell .ad-request-list article small{color:#c2d0c6!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-panel{background:#1b2a21;border-color:#3b5143;color:#edf5ef}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-request-list article{background:#202f25;border-color:#43594a}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form>label{color:#e2ece5}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form label>span{color:#b9c9bd}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form input,:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form select,:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form textarea{background:#111d16!important;color:#f1f7f2!important;border-color:#506657!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form input::placeholder,:root[data-admin-theme="dark"] .admin-request-shell .ad-request-form textarea::placeholder{color:#aab9ae!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-scope-pill{background:#233a2b;border-color:#45644e;color:#c9f0d5}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-secondary-btn{background:#23372a;color:#d9eee0;border-color:#4b6252}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-footer{border-color:#34483b;color:#b8c8bd}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-footer a{color:#9ee3b7}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-error{background:#3b2024;color:#ffd9dc;border-color:#75434a}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-success{background:#193a29;color:#c9f3d6;border-color:#376b4a}
