@@ -1,37 +1,19 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-  Activity, Bell, BookOpen, Building2, ChevronRight, ClipboardList,
-  LayoutDashboard, LogOut, Menu, MessageSquareText, RefreshCw, Send,
-  Settings, ShieldCheck, UserRound, Users, X
-} from "lucide-react";
+import { Link } from "react-router-dom";
+import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
+import { Activity, Bell, ClipboardList, RefreshCw, Send } from "lucide-react";
 import "./AdminDashboard.css";
 import "./AdminRequestCenter.css";
 
 const API_ROOT=((import.meta.env.VITE_API_BASE_URL||"http://localhost:5000/api").trim().replace(/\/+$/,"").replace(/\/api$/i,""))+"/api";
 type RequestRow={id:string;requestType:string;title:string;description:string;targetUserId?:string|null;priority:string;status:string;reviewNote?:string|null;createdAt:string};
 const label=(s:string)=>s.replace(/_/g," ").toLowerCase().replace(/\\b\\w/g,c=>c.toUpperCase());
-const adminNavigation=[
- {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard},
- {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
- {to:"/admin/requests",label:"Request log",icon:ClipboardList},
- {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell},
- {to:"/admin/activity",label:"User activity",icon:Users},
- {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
- {to:"/admin/department",label:"My assignment",icon:Building2},
- {to:"/admin/profile",label:"My profile",icon:UserRound},
- {to:"/admin/settings",label:"Settings",icon:Settings},
-];
+
 export default function AdminRequestCenter(){
- const navigate=useNavigate(),location=useLocation();
- const [workspaceOpen,setWorkspaceOpen]=useState(false);
  const [rows,setRows]=useState<RequestRow[]>([]),[unread,setUnread]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const [requestType,setType]=useState("SYSTEM_CHANGE"),[title,setTitle]=useState(""),[description,setDescription]=useState(""),[targetUserId,setTarget]=useState(""),[priority,setPriority]=useState("NORMAL"),[busy,setBusy]=useState(false);
  const token=()=>localStorage.getItem("gradly_admin_token")||localStorage.getItem("admin_token")||"";
- useEffect(()=>{const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")setWorkspaceOpen(false);};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[]);
- useEffect(()=>{setWorkspaceOpen(false);},[location.pathname]);
- function logout(){localStorage.removeItem("gradly_admin_token");localStorage.removeItem("admin_token");navigate("/admin/login",{replace:true});}
  async function load(){setLoading(true);try{const t=token();if(!t)throw new Error("Admin session missing. Sign in again.");const r=await fetch(API_ROOT+"/admin/platform-requests",{headers:{Authorization:"Bearer "+t,Accept:"application/json"}});const d=await r.json().catch(()=>({}));if(!r.ok||d.success===false)throw new Error(d.message||"Could not load requests.");setRows(Array.isArray(d.requests)?d.requests:[]);setUnread(Number(d.unreadCount)||0);setError("");}catch(e){setError(e instanceof Error?e.message:"Could not load requests.");}finally{setLoading(false);}}
  useEffect(()=>{void load();},[]);
  async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");setNotice("");try{const r=await fetch(API_ROOT+"/admin/platform-requests",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({requestType,title,description,targetUserId:targetUserId.trim()||null,priority})});const d=await r.json().catch(()=>({}));if(!r.ok||d.success===false)throw new Error(d.message||"Could not submit request.");setNotice("Request submitted to Super Admin.");setTitle("");setDescription("");setTarget("");await load();}catch(e){setError(e instanceof Error?e.message:"Could not submit request.");}finally{setBusy(false);}}
