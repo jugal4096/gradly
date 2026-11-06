@@ -513,7 +513,7 @@
 
 /* Dark appearance: surfaces are neutral charcoal, never hard-coded green. */
 :root[data-admin-theme="dark"] .admin-request-shell,
-.admin-request-shell[data-theme="dark]{
+.admin-request-shell[data-theme="dark"]{
   --arc-page:#101828;--arc-surface:#1d2939;--arc-surface-raised:#243247;
   --arc-text:#f2f4f7;--arc-muted:#c0cad6;--arc-border:#475467;
   --arc-input:#172334;--arc-input-text:#f2f4f7;
