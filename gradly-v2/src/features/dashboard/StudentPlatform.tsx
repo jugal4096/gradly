@@ -80,9 +80,6 @@ export default function StudentPlatform() {
     return () => { active=false; };
   }, []);
 
-  useEffect(() => {
-    if (!profile.institutionId) setOnboarding(true);
-  }, [profile.institutionId]);
 
   const selectedInstitution = institutions.find(item=>item.id===profile.institutionId);
   const programs = useMemo(() => {
