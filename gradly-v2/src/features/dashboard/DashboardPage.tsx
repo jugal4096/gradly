@@ -33,10 +33,6 @@ function SectionHeading({ eyebrow, title, description }: { eyebrow: string; titl
   return <div className="student-section-heading"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>;
 }
 
-function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return <div className="student-section-heading"><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>;
-}
-
 function Overview({ name, onNavigate }: { name: string; onNavigate: (section: Section) => void }) {
   return (
     <>
