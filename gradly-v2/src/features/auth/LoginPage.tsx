@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "../../student-entry.css";
@@ -37,7 +37,7 @@ export default function LoginPage() {
     }
   }
 
-  async function handleEmailLogin(event: React.FormEvent<HTMLFormElement>) {
+  async function handleEmailLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
       setError(""); setLoggingIn(true);
