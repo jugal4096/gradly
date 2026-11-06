@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import type { User } from "firebase/auth";
 import "./InstitutionDiscovery.css";
 
@@ -59,7 +60,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
    <div className="id-result-footer"><span>Search results may not represent a complete official register.</span>{hasMore&&<button type="button" disabled={loading} onClick={()=>void search(page+1)}>Load more</button>}</div></div>}
   {!loading&&!error&&items.length===0&&(query.length>=2||state||city||district||affiliation||type)&&<div className="id-empty">No matching institution found. <button type="button" onClick={()=>openRequest()}>Request to add this institution</button></div>}
   <div className="id-discovery-foot"><span>Not listed?</span><button type="button" onClick={()=>openRequest()}>＋ Request to add institution</button></div>
-  {requestOpen&&<div className="id-modal-backdrop"><section className="id-modal" role="dialog" aria-modal="true" aria-labelledby="id-request-title"><header><div><span>INSTITUTION DIRECTORY</span><h3 id="id-request-title">Request an institution</h3><p>Submit verified details for the Gradly team to review.</p></div><button type="button" aria-label="Close" onClick={()=>setRequestOpen(false)}>×</button></header>
+  {requestOpen&&createPortal(<div className="id-modal-backdrop"><section className="id-modal" role="dialog" aria-modal="true" aria-labelledby="id-request-title"><header><div><span>INSTITUTION DIRECTORY</span><h3 id="id-request-title">Request an institution</h3><p>Submit verified details for the Gradly team to review.</p></div><button type="button" aria-label="Close" onClick={()=>setRequestOpen(false)}>×</button></header>
    {submitted?<div className="id-success" role="status"><strong>Request submitted</strong><p>Your request is now in the Super Admin review queue.</p><code>{submitted.id}</code><small>Status: {submitted.status}</small><button type="button" onClick={()=>setRequestOpen(false)}>Done</button></div>:<form onSubmit={submit}>
     <label>Institution name<input required minLength={2} maxLength={160} value={form.institutionName} onChange={e=>setForm({...form,institutionName:e.target.value})}/></label>
     <div className="id-form-grid"><label>State / UT<input required value={form.state} onChange={e=>setForm({...form,state:e.target.value})}/></label><label>City<input required value={form.city} onChange={e=>setForm({...form,city:e.target.value})}/></label><label>District<input value={form.district} onChange={e=>setForm({...form,district:e.target.value})}/></label><label>Institution type<select value={form.institutionType} onChange={e=>setForm({...form,institutionType:e.target.value})}><option>Engineering college</option><option>University</option><option>Autonomous college</option><option>College</option><option>Institute of national importance</option><option>Standalone institution</option><option>Other</option></select></label></div>
@@ -69,6 +70,6 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
     {requestError&&<p className="id-error" role="alert">{requestError}</p>}
     <footer><button type="button" onClick={()=>setRequestOpen(false)}>Cancel</button><button type="submit" disabled={submitting}>{submitting?"Submitting…":"Submit request"}</button></footer>
    </form>}
-  </section></div>}
+  </section></div>,document.body)}
  </div>;
 }
