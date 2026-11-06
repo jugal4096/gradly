@@ -45,7 +45,7 @@ export async function discoverInstitutions(req:Request,res:Response) {
   const response=await fetch("https://api.openalex.org/institutions?"+params,{headers:{Accept:"application/json","User-Agent":"Gradly/1.0 institution discovery"},signal:AbortSignal.timeout(9000)});
   if(!response.ok)throw new Error("Supplementary institution provider unavailable");
   const data=await response.json() as {meta?:{count?:number};results?:Array<{id?:string;display_name?:string;geo?:{city?:string|null;region?:string|null};homepage_url?:string|null;type?:string|null}>};
-  const norm=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,""),names=new Set(locals.map(x=>norm(x.name)));
+  const norm=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,""),names=new Set([...locals,...aisheItems].map(x=>norm(x.name)));
   const external:Item[]=(data.results||[]).map(x=>({id:x.id||"",externalId:x.id||"",name:clean(x.display_name,200),city:clean(x.geo?.city,100),state:clean(x.geo?.region,100),country:"India",website:x.homepage_url||null,type:clean(x.type,60)||"Higher education institution",source:"OpenAlex (supplementary)",isInGradly:names.has(norm(clean(x.display_name,200)))})).filter(x=>x.id&&x.name&&(!state||x.state.toLowerCase().includes(state.toLowerCase()))&&(!city||x.city.toLowerCase().includes(city.toLowerCase()))&&(!type||x.type.toLowerCase().includes(type.toLowerCase())));
   const merged=[...locals,...aisheItems,...external.filter(x=>!names.has(norm(x.name)))].slice(0,limit),count=Number(data.meta?.count||0)+aisheCount;
   cache.set(key,{until:Date.now()+600000,items:merged,count});
