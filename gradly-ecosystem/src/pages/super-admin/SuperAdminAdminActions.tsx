@@ -5,7 +5,7 @@ import "./SuperAdminAdmins.css";
 
 type Admin = {
   id: string; full_name?: string | null; admin_username?: string | null; admin_code?: string | null;
-  status?: string | null; adminship_expires_at?: string | null; application_id?: string | null;
+  status?: string | null; adminship_expires_at?: string | null; application_id?: string | null; password_changed_at?: string | null; password_review_due?: boolean; password_expires_at?: string | null;
 };
 type Permission = { code: string; label: string; description: string };
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "") + "/api";
@@ -91,6 +91,18 @@ export default function SuperAdminAdminActions() {
     }
   };
 
+  const expirePassword = async () => {
+    if (!admin) return;
+    if (!window.confirm("Expire this administrator's password now? They will need to submit a password-change request for approval.")) return;
+    setBusy(true); setMessage(""); setError("");
+    try {
+      const result = await request("/super-admin/administrators/" + encodeURIComponent(admin.id) + "/expire-password", { method: "PATCH" });
+      setMessage(result.message || "Administrator password expired.");
+      await load();
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not expire password."); }
+    finally { setBusy(false); }
+  };
+
   const saveExpiry = async () => {
     if (!admin || !expiry) return;
     setBusy(true); setMessage(""); setError("");
@@ -158,6 +170,12 @@ export default function SuperAdminAdminActions() {
           <button disabled={busy || admin.status === "SUSPENDED"} onClick={() => void changeStatus("SUSPENDED")}><UserX size={15}/> Suspend access</button>
           <button disabled={busy || admin.status === "DISABLED"} onClick={() => void changeStatus("DISABLED")}><LockKeyhole size={15}/> Disable account</button>
         </div>
+      </div>
+
+      <div className="sa-admin-action-panel">
+        <div className="sa-admin-action-panel-heading"><div><span className="sa-admins-kicker">PASSWORD SECURITY</span><h2>Monthly password review</h2><p>{admin.password_review_due ? "The 30-day review is due. Expire the password only if you decide a change is required." : "Password review is scheduled 30 days after the last password change."}</p></div></div>
+        <p className="sa-admin-permission-help">Last changed: {admin.password_changed_at ? new Date(admin.password_changed_at).toLocaleString("en-IN") : "Not recorded"}. {admin.password_expires_at ? "Password is currently marked expired." : "Password is not automatically expired."}</p>
+        <button className="sa-admins-view" type="button" disabled={busy || Boolean(admin.password_expires_at)} onClick={() => void expirePassword()}><LockKeyhole size={15}/> Expire password now</button>
       </div>
 
       <div className="sa-admin-action-panel">
