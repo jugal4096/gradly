@@ -64,7 +64,8 @@ function Overview({ name, onNavigate }: { name: string; onNavigate: (section: Se
   );
 }
 
-function SgpaCalculator({ isGuest }: { isGuest: boolean }) {\n  const [institute, setInstitute] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
+function SgpaCalculator({ isGuest }: { isGuest: boolean }) {
+  const [institute, setInstitute] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
   const [program, setProgram] = useState<Program>("BTECH");
   const [admissionMode, setAdmissionMode] = useState<AdmissionMode>("Regular");
   const [semester, setSemester] = useState(1);
@@ -102,7 +103,8 @@ function SgpaCalculator({ isGuest }: { isGuest: boolean }) {\n  const [institute
   </>;
 }
 
-function CgpaCalculator({ isGuest }: { isGuest: boolean }) {\n  const [institute, setInstitute] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
+function CgpaCalculator({ isGuest }: { isGuest: boolean }) {
+  const [institute, setInstitute] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
   const [program, setProgram] = useState<Program>("BTECH");
   const [admissionMode, setAdmissionMode] = useState<AdmissionMode>("Regular");
   const [semesters,setSemesters]=useState<{id:number;semester:number;sgpa:string;credits:string}[]>([{id:1,semester:1,sgpa:"",credits:""}]);
