@@ -11,7 +11,7 @@ export async function discoverInstitutions(req:Request,res:Response) {
  const page=Math.max(1,Math.min(400,Number(req.query.page)||1)),limit=Math.max(5,Math.min(30,Number(req.query.limit)||20));
  if(q.length<2&&!state&&!city&&!district&&!affiliation&&!type)return res.json({institutions:[],page,limit,hasMore:false,sources:["Gradly directory","OpenAlex (supplementary)"]});
  const key=JSON.stringify({q,state,city,district,affiliation,type,page,limit}),hit=cache.get(key);
- if(hit&&hit.until>Date.now())return res.json({institutions:hit.items,page,limit,hasMore:hit.count>page*limit,cached:true,sources:["Gradly directory","OpenAlex (supplementary)"]});
+ if(hit&&hit.until>Date.now())return res.json({institutions:hit.items,page,limit,hasMore:hit.count>page*8,cached:true,sources:["AISHE · Ministry of Education (when imported)","Gradly directory","OpenAlex (supplementary)"]});
  try {
   const values:unknown[]=[],where:string[]=[];
   const add=(v:unknown)=>{values.push(v);return "$"+values.length;};
@@ -47,10 +47,10 @@ export async function discoverInstitutions(req:Request,res:Response) {
   const data=await response.json() as {meta?:{count?:number};results?:Array<{id?:string;display_name?:string;geo?:{city?:string|null;region?:string|null};homepage_url?:string|null;type?:string|null}>};
   const norm=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,""),names=new Set([...locals,...aisheItems].map(x=>norm(x.name)));
   const external:Item[]=(data.results||[]).map(x=>({id:x.id||"",externalId:x.id||"",name:clean(x.display_name,200),city:clean(x.geo?.city,100),state:clean(x.geo?.region,100),country:"India",website:x.homepage_url||null,type:clean(x.type,60)||"Higher education institution",source:"OpenAlex (supplementary)",isInGradly:names.has(norm(clean(x.display_name,200)))})).filter(x=>x.id&&x.name&&(!state||x.state.toLowerCase().includes(state.toLowerCase()))&&(!city||x.city.toLowerCase().includes(city.toLowerCase()))&&(!type||x.type.toLowerCase().includes(type.toLowerCase())));
-  const merged=[...locals,...aisheItems,...external.filter(x=>!names.has(norm(x.name)))].slice(0,limit),count=Number(data.meta?.count||0)+aisheCount;
+  const merged=[...locals,...aisheItems,...external.filter(x=>!names.has(norm(x.name)))].slice(0,limit),count=Math.max(Number(data.meta?.count||0),aisheCount,local.rows.length===8?page*8+1:0);
   cache.set(key,{until:Date.now()+600000,items:merged,count});
   if(cache.size>500)for(const [k,v] of cache)if(v.until<Date.now())cache.delete(k);
-  return res.json({institutions:merged,page,limit,hasMore:count>page*limit,sources:["AISHE · Ministry of Education (when imported)","Gradly directory","OpenAlex (supplementary; not a complete official Indian register)"]});
+  return res.json({institutions:merged,page,limit,hasMore:count>page*8,sources:["AISHE · Ministry of Education (when imported)","Gradly directory","OpenAlex (supplementary; not a complete official Indian register)"]});
  } catch(e){console.error("Institution discovery failed",e);return res.status(502).json({message:"Institution discovery is temporarily unavailable. You can still request an institution to be added.",institutions:[],page,limit,hasMore:false});}
 }
 
