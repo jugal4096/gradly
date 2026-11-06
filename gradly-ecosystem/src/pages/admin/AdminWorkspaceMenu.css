@@ -41,3 +41,14 @@
 .admin-workspace-menu-foot{padding:18px 8px 0;opacity:.8}
 @media(max-width:480px){.admin-workspace-menu-toggle{height:38px;min-width:38px;margin:0 8px;padding:0 10px}.admin-workspace-menu-toggle span{display:none}.admin-workspace-menu-drawer{width:min(300px,86vw);padding-left:14px;padding-right:14px}}
 @media(prefers-reduced-motion:reduce){.admin-workspace-menu-toggle,.admin-workspace-menu-drawer,.admin-workspace-menu-link,.admin-workspace-menu-logout{transition:none!important}}
+
+/* Admin navigation now follows the Super Admin workspace pattern: one drawer,
+   opened from the current section's own top bar, with no duplicate rail. */
+.admin-workspace-menu-toggle{order:1}
+.ad-topbar-right{order:2;margin-left:auto}
+.admin-dashboard{display:block!important;min-height:100vh}
+.admin-dashboard>.ad-sidebar{display:none!important}
+.admin-dashboard>.ad-main-column{width:100%!important;min-width:0;max-width:none}
+.admin-dashboard>.ad-main-column>.ad-topbar{width:100%}
+.admin-dashboard>.ad-main-column>.ad-content{width:min(1440px,100%);margin:0 auto}
+@media(max-width:480px){.admin-workspace-menu-toggle{min-width:38px;padding:0 10px}.admin-workspace-menu-toggle span{display:none}}
