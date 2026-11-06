@@ -61,3 +61,13 @@
 .launch-splash{z-index:1000}
 @media(max-width:900px){.entry-hero{grid-template-columns:1fr;max-width:680px;gap:25px}.entry-visual{min-height:410px}.entry-visual-title{margin:36px 0 28px}}
 @media(max-width:520px){.entry-hero{padding-top:25px}.entry-actions{max-width:none}.entry-visual{min-height:360px;padding:24px;border-radius:18px}.entry-visual-title{font-size:39px;margin:35px 0 25px}.entry-visual-features{gap:8px}.entry-visual-features b{font-size:10px}.entry-visual-features small{font-size:8px}.entry-visual-caption{margin-top:30px;font-size:7px}}
+
+
+/* Student entry experience — responsive polish and reduced-motion support. */
+.entry-page{min-height:100svh}
+.preview-window{box-shadow:0 34px 110px rgba(0,0,0,.46),inset 0 1px rgba(255,255,255,.1)}
+.google-button:focus-visible,.guest-button:focus-visible,.entry-page a:focus-visible{outline:3px solid #70dff7;outline-offset:4px}
+.entry-page :is(input,button,a){-webkit-tap-highlight-color:transparent}
+@media(max-width:800px){.entry-hero{padding-bottom:42px}.preview-wrap{padding:10px 0 22px}.preview-window{transform:none}.floating-note{right:8px}.entry-footer{padding-bottom:18px}}
+@media(max-height:740px) and (min-width:801px){.entry-nav{padding-top:16px;padding-bottom:14px}.entry-hero{padding-top:16px;padding-bottom:28px}.entry-proof{margin-top:24px;padding-top:16px}.preview-wrap{padding-top:6px;padding-bottom:18px}}
+@media(prefers-reduced-motion:reduce){.entry-page *{scroll-behavior:auto!important;animation:none!important;transition:none!important;transform:none!important}.launch-splash{display:none}}
