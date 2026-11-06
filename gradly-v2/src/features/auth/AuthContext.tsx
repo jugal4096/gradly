@@ -29,6 +29,7 @@ interface AuthContextType {
 }
 
 const GUEST_SESSION_KEY = "gradly_guest_session";
+const GUEST_ID_KEY = "gradly_guest_id";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -78,11 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function continueAsGuest() {
     sessionStorage.setItem(GUEST_SESSION_KEY, "true");
+    if (!localStorage.getItem(GUEST_ID_KEY)) localStorage.setItem(GUEST_ID_KEY, `GST-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
     setIsGuest(true);
   }
 
   async function logout() {
     sessionStorage.removeItem(GUEST_SESSION_KEY);
+    localStorage.removeItem(GUEST_ID_KEY);
     setIsGuest(false);
     await signOut(auth);
   }
