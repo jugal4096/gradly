@@ -51,7 +51,8 @@ html[data-admin-font-size="normal"]{--admin-text-scale:1}
 html[data-admin-font-size="large"]{--admin-text-scale:1.08}
 html[data-admin-font-size="xlarge"]{--admin-text-scale:1.16}
 html[data-admin-font-size="xxlarge"]{--admin-text-scale:1.24}
-html[data-admin-font-size] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page) :where(p,span,label,small,strong,b,button,input,select,textarea,a,li,th,td,h1,h2,h3,h4,legend,summary){font-size:calc(1em * var(--admin-text-scale,1))}
+/* Apply one consistent scale from the root size; avoid nested em multiplication. */
+html[data-admin-font-size] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page) :where(p,span,label,small,strong,b,button,input,select,textarea,a,li,th,td,h1,h2,h3,h4,legend,summary){font-size:calc(1rem * var(--admin-text-scale,1))}
 html[data-admin-font] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page),html[data-admin-font] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page) *{font-family:var(--admin-font)!important}
 
 /* Contrast pass for dense/legacy Admin components in dark appearance. */
@@ -64,3 +65,18 @@ html[data-admin-theme="dark"] .admin-change-password-page{background:#101a15;col
 html[data-admin-theme="dark"] .admin-change-password-page .admin-change-password-card{background:#1b2a21;border-color:#3b5143;color:#edf5ef}
 html[data-admin-theme="dark"] .admin-change-password-page :where(h1,h2,label,.acp-description,.acp-footnote){color:#edf5ef}
 html[data-admin-theme="dark"] .admin-change-password-page input{background:#111d16;color:#f1f7f2;border-color:#506657}
+
+
+/* Accent identity is global across every Admin workspace page, not just Overview. */
+:root[data-admin-palette="green"]{--admin-accent:#19744f;--admin-accent-strong:#124333;--admin-accent-soft:#e0f5e8;--admin-accent-border:#cfe5d5}
+:root[data-admin-palette="blue"]{--admin-accent:#2865b0;--admin-accent-strong:#173d70;--admin-accent-soft:#e2efff;--admin-accent-border:#c9dcf4}
+:root[data-admin-palette="yellow"]{--admin-accent:#a87916;--admin-accent-strong:#68490b;--admin-accent-soft:#fff1c7;--admin-accent-border:#ead8a8}
+:root[data-admin-theme="dark"][data-admin-palette="green"]{--admin-accent:#54c58b;--admin-accent-strong:#1d4b35;--admin-accent-soft:#1c3528;--admin-accent-border:#3b5a46}
+:root[data-admin-theme="dark"][data-admin-palette="blue"]{--admin-accent:#83b9f4;--admin-accent-strong:#1b3d64;--admin-accent-soft:#1b3048;--admin-accent-border:#3b5675}
+:root[data-admin-theme="dark"][data-admin-palette="yellow"]{--admin-accent:#e8c56b;--admin-accent-strong:#4b3916;--admin-accent-soft:#382f1c;--admin-accent-border:#62502a}
+.admin-dashboard :where(.ad-section-kicker,.ad-metric-card>a,.ad-quick-card>b,.ad-panel-heading h2 svg,.ad-icon-button,.ad-topbar a:hover,.ad-footer a,.ad-nav-link.active svg){color:var(--admin-accent)!important}
+.admin-dashboard :where(.ad-primary-action,.ad-nav-link.active){border-color:var(--admin-accent-border)}
+.admin-dashboard :where(.ad-metric-icon,.ad-quick-card>span){color:var(--admin-accent)!important;background:var(--admin-accent-soft)!important}
+.admin-dashboard :where(.ad-theme-option.selected,.ad-setting-control:focus-within){border-color:var(--admin-accent)!important}
+.admin-dashboard :where(.ad-setting-toggle input){accent-color:var(--admin-accent)!important}
+html[data-admin-theme="dark"] .admin-dashboard :where(.ad-section-kicker,.ad-metric-card>a,.ad-quick-card>b,.ad-panel-heading h2 svg,.ad-icon-button,.ad-footer a){color:var(--admin-accent)!important}
