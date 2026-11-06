@@ -190,10 +190,9 @@ export default function StudentPlatform() {
         <label>Admission mode<select value={profile.admissionMode} onChange={e=>updateProfile({admissionMode:e.target.value})}><option>Regular</option><option>Direct Second Year</option><option>Transfer</option><option>Other</option></select></label>
         <label>Admission number<input value={profile.admissionNumber} onChange={e=>updateProfile({admissionNumber:e.target.value})} placeholder="Optional"/></label>
         <label>Scheme / pattern<input value={profile.scheme} onChange={e=>updateProfile({scheme:e.target.value})} placeholder="e.g. CBCS 2022"/></label>
-        <div className="sp-modal-actions"><button type="button" className="sp-secondary" onClick={()=>setRequestOpen(true)}>College not listed?</button><button className="sp-primary" disabled={institutionLoading}>Save profile →</button></div>
+        <div className="sp-modal-actions"><button className="sp-primary" disabled={institutionLoading}>Save profile →</button></div>
       </form>
     </section></div>}
     {loginGate&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">GRADLY ACCOUNT</span><h2>Unlock your student workspace</h2><p>This feature is available to signed-in students. Your guest calculations remain on this device.</p></div><button onClick={()=>setLoginGate(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" onClick={()=>void loginWithGoogle()}>Continue with Google →</button><button className="sp-secondary" onClick={()=>setLoginGate(false)}>Maybe later</button></div></section></div>}
-}
   </div>;
 }
