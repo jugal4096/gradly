@@ -35,22 +35,8 @@ export default function AdminRequestCenter(){
  async function load(){setLoading(true);try{const t=token();if(!t)throw new Error("Admin session missing. Sign in again.");const r=await fetch(API_ROOT+"/admin/platform-requests",{headers:{Authorization:"Bearer "+t,Accept:"application/json"}});const d=await r.json().catch(()=>({}));if(!r.ok||d.success===false)throw new Error(d.message||"Could not load requests.");setRows(Array.isArray(d.requests)?d.requests:[]);setUnread(Number(d.unreadCount)||0);setError("");}catch(e){setError(e instanceof Error?e.message:"Could not load requests.");}finally{setLoading(false);}}
  useEffect(()=>{void load();},[]);
  async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");setNotice("");try{const r=await fetch(API_ROOT+"/admin/platform-requests",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({requestType,title,description,targetUserId:targetUserId.trim()||null,priority})});const d=await r.json().catch(()=>({}));if(!r.ok||d.success===false)throw new Error(d.message||"Could not submit request.");setNotice("Request submitted to Super Admin.");setTitle("");setDescription("");setTarget("");await load();}catch(e){setError(e instanceof Error?e.message:"Could not submit request.");}finally{setBusy(false);}}
- return <div className="admin-request-shell" data-theme={localStorage.getItem("gradly_admin_theme")==="dark"?"dark":"light"} data-palette={localStorage.getItem("gradly_admin_palette")||"green"} data-font={localStorage.getItem("gradly_admin_font")||"system"} data-font-size={localStorage.getItem("gradly_admin_font_size")||"normal"} data-compact={localStorage.getItem("gradly_admin_compact")||"false"} data-reduced-motion={localStorage.getItem("gradly_admin_reduced_motion")||"false"}>
-  <header className="admin-request-topbar">
-   <button type="button" className="admin-request-menu-toggle" aria-label={workspaceOpen?"Close workspace navigation":"Open workspace navigation"} aria-expanded={workspaceOpen} aria-controls="admin-request-navigation" onClick={()=>setWorkspaceOpen(open=>!open)}>{workspaceOpen?<X size={20}/>:<Menu size={20}/>}<span>Workspace</span></button>
-   <div className="admin-request-brand"><span className="admin-request-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></div>
-   <div className="admin-request-topbar-context"><span className="admin-request-online-dot"/><span>ADMINISTRATION / REQUEST LOG</span></div>
-  </header>
-  {workspaceOpen&&<button type="button" className="admin-request-backdrop" aria-label="Close workspace navigation" onClick={()=>setWorkspaceOpen(false)}/>}
-  <aside id="admin-request-navigation" className={"admin-request-drawer"+(workspaceOpen?" is-open":"")} aria-label="Admin workspace navigation">
-   <div className="admin-request-drawer-heading">WORKSPACE</div>
-   <nav>{adminNavigation.map(item=>{const Icon=item.icon;return <Link key={item.to} to={item.to} onClick={()=>setWorkspaceOpen(false)} className={"admin-request-nav-link"+(location.pathname===item.to?" is-active":"")}><Icon size={17}/><span>{item.label}</span><ChevronRight size={14} className="admin-request-nav-arrow"/></Link>;})}</nav>
-   <div className="admin-request-drawer-spacer"/>
-   <div className="admin-request-secure"><ShieldCheck size={18}/><span><strong>Scoped access</strong><small>Assigned department only</small></span></div>
-   <Link to="/admin/change-password" className="admin-request-nav-link" onClick={()=>setWorkspaceOpen(false)}><ShieldCheck size={17}/><span>Account security</span><ChevronRight size={14} className="admin-request-nav-arrow"/></Link>
-   <button type="button" className="admin-request-logout" onClick={logout}><LogOut size={17}/><span>Sign out</span></button>
-   <div className="admin-request-drawer-foot">GRADLY ECOSYSTEM<br/>ADMIN SYSTEM / V2</div>
-  </aside>
+ return <><AdminWorkspaceMenu/><div className="admin-request-shell" data-theme={document.documentElement.dataset.adminTheme||"light"} data-palette={document.documentElement.dataset.adminPalette||"green"} data-font={document.documentElement.dataset.adminFont||"system"} data-font-size={document.documentElement.dataset.adminFontSize||"normal"} data-compact={document.documentElement.dataset.adminCompact||"false"} data-reduced-motion={document.documentElement.dataset.adminReducedMotion||"false"}>
+  <aside className="ad-sidebar admin-request-rail"><Link to="/admin/dashboard" className="ad-brand"><span className="ad-brand-mark">G</span><span><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></span></Link></aside>
   <main className="admin-request-main">
    <div className="admin-request-system-strip"><span><Activity size={14}/> SYSTEM STATUS <b>NORMAL</b></span><span>ADMIN WORKSPACE</span></div>
    <div className="ad-workspace">
@@ -71,5 +57,5 @@ export default function AdminRequestCenter(){
     <footer className="ad-footer"><span>Gradly · Request tracking</span><Link to="/admin/dashboard">Back to overview</Link></footer>
    </div>
   </main>
- </div>;
+ </div></>;
 }
