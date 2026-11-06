@@ -10,7 +10,7 @@ import "./EcosystemEntry.css";
 function EcosystemEntry() {
   const mainAppUrl =
     import.meta.env.VITE_MAIN_APP_URL ||
-    "http://localhost:5174";
+    "https://jugalsgpa.netlify.app";
 
   return (
     <main className="system-page">
