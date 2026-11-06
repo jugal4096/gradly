@@ -25,7 +25,7 @@ export async function discoverInstitutions(req:Request,res:Response) {
    "SELECT i.id::text AS id,i.name,COALESCE(to_jsonb(i)->>'city','') AS city,COALESCE(to_jsonb(i)->>'state','') AS state,COALESCE(to_jsonb(i)->>'website',to_jsonb(i)->>'website_url') AS website,COALESCE(to_jsonb(i)->>'institution_type',to_jsonb(i)->>'type','') AS type,COALESCE(branch_data.branches,'[]'::jsonb) AS branches FROM public.institutions i LEFT JOIN LATERAL (SELECT COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',b.id,'name',b.name,'code',b.code,'program_id',p.id,'program_name',p.name,'program_level',p.level)) FILTER(WHERE b.id IS NOT NULL),'[]'::jsonb) AS branches FROM public.programs p LEFT JOIN public.branches b ON b.program_id=p.id WHERE p.institution_id=i.id) branch_data ON TRUE "+(where.length?"WHERE "+where.join(" AND "):"")+" ORDER BY i.name LIMIT 8 OFFSET "+((page-1)*8),
    values
   );
-  const locals:Item[]=local.rows.map((r:any)=>({id:String(r.id),name:r.name,city:r.city,state:r.state,country:"India",website:r.website||null,type:r.type||"Higher education institution",source:"Gradly directory",isInGradly:true,branches:r.branches||[]}));
+  const locals:Item[]=(local.rows as Array<{id:string;name:string;city:string;state:string;website:string|null;type:string|null;branches:unknown[]}>).map(r=>({id:String(r.id),name:r.name,city:r.city,state:r.state,country:"India",website:r.website||null,type:r.type||"Higher education institution",source:"Gradly directory",isInGradly:true,branches:r.branches||[]}));
   let aisheItems:Item[]=[];let aisheCount=0;
   try{
    const av:unknown[]=[];const aw:string[]=[];const aa=(v:unknown)=>{av.push(v);return "$"+av.length;};
@@ -39,7 +39,7 @@ export async function discoverInstitutions(req:Request,res:Response) {
    const rows=await pool.query("SELECT aishe_code,name,state,district,city,category,institution_type,affiliation,website FROM public.aishe_institution_directory"+clause+" ORDER BY name LIMIT 8 OFFSET "+((page-1)*8),av);
    const countResult=await pool.query("SELECT COUNT(*)::int AS count FROM public.aishe_institution_directory"+clause,av);
    aisheCount=Number(countResult.rows[0]?.count||0);
-   aisheItems=rows.rows.map((x:any)=>({id:"AISHE:"+x.aishe_code,externalId:"AISHE:"+x.aishe_code,aisheCode:x.aishe_code,name:x.name,city:x.city||"",state:x.state||"",country:"India",website:x.website||null,type:x.institution_type||x.category||"Higher education institution",source:"AISHE · Ministry of Education",isInGradly:false}));
+   aisheItems=(rows.rows as Array<{aishe_code:string;name:string;city:string|null;state:string;website:string|null;institution_type:string|null;category:string|null}>).map(x=>({id:"AISHE:"+x.aishe_code,externalId:"AISHE:"+x.aishe_code,aisheCode:x.aishe_code,name:x.name,city:x.city||"",state:x.state||"",country:"India",website:x.website||null,type:x.institution_type||x.category||"Higher education institution",source:"AISHE · Ministry of Education",isInGradly:false}));
   }catch(e){console.warn("AISHE directory is not available yet; apply the AISHE migration and import the official directory export.",e);}
   const terms=[q,city,district,affiliation,state].filter(Boolean).join(" ");
   const params=new URLSearchParams({search:terms||"higher education",filter:"country_code:IN,type:education",select:"id,display_name,geo,country_code,homepage_url,type","per-page":"4",page:String(page)});
