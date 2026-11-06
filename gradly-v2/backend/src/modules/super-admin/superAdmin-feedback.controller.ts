@@ -45,7 +45,7 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
       `SELECT id, college_name AS subject, college_name AS title,
               'Institution addition request' AS category, 'INSTITUTION_REQUEST' AS type, 'institution' AS request_source,
               concat('Institution: ', college_name, E'\\nState: ', COALESCE(state,''), E'\\nCity: ', COALESCE(city,locality,''), E'\\nDistrict: ', COALESCE(district,''), E'\\nType: ', COALESCE(institution_type,''), E'\\nAffiliation: ', COALESCE(affiliation,''), E'\\nWebsite: ', COALESCE(website,''), E'\\nAdditional information: ', COALESCE(additional_info,''), E'\\nGuest ID: ', COALESCE(guest_id, 'Not provided'), E'\\nExternal directory ID: ', COALESCE(external_institution_id, 'Not provided')) AS message,
-              status, created_at, created_at AS updated_at,
+              status, created_at, created_at AS updated_at, reviewed_note AS "reviewNote",
               COALESCE(requester_name,guest_id,'Student / guest') AS name, requester_email AS email,
               jsonb_build_object('locality', locality, 'state', state, 'city', city, 'district', district, 'institutionType', institution_type, 'affiliation', affiliation, 'website', website, 'additionalInfo', additional_info, 'externalInstitutionId', external_institution_id, 'source', source) AS metadata
        FROM public.guest_institution_requests
