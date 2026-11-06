@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LayoutDashboard, BookOpen, ClipboardList, Bell, Users, MessageSquareText, Building2, Settings, ShieldCheck, LogOut, ChevronRight } from "lucide-react";
+import { Menu, LayoutDashboard, BookOpen, ClipboardList, Bell, Users, MessageSquareText, Building2, Settings, ShieldCheck, LogOut, ChevronRight } from "lucide-react";
 import "./AdminWorkspaceMenu.css";
 
 const items=[
@@ -20,7 +20,13 @@ export default function AdminWorkspaceMenu(){
  const [header,setHeader]=useState<HTMLElement|null>(null);
  const location=useLocation(),navigate=useNavigate();
  useEffect(()=>{setOpen(false);},[location.pathname]);
- useEffect(()=>{\n  const findHeader=()=>setHeader(document.querySelector<HTMLElement>(".ad-topbar"));\n  findHeader();\n  const observer=new MutationObserver(findHeader);\n  observer.observe(document.body,{childList:true,subtree:true});\n  return()=>observer.disconnect();\n },[location.pathname]);
+ useEffect(()=>{
+  const findHeader=()=>setHeader(document.querySelector<HTMLElement>(".ad-topbar"));
+  findHeader();
+  const observer=new MutationObserver(findHeader);
+  observer.observe(document.body,{childList:true,subtree:true});
+  return()=>observer.disconnect();
+ },[location.pathname]);
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[]);
  const logout=()=>{localStorage.removeItem("gradly_admin_token");localStorage.removeItem("admin_token");navigate("/admin/login",{replace:true});};
  return <>
