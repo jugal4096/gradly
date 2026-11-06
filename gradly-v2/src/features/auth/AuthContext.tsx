@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout() {
     sessionStorage.removeItem(GUEST_SESSION_KEY);
     localStorage.removeItem(GUEST_ID_KEY);
+    localStorage.removeItem("gradly_guest_institute");
     setIsGuest(false);
     await signOut(auth);
   }
