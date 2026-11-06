@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithEmailAndPassword,
   signOut,
   type User as FirebaseUser,
 } from "firebase/auth";
@@ -21,6 +22,7 @@ interface AuthContextType {
   loading: boolean;
   isGuest: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   continueAsGuest: () => void;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -49,30 +51,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
+  async function syncUserWithBackend(firebaseUser: FirebaseUser) {
+    const idToken = await firebaseUser.getIdToken();
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    const response = await fetch(`${apiBaseUrl}/api/auth/sync`, { method: "POST", headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" } });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || "Failed to synchronize user with Gradly backend.");
+    }
+  }
+
+  async function loginWithEmail(email: string, password: string) {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    sessionStorage.removeItem(GUEST_SESSION_KEY); setIsGuest(false);
+    await syncUserWithBackend(result.user);
+  }
+
   async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const firebaseUser = result.user;
-    const idToken = await firebaseUser.getIdToken();
-
     sessionStorage.removeItem(GUEST_SESSION_KEY);
     setIsGuest(false);
-
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-    const response = await fetch(`${apiBaseUrl}/api/auth/sync`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(
-        errorData?.message || "Failed to synchronize user with Gradly backend.",
-      );
-    }
+    await syncUserWithBackend(firebaseUser);
   }
 
   function continueAsGuest() {
@@ -93,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isGuest,
         loginWithGoogle,
+        loginWithEmail,
         continueAsGuest,
         logout,
         signOut: logout,
