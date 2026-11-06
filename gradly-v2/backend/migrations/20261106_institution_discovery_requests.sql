@@ -9,6 +9,10 @@ ALTER TABLE public.institutions
   ADD COLUMN IF NOT EXISTS aishe_code TEXT;
 CREATE INDEX IF NOT EXISTS idx_institutions_state_city ON public.institutions (state, city);
 ALTER TABLE public.guest_institution_requests
+  DROP CONSTRAINT IF EXISTS guest_institution_requests_status_check;
+ALTER TABLE public.guest_institution_requests
+  ADD CONSTRAINT guest_institution_requests_status_check CHECK (status IN ('PENDING','IN_REVIEW','APPROVED','RESOLVED','REJECTED'));
+ALTER TABLE public.guest_institution_requests
   ADD COLUMN IF NOT EXISTS state TEXT,
   ADD COLUMN IF NOT EXISTS city TEXT,
   ADD COLUMN IF NOT EXISTS district TEXT,
