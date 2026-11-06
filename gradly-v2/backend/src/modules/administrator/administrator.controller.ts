@@ -544,3 +544,32 @@ export async function resetAdministratorLoginAttempts(
     client.release();
   }
 }
+
+
+/* =========================================================
+   SUPER ADMIN CONTROLLED PASSWORD EXPIRY
+   ========================================================= */
+export async function expireAdministratorPassword(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const adminId = typeof req.params.adminId === "string" ? req.params.adminId : "";
+  const superAdminId = req.superAdmin?.superAdminId;
+  if (!adminId) return res.status(400).json({ success: false, message: "Administrator ID is required." });
+  if (!superAdminId) return res.status(401).json({ success: false, message: "Super Admin authentication required." });
+  try {
+    const result = await pool.query(
+      `UPDATE public.admins SET password_expires_at = NOW(), updated_at = NOW()
+       WHERE id = $1::uuid AND status = 'ACTIVE'
+       RETURNING id, admin_code, full_name, password_changed_at, password_expires_at`,
+      [adminId]
+    );
+    if (!result.rowCount) return res.status(404).json({ success: false, message: "Active administrator was not found." });
+    await pool.query(
+      `INSERT INTO public.audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
+       VALUES ('SUPER_ADMIN', $1::uuid, 'SUPER_ADMIN', 'SUPER_ADMIN_EXPIRED_ADMIN_PASSWORD', 'admins', $2, $3, $4::jsonb)`,
+      [superAdminId, adminId, req.ip ?? null, JSON.stringify({ adminCode: result.rows[0].admin_code, adminName: result.rows[0].full_name })]
+    );
+    return res.json({ success: true, message: "Password expired by Super Admin. The administrator must submit a password-change request.", administrator: result.rows[0] });
+  } catch (error) {
+    console.error("Super Admin password expiry failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to expire administrator password." });
+  }
+}
