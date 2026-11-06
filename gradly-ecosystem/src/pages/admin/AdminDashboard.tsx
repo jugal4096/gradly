@@ -5,7 +5,7 @@ import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap,
 import "./AdminDashboard.css";
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
-type Profile = { admin_code?: string; adminCode?: string; full_name?: string; fullName?: string; role?: string; status?: string; institution_id?: string; institutionId?: string; institution_name?: string; institutionName?: string; program_id?: string | null; program_name?: string | null; branch_id?: string | null; branchId?: string | null; branch_name?: string | null; branchName?: string | null; };
+type Profile = { admin_code?: string; adminCode?: string; full_name?: string; fullName?: string; role?: string; status?: string; admin_expires_at?: string | null; institution_id?: string; institutionId?: string; institution_name?: string; institutionName?: string; program_id?: string | null; program_name?: string | null; branch_id?: string | null; branchId?: string | null; branch_name?: string | null; branchName?: string | null; };
 type Course = { id: string; code?: string; name?: string; credits?: number | string; semester?: number | string; scheme?: string | null; branch?: string | null; program?: string | null; };
 type RequestItem = { id: string; status: string; };
 type NotificationItem = { id: string; readAt?: string | null; };
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
     <section className="ad-main-column">
       <header className="ad-topbar"><div className="ad-breadcrumb"><span>Admin workspace</span><span>/</span><strong>Overview</strong></div><div className="ad-topbar-right"><span className="ad-live-dot"/><span>Signed in as {adminName}</span><button type="button" className="ad-icon-button" onClick={()=>void load()} disabled={loading} aria-label="Refresh workspace"><RefreshCw size={16}/></button><Link to="/admin/profile" className="ad-avatar" aria-label="Open my profile" title="My profile">{adminName.slice(0,1).toUpperCase()}</Link></div></header>
       <div className="ad-content">
-        <section className="ad-hero"><div className="ad-hero-content"><span className="ad-eyebrow"><CheckCircle2 size={14}/> DEPARTMENT ADMINISTRATION</span><h1>Good to see you, <span>{adminName.split(" ")[0]}</span>.</h1><p>Your Gradly workspace, focused on the academic program and department assigned to you. Review curriculum, submit change requests and stay in touch with Super Admin.</p><div className="ad-assignment-line"><Building2 size={15}/><span>{institution}</span><i>·</i><span>{program}</span><i>·</i><span>{department}</span></div><Link to="/admin/curriculum" className="ad-primary-action">Review my curriculum <ArrowRight size={16}/></Link></div><div className="ad-hero-art" aria-hidden="true"><div className="ad-art-ring"/><div className="ad-art-card"><div className="ad-art-icon"><GraduationCap size={27}/></div><span className="ad-art-line wide"/><span className="ad-art-line"/><div className="ad-art-bars"><i/><i/><i/><i/><i/><i/></div><small>Academic workspace</small></div></div></section>
+        <section className="ad-hero ad-hero-compact"><div className="ad-hero-content"><span className="ad-eyebrow"><CheckCircle2 size={14}/> DEPARTMENT ADMINISTRATION</span><h1>Good to see you, <span>{adminName}</span>.</h1><p>Explore your Gradly workspace.</p><Link to="/admin/curriculum" className="ad-primary-action">Explore curriculum <ArrowRight size={16}/></Link></div></section>
         {error&&<div className="ad-alert" role="alert"><ShieldCheck size={18}/><div><strong>Workspace data could not be fully loaded</strong><p>{error}</p><button type="button" onClick={()=>void load()}>Try again</button></div></div>}
         <section className="ad-section"><div className="ad-section-heading"><div><span className="ad-section-kicker">YOUR WORKSPACE</span><h2>Academic overview</h2><p>Live figures are based only on records returned for your assigned academic scope.</p></div><button type="button" className="ad-text-button" onClick={()=>void load()} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
           <div className="ad-metric-grid">
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
           <Link to="/admin/activity" className="ad-quick-card"><span><Users size={20}/></span><strong>Anonymous user activity</strong><p>View aggregate logged-in and guest counts for your assigned department, without personal data.</p><b>View counts <ArrowRight size={14}/></b></Link>
           <Link to="/admin/feedback" className="ad-quick-card"><span><MessageSquareText size={20}/></span><strong>Student syllabus feedback</strong><p>Review student requests and forward proposed changes to Super Admin.</p><b>Review feedback <ArrowRight size={14}/></b></Link>
         </div></section>
-        <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><span>Academic changes require Super Admin approval.</span></footer>
+        <footer className="ad-footer"><span><ShieldCheck size={15}/> Gradly · Department-scoped administration</span><span>Access expiry: {profile?.admin_expires_at ? new Intl.DateTimeFormat("en-IN",{dateStyle:"medium"}).format(new Date(profile.admin_expires_at)) : "Not set"}</span></footer>
       </div>
     </section>
   </main></> ;
