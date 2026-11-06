@@ -16,7 +16,11 @@ try {
   const adminFontSize = localStorage.getItem("gradly_admin_font_size");
   const adminReducedMotion = localStorage.getItem("gradly_admin_reduced_motion");
   if (adminPalette && ["green", "blue", "yellow"].includes(adminPalette)) root.dataset.adminPalette = adminPalette;
-  if (adminTheme && ["light", "dark", "system"].includes(adminTheme)) {\n    root.dataset.adminTheme = adminTheme === "system" ? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light") : adminTheme;\n  }
+  if (adminTheme && ["light", "dark", "system"].includes(adminTheme)) {
+    root.dataset.adminTheme = adminTheme === "system"
+      ? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : adminTheme;
+  }
   if (adminFont) root.dataset.adminFont = adminFont;
   if (adminFontSize) root.dataset.adminFontSize = adminFontSize;
   if (adminReducedMotion) root.dataset.adminReducedMotion = adminReducedMotion;
@@ -29,9 +33,7 @@ try {
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-  throw new Error(
-    "Gradly Ecosystem root element was not found."
-  );
+  throw new Error("Gradly Ecosystem root element was not found.");
 }
 
 createRoot(rootElement).render(
