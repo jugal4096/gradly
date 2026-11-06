@@ -52,3 +52,23 @@
 .admin-dashboard>.ad-main-column>.ad-topbar{width:100%}
 .admin-dashboard>.ad-main-column>.ad-content{width:min(1440px,100%);margin:0 auto}
 @media(max-width:480px){.admin-workspace-menu-toggle{min-width:38px;padding:0 10px}.admin-workspace-menu-toggle span{display:none}}
+
+/* Single launcher: tucked directly below the Gradly mark in the left rail.
+   No duplicate Workspace pill in the top bar and no permanently expanded nav. */
+.ad-sidebar{position:fixed!important;inset:0 auto 0 0!important;width:72px!important;min-width:72px!important;height:100dvh!important;padding:18px 10px!important;align-items:center!important;gap:0!important;z-index:1200!important}
+.ad-brand{justify-content:center!important;width:100%!important;padding:0 0 18px!important;margin:0!important;border-bottom:1px solid #ffffff20}
+.ad-brand>span:not(.ad-brand-mark){display:none!important}
+.ad-brand-mark{width:42px!important;height:42px!important;margin:0!important}
+.ad-brand strong,.ad-brand small,.ad-sidebar-label,.ad-sidebar-nav,.ad-sidebar-bottom{display:none!important}
+.admin-workspace-menu-toggle{position:static!important;display:grid!important;place-items:center!important;width:44px!important;height:44px!important;min-width:44px!important;margin:14px 0 0!important;padding:0!important;border:1px solid var(--admin-drawer-border)!important;border-radius:14px!important;background:var(--admin-drawer-toggle-bg)!important;color:var(--admin-drawer-toggle-fg)!important;box-shadow:0 5px 16px #0002!important;cursor:pointer!important;transition:transform .2s ease,box-shadow .2s ease,background .2s ease!important}
+.admin-workspace-menu-toggle:hover{transform:translateY(-2px) scale(1.03)!important;box-shadow:0 9px 22px color-mix(in srgb,var(--admin-drawer-accent) 26%,transparent)!important}
+.admin-workspace-menu-toggle svg{width:21px!important;height:21px!important}
+.ad-main-column{width:calc(100% - 72px)!important;min-width:0!important;margin-left:72px!important}
+.ad-topbar{padding-left:clamp(16px,2.5vw,34px)!important}
+@media(max-width:820px){
+ .ad-sidebar{width:62px!important;min-width:62px!important;padding:13px 7px!important}
+ .ad-brand-mark{width:38px!important;height:38px!important}
+ .admin-workspace-menu-toggle{width:42px!important;height:42px!important;min-width:42px!important;margin-top:13px!important}
+ .ad-main-column{width:calc(100% - 62px)!important;margin-left:62px!important}
+ .ad-topbar{padding-left:14px!important}
+}

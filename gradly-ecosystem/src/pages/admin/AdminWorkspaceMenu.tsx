@@ -17,20 +17,20 @@ const items=[
 ];
 export default function AdminWorkspaceMenu(){
  const [open,setOpen]=useState(false);
- const [header,setHeader]=useState<HTMLElement|null>(null);
+ const [rail,setRail]=useState<HTMLElement|null>(null);
  const location=useLocation(),navigate=useNavigate();
  useEffect(()=>{setOpen(false);},[location.pathname]);
  useEffect(()=>{
-  const findHeader=()=>setHeader(document.querySelector<HTMLElement>(".ad-topbar"));
-  findHeader();
-  const observer=new MutationObserver(findHeader);
+  const findRail=()=>setRail(document.querySelector<HTMLElement>(".ad-sidebar"));
+  findRail();
+  const observer=new MutationObserver(findRail);
   observer.observe(document.body,{childList:true,subtree:true});
   return()=>observer.disconnect();
  },[location.pathname]);
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey);},[]);
  const logout=()=>{localStorage.removeItem("gradly_admin_token");localStorage.removeItem("admin_token");navigate("/admin/login",{replace:true});};
  return <>
-  {header&&createPortal(<button type="button" className="admin-workspace-menu-toggle" aria-label={open?"Close workspace navigation":"Open workspace navigation"} aria-expanded={open} aria-controls="admin-workspace-menu-drawer" onClick={()=>setOpen(v=>!v)}><Menu size={20}/><span>Workspace</span></button>,header)}
+  {rail&&createPortal(<button type="button" className="admin-workspace-menu-toggle" aria-label={open?"Close workspace navigation":"Open workspace navigation"} title="Open workspace navigation" aria-expanded={open} aria-controls="admin-workspace-menu-drawer" onClick={()=>setOpen(v=>!v)}><Menu size={21}/></button>,rail)}
   {open&&<button type="button" className="admin-workspace-menu-backdrop" aria-label="Close workspace navigation" onClick={()=>setOpen(false)}/>}
   <aside id="admin-workspace-menu-drawer" className={"admin-workspace-menu-drawer"+(open?" is-open":"")} aria-hidden={!open}>
    <div className="admin-workspace-menu-brand"><span>G</span><div><strong>GRADLY</strong><small>ADMIN WORKSPACE</small></div></div>
