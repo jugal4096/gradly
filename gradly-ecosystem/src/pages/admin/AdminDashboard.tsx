@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, GraduationCap, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, Settings, Users, MessageSquareText } from "lucide-react";
+import { ArrowRight, Bell, BookOpen, CheckCircle2, ClipboardList, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, Building2, Layers3, Settings, Users, MessageSquareText } from "lucide-react";
 import "./AdminDashboard.css";
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
@@ -46,9 +46,6 @@ export default function AdminDashboard() {
   useEffect(()=>{void load();},[load]);
 
   const adminName=display(profile?.full_name||profile?.fullName||profile?.admin_code||profile?.adminCode);
-  const institution=display(profile?.institution_name||profile?.institutionName);
-  const program=display(profile?.program_name||courses[0]?.program);
-  const department=display(profile?.branch_name||profile?.branchName||courses[0]?.branch);
   const unread=notifications.filter(n=>!n.readAt).length;
   const pending=requests.filter(r=>String(r.status).toUpperCase()==="PENDING").length;
 
