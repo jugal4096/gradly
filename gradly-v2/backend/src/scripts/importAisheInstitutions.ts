@@ -29,6 +29,7 @@ async function main(){
     const state=pick(row,"state","state_name","stateName");
     if(!code||!name||!state){skipped++;continue;}
     const district=pick(row,"district","district_name","districtName");
+    const city=pick(row,"city","locality","town","city_name");
     const category=pick(row,"category","institution_category","type");
     const institutionType=pick(row,"college_type","standalone_type","university_type","institution_type");
     const affiliation=pick(row,"university_name","affiliation","affiliating_university");
@@ -36,11 +37,11 @@ async function main(){
     const management=pick(row,"management","ownership","ownership_status");
     const sourceYear=pick(row,"survey_year","source_year","year");
     await client.query(
-     `INSERT INTO public.aishe_institution_directory(aishe_code,name,state,district,category,institution_type,affiliation,website,management,source_year,verified,imported_at,updated_at)
-      VALUES($1,$2,$3,NULLIF($4,''),NULLIF($5,''),NULLIF($6,''),NULLIF($7,''),NULLIF($8,''),NULLIF($9,''),NULLIF($10,''),TRUE,NOW(),NOW())
-      ON CONFLICT(aishe_code) DO UPDATE SET name=EXCLUDED.name,state=EXCLUDED.state,district=EXCLUDED.district,category=EXCLUDED.category,institution_type=EXCLUDED.institution_type,affiliation=EXCLUDED.affiliation,website=EXCLUDED.website,management=EXCLUDED.management,source_year=EXCLUDED.source_year,verified=TRUE,updated_at=NOW()`,
-     [code,name,state,district,category,institutionType,affiliation,website,management,sourceYear]
-    );imported++;
+     `INSERT INTO public.aishe_institution_directory(aishe_code,name,state,district,city,category,institution_type,affiliation,website,management,source_year,verified,imported_at,updated_at)
+      VALUES($1,$2,$3,NULLIF($4,''),NULLIF($5,''),NULLIF($6,''),NULLIF($7,''),NULLIF($8,''),NULLIF($9,''),NULLIF($10,''),NULLIF($11,''),TRUE,NOW(),NOW())
+      ON CONFLICT(aishe_code) DO UPDATE SET name=EXCLUDED.name,state=EXCLUDED.state,district=EXCLUDED.district,city=EXCLUDED.city,category=EXCLUDED.category,institution_type=EXCLUDED.institution_type,affiliation=EXCLUDED.affiliation,website=EXCLUDED.website,management=EXCLUDED.management,source_year=EXCLUDED.source_year,verified=TRUE,updated_at=NOW()`,
+     [code,name,state,district,city,category,institutionType,affiliation,website,management,sourceYear]
+    );imported++;mported++;
    }
   }
   await client.query("COMMIT");
