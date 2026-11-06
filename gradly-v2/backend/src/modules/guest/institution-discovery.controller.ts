@@ -90,6 +90,7 @@ export async function reviewInstitutionRequest(req:Request,res:Response) {
   await client.query("BEGIN");const found=await client.query("SELECT * FROM public.guest_institution_requests WHERE id=$1 FOR UPDATE",[req.params.requestId]);
   if(!found.rowCount){await client.query("ROLLBACK");return res.status(404).json({success:false,message:"Institution request not found."});}
   const item=found.rows[0];if(["APPROVED","REJECTED"].includes(item.status)){await client.query("ROLLBACK");return res.status(409).json({success:false,message:"This request has already been closed."});}
+  await client.query("SELECT pg_advisory_xact_lock(hashtext(lower($1)))",[item.college_name]);
   let directoryId:string|null=null;
   if(status==="APPROVED"){
    const aisheCode=String(item.external_institution_id||"").startsWith("AISHE:")?String(item.external_institution_id).slice(6):null;
