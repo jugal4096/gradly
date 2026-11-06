@@ -14,6 +14,7 @@ import {
 import userManagementRoutes from "./user-management.routes";
 import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
 import { listFeedbackRequests } from "./superAdmin-feedback.controller";
+import { reviewInstitutionRequest } from "../guest/institution-discovery.controller";
 import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum.controller";
 import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
 import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
@@ -71,6 +72,7 @@ router.patch("/platform-requests/:requestId/acknowledge", authenticateSuperAdmin
 router.patch("/platform-requests/:requestId/review", authenticateSuperAdminToken, reviewPlatformRequest);
 router.delete("/platform-requests/:source/:requestId", authenticateSuperAdminToken, deleteRequestRecord);
 router.get("/feedback", authenticateSuperAdminToken, listFeedbackRequests);
+router.patch("/institution-requests/:requestId/review", authenticateSuperAdminToken, reviewInstitutionRequest);
 router.get("/student-syllabus-feedback", authenticateSuperAdminToken, listForwardedStudentSyllabusFeedback);
 router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
 router.patch("/curriculum/:id", authenticateSuperAdminToken, updateCurriculumSubject);
