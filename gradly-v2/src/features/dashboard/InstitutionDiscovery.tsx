@@ -50,7 +50,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
    <label><span>City</span><input value={city} onChange={e=>setCity(e.target.value)} placeholder="City"/></label>
    <label><span>District</span><input value={district} onChange={e=>setDistrict(e.target.value)} placeholder="District"/></label>
    <label><span>Affiliation</span><input value={affiliation} onChange={e=>setAffiliation(e.target.value)} placeholder="University / board"/></label>
-   <label><span>Institution type</span><select value={type} onChange={e=>setType(e.target.value)}><option value="">All types</option><option>University</option><option>Engineering college</option><option>Autonomous college</option><option>College</option><option>Institute of national importance</option><option>Other</option></select></label>
+   <label><span>Institution type</span><select value={type} onChange={e=>setType(e.target.value)}><option value="">All types</option><option>University</option><option>Engineering college</option><option>Autonomous college</option><option>Affiliated college</option><option>College</option><option>Standalone institution</option><option>R&D institute</option><option>Institute of national importance</option><option>Other</option></select></label>
   </div>
   {loading&&<p className="id-state" role="status">Searching institution sources…</p>}
   {error&&<div className="id-error" role="alert">{error}<button type="button" onClick={()=>void search(1)}>Retry</button></div>}
