@@ -24,3 +24,38 @@
 @media(max-width:850px){.admin-activity-analytics{grid-template-columns:1fr}}
 @media(max-width:560px){.admin-activity-chart-card,.admin-activity-breakdown{padding:14px}.admin-activity-bars{gap:5px}}
 .admin-audit-filters input[type="date"]{color-scheme:light;background:#fff;color:#26314b;accent-color:#6d5bd0;font-family:inherit;font-size:12px}.admin-audit-filters input[type="date"]::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer;filter:invert(30%) sepia(16%) saturate(1500%) hue-rotate(211deg)}.admin-audit-filters input[type="date"]:focus{outline:3px solid #e8e2ff;border-color:#8c7add}
+
+
+/* Premium audit experience: clearer hierarchy, confident colour, and depth. */
+.admin-audit-page{position:relative;isolation:isolate;padding:clamp(18px,2.8vw,36px);background:radial-gradient(ellipse at 92% 0%,#e9e6ff 0,transparent 34%),linear-gradient(145deg,#f7f8fc,#f2f5fb);color:#202944}
+.admin-audit-header{align-items:center;margin-bottom:25px;padding:clamp(20px,2.6vw,30px);border:1px solid #e2e2f4;border-radius:20px;background:linear-gradient(115deg,#fff 0%,#f8f7ff 58%,#edf3ff 100%);box-shadow:0 14px 36px #2934530b}
+.admin-audit-kicker{display:inline-flex;align-items:center;gap:7px;color:#6554bd;font-size:10px;font-weight:850;letter-spacing:.16em}
+.admin-audit-header h1{font-family:Manrope,Inter,sans-serif;font-size:clamp(25px,3vw,36px);font-weight:850;letter-spacing:-.045em;color:#1c2740}
+.admin-audit-header p{max-width:650px;color:#66728b;line-height:1.7}
+.admin-audit-header-actions button,.admin-audit-header>button{min-height:41px;padding:0 14px;border:1px solid #dcdcf1;border-radius:11px;background:#fff;color:#51449e;font-weight:750;box-shadow:0 4px 12px #34306d0a;transition:transform .18s,box-shadow .18s}
+.admin-audit-header-actions button:hover,.admin-audit-header>button:hover{transform:translateY(-2px);box-shadow:0 9px 18px #34306d16}
+.admin-audit-stats article{position:relative;overflow:hidden;padding:20px;border:1px solid #e1e5f1;border-radius:17px;background:linear-gradient(145deg,#fff,#f8f9ff);box-shadow:0 8px 22px #26365b0a}
+.admin-audit-stats article:after{content:"";position:absolute;right:-25px;top:-35px;width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#7564d51c,#4b91d51a)}
+.admin-audit-stats span{color:#6c7690;font-weight:650}
+.admin-audit-stats strong{position:relative;z-index:1;color:#26365b;font:850 30px Manrope,Inter,sans-serif;letter-spacing:-.05em}
+.admin-activity-chart-card,.admin-activity-breakdown{padding:21px;border:1px solid #e1e5f1;border-radius:18px;background:linear-gradient(145deg,#fff,#f9faff);box-shadow:0 8px 22px #26365b0a}
+.admin-audit-card-heading h2{color:#26314b;font:800 18px Manrope,Inter,sans-serif}
+.admin-audit-card-heading>strong{background:#eeecff;color:#5949b0;border:1px solid #ded9ff}
+.admin-activity-bar-track{width:min(34px,100%);background:#eeeff8;border:1px solid #e5e7f2}
+.admin-activity-bar-track span{background:linear-gradient(180deg,#9b8ae9,#5545b0);box-shadow:0 3px 9px #6554bd35}
+.admin-activity-action-track{height:9px;background:#eceef7}
+.admin-activity-action-track i{background:linear-gradient(90deg,#5545b0,#4f91d8);box-shadow:0 2px 8px #6554bd30}
+.admin-audit-filters{padding:17px;border:1px solid #e0e5f1;border-radius:16px;background:#fff;box-shadow:0 7px 20px #26365b08}
+.admin-audit-filters input,.admin-audit-filters select{border-color:#dfe4f0;border-radius:10px}
+.admin-audit-table-wrap{border:1px solid #e0e5f1;border-radius:16px;box-shadow:0 8px 24px #26365b09}
+.admin-audit-table th{padding:15px;background:linear-gradient(90deg,#f2f2ff,#f4f8ff);color:#5f6b86}
+.admin-audit-table td{padding:16px 14px}
+.admin-audit-table tbody tr:hover{background:#f7f8ff}
+.admin-audit-action{width:max-content;padding:6px 9px;border:1px solid #e0dcfa;border-radius:8px;background:#f5f3ff;color:#51449e}
+.admin-audit-details{padding:8px 11px;border-color:#d9d5f4;background:#f4f2ff;color:#51449e;font-weight:750}
+.admin-audit-details:hover{background:#e9e6ff}
+.admin-audit-pagination{margin-top:7px}
+.admin-audit-pagination button{border-radius:10px;color:#51449e;font-weight:750}
+.admin-audit-drawer{background:linear-gradient(160deg,#fff,#f7f8ff);box-shadow:-16px 0 45px #10162a30}
+.admin-audit-drawer pre{border:1px solid #e4e7f1;background:#f0f3fa;color:#34405b}
+@media(max-width:650px){.admin-audit-page{padding:14px}.admin-audit-header{padding:18px;border-radius:15px}.admin-audit-stats article{padding:16px}}
