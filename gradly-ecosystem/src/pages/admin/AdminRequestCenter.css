@@ -465,3 +465,81 @@
 :root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-scope-pill,:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-status{background:var(--arc-accent-soft);border-color:var(--arc-accent-line);color:var(--arc-accent)!important}
 :root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-primary-btn{color:#fff!important}
 :root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-secondary-btn{background:#223329;color:var(--arc-accent);border-color:var(--arc-accent-line)}
+
+
+/* -------------------------------------------------------------------------
+   Unified Request Center appearance.
+   The Admin Settings root attributes are the source of truth. Keep surfaces
+   neutral in every palette; use the selected palette for accents and navigation.
+   ------------------------------------------------------------------------- */
+.admin-request-shell{
+  --arc-accent:#19744f;--arc-accent-strong:#124333;--arc-accent-soft:#e0f5e8;
+  --arc-accent-border:#cfe5d5;--arc-page:#f5f8f5;--arc-surface:#fff;
+  --arc-surface-raised:#fbfdfb;--arc-text:#20382b;--arc-muted:#64756b;
+  --arc-border:#dce7df;--arc-input:#fff;--arc-input-text:#20382b;
+  background:var(--arc-page)!important;color:var(--arc-text)!important;
+}
+.admin-request-shell[data-palette="blue"]{--arc-accent:#2865b0;--arc-accent-strong:#173d70;--arc-accent-soft:#e2efff;--arc-accent-border:#c9dcf4}
+.admin-request-shell[data-palette="yellow"]{--arc-accent:#a87916;--arc-accent-strong:#68490b;--arc-accent-soft:#fff1c7;--arc-accent-border:#ead8a8}
+.admin-request-shell .admin-request-rail{background:linear-gradient(180deg,var(--arc-accent-strong),color-mix(in srgb,var(--arc-accent-strong) 78%,#07130d))!important}
+.admin-request-shell .admin-request-system-strip{background:var(--arc-surface)!important;color:var(--arc-muted)!important;border-color:var(--arc-border)!important}
+.admin-request-shell .admin-request-system-strip svg{color:var(--arc-accent)!important}
+.admin-request-shell .admin-request-system-strip b{color:var(--arc-accent-strong)!important;background:var(--arc-accent-soft)!important}
+.admin-request-shell .ad-workspace{background:var(--arc-page)!important;color:var(--arc-text)!important}
+.admin-request-shell .ad-workspace .ad-panel{background:var(--arc-surface)!important;border-color:var(--arc-border)!important;color:var(--arc-text)!important}
+.admin-request-shell .ad-workspace .ad-page-head h1,
+.admin-request-shell .ad-workspace .ad-panel-heading h2,
+.admin-request-shell .ad-workspace .ad-request-list article strong{color:var(--arc-text)!important}
+.admin-request-shell .ad-workspace .ad-page-head p,
+.admin-request-shell .ad-workspace .ad-request-list article p,
+.admin-request-shell .ad-workspace .ad-request-list article small{color:var(--arc-muted)!important}
+.admin-request-shell .ad-workspace .ad-section-kicker,
+.admin-request-shell .ad-workspace .ad-panel-heading h2 svg,
+.admin-request-shell .ad-workspace .ad-footer a{color:var(--arc-accent)!important}
+.admin-request-shell .ad-workspace .ad-scope-pill,
+.admin-request-shell .ad-workspace .ad-request-status{background:var(--arc-accent-soft)!important;border-color:var(--arc-accent-border)!important;color:var(--arc-accent-strong)!important}
+.admin-request-shell .ad-workspace .ad-request-list article{background:var(--arc-surface-raised)!important;border-color:var(--arc-border)!important}
+.admin-request-shell .ad-workspace .ad-request-form>label{color:var(--arc-text)!important}
+.admin-request-shell .ad-workspace .ad-request-form label>span{color:var(--arc-muted)!important}
+.admin-request-shell .ad-workspace .ad-request-form input,
+.admin-request-shell .ad-workspace .ad-request-form select,
+.admin-request-shell .ad-workspace .ad-request-form textarea{background:var(--arc-input)!important;color:var(--arc-input-text)!important;border-color:var(--arc-border)!important}
+.admin-request-shell .ad-workspace .ad-request-form input::placeholder,
+.admin-request-shell .ad-workspace .ad-request-form textarea::placeholder{color:var(--arc-muted)!important;opacity:.85}
+.admin-request-shell .ad-workspace .ad-primary-btn{background:linear-gradient(115deg,var(--arc-accent),var(--arc-accent-strong))!important;border-color:var(--arc-accent)!important;color:#fff!important}
+.admin-request-shell .ad-workspace .ad-secondary-btn{background:var(--arc-surface)!important;border-color:var(--arc-accent-border)!important;color:var(--arc-accent-strong)!important}
+.admin-request-shell .admin-request-drawer{background:linear-gradient(180deg,var(--arc-accent-strong),color-mix(in srgb,var(--arc-accent-strong) 78%,#07130d))!important}
+.admin-request-shell .admin-request-nav-link.is-active{background:linear-gradient(100deg,var(--arc-accent),var(--arc-accent-strong))!important}
+
+/* Dark appearance: surfaces are neutral charcoal, never hard-coded green. */
+:root[data-admin-theme="dark"] .admin-request-shell,
+.admin-request-shell[data-theme="dark]{
+  --arc-page:#101828;--arc-surface:#1d2939;--arc-surface-raised:#243247;
+  --arc-text:#f2f4f7;--arc-muted:#c0cad6;--arc-border:#475467;
+  --arc-input:#172334;--arc-input-text:#f2f4f7;
+  --arc-accent-soft:#243247;--arc-accent-border:#52647a;
+  background:var(--arc-page)!important;color:var(--arc-text)!important;
+}
+:root[data-admin-theme="dark"] .admin-request-shell[data-palette="green"]{--arc-accent:#6ce9a6;--arc-accent-strong:#174a33;--arc-accent-soft:#153b2c;--arc-accent-border:#35634c}
+:root[data-admin-theme="dark"] .admin-request-shell[data-palette="blue"]{--arc-accent:#84caff;--arc-accent-strong:#173d70;--arc-accent-soft:#142f4b;--arc-accent-border:#365b80}
+:root[data-admin-theme="dark"] .admin-request-shell[data-palette="yellow"]{--arc-accent:#f7d477;--arc-accent-strong:#594313;--arc-accent-soft:#3b3018;--arc-accent-border:#6b572d}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-system-strip{background:#172334!important;color:#c0cad6!important;border-color:var(--arc-border)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-system-strip b{background:var(--arc-accent-soft)!important;color:var(--arc-accent)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace{background:var(--arc-page)!important;color:var(--arc-text)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-panel,
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-list article{background:var(--arc-surface)!important;border-color:var(--arc-border)!important;color:var(--arc-text)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace :is(h1,h2,h3,strong,b,label,th,td){color:var(--arc-text)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace :is(p,small,span,.ad-footer){color:var(--arc-muted)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-section-kicker,
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-panel-heading h2 svg,
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-footer a{color:var(--arc-accent)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-scope-pill,
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-status{background:var(--arc-accent-soft)!important;border-color:var(--arc-accent-border)!important;color:var(--arc-accent)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-form>label{color:var(--arc-text)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-form label>span{color:var(--arc-muted)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-form input,
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-form select,
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-request-form textarea{background:var(--arc-input)!important;color:var(--arc-input-text)!important;border-color:var(--arc-border)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .ad-workspace .ad-secondary-btn{background:var(--arc-surface)!important;color:var(--arc-accent)!important;border-color:var(--arc-border)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-drawer{background:linear-gradient(180deg,var(--arc-accent-strong),#101828)!important}
+:root[data-admin-theme="dark"] .admin-request-shell .admin-request-nav-link.is-active{background:linear-gradient(100deg,var(--arc-accent-strong),color-mix(in srgb,var(--arc-accent-strong) 75%,#101828))!important}
