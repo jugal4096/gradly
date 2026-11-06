@@ -131,7 +131,7 @@ router.post("/:requestId/reset", authenticateFirebaseTokenForAdminApplication, a
         return res.status(403).json({ success: false, message: "This administrator account is not active." });
       }
       await client.query(
-        `UPDATE public.admins SET password_hash = $2, password_changed_at = NOW(), password_expires_at = NOW() + INTERVAL '1 month', updated_at = NOW() WHERE id = $1`,
+        `UPDATE public.admins SET password_hash = $2, password_changed_at = NOW(), password_expires_at = NULL, updated_at = NOW() WHERE id = $1`,
         [row.admin_id, passwordHash]
       );
       await client.query(
