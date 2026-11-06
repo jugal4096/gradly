@@ -93,7 +93,7 @@ export default function StudentPlatform() {
   }, []);
 
 
-  const selectedInstitution = institutions.find(item=>item.id===(isGuest ? guestInstitutionId : profile.institutionId)) || (isGuest && guestInstitutionId ? {id:guestInstitutionId,name:guestInstitutionName,branches:[]} : undefined);
+  const selectedInstitution = useMemo(()=>institutions.find(item=>item.id===(isGuest ? guestInstitutionId : profile.institutionId)) || (isGuest && guestInstitutionId ? {id:guestInstitutionId,name:guestInstitutionName,branches:[]} : undefined),[institutions,isGuest,guestInstitutionId,guestInstitutionName,profile.institutionId]);
   const programs = useMemo(() => {
     const map = new Map<string,{id:string;name:string;level?:string|null}>();
     (selectedInstitution?.branches || []).forEach(branch=>map.set(branch.program_id,{id:branch.program_id,name:branch.program_name,level:branch.program_level}));
