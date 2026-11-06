@@ -106,7 +106,7 @@ export default function DashboardPage() {
       <a className="student-brand" href="/" onClick={event=>{event.preventDefault();navigateTo("overview");}}><span className="student-brand-mark">G<span>✦</span></span><span>Gradly<small>STUDENT SPACE</small></span></a>
       <div className="sidebar-rule"/>
       {["WORKSPACE","ACADEMICS","YOUR SPACE"].map(group=><div className="student-nav-group" key={group}><span className="student-nav-label">{group}</span>{navItems.filter(item=>item.group===group).map(item=><button key={item.id} className={`student-nav-item ${section===item.id?"active":""}`} onClick={()=>navigateTo(item.id)}><span>{item.icon}</span>{item.label}{section===item.id&&<i/>}</button>)}</div>)}
-      <div className="sidebar-bottom"><div className="sidebar-help"><span>✦</span><b>Your next step starts here.</b><small>Keep learning. Keep growing.</small></div><button className="student-nav-item profile-nav ${section==="profile"?"active":""}" onClick={()=>navigateTo("profile")}><span>◎</span>Profile & settings</button></div>
+      <div className="sidebar-bottom"><div className="sidebar-help"><span>✦</span><b>Your next step starts here.</b><small>Keep learning. Keep growing.</small></div><button className={`student-nav-item profile-nav ${section==="profile"?"active":""}`} onClick={()=>navigateTo("profile")}><span>◎</span>Profile & settings</button></div>
     </aside>
     {mobileNavOpen&&<button className="student-mobile-backdrop" aria-label="Close navigation" onClick={()=>setMobileNavOpen(false)}/>}
     <main className="student-main">
