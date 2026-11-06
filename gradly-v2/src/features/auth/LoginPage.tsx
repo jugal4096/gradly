@@ -15,10 +15,13 @@ function GoogleMark() {
 }
 
 export default function LoginPage() {
-  const { loginWithGoogle, continueAsGuest } = useAuth();
+  const { loginWithGoogle, loginWithEmail, continueAsGuest } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   async function handleGoogleLogin() {
     try {
@@ -32,6 +35,18 @@ export default function LoginPage() {
     } finally {
       setLoggingIn(false);
     }
+  }
+
+  async function handleEmailLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      setError(""); setLoggingIn(true);
+      await loginWithEmail(email.trim(), password);
+      navigate("/dashboard", { replace: true });
+    } catch (loginError) {
+      console.error(loginError);
+      setError(loginError instanceof Error ? loginError.message : "Email login could not be completed.");
+    } finally { setLoggingIn(false); }
   }
 
   function handleGuest() {
@@ -59,8 +74,17 @@ export default function LoginPage() {
             <button className="google-button" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
               <GoogleMark /><span>{loggingIn ? "Connecting to Google…" : "Continue with Google"}</span>{!loggingIn && <span className="button-arrow">↗</span>}
             </button>
-            <button className="guest-button" type="button" onClick={handleGuest}>Explore as guest <span aria-hidden="true">→</span></button>
+            <button className="guest-button" type="button" onClick={handleGuest}>Continue as Guest <span aria-hidden="true">→</span></button>
+            <button className="email-login-toggle" type="button" onClick={() => { setShowEmailLogin((value) => !value); setError(""); }}>{showEmailLogin ? "Hide email login" : "Login with Email"}</button>
           </div>
+          {showEmailLogin && <form className="email-login-form" onSubmit={handleEmailLogin}>
+            <label htmlFor="gradly-email">Email address</label>
+            <input id="gradly-email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
+            <label htmlFor="gradly-password">Password</label>
+            <input id="gradly-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" required />
+            <button className="email-submit" type="submit" disabled={loggingIn}>{loggingIn ? "Signing in…" : "Login"}</button>
+            <p className="email-login-hint">Use the email and password for an existing Gradly account.</p>
+          </form>}
           {error && <p className="entry-error" role="alert">{error}</p>}
           <p className="entry-footnote">No account needed to explore. Your academic workspace is one step away.</p>
           <div className="entry-proof">
