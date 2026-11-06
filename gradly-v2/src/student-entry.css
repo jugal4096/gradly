@@ -13,3 +13,18 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 .launch-splash-fallback{position:relative;color:#f7f8ff;font:800 42px Manrope,system-ui,sans-serif;letter-spacing:-.06em;text-shadow:0 0 30px rgba(91,113,255,.55)}.launch-splash-fallback span{color:#83dff7;font-size:20px;vertical-align:top;margin-left:5px}
+
+/* Lightweight brand reveal and email login controls. */
+.launch-splash{display:block;background:transparent;pointer-events:none;animation:splash-fade-in .25s ease both}
+.launch-splash:before{display:none}
+.launch-splash img{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:min(150px,34vw);height:auto;filter:drop-shadow(0 0 18px rgba(83,100,255,.3));animation:splash-logo-out 3s ease both}
+.launch-splash-fallback{position:absolute;top:28px;left:50%;transform:translateX(-50%);font-size:24px;white-space:nowrap;animation:splash-logo-out 3s ease both}
+.email-login-toggle{min-height:52px;padding:0 15px;border:1px solid rgba(164,178,235,.27);border-radius:13px;color:#dfe5ff;background:rgba(255,255,255,.035);font-size:13px;font-weight:700;cursor:pointer}
+.email-login-form{display:grid;gap:9px;width:min(100%,390px);margin-top:18px;padding:18px;border:1px solid rgba(164,178,235,.2);border-radius:15px;background:rgba(15,22,58,.72);box-shadow:0 16px 40px rgba(0,0,0,.18)}
+.email-login-form label{color:#cbd4f5;font-size:11px;font-weight:700;margin-top:3px}
+.email-login-form input{width:100%;min-height:45px;padding:0 13px;border:1px solid rgba(164,178,235,.24);border-radius:9px;background:rgba(5,10,32,.65);color:#fff;font:inherit;font-size:13px;outline:none}
+.email-login-form input:focus{border-color:#7e8dff;box-shadow:0 0 0 3px rgba(126,141,255,.13)}
+.email-submit{min-height:46px;margin-top:6px;border:0;border-radius:9px;background:linear-gradient(100deg,#398fe9,#795cf2);color:#fff;font-size:13px;font-weight:800;cursor:pointer}
+.email-submit:disabled{opacity:.65;cursor:wait}.email-login-hint{margin:2px 0 0;color:#8492bb;font-size:10px;line-height:1.5}
+@keyframes splash-logo-out{0%,72%{opacity:1}100%{opacity:0}}
+@media(max-width:520px){.email-login-toggle{width:100%}.launch-splash img{top:14px;width:116px}}
