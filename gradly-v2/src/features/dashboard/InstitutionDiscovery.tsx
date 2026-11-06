@@ -24,7 +24,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
    const r=await fetch(API+"/api/guest/institution-search?"+p.toString(),{headers:{Accept:"application/json"}});
    const d=await r.json().catch(()=>({}));
    if(!r.ok)throw new Error(d.message||"Institution search failed.");
-   setItems(d.institutions||[]);setPage(next);setHasMore(Boolean(d.hasMore));
+   setItems(current=>{const incoming=(d.institutions||[]) as DiscoveryInstitution[];if(next===1)return incoming;const seen=new Set(current.map(x=>x.id));return [...current,...incoming.filter(x=>!seen.has(x.id))];});setPage(next);setHasMore(Boolean(d.hasMore));
   }catch(e){setError(e instanceof Error?e.message:"Unable to search institutions.");setItems([]);setHasMore(false);}
   finally{setLoading(false);}
  }
