@@ -3,3 +3,26 @@
 @media(max-width:1100px){.student-sidebar{width:225px;flex-basis:225px}.student-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.student-main-grid,.calculator-layout{grid-template-columns:1fr}.result-panel{min-height:330px}.result-panel>p{max-width:400px}}
 @media(max-width:760px){.student-sidebar{position:fixed;left:0;top:0;bottom:0;width:270px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:18px 0 50px rgba(0,0,0,.35)}.student-sidebar.is-open{transform:translateX(0)}.student-mobile-backdrop{display:block;position:fixed;inset:0;z-index:15;border:0;background:rgba(0,0,0,.55)}.student-menu-toggle{display:block}.student-topbar{height:68px;padding:0 17px}.student-topbar-left,.student-topbar-right{gap:10px}.student-mode-chip{font-size:0;padding:8px}.student-mode-chip i{width:7px;height:7px}.student-signout{font-size:9px}.student-content{padding:24px 17px 32px}.student-welcome{padding:25px 22px;min-height:165px}.welcome-orbit{width:75px;height:75px;margin-right:7px}.welcome-orbit span{font-size:35px}.welcome-orbit:before{inset:-8px}.welcome-orbit:after{inset:-16px}.student-app-footer{padding:15px 17px;flex-wrap:wrap}.student-app-footer span:nth-child(2){order:3;width:100%}}
 @media(max-width:520px){.student-topbar-right{gap:8px}.student-avatar{width:29px;height:29px}.student-topbar-left strong{font-size:11px}.student-welcome{padding:22px 18px}.student-welcome h1{font-size:25px}.student-welcome p{max-width:250px;font-size:10px}.welcome-orbit{width:55px;height:55px}.welcome-orbit span{font-size:27px}.welcome-orbit:before{inset:-6px}.welcome-orbit:after{inset:-12px}.student-stat-grid{gap:9px}.student-stat-card{min-height:130px;padding:13px}.student-stat-card strong{font-size:21px}.student-stat-card small{font-size:7px}.progress-panel,.shortcuts-panel,.calculator-panel,.result-panel{padding:16px}.getting-started{align-items:flex-start;flex-direction:column}.subject-table-head,.subject-row{grid-template-columns:minmax(85px,1fr) minmax(95px,.85fr) 62px 25px;gap:5px}.subject-row input,.subject-row select{padding:0 6px;font-size:9px}.cgpa-table-head,.cgpa-row{grid-template-columns:65px minmax(75px,1fr) minmax(75px,1fr) 25px;gap:5px}.cgpa-row input{padding:0 5px;font-size:9px}.cgpa-row>b{font-size:8px}.subject-table-head,.cgpa-table-head{font-size:7px}.student-app-footer{font-size:7px}}
+
+
+/* GECA academic workflow refinements */
+.academic-rule-banner{margin:0 0 17px;padding:17px 20px;border:1px solid rgba(104,155,255,.22);border-radius:13px;background:linear-gradient(110deg,rgba(30,65,119,.34),rgba(81,59,145,.2));}
+.academic-rule-banner>span,.semester-limit-note>span{display:block;color:#8ea8e8;font-size:8px;font-weight:800;letter-spacing:.16em}
+.academic-rule-banner p{margin:8px 0 5px;color:#f0f3ff;font-size:clamp(13px,1.5vw,17px);font-weight:800;letter-spacing:-.025em}
+.academic-rule-banner small{color:#9aa9d1;font-size:9px;line-height:1.6}
+.academic-config-row{display:flex;align-items:end;gap:13px;flex-wrap:wrap;margin:0 0 17px;padding:15px 17px;border:1px solid rgba(144,162,239,.13);border-radius:13px;background:rgba(18,27,65,.62)}
+.academic-config-row label{display:flex;flex-direction:column;gap:7px;min-width:150px;color:#8e9fc9;font-size:9px;font-weight:800;letter-spacing:.08em}
+.academic-config-row select,.cgpa-row select{height:37px;min-width:0;padding:0 11px;border:1px solid rgba(137,157,230,.2);border-radius:8px;background:#0c1435;color:#e9edff;font:600 10px Manrope}
+.semester-limit-note{margin-left:auto;padding:8px 12px;border:1px solid rgba(137,157,230,.16);border-radius:9px;background:rgba(255,255,255,.025)}
+.semester-limit-note b{display:block;margin-top:4px;color:#f3f5ff;font-size:15px}
+.grade-reference-panel{margin-top:16px;padding:19px 21px;border:1px solid rgba(144,162,239,.15);border-radius:14px;background:linear-gradient(145deg,rgba(20,29,68,.8),rgba(13,20,49,.9))}
+.grade-reference-panel h3{margin:6px 0 14px;color:#edf0ff;font-size:13px}
+.grade-reference-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+.grade-reference-grid>div{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:10px 11px;border:1px solid rgba(143,161,229,.12);border-radius:8px;background:rgba(255,255,255,.025)}
+.grade-reference-grid b{color:#e9edff;font-size:11px}.grade-reference-grid span{color:#78d9f4;font-size:11px;font-weight:800}
+.cgpa-row select{width:100%}
+.add-subject-btn:disabled{opacity:.35;cursor:not-allowed}
+.semester-complete-note,.academic-validation-note{margin:8px 0 0;color:#9da9d0;font-size:9px;line-height:1.6}
+.academic-validation-note{color:#f0c88b}
+@media(max-width:760px){.grade-reference-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.academic-config-row label{flex:1;min-width:130px}}
+@media(max-width:520px){.academic-rule-banner{padding:14px}.academic-config-row{padding:12px;gap:9px}.academic-config-row label{min-width:calc(50% - 6px)}.semester-limit-note{margin-left:0}.grade-reference-panel{padding:15px}.grade-reference-grid{gap:6px}.grade-reference-grid>div{padding:8px}}
