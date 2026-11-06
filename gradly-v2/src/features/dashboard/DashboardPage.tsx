@@ -64,7 +64,7 @@ function Overview({ name, onNavigate }: { name: string; onNavigate: (section: Se
   );
 }
 
-function SgpaCalculator() {
+function SgpaCalculator({ isGuest }: { isGuest: boolean }) {\n  const [institute, setInstitute] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
   const [program, setProgram] = useState<Program>("BTECH");
   const [admissionMode, setAdmissionMode] = useState<AdmissionMode>("Regular");
   const [semester, setSemester] = useState(1);
@@ -102,7 +102,7 @@ function SgpaCalculator() {
   </>;
 }
 
-function CgpaCalculator() {
+function CgpaCalculator({ isGuest }: { isGuest: boolean }) {\n  const [institute, setInstitute] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
   const [program, setProgram] = useState<Program>("BTECH");
   const [admissionMode, setAdmissionMode] = useState<AdmissionMode>("Regular");
   const [semesters,setSemesters]=useState<{id:number;semester:number;sgpa:string;credits:string}[]>([{id:1,semester:1,sgpa:"",credits:""}]);
@@ -158,7 +158,7 @@ function SimpleSection({ section, onNavigate }: { section: Exclude<Section,"over
 
 export default function DashboardPage() {
   const { user, isGuest, signOut } = useAuth();
-  const [section,setSection]=useState<Section>("overview");
+  const [section,setSection]=useState<Section>(isGuest ? "sgpa" : "overview");
   const [mobileNavOpen,setMobileNavOpen]=useState(false);
   const displayName=user?.displayName||"Student";
   const initials=useMemo(()=>displayName.split(" ").filter(Boolean).slice(0,2).map(part=>part[0]?.toUpperCase()).join("")||"S",[displayName]);
@@ -168,13 +168,13 @@ export default function DashboardPage() {
     <aside className={`student-sidebar ${mobileNavOpen?"is-open":""}`}>
       <a className="student-brand" href="/" onClick={event=>{event.preventDefault();navigateTo("overview");}}><span className="student-brand-mark">G<span>✦</span></span><span>Gradly<small>STUDENT SPACE</small></span></a>
       <div className="sidebar-rule"/>
-      {["WORKSPACE","ACADEMICS","YOUR SPACE"].map(group=><div className="student-nav-group" key={group}><span className="student-nav-label">{group}</span>{navItems.filter(item=>item.group===group).map(item=><button key={item.id} className={`student-nav-item ${section===item.id?"active":""}`} onClick={()=>navigateTo(item.id)}><span>{item.icon}</span>{item.label}{section===item.id&&<i/>}</button>)}</div>)}
-      <div className="sidebar-bottom"><div className="sidebar-help"><span>✦</span><b>Your next step starts here.</b><small>Keep learning. Keep growing.</small></div><button className={`student-nav-item profile-nav ${section==="profile"?"active":""}`} onClick={()=>navigateTo("profile")}><span>◎</span>Profile & settings</button></div>
+      {(isGuest ? ["ACADEMICS"] : ["WORKSPACE","ACADEMICS","YOUR SPACE"]).map(group=><div className="student-nav-group" key={group}><span className="student-nav-label">{group}</span>{navItems.filter(item=>(isGuest ? ["sgpa","cgpa"].includes(item.id) : true) && item.group===group).map(item=><button key={item.id} className={`student-nav-item ${section===item.id?"active":""}`} onClick={()=>navigateTo(item.id)}><span>{item.icon}</span>{item.label}{section===item.id&&<i/>}</button>)}</div>)}
+      {!isGuest && <div className="sidebar-bottom"><div className="sidebar-help"><span>✦</span><b>Your next step starts here.</b><small>Keep learning. Keep growing.</small></div><button className={`student-nav-item profile-nav ${section==="profile"?"active":""}`} onClick={()=>navigateTo("profile")}><span>◎</span>Profile & settings</button></div>}{isGuest && <div className="sidebar-bottom guest-sidebar-note">GUEST ACCESS<br/><small>Manual calculations only</small></div>}
     </aside>
     {mobileNavOpen&&<button className="student-mobile-backdrop" aria-label="Close navigation" onClick={()=>setMobileNavOpen(false)}/>}
     <main className="student-main">
-      <header className="student-topbar"><div className="student-topbar-left"><button className="student-menu-toggle" aria-label="Open navigation" onClick={()=>setMobileNavOpen(true)}>☰</button><div><span className="topbar-overline">GRADLY / STUDENT</span><strong>{title}</strong></div></div><div className="student-topbar-right"><span className="student-mode-chip"><i/>{isGuest?"Guest workspace":"Student workspace"}</span><button className="student-avatar" title={displayName} onClick={()=>navigateTo("profile")}>{initials}</button><button className="student-signout" onClick={()=>void signOut()}>{isGuest?"Exit guest":"Sign out"} ↗</button></div></header>
-      <div className="student-content">{section==="overview"?<Overview name={user?.displayName||""} onNavigate={navigateTo}/>:section==="sgpa"?<SgpaCalculator/>:section==="cgpa"?<CgpaCalculator/>:section==="curriculum"||section==="notifications"||section==="services"||section==="profile"?<SimpleSection section={section} onNavigate={navigateTo}/>:null}</div>
+      <header className="student-topbar"><div className="student-topbar-left"><button className="student-menu-toggle" aria-label="Open navigation" onClick={()=>setMobileNavOpen(true)}>☰</button><div><span className="topbar-overline">GRADLY / STUDENT</span><strong>{title}</strong></div></div><div className="student-topbar-right"><span className="student-mode-chip"><i/>{isGuest?"Guest workspace":"Student workspace"}</span>{isGuest && <span className="guest-id-chip">ID · {localStorage.getItem("gradly_guest_id") || "TEMP"}</span>}{!isGuest && <button className="student-avatar" title={displayName} onClick={()=>navigateTo("profile")}>{initials}</button>}<button className="student-signout" onClick={()=>void signOut()}>{isGuest?"Delete guest ID":"Sign out"} ↗</button></div></header>
+      <div className="student-content">{section==="overview"&&!isGuest?<Overview name={user?.displayName||""} onNavigate={navigateTo}/>:section==="sgpa"?<SgpaCalculator isGuest={isGuest}/>:section==="cgpa"?<CgpaCalculator isGuest={isGuest}/>:section==="curriculum"||section==="notifications"||section==="services"||section==="profile"?<SimpleSection section={section} onNavigate={navigateTo}/>:null}</div>
       <footer className="student-app-footer"><span>© {new Date().getFullYear()} Gradly</span><span>CALCULATE <i>·</i> SIMULATE <i>·</i> PLAN</span><span>Built for your next chapter ✦</span></footer>
     </main>
   </div>;
