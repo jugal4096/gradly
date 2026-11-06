@@ -53,3 +53,14 @@ html[data-admin-font-size="xlarge"]{--admin-text-scale:1.16}
 html[data-admin-font-size="xxlarge"]{--admin-text-scale:1.24}
 html[data-admin-font-size] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page) :where(p,span,label,small,strong,b,button,input,select,textarea,a,li,th,td,h1,h2,h3,h4,legend,summary){font-size:calc(1em * var(--admin-text-scale,1))}
 html[data-admin-font] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page),html[data-admin-font] body :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page,.admin-login-page) *{font-family:var(--admin-font)!important}
+
+/* Contrast pass for dense/legacy Admin components in dark appearance. */
+html[data-admin-theme="dark"] :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page) :where(label,strong,b,th,td,h1,h2,h3,h4,legend,summary){color:#edf5ef}
+html[data-admin-theme="dark"] :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page) :where(p,small,span,li,.ad-muted,.ad-description,.ad-helper-text){color:#bdcbbf}
+html[data-admin-theme="dark"] :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page) :where(.ad-panel,.ad-card,.ad-settings-card,.acp-card){background-color:#1b2a21;border-color:#3b5143;color:#edf5ef}
+html[data-admin-theme="dark"] :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page) :where(input,select,textarea){background:#111d16;color:#f1f7f2;border-color:#506657}
+html[data-admin-theme="dark"] :where(.admin-dashboard,.admin-request-shell,.admin-change-password-page) :where(input,textarea)::placeholder{color:#aab9ae}
+html[data-admin-theme="dark"] .admin-change-password-page{background:#101a15;color:#edf5ef}
+html[data-admin-theme="dark"] .admin-change-password-page .admin-change-password-card{background:#1b2a21;border-color:#3b5143;color:#edf5ef}
+html[data-admin-theme="dark"] .admin-change-password-page :where(h1,h2,label,.acp-description,.acp-footnote){color:#edf5ef}
+html[data-admin-theme="dark"] .admin-change-password-page input{background:#111d16;color:#f1f7f2;border-color:#506657}
