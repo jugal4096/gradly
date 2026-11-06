@@ -43,3 +43,7 @@
 .sp-footer{border-color:#29233d}
 @media(max-width:760px){.sp-hero{transform:none}.sp-card,.sp-feature,.sp-metrics article{box-shadow:0 7px 22px #03020b35,inset 0 1px #ffffff08}.sp-content{padding-bottom:28px}.sp-topbar{backdrop-filter:blur(12px)}}
 @media(prefers-reduced-motion:reduce){.sp-shell *{scroll-behavior:auto!important;transition:none!important;animation:none!important;transform:none!important}}
+
+.sp-guest-hero{display:block;min-height:0;background:radial-gradient(ellipse at 88% 8%,#6d50a433,transparent 34%),linear-gradient(120deg,#19142e,#171126 72%,#211638)}
+.sp-guest-hero .sp-hero-art{display:none}
+.sp-guest-hero>.id-discovery{max-width:none}
