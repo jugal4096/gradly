@@ -11,7 +11,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
  const [query,setQuery]=useState(""),[state,setState]=useState(""),[city,setCity]=useState(""),[district,setDistrict]=useState(""),[affiliation,setAffiliation]=useState(""),[type,setType]=useState("");
  const [items,setItems]=useState<DiscoveryInstitution[]>([]),[page,setPage]=useState(1),[hasMore,setHasMore]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState("");
  const [requestOpen,setRequestOpen]=useState(false),[submitting,setSubmitting]=useState(false),[requestError,setRequestError]=useState(""),[submitted,setSubmitted]=useState<{id:string;status:string;message:string}|null>(null),[statusChecking,setStatusChecking]=useState(false);
- const [form,setForm]=useState({institutionName:"",state:"",city:"",district:"",institutionType:"Engineering college",affiliation:"",website:"",additionalInfo:""});
+ const [form,setForm]=useState({institutionName:"",state:"",city:"",district:"",institutionType:"Engineering college",affiliation:"",website:"",additionalInfo:"",externalInstitutionId:""});
  const search=useCallback(async(next:number)=>{
   if(query.trim().length<2&&!state&&!city&&!district&&!affiliation&&!type){setItems([]);setHasMore(false);setError("");return;}
   setLoading(true);setError("");
@@ -26,7 +26,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
  },[query,state,city,district,affiliation,type]);
  useEffect(()=>{const timer=window.setTimeout(()=>{void search(1);},350);return()=>window.clearTimeout(timer);},[search]);
  function openRequest(prefill?:DiscoveryInstitution){
-  setForm(f=>({...f,institutionName:prefill?.name||query,state:prefill?.state||state,city:prefill?.city||city,institutionType:prefill?.type||"Engineering college",website:prefill?.website||""}));
+  setForm(f=>({...f,institutionName:prefill?.name||query,state:prefill?.state||state,city:prefill?.city||city,institutionType:prefill?.type||"Engineering college",website:prefill?.website||"",externalInstitutionId:prefill?.externalId||prefill?.id||""}));
   setRequestError("");setSubmitted(null);setRequestOpen(true);
  }
  async function refreshStatus(){if(!submitted?.id)return;setStatusChecking(true);try{const r=await fetch(API+"/api/guest/institution-requests/"+encodeURIComponent(submitted.id));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Unable to check request status.");setSubmitted({id:submitted.id,status:String(d.request?.status||submitted.status),message:d.message||submitted.message});}catch(e){setRequestError(e instanceof Error?e.message:"Unable to check status.");}finally{setStatusChecking(false);}}
