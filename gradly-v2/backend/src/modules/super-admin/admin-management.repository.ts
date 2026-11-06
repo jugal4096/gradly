@@ -94,7 +94,7 @@ export async function createAdmin(
       password_changed_at,
       password_expires_at
     )
-    VALUES ($1, $2, (SELECT program_id FROM public.branches WHERE id = $3), $3, $4, $5, $6, $7, $8, 'ACTIVE', NOW(), NOW() + INTERVAL '1 month')
+    VALUES ($1, $2, (SELECT program_id FROM public.branches WHERE id = $3), $3, $4, $5, $6, $7, $8, 'ACTIVE', NOW(), NULL)
     RETURNING
       id,
       admin_code,
