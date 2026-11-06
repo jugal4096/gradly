@@ -26,3 +26,15 @@
 .academic-validation-note{color:#f0c88b}
 @media(max-width:760px){.grade-reference-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.academic-config-row label{flex:1;min-width:130px}}
 @media(max-width:520px){.academic-rule-banner{padding:14px}.academic-config-row{padding:12px;gap:9px}.academic-config-row label{min-width:calc(50% - 6px)}.semester-limit-note{margin-left:0}.grade-reference-panel{padding:15px}.grade-reference-grid{gap:6px}.grade-reference-grid>div{padding:8px}}
+
+
+/* Guest mode: focused manual calculator access. */
+.guest-institute-field{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:0 0 16px;padding:15px 18px;border:1px solid rgba(91,191,224,.22);border-radius:13px;background:linear-gradient(110deg,rgba(25,91,122,.22),rgba(71,57,133,.16))}
+.guest-institute-field label{display:flex;flex-direction:column;gap:8px;min-width:min(100%,340px);color:#8fc9e4;font-size:8px;font-weight:800;letter-spacing:.15em}
+.guest-institute-field input{height:39px;width:100%;padding:0 12px;border:1px solid rgba(137,177,230,.24);border-radius:8px;background:#0c1435;color:#f0f4ff;font:500 11px Manrope;letter-spacing:0}
+.guest-institute-field input::placeholder{color:#6f7fa8}
+.guest-institute-field>span{color:#8294bf;font-size:9px;line-height:1.5}
+.guest-id-chip{padding:7px 9px;border:1px solid rgba(113,190,224,.2);border-radius:8px;color:#9edaf0;background:rgba(47,137,171,.08);font-size:8px;font-weight:800;letter-spacing:.08em}
+.guest-sidebar-note{padding:18px 12px;border-top:1px solid rgba(160,176,245,.1);color:#88a2d6;font-size:8px;font-weight:800;letter-spacing:.14em;line-height:1.8}
+.guest-sidebar-note small{color:#7484ae;font-size:9px;font-weight:500;letter-spacing:0}
+@media(max-width:760px){.guest-institute-field{align-items:flex-start;flex-direction:column}.guest-id-chip{display:none}}
