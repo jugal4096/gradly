@@ -8,7 +8,7 @@ const items=[
  {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard},
  {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
  {to:"/admin/requests",label:"Request center",icon:ClipboardList},
- {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell},
+ {to:"/admin/notifications",label:"Notifications",icon:Bell},
  {to:"/admin/activity",label:"User activity",icon:Users},
  {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
  {to:"/admin/department",label:"My assignment",icon:Building2},
