@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard,active:true},
     {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
     {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
-    {to:"/admin/notifications",label:"Super Admin inbox",icon:Bell,badge:unread},
+    {to:"/admin/notifications",label:"Notifications",icon:Bell,badge:unread},
     {to:"/admin/activity",label:"User activity",icon:Users},
     {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
     {to:"/admin/department",label:"My assignment",icon:Building2},
