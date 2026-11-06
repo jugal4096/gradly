@@ -127,6 +127,9 @@ export async function findAdministrators(
       a.adminship_expires_at,
 
       a.last_login_at,
+      a.password_changed_at,
+      COALESCE(a.password_changed_at, a.created_at) AS password_review_started_at,
+      (COALESCE(a.password_changed_at, a.created_at) + INTERVAL '30 days' <= NOW()) AS password_review_due,
 
       a.created_at,
       a.updated_at,
@@ -207,6 +210,9 @@ export async function findAdministratorById(
       a.adminship_expires_at,
 
       a.last_login_at,
+      a.password_changed_at,
+      COALESCE(a.password_changed_at, a.created_at) AS password_review_started_at,
+      (COALESCE(a.password_changed_at, a.created_at) + INTERVAL '30 days' <= NOW()) AS password_review_due,
 
       a.user_id,
 
