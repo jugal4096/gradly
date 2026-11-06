@@ -86,9 +86,10 @@ function SgpaCalculator({ isGuest }: { isGuest: boolean }) {
     setShowResult(false);
   }
   return <>
-    <SectionHeading eyebrow="GECA ACADEMIC ENGINE" title="SGPA calculator" description="Calculate your semester grade point average using the GECA grade scale and credit-weighted method." />
-    <div className="academic-rule-banner"><span>GECA GRADING STANDARD</span><p>Σ (Subject credits × Grade points) ÷ Σ Subject credits</p><small>Only subjects with a name, valid grade and positive credits are included.</small></div>
-    <div className="academic-config-row">
+    <SectionHeading eyebrow={isGuest ? "GUEST · MANUAL CALCULATOR" : "GECA ACADEMIC ENGINE"} title="SGPA calculator" description={isGuest ? "Add your subjects, choose a grade and enter each subject credits. Your institute name is optional." : "Calculate your semester grade point average using the GECA grade scale and credit-weighted method."} />
+    <div className="academic-rule-banner"><span>{isGuest ? "GRADE POINT CALCULATION" : "GECA GRADING STANDARD"}</span><p>Σ (Subject credits × Grade points) ÷ Σ Subject credits</p><small>Only subjects with a name, valid grade and positive credits are included.</small></div>
+    {isGuest && <div className="guest-institute-field"><label>INSTITUTE (OPTIONAL)<input value={institute} onChange={event => { setInstitute(event.target.value); localStorage.setItem("gradly_guest_institute", event.target.value); }} placeholder="Enter your institute name" /></label><span>Manual calculator · no programme or branch selection</span></div>}
+    <div className="academic-config-row" style={isGuest ? { display: "none" } : undefined}>
       <label>Programme<select value={program} onChange={event => { const next = event.target.value as Program; setProgram(next); const nextRange = getSemesterRange(next, admissionMode); setSemester(nextRange.start); resetSubjects(); }}><option value="BTECH">B.Tech</option><option value="MCA">MCA</option><option value="MTECH">M.Tech</option></select></label>
       {program === "BTECH" && <label>Admission mode<select value={admissionMode} onChange={event => { const next = event.target.value as AdmissionMode; setAdmissionMode(next); setSemester(getSemesterRange(program, next).start); resetSubjects(); }}><option>Regular</option><option>Direct Second Year</option><option>Direct Third Year</option></select></label>}
       <label>Semester<select value={semester} onChange={event => setSemester(Number(event.target.value))}>{validSemesters.map(value => <option key={value} value={value}>Semester {value}</option>)}</select></label>
@@ -130,8 +131,8 @@ function CgpaCalculator({ isGuest }: { isGuest: boolean }) {
     setSemesters(current=>[...current,{id:Math.max(0,...current.map(item=>item.id))+1,semester:nextSemester,sgpa:"",credits:""}]);setCalculated(false);
   }
   return <>
-    <SectionHeading eyebrow="GECA ACADEMIC ENGINE" title="CGPA management" description="Build your semester-wise academic record and calculate your cumulative performance exactly by GECA's credit-weighted method." />
-    <div className="academic-rule-banner"><span>GECA CGPA STANDARD</span><p>Σ (Semester SGPA × Semester credits) ÷ Σ Semester credits</p><small>CGPA uses each semester's total credits. It is not the simple average of SGPAs.</small></div>
+    <SectionHeading eyebrow={isGuest ? "GUEST · MANUAL CALCULATOR" : "GECA ACADEMIC ENGINE"} title="CGPA calculator" description={isGuest ? "Enter each semester SGPA and its total credits to calculate your cumulative result. No programme or branch details required." : "Build your semester-wise academic record and calculate your cumulative performance exactly by GECA's credit-weighted method."} />
+    <div className="academic-rule-banner"><span>{isGuest ? "CREDIT-WEIGHTED CGPA" : "GECA CGPA STANDARD"}</span><p>Σ (Semester SGPA × Semester credits) ÷ Σ Semester credits</p><small>CGPA uses each semester's total credits. It is not the simple average of SGPAs.</small></div>
     <div className="academic-config-row">
       <label>Programme<select value={program} onChange={event=>changeProgramme(event.target.value as Program,admissionMode)}><option value="BTECH">B.Tech</option><option value="MCA">MCA</option><option value="MTECH">M.Tech</option></select></label>
       {program==="BTECH"&&<label>Admission mode<select value={admissionMode} onChange={event=>changeProgramme(program,event.target.value as AdmissionMode)}><option>Regular</option><option>Direct Second Year</option><option>Direct Third Year</option></select></label>}
