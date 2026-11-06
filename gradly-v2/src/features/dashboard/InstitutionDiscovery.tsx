@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import type { User } from "firebase/auth";
 import "./InstitutionDiscovery.css";
@@ -12,11 +12,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
  const [items,setItems]=useState<DiscoveryInstitution[]>([]),[page,setPage]=useState(1),[hasMore,setHasMore]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState("");
  const [requestOpen,setRequestOpen]=useState(false),[submitting,setSubmitting]=useState(false),[requestError,setRequestError]=useState(""),[submitted,setSubmitted]=useState<{id:string;status:string}|null>(null),[statusChecking,setStatusChecking]=useState(false);
  const [form,setForm]=useState({institutionName:"",state:"",city:"",district:"",institutionType:"Engineering college",affiliation:"",website:"",additionalInfo:""});
- useEffect(()=>{
-  const timer=window.setTimeout(()=>{void search(1);},350);
-  return()=>window.clearTimeout(timer);
- },[query,state,city,district,affiliation,type]);
- async function search(next:number){
+ const search=useCallback(async(next:number)=>{
   if(query.trim().length<2&&!state&&!city&&!district&&!affiliation&&!type){setItems([]);setHasMore(false);setError("");return;}
   setLoading(true);setError("");
   try{
@@ -27,7 +23,8 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
    setItems(current=>{const incoming=(d.institutions||[]) as DiscoveryInstitution[];if(next===1)return incoming;const seen=new Set(current.map(x=>x.id));return [...current,...incoming.filter(x=>!seen.has(x.id))];});setPage(next);setHasMore(Boolean(d.hasMore));
   }catch(e){setError(e instanceof Error?e.message:"Unable to search institutions.");setItems([]);setHasMore(false);}
   finally{setLoading(false);}
- }
+ },[query,state,city,district,affiliation,type]);
+ useEffect(()=>{const timer=window.setTimeout(()=>{void search(1);},350);return()=>window.clearTimeout(timer);},[search]);
  function openRequest(prefill?:DiscoveryInstitution){
   setForm(f=>({...f,institutionName:prefill?.name||query,state:prefill?.state||state,city:prefill?.city||city,institutionType:prefill?.type||"Engineering college",website:prefill?.website||""}));
   setRequestError("");setSubmitted(null);setRequestOpen(true);
