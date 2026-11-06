@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { pool } from "../../config/database";
 import { firebaseAuth } from "../../config/firebase-admin";
 
-type Item = { id:string; name:string; city:string; state:string; country:string; website:string|null; type:string; source:string; isInGradly:boolean; externalId?:string; branches?:unknown[] };
+type Item = { id:string; name:string; aisheCode?:string; city:string; state:string; country:string; website:string|null; type:string; source:string; isInGradly:boolean; externalId?:string; branches?:unknown[] };
 const cache = new Map<string,{until:number;items:Item[];count:number}>();
 const clean=(v:unknown,n=160)=>typeof v==="string"?v.trim().slice(0,n):"";
 
@@ -21,21 +21,36 @@ export async function discoverInstitutions(req:Request,res:Response) {
   if(district)where.push("COALESCE(to_jsonb(i)->>'district','') ILIKE "+add("%"+district+"%"));
   if(affiliation)where.push("COALESCE(to_jsonb(i)->>'affiliation','') ILIKE "+add("%"+affiliation+"%"));
   const local=await pool.query(
-   "SELECT i.id::text AS id,i.name,COALESCE(to_jsonb(i)->>'city','') AS city,COALESCE(to_jsonb(i)->>'state','') AS state,COALESCE(to_jsonb(i)->>'website',to_jsonb(i)->>'website_url') AS website,COALESCE(to_jsonb(i)->>'institution_type',to_jsonb(i)->>'type','') AS type,COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',b.id,'name',b.name,'code',b.code,'program_id',p.id,'program_name',p.name,'program_level',p.level)) FILTER(WHERE b.id IS NOT NULL),'[]'::jsonb) AS branches FROM public.institutions i LEFT JOIN public.programs p ON p.institution_id=i.id LEFT JOIN public.branches b ON b.program_id=p.id "+(where.length?"WHERE "+where.join(" AND "):"")+" GROUP BY i.id,i.name ORDER BY i.name LIMIT "+(values.length+1),
-   [...values,Math.min(200,page*limit+limit)]
+   "SELECT i.id::text AS id,i.name,COALESCE(to_jsonb(i)->>'city','') AS city,COALESCE(to_jsonb(i)->>'state','') AS state,COALESCE(to_jsonb(i)->>'website',to_jsonb(i)->>'website_url') AS website,COALESCE(to_jsonb(i)->>'institution_type',to_jsonb(i)->>'type','') AS type,COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',b.id,'name',b.name,'code',b.code,'program_id',p.id,'program_name',p.name,'program_level',p.level)) FILTER(WHERE b.id IS NOT NULL),'[]'::jsonb) AS branches FROM public.institutions i LEFT JOIN public.programs p ON p.institution_id=i.id LEFT JOIN public.branches b ON b.program_id=p.id "+(where.length?"WHERE "+where.join(" AND "):"")+" GROUP BY i.id,i.name ORDER BY i.name LIMIT 8 OFFSET "+((page-1)*8),
+   values
   );
   const locals:Item[]=local.rows.map((r:any)=>({id:String(r.id),name:r.name,city:r.city,state:r.state,country:"India",website:r.website||null,type:r.type||"Higher education institution",source:"Gradly directory",isInGradly:true,branches:r.branches||[]}));
+  let aisheItems:Item[]=[];let aisheCount=0;
+  try{
+   const av:unknown[]=[];const aw:string[]=[];const aa=(v:unknown)=>{av.push(v);return "$"+av.length;};
+   if(q)aw.push("name ILIKE "+aa("%"+q+"%"));
+   if(state)aw.push("state ILIKE "+aa("%"+state+"%"));
+   if(city)aw.push("COALESCE(city,'') ILIKE "+aa("%"+city+"%"));
+   if(district)aw.push("COALESCE(district,'') ILIKE "+aa("%"+district+"%"));
+   if(affiliation)aw.push("COALESCE(affiliation,'') ILIKE "+aa("%"+affiliation+"%"));
+   if(type)aw.push("(COALESCE(category,'')||' '||COALESCE(institution_type,'')) ILIKE "+aa("%"+type+"%"));
+   const clause=aw.length?" WHERE "+aw.join(" AND "):"";
+   const rows=await pool.query("SELECT aishe_code,name,state,district,city,category,institution_type,affiliation,website FROM public.aishe_institution_directory"+clause+" ORDER BY name LIMIT 8 OFFSET "+((page-1)*8),av);
+   const countResult=await pool.query("SELECT COUNT(*)::int AS count FROM public.aishe_institution_directory"+clause,av);
+   aisheCount=Number(countResult.rows[0]?.count||0);
+   aisheItems=rows.rows.map((x:any)=>({id:"AISHE:"+x.aishe_code,externalId:"AISHE:"+x.aishe_code,aisheCode:x.aishe_code,name:x.name,city:x.city||"",state:x.state||"",country:"India",website:x.website||null,type:x.institution_type||x.category||"Higher education institution",source:"AISHE · Ministry of Education",isInGradly:false}));
+  }catch(e){console.warn("AISHE directory is not available yet; apply the AISHE migration and import the official directory export.",e);}
   const terms=[q,city,district,affiliation,state].filter(Boolean).join(" ");
-  const params=new URLSearchParams({search:terms||"higher education",filter:"country_code:IN,type:education",select:"id,display_name,geo,country_code,homepage_url,type","per-page":String(limit),page:String(page)});
+  const params=new URLSearchParams({search:terms||"higher education",filter:"country_code:IN,type:education",select:"id,display_name,geo,country_code,homepage_url,type","per-page":"8",page:String(page)});
   const response=await fetch("https://api.openalex.org/institutions?"+params,{headers:{Accept:"application/json","User-Agent":"Gradly/1.0 institution discovery"},signal:AbortSignal.timeout(9000)});
   if(!response.ok)throw new Error("Supplementary institution provider unavailable");
   const data=await response.json() as {meta?:{count?:number};results?:Array<{id?:string;display_name?:string;geo?:{city?:string|null;region?:string|null};homepage_url?:string|null;type?:string|null}>};
   const norm=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,""),names=new Set(locals.map(x=>norm(x.name)));
   const external:Item[]=(data.results||[]).map(x=>({id:x.id||"",externalId:x.id||"",name:clean(x.display_name,200),city:clean(x.geo?.city,100),state:clean(x.geo?.region,100),country:"India",website:x.homepage_url||null,type:clean(x.type,60)||"Higher education institution",source:"OpenAlex (supplementary)",isInGradly:names.has(norm(clean(x.display_name,200)))})).filter(x=>x.id&&x.name&&(!state||x.state.toLowerCase().includes(state.toLowerCase()))&&(!city||x.city.toLowerCase().includes(city.toLowerCase()))&&(!type||x.type.toLowerCase().includes(type.toLowerCase())));
-  const merged=[...locals,...external.filter(x=>!names.has(norm(x.name)))].slice(0,limit),count=Number(data.meta?.count||0);
+  const merged=[...locals,...aisheItems,...external.filter(x=>!names.has(norm(x.name)))].slice(0,limit),count=Number(data.meta?.count||0)+aisheCount;
   cache.set(key,{until:Date.now()+600000,items:merged,count});
   if(cache.size>500)for(const [k,v] of cache)if(v.until<Date.now())cache.delete(k);
-  return res.json({institutions:merged,page,limit,hasMore:count>page*limit,sources:["Gradly directory","OpenAlex (supplementary; not a complete official Indian register)"]});
+  return res.json({institutions:merged,page,limit,hasMore:count>page*limit,sources:["AISHE · Ministry of Education (when imported)","Gradly directory","OpenAlex (supplementary; not a complete official Indian register)"]});
  } catch(e){console.error("Institution discovery failed",e);return res.status(502).json({message:"Institution discovery is temporarily unavailable. You can still request an institution to be added.",institutions:[],page,limit,hasMore:false});}
 }
 
