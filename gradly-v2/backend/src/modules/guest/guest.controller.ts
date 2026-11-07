@@ -10,6 +10,7 @@ import {
   listGuestInstitutionOptions,
   isGuestIdAvailable,
   setGuestInstitution,
+  deleteOwnGuestSession,
 } from "./guest.repository";
 
 export async function listGuestInstitutions(_req: Request, res: Response) {
@@ -295,5 +296,23 @@ export async function selectGuestInstitution(req: Request, res: Response) {
   } catch (error) {
     console.error("Failed to save guest institution:", error);
     return res.status(500).json({ message: "Unable to save the selected institution." });
+  }
+}
+
+
+export async function deleteOwnGuestProfile(req: Request, res: Response) {
+  const sessionToken = req.headers["x-guest-session"];
+  if (typeof sessionToken !== "string" || !sessionToken) {
+    return res.status(401).json({ message: "Guest session token is required." });
+  }
+  try {
+    const deleted = await deleteOwnGuestSession(sessionToken);
+    if (!deleted) {
+      return res.status(401).json({ message: "Guest session is invalid, expired or already deleted." });
+    }
+    return res.status(200).json({ message: "Your guest profile and guest activity have been deleted." });
+  } catch (error) {
+    console.error("Failed to delete own guest profile:", error);
+    return res.status(500).json({ message: "We couldn't delete your guest profile. Please try again." });
   }
 }
