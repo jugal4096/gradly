@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function createGuestIdentity(guestId: string) {
-    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
     const response = await fetch(`${apiBaseUrl}/api/guest/session`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
