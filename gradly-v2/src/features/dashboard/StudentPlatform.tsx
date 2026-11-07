@@ -83,7 +83,7 @@ export default function StudentPlatform() {
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
   const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"system";});
-  const [systemDark,setSystemDark] = useState(()=>window.matchMedia?.("(prefers-color-scheme: dark)").matches??false);
+  const [systemDark] = useState(()=>window.matchMedia?.("(prefers-color-scheme: dark)").matches??false);
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
   const [fontFamily,setFontFamily] = useState(()=>localStorage.getItem("gradly_font_family")||"DM Sans");
   const [textSize,setTextSize] = useState(()=>Number(localStorage.getItem("gradly_text_size")||"14"));
@@ -95,8 +95,8 @@ export default function StudentPlatform() {
     catch { return emptyProfile; }
   });
   const [onboarding,setOnboarding] = useState(() => !isGuest && !profile.institutionId);
-  const [guestInstitutionId,setGuestInstitutionId] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
-  const [guestSemester,setGuestSemester] = useState("1");
+  const [guestInstitutionId] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
+  
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
   const [guestCgpaResult,setGuestCgpaResult] = useState<number|null>(null);
   const [loginGate,setLoginGate] = useState(false);
@@ -164,7 +164,6 @@ export default function StudentPlatform() {
   const cgpaValue = cgpaCredits ? results.reduce((sum,r)=>sum+r.sgpa*r.credits,0)/cgpaCredits : 0;
   const name = user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
-  const gradeScaleLabel = selectedInstitution?.name?.toLowerCase().includes("geca") ? "GECA grade-point reference" : "GECA reference scale — verify your institution scheme";
 
   function saveProfile(next:Profile) {
     setProfile(next);
