@@ -233,7 +233,7 @@ export default function StudentPlatform() {
   return <div className={"sp-shell "+(isGuest?"sp-guest-mode":"sp-user-mode")+(theme==="dark"?" sp-dark-theme":"")} style={{fontFamily:`"${fontFamily}", sans-serif`,fontSize:`${textSize}px`}}>
     <aside id="student-workspace-menu" className={"sp-sidebar "+(mobileOpen?"open":"")}>
       <a className="sp-brand" href="/" onClick={e=>{e.preventDefault();navigate("home");}}><span className="sp-brand-mark">G<small>✦</small></span><span>Gradly<small>STUDENT SPACE</small></span></a>
-      <div className="sp-nav-scroll">{(isGuest?["WORKSPACE","SGPA ANALYSIS","CGPA ANALYSIS"]:["WORKSPACE","SGPA ANALYSIS","CGPA ANALYSIS","COMMUNITY","AI ASSISTANT","ACADEMICS","SETTINGS"]).map(group=><div className="sp-nav-group" key={group}><span className="sp-nav-label">{group}</span>{nav.filter(item=>item.group===group&&(!isGuest||["home","sgpa","cgpa"].includes(item.id))).map(item=><button key={item.id} className={section===item.id?"active":""} onClick={()=>navigate(item.id)}><i>{item.icon}</i>{item.label}{section===item.id&&<b/>}</button>)}</div>)}</div>
+      <div className="sp-nav-scroll">{(isGuest?["WORKSPACE","SGPA ANALYSIS","CGPA ANALYSIS"]:["WORKSPACE","SGPA ANALYSIS","CGPA ANALYSIS","COMMUNITY","AI ASSISTANT","ACADEMICS","SETTINGS"]).map((group,index)=><section className={"sp-nav-group sp-nav-group-"+index} key={group} aria-label={group}><div className="sp-nav-label-row"><span className="sp-nav-label">{group}</span><span className="sp-nav-count">{nav.filter(item=>item.group===group&&(!isGuest||["home","sgpa","cgpa"].includes(item.id))).length.toString().padStart(2,"0")}</span></div><div className="sp-nav-items">{nav.filter(item=>item.group===group&&(!isGuest||["home","sgpa","cgpa"].includes(item.id))).map(item=><button key={item.id} className={section===item.id?"active":""} onClick={()=>navigate(item.id)} aria-current={section===item.id?"page":undefined}><i>{item.icon}</i><span>{item.label}</span>{section===item.id&&<b/>}</button>)}</div></section>)}</div>
       <div className="sp-sidebar-bottom">{isGuest?<div className="sp-guest-unlock"><span>✦ THE FULL EXPERIENCE</span><strong>Your next chapter is waiting.</strong><p>Unlock planners, progress insights, community and AI study tools.</p><button onClick={()=>void loginWithGoogle()}>Unlock Gradly →</button></div>:<div className="sp-sidebar-tip"><span>✦ ACADEMIC COMPANION</span><b>Progress over perfection.</b><small>Your next chapter starts here.</small></div>}<button className="sp-signout" onClick={()=>void signOut()}>↗ {isGuest?"Exit guest mode":"Sign out"}</button></div>
     </aside>
     {mobileOpen&&<button className="sp-backdrop" aria-label="Close workspace menu" onClick={()=>setMobileOpen(false)}/>}
@@ -244,25 +244,44 @@ export default function StudentPlatform() {
         {section==="home"&&isGuest&&<>
           <section className="sp-guest-welcome">
             <div className="sp-guest-welcome-copy">
-              <span className="sp-kicker">YOUR GRADLY GUEST SPACE</span>
-              <h1>Make every<br/><em>grade count.</em></h1>
-              <p>A focused space to calculate your semester and cumulative performance. No clutter. Just the tools you need to get started.</p>
-              <div className="sp-guest-identity"><span>YOUR GUEST ID</span><strong>@{localStorage.getItem("gradly_guest_id")||"GUEST"}</strong><i>ACTIVE</i></div>
-              <button className="sp-primary" onClick={()=>navigate("sgpa")}>Open SGPA calculator <span>→</span></button>
+              <span className="sp-kicker">GRADLY / GUEST WORKSPACE</span>
+              <h1>Your academics.<br/><em>In better focus.</em></h1>
+              <p>A clean, practical space to understand your semester and cumulative performance. Your calculations stay on this device.</p>
+              <div className="sp-guest-identity"><span>GUEST ID</span><strong>@{localStorage.getItem("gradly_guest_id")||"GUEST"}</strong><i><b/> ACTIVE</i></div>
+              <div className="sp-guest-welcome-actions">
+                <button className="sp-primary" onClick={()=>navigate("sgpa")}>Calculate SGPA <span>↗</span></button>
+                <button className="sp-guest-text-action" onClick={()=>navigate("cgpa")}>Open CGPA calculator <span>→</span></button>
+              </div>
             </div>
-            <div className="sp-guest-visual" aria-hidden="true"><div className="sp-guest-visual-orbit orbit-one"/><div className="sp-guest-visual-orbit orbit-two"/><div className="sp-guest-visual-glow"/><div className="sp-guest-visual-mark">G<span>✦</span></div><div className="sp-guest-visual-chip chip-a"><small>ACADEMIC FOCUS</small><b>One semester<br/>at a time.</b></div><div className="sp-guest-visual-chip chip-b"><small>YOUR TOOLKIT</small><b>SGPA + CGPA</b></div></div>
+            <div className="sp-guest-visual" aria-hidden="true">
+              <div className="sp-guest-visual-orbit orbit-one"/><div className="sp-guest-visual-orbit orbit-two"/>
+              <div className="sp-guest-visual-glow"/><div className="sp-guest-visual-mark">G<span>✦</span></div>
+              <div className="sp-guest-visual-chip chip-a"><small>YOUR ACADEMIC SPACE</small><b>Clear numbers.<br/>Better decisions.</b></div>
+              <div className="sp-guest-visual-chip chip-b"><small>TOOLS READY</small><b>SGPA / CGPA</b></div>
+            </div>
           </section>
           <section className="sp-guest-stats">
-            <article><span>INSTITUTION</span><strong>{institutionLabel}</strong><small>Linked to this guest workspace</small></article>
-            <article><span>SEMESTERS SAVED</span><strong>{results.length}</strong><small>Your saved SGPA history</small></article>
-            <article><span>LATEST SGPA</span><strong>{results.length?results[results.length-1].sgpa.toFixed(2):"—"}</strong><small>{results.length?"Most recent saved result":"Calculate your first result"}</small></article>
+            <article><span>INSTITUTION</span><strong>{institutionLabel}</strong><small>Your selected academic home</small></article>
+            <article><span>SAVED SEMESTERS</span><strong>{results.length.toString().padStart(2,"0")}</strong><small>SGPA records on this device</small></article>
+            <article><span>CURRENT CGPA</span><strong>{results.length?cgpaValue.toFixed(2):"—"}</strong><small>{results.length?"Based on saved semester credits":"Add semester results to begin"}</small></article>
           </section>
-          <div className="sp-guest-section-head"><div><span className="sp-kicker">AVAILABLE IN GUEST MODE</span><h2>Your calculators</h2><p>Enter your academic details manually and explore your numbers.</p></div><span>02 TOOLS</span></div>
+          <div className="sp-guest-section-head"><div><span className="sp-kicker">YOUR CALCULATION TOOLS</span><h2>Start with the numbers that matter.</h2><p>Both calculators are available without signing in.</p></div><span>02 AVAILABLE</span></div>
           <div className="sp-guest-tools">
-            <button className="sp-guest-tool" onClick={()=>navigate("sgpa")}><span className="sp-guest-tool-icon">∑</span><span className="sp-guest-tool-meta">01 / SEMESTER PERFORMANCE</span><strong>SGPA calculator</strong><p>Enter subject credits and grades to calculate your semester result.</p><i>Open calculator ↗</i></button>
-            <button className="sp-guest-tool" onClick={()=>navigate("cgpa")}><span className="sp-guest-tool-icon">◈</span><span className="sp-guest-tool-meta">02 / CUMULATIVE PERFORMANCE</span><strong>CGPA calculator</strong><p>Combine semester results with credits to calculate your cumulative score.</p><i>Open calculator ↗</i></button>
+            <button className="sp-guest-tool sp-guest-tool-sgpa" onClick={()=>navigate("sgpa")}><span className="sp-guest-tool-top"><span className="sp-guest-tool-icon">∑</span><small>01 / SEMESTER</small></span><strong>SGPA calculator</strong><p>Enter subject credits and grades, calculate your semester score and save it to your progress.</p><i>Open SGPA calculator <b>↗</b></i></button>
+            <button className="sp-guest-tool sp-guest-tool-cgpa" onClick={()=>navigate("cgpa")}><span className="sp-guest-tool-top"><span className="sp-guest-tool-icon">◈</span><small>02 / CUMULATIVE</small></span><strong>CGPA calculator</strong><p>Combine semester performance and credits to understand your overall academic standing.</p><i>Open CGPA calculator <b>↗</b></i></button>
           </div>
-          <section className="sp-guest-upgrade"><div><span className="sp-kicker">READY FOR MORE?</span><h2>Your academic journey has more to offer.</h2><p>Sign in to unlock SGPA and CGPA planners, progress trackers, community, AI study tools and your academic profile.</p></div><button className="sp-primary" onClick={()=>void loginWithGoogle()}>Unlock full Gradly <span>→</span></button></section>
+          <section className="sp-guest-full-preview">
+            <div className="sp-guest-preview-head"><div><span className="sp-kicker">THE COMPLETE GRADLY WORKSPACE</span><h2>Everything else, organised for you.</h2><p>Sign in to unlock the full set of academic tools and student spaces.</p></div><button onClick={()=>void loginWithGoogle()}>Unlock full access <span>→</span></button></div>
+            <div className="sp-guest-preview-groups">
+              <div><span>01</span><section><strong>SGPA Analysis</strong><p>Calculator · What-if Analysis · SGPA Planner · Progress Tracker</p></section><i>⌁</i></div>
+              <div><span>02</span><section><strong>CGPA Analysis</strong><p>Calculator · What-if Analysis · CGPA Planner · Progress Tracker</p></section><i>◈</i></div>
+              <div><span>03</span><section><strong>Community</strong><p>Group Chat · Upcoming Events & Holidays</p></section><i>☷</i></div>
+              <div><span>04</span><section><strong>AI Assistant</strong><p>AI Chatbot · AI Study Planner</p></section><i>✳</i></div>
+              <div><span>05</span><section><strong>Academics</strong><p>Academic Profile · Academic Management</p></section><i>◎</i></div>
+              <div><span>06</span><section><strong>Settings</strong><p>Font · Light / Dark Mode · Text Size</p></section><i>⚙</i></div>
+            </div>
+          </section>
+          <section className="sp-guest-upgrade"><div><span className="sp-kicker">YOUR NEXT STEP</span><h2>Keep your academic journey moving.</h2><p>Create your student account to save your profile, plan targets, track progress and use every Gradly feature.</p></div><button className="sp-primary" onClick={()=>void loginWithGoogle()}>Continue with Google <span>→</span></button></section>
         </>}
         {section==="home"&&!isGuest&&<><div className="sp-hero"><div><span className="sp-kicker">YOUR ACADEMIC WORKSPACE</span><h1>Make your next semester<br/><em>your strongest yet.</em></h1><p>Welcome back, {name}. Your academic journey, organised in one place.</p><button className="sp-primary" onClick={()=>navigate("sgpa")}>Explore academic tools <span>→</span></button></div><div className="sp-hero-art"><div className="sp-orbit orbit-a"/><div className="sp-orbit orbit-b"/><div className="sp-orbit-core">G<span>✦</span></div><small>LEARN · PLAN · GROW</small></div></div>
           <div className="sp-metrics"><article><span>CGPA</span><strong>{results.length?cgpaValue.toFixed(2):"—"}</strong><small>{results.length} semester records saved</small></article><article><span>LATEST SGPA</span><strong>{results.length?results[results.length-1].sgpa.toFixed(2):"—"}</strong><small>Most recent saved result</small></article><article><span>CREDITS EARNED</span><strong>{earnedCredits||"0"}</strong><small>Update your credit analyser</small></article><article><span>ACADEMIC PROFILE</span><strong>{profile.institutionName?"Ready":"Setup"}</strong><small>{profile.institutionName||"Complete your onboarding"}</small></article></div>
