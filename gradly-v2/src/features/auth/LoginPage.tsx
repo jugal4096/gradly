@@ -14,13 +14,32 @@ function GoogleMark() {
   );
 }
 
+function LearningPreview() {
+  return (
+    <div className="learning-stage" aria-label="Preview of the Gradly student workspace">
+      <div className="stage-orbit stage-orbit-one" />
+      <div className="stage-orbit stage-orbit-two" />
+      <div className="stage-floating-note stage-note-top"><span>✦</span><div><b>One clear view</b><small>Your academics, organised</small></div></div>
+      <div className="workspace-preview">
+        <div className="preview-chrome"><div className="preview-brand"><span className="preview-brand-mark">G</span> gradly <small>STUDENT SPACE</small></div><div className="preview-window-dots"><i/><i/><i/></div></div>
+        <div className="preview-body">
+          <div className="preview-welcome"><div><span>YOUR LEARNING SPACE</span><h2>Make every<br/><em>semester count.</em></h2><p>A little more clarity. A lot more direction.</p></div><div className="preview-seal">G<span>✦</span></div></div>
+          <div className="preview-stat-row"><div><small>ACADEMIC RECORD</small><b>SGPA <i>↗</i></b><span>Understand each result</span></div><div><small>BIG PICTURE</small><b>CGPA <i>↗</i></b><span>Track your progress</span></div></div>
+          <div className="preview-course-card"><div className="course-card-head"><span>YOUR NEXT STEP</span><b>01 / 03</b></div><div className="course-progress"><i/></div><div className="course-card-foot"><strong>Plan with purpose.</strong><span>Explore your workspace →</span></div></div>
+        </div>
+      </div>
+      <div className="stage-floating-note stage-note-bottom"><span>✓</span><div><b>Built for students</b><small>Focused on real academic work</small></div></div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const { loginWithGoogle, continueAsGuest } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
 
-  async function handleGoogleLogin() {
+  async function handleUserLogin() {
     try {
       setError("");
       setLoggingIn(true);
@@ -28,7 +47,7 @@ export default function LoginPage() {
       navigate("/dashboard", { replace: true });
     } catch (loginError) {
       console.error(loginError);
-      setError(loginError instanceof Error ? loginError.message : "Google sign-in could not be completed.");
+      setError(loginError instanceof Error ? loginError.message : "Sign-in could not be completed. Please try again.");
     } finally {
       setLoggingIn(false);
     }
@@ -41,45 +60,34 @@ export default function LoginPage() {
 
   return (
     <main className="entry-page">
-      <div className="entry-orb entry-orb-one" aria-hidden="true" />
-      <div className="entry-orb entry-orb-two" aria-hidden="true" />
+      <div className="entry-ambient entry-ambient-one" aria-hidden="true"/>
+      <div className="entry-ambient entry-ambient-two" aria-hidden="true"/>
       <header className="entry-nav">
-        <a className="brand-lockup" href="/" aria-label="Gradly home">
-          <span className="brand-mark">G<span>✦</span></span><span>Gradly</span>
-        </a>
-        <div className="entry-nav-note"><span className="live-dot" /> Your academic journey, in focus</div>
+        <a className="brand-lockup" href="/" aria-label="Gradly home"><span className="brand-mark">G<span>✦</span></span><span>gradly</span></a>
+        <div className="entry-nav-note"><span className="nav-spark">✳</span> Your academic space, thoughtfully designed</div>
       </header>
 
       <section className="entry-hero">
         <div className="entry-copy">
-          <div className="entry-access-kicker">ACADEMIC TOOLS, WITHOUT THE CLUTTER</div>
-          <div className="eyebrow"><span className="eyebrow-line" /> A smarter way to move forward</div>
-          <h1>Your next academic<br /><span>breakthrough</span> starts here.</h1>
-          <p className="entry-description">One place to understand your progress, explore what’s possible and make your next semester count.</p>
+          <div className="entry-overline"><span/> THE STUDENT PLATFORM</div>
+          <p className="entry-index">A BETTER WAY TO STAY ON TRACK <b>— 01</b></p>
+          <h1>Your academic life,<br/><em>in a clearer light.</em></h1>
+          <p className="entry-description">Bring your results, plans and academic essentials together. Spend less time figuring things out and more time moving forward.</p>
+          <div className="entry-choice-heading"><span>CHOOSE HOW TO CONTINUE</span><i/></div>
           <div className="entry-actions">
-            <button className="google-button" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
-              <GoogleMark /><span>{loggingIn ? "Connecting to Google…" : "Continue with Google"}</span>{!loggingIn && <span className="button-arrow">↗</span>}
+            <button className="user-choice" type="button" onClick={handleUserLogin} disabled={loggingIn}>
+              <span className="choice-icon"><GoogleMark/></span><span className="choice-copy"><b>{loggingIn ? "Connecting…" : "Continue as User"}</b><small>Sign in to access your full student workspace</small></span><span className="choice-arrow">↗</span>
             </button>
-            <button className="guest-button" type="button" onClick={handleGuest}>Continue as a guest <span aria-hidden="true">→</span></button>
+            <button className="guest-choice" type="button" onClick={handleGuest}>
+              <span className="guest-choice-icon">↗</span><span className="choice-copy"><b>Continue as Guest</b><small>Try the SGPA and CGPA calculators without signing in</small></span><span className="choice-arrow">→</span>
+            </button>
           </div>
           {error && <p className="entry-error" role="alert">{error}</p>}
-          <p className="entry-footnote">Choose how you want to use Gradly. Guest access is limited to manual SGPA and CGPA calculations; sign in to unlock the full student experience.</p>
-          <div className="entry-proof">
-            <div className="proof-avatars" aria-hidden="true"><span>A</span><span>R</span><span>S</span><span>+</span></div>
-            <p><strong>Built around your progress.</strong><br />Designed for every semester ahead.</p>
-          </div>
+          <div className="entry-assurance"><span>◇</span><p><b>Your choice, your pace.</b> Guest calculations stay on this device. Sign in whenever you're ready for the complete student experience.</p></div>
         </div>
-
-        <div className="entry-visual">
-          <div className="entry-visual-glow" />
-          <div className="entry-visual-brand"><span className="entry-visual-mark">G</span><span>GRADLY <small>ACADEMIC COMPANION</small></span></div>
-          <div className="entry-visual-title">Your effort.<br/><em>Your progress.</em><br/>Your next chapter.</div>
-          <div className="entry-visual-rule" />
-          <div className="entry-visual-features"><span>01 <b>Calculate</b><small>SGPA & CGPA</small></span><span>02 <b>Understand</b><small>Credit-weighted results</small></span><span>03 <b>Move forward</b><small>One semester at a time</small></span></div>
-          <div className="entry-visual-caption">MADE FOR STUDENTS · BUILT AROUND ACADEMICS</div>
-        </div>
+        <LearningPreview/>
       </section>
-      <footer className="entry-footer"><span>© {new Date().getFullYear()} Gradly</span><span className="footer-center">CALCULATE <i>·</i> SIMULATE <i>·</i> PLAN</span><span>Made for your next chapter <b>↗</b></span></footer>
+      <footer className="entry-footer"><span>© {new Date().getFullYear()} Gradly</span><span>LEARN <i>·</i> TRACK <i>·</i> GROW</span><span>Made for the work behind every result <b>✦</b></span></footer>
     </main>
   );
 }

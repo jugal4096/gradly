@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { createHash, randomBytes } from "crypto";
 import { pool } from "../../config/database";
 import {
   getGuestSession,
@@ -8,7 +9,25 @@ import {
   recordGuestActivity,
   updateGuestWorkspace,
   listGuestInstitutionOptions,
+  deleteGuestSessionByToken,
 } from "./guest.repository";
+
+
+export async function checkGuestIdAvailability(req: Request, res: Response) {
+  const guestId = typeof req.query.guestId === "string" ? req.query.guestId.trim().toUpperCase() : "";
+  if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(guestId)) return res.status(200).json({ available: false, valid: false });
+  try {
+    const result = await pool.query(
+      "SELECT EXISTS (SELECT 1 FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1)) " +
+      "OR EXISTS (SELECT 1 FROM guest_institution_requests WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW')) AS taken",
+      [guestId]
+    );
+    return res.status(200).json({ available: !result.rows[0].taken, valid: true });
+  } catch (error) {
+    console.error("Guest ID availability check failed:", error);
+    return res.status(503).json({ available: false, message: "Could not verify this Guest ID right now." });
+  }
+}
 
 export async function listGuestInstitutions(_req: Request, res: Response) {
   try {
@@ -235,35 +254,80 @@ export async function searchGuestInstitutions(req: Request, res: Response) {
 export async function requestInstitution(req: Request, res: Response) {
   const collegeName = typeof req.body?.collegeName === "string" ? req.body.collegeName.trim() : "";
   const locality = typeof req.body?.locality === "string" ? req.body.locality.trim() : "";
-  const guestId = typeof req.body?.guestId === "string" ? req.body.guestId.trim().slice(0, 24) : "";
+  const guestId = typeof req.body?.guestId === "string" ? req.body.guestId.trim().toUpperCase() : "";
   const externalInstitutionId = typeof req.body?.externalInstitutionId === "string" ? req.body.externalInstitutionId.trim().slice(0, 200) : "";
+  if (collegeName.length < 2 || collegeName.length > 160 || locality.length < 2 || locality.length > 160 || /[<>]/.test(collegeName+locality)) {
+    return res.status(400).json({ message: "Enter a valid institution name and city or locality." });
+  }
+  if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(guestId)) {
+    return res.status(400).json({ message: "Choose a valid Guest ID before submitting an institution request." });
+  }
+  const trackingToken = randomBytes(32).toString("hex");
+  const trackingHash = createHash("sha256").update(trackingToken).digest("hex");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock($1)", [43829011]);
+    const duplicate = await client.query(
+      `SELECT 1 FROM guest_sessions
+       WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1)
+       UNION ALL
+       SELECT 1 FROM guest_institution_requests
+       WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW') LIMIT 1`,
+      [guestId]
+    );
+    if (duplicate.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ message: "This Guest ID is already in use or attached to an active request. Choose another ID." });
+    }
+    const result = await client.query(
+      `INSERT INTO public.guest_institution_requests
+        (college_name, locality, guest_id, external_institution_id, source, status, tracking_token_hash)
+       VALUES ($1, $2, $3, NULLIF($4, ''), 'GUEST_SETUP', 'PENDING', $5)
+       RETURNING id, college_name, locality, guest_id, status, created_at`,
+      [collegeName, locality, guestId, externalInstitutionId, trackingHash]
+    );
+    await client.query("COMMIT");
+    return res.status(201).json({ message: "Your institution request has been sent for review.", request: result.rows[0], trackingToken });
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* transaction may already be closed */ }
+    console.error("Failed to save guest institution request:", error);
+    return res.status(503).json({ message: "We couldn't submit your request right now. Please try again later." });
+  } finally {
+    client.release();
+  }
+}
 
-  if (collegeName.length < 2 || collegeName.length > 160) {
-    return res.status(400).json({ message: "Enter a college name between 2 and 160 characters." });
-  }
-  if (locality.length < 2 || locality.length > 160) {
-    return res.status(400).json({ message: "Enter a locality or city between 2 and 160 characters." });
-  }
-  if (/[<>]/.test(collegeName) || /[<>]/.test(locality)) {
-    return res.status(400).json({ message: "Please remove unsupported characters from the form." });
-  }
-
+export async function getInstitutionRequestStatus(req: Request, res: Response) {
+  const token = req.headers["x-request-tracking-token"];
+  if (typeof token !== "string" || token.length < 32) return res.status(401).json({ message: "A valid request tracking token is required." });
+  const hash = createHash("sha256").update(token).digest("hex");
   try {
     const result = await pool.query(
-      `INSERT INTO public.guest_institution_requests
-        (college_name, locality, guest_id, external_institution_id, source, status)
-       VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), 'GUEST_SETUP', 'PENDING')
-       RETURNING id, college_name, locality, guest_id, status, created_at`,
-      [collegeName, locality, guestId, externalInstitutionId]
+      `SELECT id, college_name, locality, guest_id, status, created_at, reviewed_at
+       FROM public.guest_institution_requests WHERE tracking_token_hash = $1 LIMIT 1`,
+      [hash]
     );
-    return res.status(201).json({
-      message: "Your institution request has been sent to the Super Admin inbox.",
-      request: result.rows[0],
-    });
+    if (!result.rows[0]) return res.status(404).json({ message: "No request was found for this tracking link." });
+    return res.status(200).json({ request: result.rows[0] });
   } catch (error) {
-    console.error("Failed to save guest institution request:", error);
-    return res.status(503).json({
-      message: "We couldn't submit your request right now. Please try again later.",
-    });
+    console.error("Failed to retrieve guest institution request:", error);
+    return res.status(503).json({ message: "Request status is temporarily unavailable." });
+  }
+}
+
+
+export async function deleteOwnGuestSession(req: Request, res: Response) {
+  const sessionToken = req.headers["x-guest-session"];
+  if (typeof sessionToken !== "string" || !sessionToken) {
+    return res.status(401).json({ message: "Guest session token is required." });
+  }
+  try {
+    const deleted = await deleteGuestSessionByToken(sessionToken);
+    if (!deleted) return res.status(404).json({ message: "Guest session was not found or has already expired." });
+    return res.status(200).json({ message: "Your Guest ID and guest workspace have been deleted." });
+  } catch (error) {
+    console.error("Guest self-deletion failed:", error);
+    return res.status(500).json({ message: "Your Guest ID could not be deleted. Please try again." });
   }
 }
