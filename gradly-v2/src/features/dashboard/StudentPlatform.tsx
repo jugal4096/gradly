@@ -38,7 +38,7 @@ function Card({ children, className="" }: { children: ReactNode; className?: str
 
 export default function StudentPlatform() {
   const { user, isGuest, signOut, loginWithGoogle, deleteGuestProfile } = useAuth();
-  const [section,setSection] = useState<Section>("home");
+  const [section,setSection] = useState<Section>(isGuest?"profile":"home");
   const themeStorageKey = isGuest ? `gradly_guest_theme_${localStorage.getItem("gradly_guest_id") || "default"}` : "gradly_student_theme";
   const [theme,setTheme] = useState<"light"|"dark">(() => localStorage.getItem(themeStorageKey)==="dark"?"dark":"light");
   useEffect(()=>{document.documentElement.dataset.studentTheme=theme;localStorage.setItem(themeStorageKey,theme);},[theme,themeStorageKey]);
@@ -102,6 +102,22 @@ export default function StudentPlatform() {
   }, []);
 
 
+  useEffect(() => {
+    if (!isGuest) return;
+    const token = sessionStorage.getItem("gradly_guest_token");
+    if (!token) { setGuestInstitutionId(""); setGuestInstitutionName(""); setSection("profile"); return; }
+    let active = true;
+    fetch(API + "/api/guest/session", { headers: { Accept: "application/json", "x-guest-session": token } })
+      .then(async response => { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || "Guest session could not be verified."); return data.guest; })
+      .then(guest => {
+        if (!active) return;
+        const validInstitution = guest?.institutionId && institutions.some(item => item.id === guest.institutionId);
+        if (validInstitution) { setGuestInstitutionId(guest.institutionId); setGuestInstitutionName(guest.institutionName || ""); localStorage.setItem("gradly_guest_institute", guest.institutionId); localStorage.setItem("gradly_guest_institute_name", guest.institutionName || ""); setSection("home"); }
+        else { setGuestInstitutionId(""); setGuestInstitutionName(""); localStorage.removeItem("gradly_guest_institute"); localStorage.removeItem("gradly_guest_institute_name"); setSection("profile"); }
+      })
+      .catch(() => { if (active) { setGuestInstitutionId(""); setGuestInstitutionName(""); setSection("profile"); } });
+    return () => { active = false; };
+  }, [isGuest, institutions]);
   const selectedInstitution = useMemo(()=>institutions.find(item=>item.id===(isGuest ? guestInstitutionId : profile.institutionId)) || (isGuest && guestInstitutionId ? {id:guestInstitutionId,name:guestInstitutionName,branches:[]} : undefined),[institutions,isGuest,guestInstitutionId,guestInstitutionName,profile.institutionId]);
   const programs = useMemo(() => {
     const map = new Map<string,{id:string;name:string;level?:string|null}>();
@@ -141,7 +157,8 @@ export default function StudentPlatform() {
     setNotice("Semester result added to your academic tracker.");
   }
   function navigate(next:Section) {
-    if (isGuest && !["home","sgpa","cgpa","settings"].includes(next)) { setLoginGate(true); setMobileOpen(false); return; }
+    if (isGuest && !guestInstitutionId && ["home","sgpa","cgpa"].includes(next)) { setSection("profile"); setNotice("Select an institution from the Gradly directory before opening the calculators."); setMobileOpen(false); return; }
+    if (isGuest && !["home","sgpa","cgpa","settings","profile"].includes(next)) { setLoginGate(true); setMobileOpen(false); return; }
     setSection(next); setMobileOpen(false); setNotice("");
   }
   function submitMessage(event:FormEvent) {
