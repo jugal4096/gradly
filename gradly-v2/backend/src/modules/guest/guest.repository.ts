@@ -88,7 +88,9 @@ export async function findGuestSessionByToken(sessionToken: string) {
   const result = await pool.query(
     `SELECT id, first_seen_at, last_seen_at, expires_at, metadata
      FROM guest_sessions
-     WHERE session_token_hash = $1 AND (expires_at IS NULL OR expires_at > NOW())
+     WHERE session_token_hash = $1
+       AND (expires_at IS NULL OR expires_at > NOW())
+       AND COALESCE(metadata->>'account_status', 'ACTIVE') = 'ACTIVE'
      LIMIT 1`,
     [tokenHash]
   );
@@ -98,7 +100,8 @@ export async function findGuestSessionByToken(sessionToken: string) {
 export async function updateGuestActivity(guestSessionId: string) {
   const result = await pool.query(
     `UPDATE guest_sessions SET last_seen_at = NOW()
-     WHERE id = $1 RETURNING id, last_seen_at`,
+     WHERE id = $1 AND COALESCE(metadata->>'account_status', 'ACTIVE') = 'ACTIVE'
+     RETURNING id, last_seen_at`,
     [guestSessionId]
   );
   return result.rows[0] ?? null;
