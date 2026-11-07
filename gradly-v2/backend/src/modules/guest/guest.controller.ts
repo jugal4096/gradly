@@ -8,6 +8,8 @@ import {
   recordGuestActivity,
   updateGuestWorkspace,
   listGuestInstitutionOptions,
+  isGuestIdAvailable,
+  setGuestInstitution,
 } from "./guest.repository";
 
 export async function listGuestInstitutions(_req: Request, res: Response) {
@@ -24,27 +26,15 @@ export async function createGuest(req: Request, res: Response) {
   try {
     const guestId = typeof req.body?.guestId === "string" ? req.body.guestId : "";
     const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
-    const externalName = typeof req.body?.institutionName === "string" ? req.body.institutionName.trim() : "";
-    const externalLocality = typeof req.body?.institutionLocality === "string" ? req.body.institutionLocality.trim() : "";
-    const externalId = typeof req.body?.externalInstitutionId === "string" ? req.body.externalInstitutionId.trim() : "";
     if (!guestId.trim()) {
       return res.status(400).json({ message: "Choose a unique Guest ID to continue." });
     }
-    if (!institutionId.trim() && (!externalName || !externalLocality)) {
-      return res.status(400).json({ message: "Select an institution from Gradly or the live institution search." });
-    }
-
-    const session = await startGuestSession(guestId, institutionId, externalName && externalLocality ? { name: externalName, locality: externalLocality, externalId } : undefined);
-    await recordGuestActivity(session.id, "GUEST_INSTITUTION_SELECTED", {
-      institutionId: session.metadata?.institution_id,
-      institutionName: session.metadata?.institution_name,
-    });
-    await recordGuestActivity(session.id, "GUEST_SESSION_CREATED", {
+    const session = await startGuestSession(guestId, institutionId);
+    await recordGuestActivity(session.id, "GUEST_ACCOUNT_CREATED", {
       source: "web",
       guestId: session.metadata?.guest_id ?? session.metadata?.display_id,
-      institutionId: session.metadata?.institution_id,
-      institutionName: session.metadata?.institution_name,
     });
+    await recordGuestActivity(session.id, "GUEST_SESSION_STARTED", { source: "web" });
 
     return res.status(201).json({
       message: "Guest workspace created successfully.",
@@ -69,9 +59,6 @@ export async function createGuest(req: Request, res: Response) {
       return res.status(400).json({ code, message: error instanceof Error ? error.message : "Choose a valid institution." });
     }
     if (error instanceof Error && error.message.startsWith("Choose a Guest ID")) {
-      return res.status(400).json({ message: error.message });
-    }
-    if (error instanceof Error && error.message.startsWith("Select your institution")) {
       return res.status(400).json({ message: error.message });
     }
     console.error("Failed to create guest session:", error);
@@ -265,5 +252,33 @@ export async function requestInstitution(req: Request, res: Response) {
     return res.status(503).json({
       message: "We couldn't submit your request right now. Please try again later.",
     });
+  }
+}
+
+
+export async function checkGuestIdAvailability(req: Request, res: Response) {
+  const guestId = typeof req.query.guestId === "string" ? req.query.guestId : "";
+  const result = await isGuestIdAvailable(guestId);
+  return res.status(result.valid ? 200 : 400).json({
+    ...result,
+    message: !result.valid ? "Use 4–24 letters, numbers, hyphens or underscores." : result.available ? "Guest ID is available." : "That Guest ID is already taken.",
+  });
+}
+
+export async function selectGuestInstitution(req: Request, res: Response) {
+  const token = req.headers["x-guest-session"];
+  if (typeof token !== "string" || !token) return res.status(401).json({ message: "Guest session token is required." });
+  const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
+  if (!institutionId) return res.status(400).json({ message: "Select an institution from Gradly's directory." });
+  try {
+    const session = await getGuestSession(token);
+    if (!session) return res.status(401).json({ message: "Guest session is invalid, expired or disabled." });
+    const updated = await setGuestInstitution(session.id, institutionId);
+    if (!updated) return res.status(400).json({ message: "The selected institution is not available in Gradly's directory." });
+    await recordGuestActivity(session.id, "GUEST_INSTITUTION_SELECTED", { institutionId, institutionName: updated.metadata?.institution_name });
+    return res.status(200).json({ message: "Institution saved.", guest: { id: updated.id, institutionId: updated.metadata?.institution_id, institutionName: updated.metadata?.institution_name } });
+  } catch (error) {
+    console.error("Failed to save guest institution:", error);
+    return res.status(500).json({ message: "Unable to save the selected institution." });
   }
 }
