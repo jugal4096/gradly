@@ -614,3 +614,43 @@
 @media(max-width:700px){.sp-hero{grid-template-columns:1fr;padding:27px 22px}.sp-hero-art{min-height:170px}.sp-orbit-core{width:98px;height:98px;font-size:52px;border-radius:29px}.sp-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-card{padding:18px}.sp-status{display:none}}
 @media(max-width:460px){.sp-content{padding:18px 13px 30px!important}.sp-hero h1{font-size:34px;letter-spacing:-1.6px}.sp-metrics,.sp-feature-grid{grid-template-columns:1fr}.sp-feature{min-height:145px}.sp-topbar{padding:0 13px}.sp-top-left>div strong{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.sp-shell *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+
+/* SGPA calculator — focused hero, no institution/formula/semester banner */
+.sp-calculator-hero{
+  position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;
+  min-height:250px;margin:0 0 25px;padding:35px 34px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.72);border-radius:28px;
+  background:
+    radial-gradient(ellipse at 18% 12%,rgba(93,232,205,.30),transparent 34%),
+    radial-gradient(ellipse at 86% 88%,rgba(148,139,255,.34),transparent 38%),
+    linear-gradient(120deg,#102d42 0%,#17616a 48%,#4d528b 100%);
+  box-shadow:0 26px 55px rgba(30,62,91,.20),inset 0 1px 0 rgba(255,255,255,.32);
+}
+.sp-calculator-hero:before{
+  content:"";position:absolute;inset:0;z-index:-1;opacity:.20;pointer-events:none;
+  background-image:linear-gradient(120deg,transparent 49.8%,rgba(255,255,255,.38) 50%,transparent 50.25%),radial-gradient(rgba(255,255,255,.75) .8px,transparent .8px);
+  background-size:100% 100%,22px 22px;
+  mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);
+}
+.sp-calculator-hero-copy{position:relative;z-index:2;width:100%;text-align:center}
+.sp-calc-eyebrow{display:inline-flex;align-items:center;gap:8px;color:#9cf0df;font-size:9px;font-weight:900;letter-spacing:2.5px}
+.sp-calculator-hero h1{margin:12px 0 8px;color:#fff;font-size:clamp(36px,5vw,54px);font-weight:850;letter-spacing:-2px;line-height:1.08;text-shadow:0 5px 22px rgba(4,20,39,.18)}
+.sp-calculator-hero p{margin:0 auto;color:#d0e7e8;font-size:13px;line-height:1.7}
+.sp-calc-pills{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:19px}
+.sp-calc-pills span{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid rgba(255,255,255,.2);border-radius:99px;background:rgba(255,255,255,.10);color:#e2f7f3;font-size:10px;backdrop-filter:blur(10px)}
+.sp-calc-pills i{width:6px;height:6px;border-radius:50%;background:#69e4c6;box-shadow:0 0 0 4px rgba(105,228,198,.13)}
+.sp-calc-art{position:absolute;right:5%;top:50%;width:150px;height:150px;transform:translateY(-50%);perspective:700px;opacity:.85}
+.sp-calc-orbit{position:absolute;inset:10px;border:1px solid rgba(193,255,243,.32);border-radius:50%;transform:rotateX(66deg) rotateZ(-25deg)}
+.sp-calc-orbit-two{inset:-4px;transform:rotateX(66deg) rotateZ(42deg);border-color:rgba(205,198,255,.35)}
+.sp-calc-cube{position:absolute;left:31px;top:25px;display:grid;place-items:center;width:88px;height:88px;border:1px solid rgba(255,255,255,.55);border-radius:25px;background:linear-gradient(145deg,#75e8d2,#219e9e 52%,#6c7ee5);box-shadow:0 22px 35px rgba(4,18,39,.32),inset 0 2px 2px rgba(255,255,255,.7),inset 0 -9px 18px rgba(13,42,72,.2);transform:rotateX(16deg) rotateY(-20deg) rotateZ(-9deg);animation:sp-calc-float 5s ease-in-out infinite}
+.sp-calc-cube span{color:#fff;font-size:49px;font-weight:900;text-shadow:0 4px 10px rgba(13,48,64,.22)}
+.sp-calc-cube i{position:absolute;top:8px;right:10px;color:#eafff8;font-size:13px;font-style:normal}
+.sp-calc-float{position:absolute;display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(255,255,255,.45);border-radius:11px;background:rgba(245,255,252,.9);color:#147f7b;font-size:11px;font-weight:900;box-shadow:0 10px 20px rgba(5,20,42,.22)}
+.sp-calc-float-one{top:0;right:0;transform:rotate(9deg)}
+.sp-calc-float-two{bottom:0;left:0;transform:rotate(-9deg)}
+.sp-calc-glow{position:absolute;z-index:-1;right:10%;bottom:-100px;width:220px;height:160px;border-radius:50%;background:rgba(85,235,208,.17);filter:blur(35px)}
+@keyframes sp-calc-float{0%,100%{transform:translateY(0) rotateX(16deg) rotateY(-20deg) rotateZ(-9deg)}50%{transform:translateY(-9px) rotateX(20deg) rotateY(-13deg) rotateZ(-5deg)}}
+.sp-dark-theme .sp-calculator-hero{border-color:rgba(170,205,220,.18);box-shadow:0 26px 55px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.16)}
+@media(max-width:760px){.sp-calculator-hero{min-height:220px;padding:30px 20px}.sp-calc-art{right:-34px;opacity:.25}.sp-calculator-hero-copy{max-width:100%}.sp-calculator-hero h1{font-size:38px}}
+@media(prefers-reduced-motion:reduce){.sp-calc-cube{animation:none}}
