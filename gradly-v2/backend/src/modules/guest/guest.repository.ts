@@ -180,3 +180,40 @@ export async function recordGuestActivity(guestSessionId: string, action: string
     VALUES ('GUEST', $1, 'GUEST', $2, 'guest_sessions', $1, $3::jsonb)
   `, [guestSessionId, action, JSON.stringify(metadata)]);
 }
+
+/**
+ * Permanently remove Guest Mode sessions that have had no activity for 30 days.
+ * Their guest-generated activity rows are removed in the same transaction.
+ * Super Admin audit records are not touched.
+ */
+export async function purgeInactiveGuestSessions() {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const stale = await client.query(
+      `SELECT id::text AS id
+       FROM public.guest_sessions
+       WHERE COALESCE(last_seen_at, first_seen_at) < NOW() - INTERVAL '30 days'
+       FOR UPDATE`
+    );
+    const ids = stale.rows.map((row: { id: string }) => row.id);
+    if (ids.length) {
+      await client.query(
+        `DELETE FROM public.audit_logs
+         WHERE actor_type = 'GUEST' AND actor_id::text = ANY($1::text[])`,
+        [ids]
+      );
+      await client.query(
+        `DELETE FROM public.guest_sessions WHERE id::text = ANY($1::text[])`,
+        [ids]
+      );
+    }
+    await client.query("COMMIT");
+    return ids.length;
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* transaction may already be closed */ }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
