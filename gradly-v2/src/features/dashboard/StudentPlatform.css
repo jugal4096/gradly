@@ -747,3 +747,35 @@
   .sp-menu{width:43px!important;height:43px!important;flex-basis:43px!important}
   .sp-nav-group button{min-height:43px!important;font-size:12.5px!important}
 }
+
+
+/* Performance pass: keep the visual identity while reducing scroll-time paint. */
+.sp-shell:before{display:none!important}
+.sp-shell{background:linear-gradient(145deg,#f8faff 0%,#f1f5fa 58%,#f7f5ff 100%)!important}
+.sp-sidebar{backdrop-filter:none!important;box-shadow:12px 0 28px rgba(12,25,48,.16)!important}
+.sp-topbar{backdrop-filter:none!important;background:rgba(248,250,255,.97)!important;box-shadow:0 2px 9px rgba(44,61,96,.035)!important}
+.sp-calc-pills{display:none!important}
+.sp-calculator-hero:before{display:none!important}
+.sp-calculator-hero{box-shadow:0 12px 26px rgba(30,62,91,.13),inset 0 1px 0 rgba(255,255,255,.24)!important}
+.sp-calc-art{opacity:.58!important}
+.sp-calc-cube{animation:none!important;transform:rotateX(13deg) rotateY(-16deg) rotateZ(-7deg)!important;box-shadow:0 12px 20px rgba(4,18,39,.23),inset 0 1px 1px rgba(255,255,255,.55)!important}
+.sp-calc-glow{display:none!important}
+.sp-card,.sp-feature,.sp-metrics article,.sp-theme-choices button{transition:box-shadow .18s ease,border-color .18s ease!important}
+.sp-card:hover,.sp-feature:hover,.sp-metrics article:hover{transform:none!important;filter:none!important;box-shadow:0 12px 26px rgba(37,57,91,.09)!important}
+.sp-metrics article:after{display:none!important}
+.sp-result{background:linear-gradient(145deg,#f4fffc 0%,#e9f7f7 52%,#f0efff 100%)!important;border:1px solid #c9e4e2!important;color:#17384a!important;box-shadow:0 12px 25px rgba(35,82,91,.10)!important}
+.sp-result>span{color:#167e78!important;font-weight:900!important;letter-spacing:1.6px!important}
+.sp-result .sp-score{color:#163c50!important;text-shadow:none!important;font-weight:900!important}
+.sp-result .sp-score small{color:#52717f!important}
+.sp-result h3{color:#193c50!important;font-weight:850!important}
+.sp-result p{color:#4d6878!important;line-height:1.65!important}
+.sp-result-line{border-color:#c9dddf!important;color:#38596a!important}
+.sp-result-line span{color:#4d6878!important;font-weight:650!important}
+.sp-result-line b{color:#173e50!important;font-weight:850!important}
+.sp-dark-theme .sp-result{background:linear-gradient(145deg,#193b43 0%,#1d3448 55%,#292b4d 100%)!important;border-color:#41616a!important;color:#f2fffc!important}
+.sp-dark-theme .sp-result>span{color:#83e7d3!important}
+.sp-dark-theme .sp-result .sp-score,.sp-dark-theme .sp-result h3{color:#f4fffc!important}
+.sp-dark-theme .sp-result .sp-score small,.sp-dark-theme .sp-result p,.sp-dark-theme .sp-result-line,.sp-dark-theme .sp-result-line span{color:#c1d9dc!important}
+.sp-dark-theme .sp-result-line{border-color:#45606a!important}
+.sp-dark-theme .sp-result-line b{color:#f1fffb!important}
+@media(prefers-reduced-motion:reduce){.sp-calc-cube{animation:none!important}}
