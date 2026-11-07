@@ -217,3 +217,34 @@ export async function purgeInactiveGuestSessions() {
     client.release();
   }
 }
+
+
+/** Delete the current guest's own session using its bearer token. */
+export async function deleteGuestSessionByToken(sessionToken: string) {
+  const tokenHash = hashGuestToken(sessionToken);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query(
+      "SELECT id::text AS id FROM public.guest_sessions WHERE session_token_hash = $1 FOR UPDATE",
+      [tokenHash]
+    );
+    const guestId = found.rows[0]?.id;
+    if (!guestId) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    await client.query(
+      "DELETE FROM public.audit_logs WHERE actor_type = 'GUEST' AND actor_id::text = $1",
+      [guestId]
+    );
+    await client.query("DELETE FROM public.guest_sessions WHERE id::text = $1", [guestId]);
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* transaction may already be closed */ }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
