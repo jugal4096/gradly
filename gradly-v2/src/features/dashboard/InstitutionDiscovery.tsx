@@ -35,7 +35,8 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
   e.preventDefault();setSubmitting(true);setRequestError("");
   try{
    const headers:Record<string,string>={"Content-Type":"application/json","Accept":"application/json"};
-   if(user)headers.Authorization="Bearer "+await user.getIdToken();\n   if(isGuest){const guestToken=sessionStorage.getItem("gradly_guest_token");if(guestToken)headers["x-guest-session"]=guestToken;}
+   if(user)headers.Authorization="Bearer "+await user.getIdToken();
+   if(isGuest){const guestToken=sessionStorage.getItem("gradly_guest_token");if(guestToken)headers["x-guest-session"]=guestToken;}
    const r=await fetch(API+"/api/guest/institution-requests",{method:"POST",headers,body:JSON.stringify({...form,guestId:isGuest?localStorage.getItem("gradly_guest_id")||"":""})});
    const d=await r.json().catch(()=>({}));
    if(!r.ok)throw new Error(d.message||"Unable to submit institution request.");
