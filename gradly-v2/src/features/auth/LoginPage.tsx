@@ -69,7 +69,7 @@ export default function LoginPage() {
       setError("");
       setLoggingIn(true);
       await createGuestIdentity(guestId.trim());
-      navigate("/dashboard", { replace: true });
+      navigate("/dashboard", { replace: true, state: { guestSetup: true } });
     } catch (guestError) {
       setError(guestError instanceof Error ? guestError.message : "Guest identity could not be created.");
       setAvailability("idle");
