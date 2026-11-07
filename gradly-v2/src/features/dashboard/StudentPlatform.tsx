@@ -37,8 +37,11 @@ function Card({ children, className="" }: { children: ReactNode; className?: str
 
 export default function StudentPlatform() {
   const { user, isGuest, signOut, loginWithGoogle } = useAuth();
-  const [section,setSection] = useState<Section>("home");\n  const [theme,setTheme] = useState<"light"|"dark">(() => localStorage.getItem("gradly_student_theme")==="dark"?"dark":"light");\n  useEffect(()=>{document.documentElement.dataset.studentTheme=theme;localStorage.setItem("gradly_student_theme",theme);},[theme]);
-  const [mobileOpen,setMobileOpen] = useState(false);\n  const [guestRequestOpen,setGuestRequestOpen] = useState(false);
+  const [section,setSection] = useState<Section>("home");
+  const [theme,setTheme] = useState<"light"|"dark">(() => localStorage.getItem("gradly_student_theme")==="dark"?"dark":"light");
+  useEffect(()=>{document.documentElement.dataset.studentTheme=theme;localStorage.setItem("gradly_student_theme",theme);},[theme]);
+  const [mobileOpen,setMobileOpen] = useState(false);
+  const [guestRequestOpen,setGuestRequestOpen] = useState(false);
   const [institutions,setInstitutions] = useState<Institution[]>([]);
   const [institutionLoading,setInstitutionLoading] = useState(true);
   const [institutionError,setInstitutionError] = useState("");
