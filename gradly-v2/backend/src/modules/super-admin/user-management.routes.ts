@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { updateGuestAccountStatus } from "./superAdmin-guests.controller";
 
 import { authenticateSuperAdminToken } from "../../middleware/super-admin-auth.middleware";
 import {
@@ -25,6 +26,7 @@ router.use(authenticateSuperAdminToken);
 router.get("/guests", listGuests);
 router.get("/disabled", listDisabledAccounts);
 router.delete("/guests/:guestId", removeGuestSession);
+router.patch("/guests/:guestId/status", (req, res, next) => { req.params.guestSessionId = req.params.guestId; return updateGuestAccountStatus(req as never, res).catch(next); });
 router.get("/guests/:guestId/activity", listGuestActivity);
 router.get("/filters", getAcademicFilters);
 router.get("/branches", listBranches);
