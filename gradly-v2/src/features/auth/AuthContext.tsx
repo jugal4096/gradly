@@ -24,6 +24,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   createGuestIdentity: (guestId: string) => Promise<void>;
+  deleteGuestProfile: () => Promise<void>;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -95,10 +96,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGuest(true);
   }
 
-  async function logout() {
+  async function deleteGuestProfile() {
+    const token = sessionStorage.getItem(GUEST_TOKEN_KEY);
+    if (!token) throw new Error("Your guest session is missing. Sign in to your Guest ID again.");
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+    const response = await fetch(apiBaseUrl + "/api/guest/session", {
+      method: "DELETE",
+      headers: { Accept: "application/json", "x-guest-session": token },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.message || "Unable to delete your guest profile.");
+    clearGuestLocalData();
+    setIsGuest(false);
+  }
+
+  function clearGuestLocalData() {
+    const guestId = localStorage.getItem(GUEST_ID_KEY) || "default";
     sessionStorage.removeItem(GUEST_SESSION_KEY);
+    sessionStorage.removeItem(GUEST_TOKEN_KEY);
     localStorage.removeItem(GUEST_ID_KEY);
-    localStorage.removeItem("gradly_guest_institute");
+    for (const key of ["gradly_guest_institute", "gradly_guest_institute_name", "gradly_guest_subjects", "gradly_guest_semester_results", "gradly_guest_theme", "gradly_guest_theme_" + guestId, "gradly_guest_profile", "gradly_guest_workspace"]) localStorage.removeItem(key);
+  }
+  async function logout() {
+    clearGuestLocalData();
     setIsGuest(false);
     await signOut(auth);
   }
@@ -112,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithGoogle,
         loginWithEmail,
         createGuestIdentity,
+        deleteGuestProfile,
         logout,
         signOut: logout,
       }}
