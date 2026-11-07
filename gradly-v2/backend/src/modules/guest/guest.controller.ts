@@ -17,8 +17,8 @@ export async function checkGuestIdAvailability(req: Request, res: Response) {
   if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(guestId)) return res.status(200).json({ available: false, valid: false });
   try {
     const result = await pool.query(
-      `SELECT EXISTS (SELECT 1 FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1))
-       OR EXISTS (SELECT 1 FROM guest_institution_requests WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW')) AS taken`,
+      "SELECT EXISTS (SELECT 1 FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1)) " +
+      "OR EXISTS (SELECT 1 FROM guest_institution_requests WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW')) AS taken",
       [guestId]
     );
     return res.status(200).json({ available: !result.rows[0].taken, valid: true });
