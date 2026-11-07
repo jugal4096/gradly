@@ -779,3 +779,13 @@
 .sp-dark-theme .sp-result-line{border-color:#45606a!important}
 .sp-dark-theme .sp-result-line b{color:#f1fffb!important}
 @media(prefers-reduced-motion:reduce){.sp-calc-cube{animation:none!important}}
+
+
+/* CGPA calculator hero and compact semester-entry rows */
+.sp-cgpa-calculator-hero{min-height:205px;margin-bottom:22px}
+.sp-cgpa-calculator-hero .sp-calculator-hero-copy{max-width:720px}
+.sp-cgpa-input-row{padding:3px 0;gap:7px}
+.sp-cgpa-input-row input,.sp-cgpa-input-row select{height:34px;padding:6px 9px;font-size:10px}
+.sp-cgpa-input-row .sp-remove{font-size:16px;line-height:1}
+.sp-cgpa-input-head{padding-bottom:7px}
+@media(max-width:560px){.sp-cgpa-calculator-hero{min-height:175px;padding:25px 18px}.sp-cgpa-input-head,.sp-cgpa-input-row{grid-template-columns:.9fr 1fr .9fr 20px;gap:5px}.sp-cgpa-input-row input,.sp-cgpa-input-row select{height:32px;padding:5px 6px;font-size:9px}}
