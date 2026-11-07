@@ -87,11 +87,16 @@ export async function submitInstitutionRequest(req:Request,res:Response) {
 }
 
 export async function getInstitutionRequestStatus(req:Request,res:Response) {
- const id=clean(req.params.requestId,80);if(!/^[0-9a-f-]{36}$/i.test(id))return res.status(400).json({message:"Invalid request ID."});
- try{const r=await pool.query("SELECT id,college_name AS \"institutionName\",state,city,district,institution_type AS \"institutionType\",status,created_at AS \"createdAt\",reviewed_at AS \"reviewedAt\",reviewed_note AS \"reviewNote\" FROM public.guest_institution_requests WHERE id=$1 LIMIT 1",[id]);if(!r.rowCount)return res.status(404).json({message:"Request not found."});return res.json({request:r.rows[0]});}
- catch(e){console.error(e);return res.status(500).json({message:"Unable to retrieve request status."});}
+ const id=clean(req.params.requestId,80),token=req.headers["x-guest-session"];
+ if(!/^[0-9a-f-]{36}$/i.test(id))return res.status(400).json({message:"Invalid request ID."});
+ if(typeof token!=="string"||!token)return res.status(401).json({message:"Guest session token is required."});
+ try{
+  const guest=await getGuestSession(token);if(!guest)return res.status(401).json({message:"Guest session is invalid or expired."});
+  const r=await pool.query("SELECT id,college_name AS \"institutionName\",state,city,district,institution_type AS \"institutionType\",status,created_at AS \"createdAt\",reviewed_at AS \"reviewedAt\",reviewed_note AS \"reviewNote\" FROM public.guest_institution_requests WHERE id=$1 AND guest_session_id=$2 LIMIT 1",[id,guest.id]);
+  if(!r.rowCount)return res.status(404).json({message:"Request not found."});
+  return res.json({request:r.rows[0]});
+ }catch(e){console.error(e);return res.status(500).json({message:"Unable to retrieve request status."});}
 }
-
 export async function reviewInstitutionRequest(req:Request,res:Response) {
  const sa=(req as Request&{superAdmin?:{superAdminId?:string}}).superAdmin?.superAdminId,status=clean(req.body?.status,20).toUpperCase(),note=clean(req.body?.reviewNote,2000);
  if(!sa)return res.status(401).json({success:false,message:"Super Admin authentication required."});
