@@ -35,7 +35,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
   e.preventDefault();setSubmitting(true);setRequestError("");
   try{
    const headers:Record<string,string>={"Content-Type":"application/json","Accept":"application/json"};
-   if(user)headers.Authorization="Bearer "+await user.getIdToken();
+   if(user)headers.Authorization="Bearer "+await user.getIdToken();\n   if(isGuest){const guestToken=sessionStorage.getItem("gradly_guest_token");if(guestToken)headers["x-guest-session"]=guestToken;}
    const r=await fetch(API+"/api/guest/institution-requests",{method:"POST",headers,body:JSON.stringify({...form,guestId:isGuest?localStorage.getItem("gradly_guest_id")||"":""})});
    const d=await r.json().catch(()=>({}));
    if(!r.ok)throw new Error(d.message||"Unable to submit institution request.");
@@ -55,7 +55,7 @@ export default function InstitutionDiscovery({isGuest,user,onSelect,selectedId}:
   </div>
   {loading&&<p className="id-state" role="status">Searching institution sources…</p>}
   {error&&<div className="id-error" role="alert">{error}<button type="button" onClick={()=>void search(1)}>Retry</button></div>}
-  {!loading&&!error&&items.length>0&&<div className="id-results" aria-live="polite">{items.map(item=><article className="id-result" key={item.id}><div><strong>{item.name}</strong><p>{[item.city,item.state].filter(Boolean).join(", ")||"Location not listed"} · {item.type||"Higher education institution"}</p><small>{item.source||"Institution directory"}{item.isInGradly?" · In Gradly directory":""}</small></div><button type="button" onClick={()=>item.isInGradly||isGuest?onSelect(item):openRequest(item)}>{item.isInGradly||isGuest?(selectedId===item.id?"Selected":"Select institution"):"Request to add"}</button></article>)}
+  {!loading&&!error&&items.length>0&&<div className="id-results" aria-live="polite">{items.map(item=><article className="id-result" key={item.id}><div><strong>{item.name}</strong><p>{[item.city,item.state].filter(Boolean).join(", ")||"Location not listed"} · {item.type||"Higher education institution"}</p><small>{item.source||"Institution directory"}{item.isInGradly?" · In Gradly directory":""}</small></div><button type="button" onClick={()=>item.isInGradly?onSelect(item):openRequest(item)}>{item.isInGradly?(selectedId===item.id?"In Gradly directory":"Select institution"):"Request to add"}</button></article>)}
    <div className="id-result-footer"><span>Search results may not represent a complete official register.</span>{hasMore&&<button type="button" disabled={loading} onClick={()=>void search(page+1)}>Load more</button>}</div></div>}
   {!loading&&!error&&items.length===0&&(query.length>=2||state||city||district||affiliation||type)&&<div className="id-empty">No matching institution found. <button type="button" onClick={()=>openRequest()}>Request to add this institution</button></div>}
   <div className="id-discovery-foot"><span>Not listed?</span><div><button type="button" onClick={()=>openRequest()}>＋ Request to add institution</button>{submitted&&<button type="button" onClick={()=>{setRequestCompleted(true);setRequestError("");setRequestOpen(true);}}>Track latest request</button>}</div></div>
