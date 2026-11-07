@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import "./GuestOnboarding.css";
 
-const API=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000").replace(/\\/+$/,"");
+const API=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000").replace(/\/+$/,"");
 const ID_KEY="gradly_guest_id";
 const REQUEST_KEY="gradly_guest_institute_request_token";
 type Institution={id:string;name:string};
