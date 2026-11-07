@@ -23,13 +23,14 @@ interface AuthContextType {
   isGuest: boolean;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
-  continueAsGuest: () => void;
+  createGuestIdentity: (guestId: string) => Promise<void>;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const GUEST_SESSION_KEY = "gradly_guest_session";
 const GUEST_ID_KEY = "gradly_guest_id";
+const GUEST_TOKEN_KEY = "gradly_guest_token";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -77,9 +78,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await syncUserWithBackend(firebaseUser);
   }
 
-  function continueAsGuest() {
+  async function createGuestIdentity(guestId: string) {
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+    const response = await fetch(`${apiBaseUrl}/api/guest/session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ guestId }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.guest?.sessionToken) {
+      throw new Error(data?.message || "Unable to create your Guest ID. Please try again.");
+    }
     sessionStorage.setItem(GUEST_SESSION_KEY, "true");
-    if (!localStorage.getItem(GUEST_ID_KEY)) localStorage.setItem(GUEST_ID_KEY, `GST-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
+    sessionStorage.setItem(GUEST_TOKEN_KEY, data.guest.sessionToken);
+    localStorage.setItem(GUEST_ID_KEY, data.guest.guestId);
     setIsGuest(true);
   }
 
@@ -99,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isGuest,
         loginWithGoogle,
         loginWithEmail,
-        continueAsGuest,
+        createGuestIdentity,
         logout,
         signOut: logout,
       }}
