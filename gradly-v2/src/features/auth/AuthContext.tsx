@@ -79,13 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function continueAsGuest() {
     sessionStorage.setItem(GUEST_SESSION_KEY, "true");
-    if (!localStorage.getItem(GUEST_ID_KEY)) localStorage.setItem(GUEST_ID_KEY, `GST-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
     setIsGuest(true);
   }
 
   async function logout() {
     sessionStorage.removeItem(GUEST_SESSION_KEY);
     localStorage.removeItem(GUEST_ID_KEY);
+    localStorage.removeItem("gradly_guest_session_token");
     localStorage.removeItem("gradly_guest_institute");
     setIsGuest(false);
     await signOut(auth);
