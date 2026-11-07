@@ -6,7 +6,7 @@ const ID_KEY="gradly_guest_id";
 const REQUEST_KEY="gradly_guest_institute_request_token";
 type Institution={id:string;name:string};
 type SearchInstitution={externalId:string;name:string;city:string;region:string;country:string};
-type RequestStatus={id:string;college_name:string;locality:string;status:string;created_at:string};
+type RequestStatus={id:string;college_name:string;locality:string;guest_id?:string;status:string;created_at:string};
 
 export default function GuestOnboarding({onComplete}:{onComplete:()=>void}){
  const [guestId,setGuestId]=useState(()=>localStorage.getItem(ID_KEY)||"");
