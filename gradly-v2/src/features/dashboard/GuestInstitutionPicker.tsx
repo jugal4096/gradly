@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DiscoveryInstitution } from "./InstitutionDiscovery";
 
-const API=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000").replace(/\\/+$/,"");
+const API=(import.meta.env.VITE_API_BASE_URL||"http://localhost:5000").replace(/\/+$/,"");
 
 type Props={selectedId:string;onSelect:(item:DiscoveryInstitution)=>void;onRequest:()=>void};
 
