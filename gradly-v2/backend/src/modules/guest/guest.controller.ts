@@ -17,8 +17,8 @@ export async function checkGuestIdAvailability(req: Request, res: Response) {
   if (!/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(guestId)) return res.status(200).json({ available: false, valid: false });
   try {
     const result = await pool.query(
-      \`SELECT EXISTS (SELECT 1 FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1))
-       OR EXISTS (SELECT 1 FROM guest_institution_requests WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW')) AS taken\`,
+      `SELECT EXISTS (SELECT 1 FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1))
+       OR EXISTS (SELECT 1 FROM guest_institution_requests WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW')) AS taken`,
       [guestId]
     );
     return res.status(200).json({ available: !result.rows[0].taken, valid: true });
@@ -268,11 +268,11 @@ export async function requestInstitution(req: Request, res: Response) {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock($1)", [43829011]);
     const duplicate = await client.query(
-      \`SELECT 1 FROM guest_sessions
+      `SELECT 1 FROM guest_sessions
        WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1)
        UNION ALL
        SELECT 1 FROM guest_institution_requests
-       WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW') LIMIT 1\`,
+       WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW') LIMIT 1`,
       [guestId]
     );
     if (duplicate.rows.length) {
@@ -280,10 +280,10 @@ export async function requestInstitution(req: Request, res: Response) {
       return res.status(409).json({ message: "This Guest ID is already in use or attached to an active request. Choose another ID." });
     }
     const result = await client.query(
-      \`INSERT INTO public.guest_institution_requests
+      `INSERT INTO public.guest_institution_requests
         (college_name, locality, guest_id, external_institution_id, source, status, tracking_token_hash)
        VALUES ($1, $2, $3, NULLIF($4, ''), 'GUEST_SETUP', 'PENDING', $5)
-       RETURNING id, college_name, locality, guest_id, status, created_at\`,
+       RETURNING id, college_name, locality, guest_id, status, created_at`,
       [collegeName, locality, guestId, externalInstitutionId, trackingHash]
     );
     await client.query("COMMIT");
@@ -303,8 +303,8 @@ export async function getInstitutionRequestStatus(req: Request, res: Response) {
   const hash = createHash("sha256").update(token).digest("hex");
   try {
     const result = await pool.query(
-      \`SELECT id, college_name, locality, guest_id, status, created_at, reviewed_at
-       FROM public.guest_institution_requests WHERE tracking_token_hash = $1 LIMIT 1\`,
+      `SELECT id, college_name, locality, guest_id, status, created_at, reviewed_at
+       FROM public.guest_institution_requests WHERE tracking_token_hash = $1 LIMIT 1`,
       [hash]
     );
     if (!result.rows[0]) return res.status(404).json({ message: "No request was found for this tracking link." });
