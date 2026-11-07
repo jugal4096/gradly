@@ -82,6 +82,12 @@ export async function getGuestSessionForSuperAdmin(req: SuperAdminAuthenticatedR
        ORDER BY created_at DESC LIMIT 200`,
       [guestSessionId]
     );
+    const requests = await pool.query(
+      `SELECT id, college_name, locality, state, city, district, institution_type, status, created_at, reviewed_at, reviewed_note
+       FROM public.guest_institution_requests WHERE guest_session_id::text=$1
+       ORDER BY created_at DESC LIMIT 100`,
+      [guestSessionId]
+    );
     return res.status(200).json({
       guest: {
         id: guest.id,
@@ -92,9 +98,11 @@ export async function getGuestSessionForSuperAdmin(req: SuperAdminAuthenticatedR
         firstSeenAt: guest.first_seen_at,
         lastSeenAt: guest.last_seen_at,
         expiresAt: guest.expires_at,
+        accountStatus: guest.metadata?.account_status ?? "ACTIVE",
         workspace: guest.metadata?.guest_workspace ?? { subjects: [], semesters: [], lastActiveCalculator: "sgpa" },
       },
       activity: activity.rows,
+      instituteRequests: requests.rows,
     });
   } catch (error) {
     console.error("Failed to load guest session details for Super Admin:", error);
