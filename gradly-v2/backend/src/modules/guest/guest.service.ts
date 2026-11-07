@@ -5,6 +5,11 @@ import {
   purgeInactiveGuestSessions,
 } from "./guest.repository";
 
+const guestCleanupTimer = setInterval(() => {
+  void purgeInactiveGuestSessions().catch(error => console.error("Scheduled inactive guest cleanup failed:", error));
+}, 6 * 60 * 60 * 1000);
+guestCleanupTimer.unref?.();
+
 let lastGuestCleanupAt = 0;
 async function runGuestCleanupIfDue() {
   if (Date.now() - lastGuestCleanupAt < 60 * 60 * 1000) return;
