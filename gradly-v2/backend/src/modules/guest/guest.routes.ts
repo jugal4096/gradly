@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { createGuest, getGuest, listGuestInstitutions, recordGuestEvent, requestInstitution, searchGuestInstitutions, saveGuestWorkspace } from "./guest.controller";
+import { createGuest, getGuest, listGuestInstitutions, recordGuestEvent, requestInstitution, searchGuestInstitutions, saveGuestWorkspace, checkGuestIdAvailability, getInstitutionRequestStatus } from "./guest.controller";
 
 const router = Router();
 
 router.get("/institutions", listGuestInstitutions);
+router.get("/guest-id-availability", checkGuestIdAvailability);
+router.get("/institution-requests/status", getInstitutionRequestStatus);
 router.get("/institution-search", searchGuestInstitutions);
 router.post("/institution-requests", requestInstitution);
 router.post("/session", createGuest);

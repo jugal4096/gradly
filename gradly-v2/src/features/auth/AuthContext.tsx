@@ -79,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function continueAsGuest() {
     sessionStorage.setItem(GUEST_SESSION_KEY, "true");
-    if (!localStorage.getItem(GUEST_ID_KEY)) localStorage.setItem(GUEST_ID_KEY, `GST-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
     setIsGuest(true);
   }
 

@@ -24,7 +24,8 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
     await client.query("SELECT pg_advisory_xact_lock($1)", [43829011]);
 
     const idCheck = await client.query(
-      "SELECT id FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1) LIMIT 1",
+      `SELECT id FROM guest_sessions WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1)
+       UNION ALL SELECT id FROM guest_institution_requests WHERE lower(guest_id) = lower($1) AND status IN ('PENDING','IN_REVIEW') LIMIT 1`,
       [guestId]
     );
     if (idCheck.rows.length) {
