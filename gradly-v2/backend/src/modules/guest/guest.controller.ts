@@ -11,6 +11,7 @@ import {
   isGuestIdAvailable,
   setGuestInstitution,
   deleteOwnGuestSession,
+  listOwnGuestInstitutionRequests,
 } from "./guest.repository";
 
 export async function listGuestInstitutions(_req: Request, res: Response) {
@@ -299,6 +300,20 @@ export async function selectGuestInstitution(req: Request, res: Response) {
   }
 }
 
+
+export async function listOwnGuestRequests(req: Request, res: Response) {
+  const token = req.headers["x-guest-session"];
+  if (typeof token !== "string" || !token) return res.status(401).json({ message: "Guest session token is required." });
+  try {
+    const session = await getGuestSession(token);
+    if (!session) return res.status(401).json({ message: "Guest session is invalid or expired." });
+    const requests = await listOwnGuestInstitutionRequests(session.id);
+    return res.status(200).json({ requests });
+  } catch (error) {
+    console.error("Failed to load guest institution requests:", error);
+    return res.status(500).json({ message: "Unable to load your institution requests." });
+  }
+}
 
 export async function deleteOwnGuestProfile(req: Request, res: Response) {
   const sessionToken = req.headers["x-guest-session"];
