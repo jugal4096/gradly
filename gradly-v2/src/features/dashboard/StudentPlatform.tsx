@@ -159,7 +159,7 @@ export default function StudentPlatform() {
   return <div className="sp-shell">
     <aside className={"sp-sidebar "+(mobileOpen?"open":"")}>
       <a className="sp-brand" href="/" onClick={e=>{e.preventDefault();navigate("home");}}><span className="sp-brand-mark">G<small>✦</small></span><span>Gradly<small>STUDENT SPACE</small></span></a>
-      <div className="sp-nav-scroll">{["WORKSPACE","ACADEMICS","COMMUNITY","ACCOUNT"].map(group=><div className="sp-nav-group" key={group}><span className="sp-nav-label">{group}</span>{nav.filter(item=>item.group===group).map(item=><button key={item.id} className={section===item.id?"active":""} onClick={()=>navigate(item.id)}><i>{item.icon}</i>{item.label}{section===item.id&&<b/>}</button>)}</div>)}</div>
+      <div className="sp-nav-scroll">{["WORKSPACE","ACADEMICS","COMMUNITY","ACCOUNT"].map(group=><div className="sp-nav-group" key={group}><span className="sp-nav-label">{group}</span>{nav.filter(item=>item.group===group&&(item.id!=="settings"||isGuest)).map(item=><button key={item.id} className={section===item.id?"active":""} onClick={()=>navigate(item.id)}><i>{item.icon}</i>{item.label}{section===item.id&&<b/>}</button>)}</div>)}</div>
       <div className="sp-sidebar-bottom"><div className="sp-sidebar-tip"><span>✦ ACADEMIC COMPANION</span><b>Progress over perfection.</b><small>Your next chapter starts here.</small></div><button className="sp-signout" onClick={()=>void signOut()}>↗ Sign out</button></div>
     </aside>
     {mobileOpen&&<button className="sp-backdrop" aria-label="Close menu" onClick={()=>setMobileOpen(false)}/>}
