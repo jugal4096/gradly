@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function deleteGuestProfile() {
     const token = sessionStorage.getItem(GUEST_TOKEN_KEY);
     if (!token) throw new Error("Your guest session is missing. Sign in to your Guest ID again.");
-    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
     const response = await fetch(apiBaseUrl + "/api/guest/session", {
       method: "DELETE",
       headers: { Accept: "application/json", "x-guest-session": token },
