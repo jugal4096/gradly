@@ -163,9 +163,16 @@ export async function setGuestBranch(guestSessionId: string, branchId: string) {
 
 export async function findGuestActivity(guestSessionId: string) {
   const result = await pool.query(`
-    SELECT id, actor_type, actor_role, action, entity_table, entity_id, created_at, metadata
+    SELECT id::text AS id, actor_type, actor_role, action, entity_table, entity_id::text AS entity_id, created_at, metadata
     FROM audit_logs
     WHERE actor_id::text = $1::text AND actor_type = 'GUEST'
+    UNION ALL
+    SELECT id::text AS id, 'GUEST' AS actor_type, 'GUEST' AS actor_role,
+      'GUEST_INSTITUTION_REQUEST_SUBMITTED' AS action,
+      'guest_institution_requests' AS entity_table, id::text AS entity_id, created_at,
+      jsonb_build_object('institutionName',college_name,'requestStatus',status,'locality',locality) AS metadata
+    FROM public.guest_institution_requests
+    WHERE guest_session_id::text = $1::text
     ORDER BY created_at DESC
     LIMIT 200
   `, [guestSessionId]);
