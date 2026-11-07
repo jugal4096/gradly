@@ -19,7 +19,7 @@ import { listCurriculum, updateCurriculumSubject } from "./superAdmin-curriculum
 import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
 import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
 import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
-import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
+import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin, updateGuestAccountStatus } from "./superAdmin-guests.controller";
 import { acknowledgePlatformRequest, deleteRequestRecord, listPlatformRequests, reviewPlatformRequest } from "../admin/platform-request.controller";
 
 const router = Router();
@@ -94,6 +94,7 @@ router.get("/audit/admin-actions", authenticateSuperAdminToken, getAdminAuditAct
  */
 router.get("/guest-sessions", authenticateSuperAdminToken, listGuestSessionsForSuperAdmin);
 router.get("/guest-sessions/:guestSessionId", authenticateSuperAdminToken, getGuestSessionForSuperAdmin);
+router.patch("/guest-sessions/:guestSessionId/status", authenticateSuperAdminToken, updateGuestAccountStatus);
 
 /*
  * USER MANAGEMENT
