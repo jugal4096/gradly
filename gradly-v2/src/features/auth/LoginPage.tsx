@@ -21,7 +21,7 @@ export default function LoginPage() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [guestSetup, setGuestSetup] = useState(false);
   const [guestId, setGuestId] = useState("");
-  const [availability, setAvailability] = useState<"idle"|"checking"|"available"|"taken"|"invalid">("idle");
+  const [availability, setAvailability] = useState<"idle"|"checking"|"available"|"taken"|"invalid"|"error">("idle");
 
   async function handleGoogleLogin() {
     try {
@@ -47,8 +47,18 @@ export default function LoginPage() {
         const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
         const response = await fetch(`${base}/api/guest/guest-id-availability?guestId=${encodeURIComponent(value)}`);
         const data = await response.json().catch(() => ({}));
-        setAvailability(response.ok && data.available ? "available" : response.status === 409 || data.valid ? "taken" : "invalid");
-      } catch { setAvailability("idle"); }
+        if (!response.ok && response.status >= 500) {
+          setAvailability("error");
+          setError(data.message || "Gradly could not check Guest ID availability. Please try again in a moment.");
+        } else if (!data.valid) {
+          setAvailability("invalid");
+        } else {
+          setAvailability(data.available ? "available" : "taken");
+        }
+      } catch {
+        setAvailability("error");
+        setError("Could not reach the Gradly server to check this Guest ID. Make sure the backend is running and try again.");
+      }
     }, 350);
     return () => window.clearTimeout(timer);
   }, [guestId, guestSetup]);
@@ -92,7 +102,7 @@ export default function LoginPage() {
               <input id="guest-id-input" autoComplete="off" maxLength={24} value={guestId} onChange={e => setGuestId(e.target.value)} placeholder="e.g. JUGAL2026" />
               <small>4–24 characters · letters, numbers, hyphens or underscores</small>
               <p className={`guest-id-status guest-id-${availability}`} role="status">
-                {availability === "checking" ? "Checking availability…" : availability === "available" ? "✓ This Guest ID is available" : availability === "taken" ? "This Guest ID is already taken" : availability === "invalid" ? "Enter a valid Guest ID" : "Choose your unique ID to check availability"}
+                {availability === "checking" ? "Checking availability…" : availability === "available" ? "✓ This Guest ID is available" : availability === "taken" ? "This Guest ID is already taken. Try another ID." : availability === "invalid" ? "Enter 4–24 characters using letters, numbers, hyphens or underscores." : availability === "error" ? "We couldn't verify availability. Check your connection and try again." : "Choose your unique ID to check availability"}
               </p>
               <button className="google-button guest-create-button" type="button" onClick={handleGuestCreate} disabled={availability !== "available" || loggingIn}>
                 {loggingIn ? "Creating your identity…" : "Create Guest Identity →"}
