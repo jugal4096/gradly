@@ -410,3 +410,41 @@
 .sp-grade-options button:focus-visible{outline:3px solid #b3a3f0;outline-offset:2px}
 @media(max-width:900px){.sp-subject-row{grid-template-columns:minmax(110px,1fr) 64px minmax(190px,1.2fr) 22px}.sp-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:640px){.sp-content{padding:20px 14px 32px!important}.sp-subject-head,.sp-subject-row{grid-template-columns:minmax(95px,1fr) 58px minmax(150px,1.25fr) 20px;gap:6px}.sp-grade-options{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-grade-options button{min-height:34px}.sp-grade-options button small{font-size:8px}}
+
+
+/* Academic workspace refresh: richer indigo, teal and lavender accents. */
+.sp-shell{--sp-accent:#6654b6;--sp-accent-strong:#51409b;--sp-academic:#0f8f83;--sp-academic-soft:#e8f7f4;--sp-lilac:#f0edff}
+.sp-topbar{background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid #ebe8f3}
+.sp-heading h1{letter-spacing:-1.4px}
+.sp-card{border-radius:19px;border-color:#e9e6f1}
+.sp-nav-group-5 button i{background:linear-gradient(145deg,#d9f4ee,#bce8dc);color:#087b70}
+.sp-nav-group-5 button.active i{background:linear-gradient(145deg,#28b7a2,#087b70);color:white;box-shadow:0 6px 16px rgba(15,143,131,.28)}
+.sp-nav-group-5 button:hover i{background:#d5f2ec;color:#087b70}
+.sp-credit-visual{padding:22px;border-radius:16px;background:linear-gradient(120deg,#effaf7,#f4f1ff);border:1px solid #dcefe9}
+.sp-credit-visual>div:first-child{display:flex;align-items:baseline;gap:10px}
+.sp-credit-visual>div:first-child strong{font:800 42px Manrope;color:#087b70;letter-spacing:-2px}
+.sp-credit-visual>div:first-child span{font-size:12px;color:#667b78}
+.sp-credit-track{height:12px;margin:18px 0 9px;border-radius:20px;background:#d8e8e3;overflow:hidden}
+.sp-credit-track i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#18aa96,#7664d3);transition:width .35s ease}
+.sp-credit-labels{display:flex;justify-content:space-between;color:#71817d;font-size:11px;font-weight:700}
+.sp-theme-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sp-theme-choices button{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-height:145px;padding:17px;border:1px solid #e7e3ef;border-radius:15px;background:#fcfbff;color:#37314f;text-align:left;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s}
+.sp-theme-choices button:hover{transform:translateY(-3px);border-color:#b8a9eb;box-shadow:0 12px 26px rgba(65,50,120,.09)}
+.sp-theme-choices button.selected{border:2px solid #7763c8;background:linear-gradient(145deg,#f2efff,#fff);box-shadow:0 8px 22px rgba(103,83,181,.12)}
+.sp-theme-choices button>span{display:grid;place-items:center;width:37px;height:37px;border-radius:11px;background:#eeeaff;color:#6654b6;font-size:20px}
+.sp-theme-choices button strong{font:800 14px Manrope}
+.sp-theme-choices button small{color:#89839b;font-size:11px}
+.sp-theme-choices button>b{position:absolute;top:12px;right:12px;color:#6654b6;font-size:9px}
+.sp-type-preview{margin-top:18px;padding:18px;border:1px dashed #d9d2eb;border-radius:13px;background:#faf9ff;color:#4b4562;line-height:1.7}
+.sp-type-preview strong{display:block;margin-top:5px;color:#6654b6}
+.sp-preference-card{background:linear-gradient(145deg,#fff,#fcfbff)}
+.sp-user-mode .sp-nav-group-5 .sp-nav-label{color:#75a69d}
+.sp-dark-theme .sp-theme-choices button{background:#211d36;color:#f0edff;border-color:#393252}
+.sp-dark-theme .sp-theme-choices button.selected{background:#30264d;border-color:#9c88ed}
+.sp-dark-theme .sp-theme-choices button small{color:#b2abc8}
+.sp-dark-theme .sp-type-preview{background:#211d36;border-color:#51476f;color:#e4def8}
+.sp-dark-theme .sp-type-preview strong{color:#b6a5ff}
+.sp-dark-theme .sp-credit-visual{background:linear-gradient(120deg,#173a38,#292344);border-color:#315b55}
+.sp-dark-theme .sp-credit-visual>div:first-child strong{color:#65d6c4}
+.sp-dark-theme .sp-credit-visual>div:first-child span,.sp-dark-theme .sp-credit-labels{color:#c0d8d2}
+@media(max-width:700px){.sp-theme-choices{grid-template-columns:1fr}.sp-theme-choices button{min-height:112px}.sp-credit-visual{padding:17px}}
