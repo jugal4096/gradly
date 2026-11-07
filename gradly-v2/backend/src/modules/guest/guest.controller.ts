@@ -9,6 +9,7 @@ import {
   recordGuestActivity,
   updateGuestWorkspace,
   listGuestInstitutionOptions,
+  deleteGuestSessionByToken,
 } from "./guest.repository";
 
 
@@ -312,5 +313,21 @@ export async function getInstitutionRequestStatus(req: Request, res: Response) {
   } catch (error) {
     console.error("Failed to retrieve guest institution request:", error);
     return res.status(503).json({ message: "Request status is temporarily unavailable." });
+  }
+}
+
+
+export async function deleteOwnGuestSession(req: Request, res: Response) {
+  const sessionToken = req.headers["x-guest-session"];
+  if (typeof sessionToken !== "string" || !sessionToken) {
+    return res.status(401).json({ message: "Guest session token is required." });
+  }
+  try {
+    const deleted = await deleteGuestSessionByToken(sessionToken);
+    if (!deleted) return res.status(404).json({ message: "Guest session was not found or has already expired." });
+    return res.status(200).json({ message: "Your Guest ID and guest workspace have been deleted." });
+  } catch (error) {
+    console.error("Guest self-deletion failed:", error);
+    return res.status(500).json({ message: "Your Guest ID could not be deleted. Please try again." });
   }
 }
