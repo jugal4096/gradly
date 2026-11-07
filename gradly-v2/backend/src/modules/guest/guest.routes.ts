@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkGuestIdAvailability, createGuest, getGuest, listGuestInstitutions, recordGuestEvent, saveGuestWorkspace, selectGuestInstitution } from "./guest.controller";
+import { checkGuestIdAvailability, createGuest, deleteOwnGuestProfile, getGuest, listGuestInstitutions, recordGuestEvent, saveGuestWorkspace, selectGuestInstitution } from "./guest.controller";
 import { discoverInstitutions, getInstitutionRequestStatus, submitInstitutionRequest } from "./institution-discovery.controller";
 
 const router = Router();
@@ -12,6 +12,7 @@ router.post("/institution-requests", submitInstitutionRequest);
 router.post("/session", createGuest);
 router.patch("/session/institution", selectGuestInstitution);
 router.get("/session", getGuest);
+router.delete("/session", deleteOwnGuestProfile);
 router.post("/session/activity", recordGuestEvent);
 router.patch("/session/workspace", saveGuestWorkspace);
 
