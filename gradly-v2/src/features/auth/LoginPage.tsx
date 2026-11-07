@@ -41,7 +41,7 @@ export default function LoginPage() {
     setAvailability("checking");
     const timer = window.setTimeout(async () => {
       try {
-        const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+        const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
         const response = await fetch(`${base}/api/guest/guest-id-availability?guestId=${encodeURIComponent(value)}`);
         const data = await response.json().catch(() => ({}));
         setAvailability(response.ok && data.available ? "available" : response.status === 409 || data.valid ? "taken" : "invalid");
