@@ -47,7 +47,8 @@ export async function listFeedbackRequests(req: SuperAdminAuthenticatedRequest, 
               concat('Institution: ', college_name, E'\\nState: ', COALESCE(state,''), E'\\nCity: ', COALESCE(city,locality,''), E'\\nDistrict: ', COALESCE(district,''), E'\\nType: ', COALESCE(institution_type,''), E'\\nAffiliation: ', COALESCE(affiliation,''), E'\\nWebsite: ', COALESCE(website,''), E'\\nAdditional information: ', COALESCE(additional_info,''), E'\\nGuest ID: ', COALESCE(guest_id, 'Not provided'), E'\\nExternal directory ID: ', COALESCE(external_institution_id, 'Not provided')) AS message,
               status, created_at, created_at AS updated_at, reviewed_note AS "reviewNote",
               COALESCE(requester_name,guest_id,'Student / guest') AS name, requester_email AS email,
-              jsonb_build_object('locality', locality, 'state', state, 'city', city, 'district', district, 'institutionType', institution_type, 'affiliation', affiliation, 'website', website, 'additionalInfo', additional_info, 'externalInstitutionId', external_institution_id, 'source', source) AS metadata
+              guest_id, guest_session_id,
+              jsonb_build_object('locality', locality, 'state', state, 'city', city, 'district', district, 'institutionType', institution_type, 'affiliation', affiliation, 'website', website, 'additionalInfo', additional_info, 'externalInstitutionId', external_institution_id, 'source', source, 'guestId', guest_id, 'guestSessionId', guest_session_id) AS metadata
        FROM public.guest_institution_requests
        ${institutionWhere.length ? "WHERE " + institutionWhere.join(" AND ") : ""}
        ORDER BY created_at DESC
