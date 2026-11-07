@@ -178,7 +178,10 @@ export async function findGuestSessions(search?: string) {
       COALESCE(metadata->>'guest_id', metadata->>'display_id') AS guest_id,
       metadata->>'display_name' AS display_name,
       metadata->>'institution_name' AS institution_name,
-      (expires_at IS NULL OR expires_at > NOW()) AS active,
+      (COALESCE(metadata->>'account_status','ACTIVE')='ACTIVE' AND (expires_at IS NULL OR expires_at > NOW())) AS active,
+      COALESCE(metadata->>'account_status','ACTIVE') AS account_status,
+      COALESCE((SELECT COUNT(*) FROM audit_logs al WHERE al.actor_type='GUEST' AND al.actor_id=guest_sessions.id),0)::int AS activity_count,
+      COALESCE((SELECT COUNT(*) FROM guest_institution_requests ir WHERE ir.guest_session_id=guest_sessions.id),0)::int AS institute_request_count,
       jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'subjects') = 'array'
         THEN metadata->'guest_workspace'->'subjects' ELSE '[]'::jsonb END) AS subject_count,
       jsonb_array_length(CASE WHEN jsonb_typeof(metadata->'guest_workspace'->'semesters') = 'array'
