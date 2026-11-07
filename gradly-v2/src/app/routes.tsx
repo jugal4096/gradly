@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import LoginPage from "../features/auth/LoginPage";
@@ -14,33 +14,6 @@ function HomePage() {
   return <LoginPage />;
 }
 
-function LaunchSplash() {
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timeout = window.setTimeout(() => setVisible(false), reducedMotion ? 500 : 3000);
-    return () => window.clearTimeout(timeout);
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <div className="launch-splash" role="status" aria-label="Gradly is loading">
-      <img
-        src="/gradly-intro.gif"
-        alt="Gradly animated logo"
-        onError={(event) => {
-          event.currentTarget.style.display = "none";
-          const fallback = event.currentTarget.nextElementSibling;
-          if (fallback instanceof HTMLElement) fallback.hidden = false;
-        }}
-      />
-      <span className="launch-splash-fallback" hidden>Gradly<span>✦</span></span>
-      <span className="sr-only">Loading Gradly</span>
-    </div>
-  );
-}
 
 function NotFoundPage() {
   return (
@@ -65,7 +38,6 @@ export default function AppRoutes() {
 
   return (
     <>
-      <LaunchSplash />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
