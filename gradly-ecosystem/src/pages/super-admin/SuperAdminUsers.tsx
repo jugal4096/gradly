@@ -251,27 +251,28 @@ export default function SuperAdminUsers() {
   const activeStudents = students.filter((student) => student.active).length;
   const activeGuests = guests.filter((guest) => guest.active).length;
 
-  async function deleteGuestSession(guest: GuestSession) {
+  async function updateGuestStatus(guest: GuestSession) {
+    const nextStatus = guest.active ? "DISABLED" : "ACTIVE";
     const guestLabel = String(guest.metadata?.guest_id || guest.metadata?.display_id || guest.id);
-    if (!window.confirm(`Permanently delete guest session ${guestLabel} and its saved guest workspace and recorded guest activity? This cannot be undone.`)) return;
+    if (!window.confirm(`${nextStatus === "DISABLED" ? "Disable" : "Reactivate"} guest account ${guestLabel}?${nextStatus === "DISABLED" ? " Active guest sessions will be revoked." : " The guest can use the saved identity again."}`)) return;
     const token = localStorage.getItem("gradly_super_admin_token");
     if (!token) { setError("Your Super Admin session is missing. Please sign in again."); return; }
     setGuestDeleteId(guest.id);
     setGuestNotice("");
     setError("");
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/guests/${encodeURIComponent(guest.id)}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      const response = await fetch(`${getApiBaseUrl()}/api/super-admin/users/guests/${encodeURIComponent(guest.id)}/status`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
       });
       const data = await response.json().catch(() => ({})) as { message?: string };
-      if (!response.ok) throw new Error(data.message || "Could not delete this guest session.");
-      setGuests((current) => current.filter((item) => item.id !== guest.id));
-      setSelectedGuest((current) => current?.id === guest.id ? null : current);
-      setGuestActivityTarget((current) => current?.id === guest.id ? null : current);
-      setGuestNotice(`Guest session ${guestLabel} and its recorded guest activity were deleted.`);
+      if (!response.ok) throw new Error(data.message || "Could not update this guest account.");
+      setGuests(current => current.map(item => item.id === guest.id ? { ...item, active: nextStatus === "ACTIVE", expires_at: nextStatus === "DISABLED" ? new Date().toISOString() : null, metadata: { ...(item.metadata || {}), account_status: nextStatus } } : item));
+      setSelectedGuest(current => current?.id === guest.id ? { ...current, active: nextStatus === "ACTIVE", expires_at: nextStatus === "DISABLED" ? new Date().toISOString() : null, metadata: { ...(current.metadata || {}), account_status: nextStatus } } : current);
+      setGuestNotice(nextStatus === "DISABLED" ? `Guest ${guestLabel} disabled; active session revoked.` : `Guest ${guestLabel} reactivated.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete this guest session.");
+      setError(err instanceof Error ? err.message : "Could not update guest account.");
     } finally {
       setGuestDeleteId(null);
     }
@@ -555,7 +556,7 @@ export default function SuperAdminUsers() {
                     <td><span className="super-users-date">{formatDate(guest.last_seen_at)}</span></td>
                     <td><span className="super-users-date">{guest.expires_at ? formatDate(guest.expires_at) : "No expiry set"}</span></td>
                     <td><span className={`super-users-status ${guest.active ? "is-active" : "is-inactive"}`}><span />{guest.active ? "Active" : "Expired"}</span></td>
-                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view guest-delete-action" onClick={() => void deleteGuestSession(guest)} disabled={guestDeleteId === guest.id} aria-label="Delete guest data" title="Delete guest data">{guestDeleteId === guest.id ? "…" : "Delete"}</button></div></td>
+                    <td><div className="super-users-row-actions"><button type="button" className="super-users-view" onClick={() => setSelectedGuest(guest)} aria-label="Inspect guest session" title="Inspect session"><Eye size={16} /></button><button type="button" className="super-users-view activity-view" onClick={() => void openGuestActivity(guest)} aria-label="View guest activity" title="Guest activity timeline"><Activity size={16} /></button><button type="button" className="super-users-view guest-delete-action" onClick={() => void updateGuestStatus(guest)} disabled={guestDeleteId === guest.id} aria-label={guest.active ? "Disable guest account" : "Reactivate guest account"} title={guest.active ? "Disable guest account" : "Reactivate guest account"}>{guestDeleteId === guest.id ? "…" : guest.active ? "Disable" : "Reactivate"}</button></div></td>
                   </tr>)}
               </tbody>
             </table>
@@ -613,7 +614,7 @@ export default function SuperAdminUsers() {
             <div><dt>Guest ID</dt><dd>{String(selectedGuest.metadata?.guest_id || selectedGuest.metadata?.display_id || "Legacy guest")}</dd></div>
             <div><dt>Session ID</dt><dd>{selectedGuest.id}</dd></div>
             <div><dt>Display name</dt><dd>{String(selectedGuest.metadata?.display_name || "Guest")}</dd></div>
-            <div><dt>Status</dt><dd>{selectedGuest.active ? "Active / unexpired" : "Expired"}</dd></div>
+            <div><dt>Status</dt><dd>{selectedGuest.metadata?.account_status === "DISABLED" ? "Disabled" : selectedGuest.active ? "Active / unexpired" : "Expired"}</dd></div>
             <div><dt>First seen</dt><dd>{formatDate(selectedGuest.first_seen_at)}</dd></div>
             <div><dt>Last activity</dt><dd>{formatDate(selectedGuest.last_seen_at)}</dd></div>
             <div><dt>Expires</dt><dd>{selectedGuest.expires_at ? formatDate(selectedGuest.expires_at) : "No expiry set"}</dd></div>
