@@ -789,3 +789,12 @@
 .sp-cgpa-input-row .sp-remove{font-size:16px;line-height:1}
 .sp-cgpa-input-head{padding-bottom:7px}
 @media(max-width:560px){.sp-cgpa-calculator-hero{min-height:175px;padding:25px 18px}.sp-cgpa-input-head,.sp-cgpa-input-row{grid-template-columns:.9fr 1fr .9fr 20px;gap:5px}.sp-cgpa-input-row input,.sp-cgpa-input-row select{height:32px;padding:5px 6px;font-size:9px}}
+
+
+/* CGPA calculator: input form and live result side by side */
+.sp-cgpa-workspace-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(250px,.85fr);align-items:start;gap:18px}
+.sp-cgpa-workspace-grid>.sp-card{min-width:0}
+.sp-cgpa-workspace-grid>.sp-cgpa-result-panel{position:sticky;top:92px;min-width:0;margin:0}
+.sp-cgpa-result-panel .sp-score{font-size:clamp(38px,4vw,54px)}
+.sp-cgpa-result-panel>p{max-width:34ch}
+@media(max-width:760px){.sp-cgpa-workspace-grid{grid-template-columns:1fr}.sp-cgpa-workspace-grid>.sp-cgpa-result-panel{position:static}}
