@@ -264,11 +264,20 @@ export async function requestInstitution(req: Request, res: Response) {
 
 export async function checkGuestIdAvailability(req: Request, res: Response) {
   const guestId = typeof req.query.guestId === "string" ? req.query.guestId : "";
-  const result = await isGuestIdAvailable(guestId);
-  return res.status(result.valid ? 200 : 400).json({
-    ...result,
-    message: !result.valid ? "Use 4–24 letters, numbers, hyphens or underscores." : result.available ? "Guest ID is available." : "That Guest ID is already taken.",
-  });
+  try {
+    const result = await isGuestIdAvailable(guestId);
+    return res.status(result.valid ? 200 : 400).json({
+      ...result,
+      message: !result.valid ? "Use 4–24 letters, numbers, hyphens or underscores." : result.available ? "Guest ID is available." : "That Guest ID is already taken.",
+    });
+  } catch (error) {
+    console.error("Failed to check Guest ID availability:", error);
+    return res.status(503).json({
+      valid: true,
+      available: false,
+      message: "Guest ID availability is temporarily unavailable. Please try again.",
+    });
+  }
 }
 
 export async function selectGuestInstitution(req: Request, res: Response) {
