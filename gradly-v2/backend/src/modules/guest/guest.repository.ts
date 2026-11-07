@@ -224,6 +224,40 @@ export async function setGuestInstitution(guestSessionId: string, institutionId:
  * supplies a guest UUID, so one guest cannot target another guest's profile.
  * Guest-generated audit events are removed in the same transaction.
  */
+export async function listOwnGuestInstitutionRequests(guestSessionId: string) {
+  const result = await pool.query(
+    `SELECT id::text AS id, college_name AS "institutionName", state, city, district,
+            institution_type AS "institutionType", status, created_at AS "createdAt",
+            reviewed_at AS "reviewedAt", reviewed_note AS "reviewNote"
+     FROM public.guest_institution_requests
+     WHERE guest_session_id = $1
+     ORDER BY created_at DESC LIMIT 100`,
+    [guestSessionId]
+  );
+  return result.rows;
+}
+
+export async function purgeInactiveGuestSessions() {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const stale = await client.query(
+      `SELECT id FROM public.guest_sessions
+       WHERE COALESCE(metadata->>'account_status', 'ACTIVE') = 'ACTIVE'
+         AND last_seen_at < NOW() - INTERVAL '30 days'
+       FOR UPDATE SKIP LOCKED`
+    );
+    const ids = stale.rows.map((row: { id: string }) => row.id);
+    if (ids.length) {
+      await client.query("DELETE FROM public.guest_institution_requests WHERE guest_session_id = ANY($1::uuid[])", [ids]);
+      await client.query("DELETE FROM audit_logs WHERE actor_type = 'GUEST' AND actor_id::text = ANY($1::text[])", [ids]);
+      await client.query("DELETE FROM public.guest_sessions WHERE id = ANY($1::uuid[])", [ids]);
+    }
+    await client.query("COMMIT");
+    return ids.length;
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
+}
 export async function deleteOwnGuestSession(sessionToken: string) {
   const tokenHash = hashGuestToken(sessionToken);
   const client = await pool.connect();
@@ -242,6 +276,7 @@ export async function deleteOwnGuestSession(sessionToken: string) {
       return false;
     }
     const guestSessionId = existing.rows[0].id;
+    await client.query("DELETE FROM public.guest_institution_requests WHERE guest_session_id = $1", [guestSessionId]);
     await client.query(
       `DELETE FROM audit_logs WHERE actor_type = 'GUEST' AND actor_id::text = $1::text`,
       [guestSessionId]
