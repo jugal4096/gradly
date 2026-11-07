@@ -378,3 +378,35 @@
  .sp-guest-mode .sp-nav-group button{height:40px;min-height:40px;font-size:12px}
  .sp-guest-mode .sp-guest-unlock p{display:block}
 }
+
+
+/* Workspace refinement: use the sidebar as an overlay drawer so the canvas
+   starts at the viewport edge instead of reserving a permanently empty rail. */
+.sp-sidebar{transform:translateX(-105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);box-shadow:24px 0 70px rgba(12,8,34,.2)}
+.sp-sidebar.open{transform:translateX(0)}
+.sp-main{margin-left:0!important;width:100%!important;max-width:100%;box-sizing:border-box}
+.sp-menu{display:flex!important;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid #e7e2f0;border-radius:13px;background:#fff;color:#55458f;cursor:pointer;box-shadow:0 5px 16px rgba(55,43,102,.08)}
+.sp-menu:hover{background:#f4f0ff;transform:translateY(-1px)}
+.sp-menu span{display:none}
+.sp-backdrop{display:block;position:fixed;inset:0;background:rgba(22,17,43,.38);backdrop-filter:blur(3px);border:0;z-index:19}
+.sp-content{width:100%!important;max-width:none!important;margin:0!important;padding:30px clamp(20px,3.2vw,52px) 48px!important;box-sizing:border-box}
+.sp-topbar{padding-left:clamp(18px,3vw,44px);padding-right:clamp(18px,3vw,44px)}
+.sp-nav-group button{height:46px;font-size:12px;border:1px solid transparent}
+.sp-nav-group button i{width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:rgba(164,145,255,.12);font-size:16px;transition:transform .2s,background .2s}
+.sp-nav-group button:hover i{transform:rotate(-7deg) scale(1.08);background:rgba(164,145,255,.24)}
+.sp-nav-group button.active i{background:linear-gradient(145deg,#9c85ff,#6d52ce);color:white;box-shadow:0 5px 14px rgba(120,92,220,.3)}
+.sp-nav-group button.active{box-shadow:inset 0 0 0 1px rgba(171,151,255,.16),0 8px 22px rgba(12,8,35,.16)}
+.sp-card{box-shadow:0 12px 34px rgba(28,21,59,.08);transition:transform .2s,border-color .2s,box-shadow .2s}
+.sp-card:hover{border-color:rgba(151,128,226,.42);box-shadow:0 18px 42px rgba(28,21,59,.12)}
+.sp-subject-row{grid-template-columns:minmax(130px,1fr) 76px minmax(220px,1.35fr) 25px;gap:10px;padding:13px 0}
+.sp-subject-row input{min-height:42px;font-size:12px}
+.sp-grade-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-width:0}
+.sp-grade-options button{min-width:0;min-height:38px;padding:5px 4px;border:1px solid #e5e0ef;border-radius:9px;background:#faf9fd;color:#51496c;display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:transform .16s,border-color .16s,background .16s,box-shadow .16s}
+.sp-grade-options button strong{font:800 11px Manrope}
+.sp-grade-options button small{font:600 9px 'DM Sans';color:#9690a7}
+.sp-grade-options button:hover{transform:translateY(-1px);border-color:#a99ae1;background:#f4f0ff}
+.sp-grade-options button.selected{border-color:#826bd0;background:linear-gradient(135deg,#eee9ff,#f8f5ff);color:#49368d;box-shadow:0 0 0 2px rgba(130,107,208,.12),0 5px 12px rgba(100,79,165,.09)}
+.sp-grade-options button.selected small{color:#7866b4}
+.sp-grade-options button:focus-visible{outline:3px solid #b3a3f0;outline-offset:2px}
+@media(max-width:900px){.sp-subject-row{grid-template-columns:minmax(110px,1fr) 64px minmax(190px,1.2fr) 22px}.sp-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:640px){.sp-content{padding:20px 14px 32px!important}.sp-subject-head,.sp-subject-row{grid-template-columns:minmax(95px,1fr) 58px minmax(150px,1.25fr) 20px;gap:6px}.sp-grade-options{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-grade-options button{min-height:34px}.sp-grade-options button small{font-size:8px}}
