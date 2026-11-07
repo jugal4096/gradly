@@ -16,17 +16,26 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").repla
 const DEFAULT_POINTS: Record<string, number> = { "O":10, "A+":9, "A":8, "B+":7, "B":6, "C":5, "P":4, "F":0 };
 const GECA_POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", semester:"", enrollment:"", admissionMode:"Regular", admissionNumber:"", scheme:"" };
-const nav: { id: Section; label: string; icon: string; group: string }[] = [
-  { id:"home",label:"Overview",icon:"⌂",group:"WORKSPACE" },
-  { id:"sgpa",label:"SGPA analysis",icon:"∑",group:"ACADEMICS" },
-  { id:"cgpa",label:"CGPA analysis",icon:"◈",group:"ACADEMICS" },
-  { id:"planner",label:"Academic planner",icon:"⌁",group:"ACADEMICS" },
-  { id:"tracker",label:"Progress tracker",icon:"▥",group:"ACADEMICS" },
-  { id:"credits",label:"Credit analyser",icon:"◇",group:"ACADEMICS" },
-  { id:"community",label:"Group chat & notes",icon:"☷",group:"COMMUNITY" },
-  { id:"assistant",label:"Gradly AI",icon:"✳",group:"COMMUNITY" },
-  { id:"profile",label:"Academic profile",icon:"◎",group:"ACCOUNT" },
-  { id:"settings",label:"Guest settings",icon:"⚙",group:"ACCOUNT" },
+type NavLeaf = { id: Section; label: string; icon: string; comingSoon?: boolean };
+type NavBranch = { label: string; icon: string; children: NavLeaf[] };
+type NavGroup = { label: string; icon: string; branches: NavBranch[] };
+const workspaceNavigation: NavGroup[] = [
+  { label:"WORKSPACE", icon:"⌂", branches:[{label:"Overview",icon:"▦",children:[{id:"home",label:"Dashboard",icon:"⌂"}]}] },
+  { label:"ACADEMICS", icon:"▤", branches:[
+    {label:"Academic Analysis",icon:"∑",children:[{id:"sgpa",label:"SGPA Analysis",icon:"∑"},{id:"cgpa",label:"CGPA Analysis",icon:"◈"}]},
+    {label:"Academic Planning",icon:"⌁",children:[{id:"planner",label:"Academic Planner",icon:"⌁"},{id:"tracker",label:"Progress Tracker",icon:"▥"},{id:"credits",label:"Credit Analyser",icon:"◇"}]},
+    {label:"Academic Profile",icon:"◎",children:[{id:"profile",label:"Student Academic Profile",icon:"◎"},{id:"tracker",label:"Semester Records",icon:"▤",comingSoon:true}]}
+  ]},
+  { label:"COMMUNITY", icon:"♧", branches:[
+    {label:"Collaboration",icon:"☷",children:[{id:"community",label:"Group Chat",icon:"☷"},{id:"community",label:"Notes",icon:"▧",comingSoon:true}]},
+    {label:"Announcements",icon:"◉",children:[{id:"community",label:"Notices",icon:"▤",comingSoon:true},{id:"community",label:"Notifications",icon:"♧",comingSoon:true}]}
+  ]},
+  { label:"ACADEMIC COMPANION", icon:"✦", branches:[
+    {label:"Gradly AI",icon:"✧",children:[{id:"assistant",label:"AI Assistant",icon:"✧"},{id:"assistant",label:"Academic Guidance",icon:"✦",comingSoon:true}]}
+  ]},
+  { label:"ACCOUNT", icon:"⚙", branches:[
+    {label:"Account",icon:"◎",children:[{id:"profile",label:"Profile",icon:"◎"},{id:"settings",label:isGuest?"Guest Settings":"Settings",icon:"⚙"}]}
+  ]}
 ];
 
 function SectionTitle({ kicker, title, copy }: { kicker:string; title:string; copy:string }) {
@@ -43,6 +52,8 @@ export default function StudentPlatform() {
   const [theme,setTheme] = useState<"light"|"dark">(() => localStorage.getItem(themeStorageKey)==="dark"?"dark":"light");
   useEffect(()=>{document.documentElement.dataset.studentTheme=theme;localStorage.setItem(themeStorageKey,theme);},[theme,themeStorageKey]);
   const [mobileOpen,setMobileOpen] = useState(false);
+  const [expandedNav,setExpandedNav] = useState<string[]>(["WORKSPACE","ACADEMICS","COMMUNITY","ACADEMIC COMPANION","ACCOUNT","Overview","Academic Analysis","Academic Planning","Academic Profile","Collaboration","Announcements","Gradly AI","Account"]);
+  const toggleNav = (label:string) => setExpandedNav(current=>current.includes(label)?current.filter(item=>item!==label):[...current,label]);
   const [guestRequestOpen,setGuestRequestOpen] = useState(false);
   const [guestRequests,setGuestRequests] = useState<Array<{id:string;institutionName:string;status:string;createdAt:string}>>([]);
   const [guestRequestsLoading,setGuestRequestsLoading] = useState(false);
@@ -199,8 +210,8 @@ export default function StudentPlatform() {
   return <div className="sp-shell">
     <aside className={"sp-sidebar "+(mobileOpen?"open":"")}>
       <a className="sp-brand" href="/" onClick={e=>{e.preventDefault();navigate("home");}}><span className="sp-brand-mark">G<small>✦</small></span><span>Gradly<small>STUDENT SPACE</small></span></a>
-      <div className="sp-nav-scroll">{["WORKSPACE","ACADEMICS","COMMUNITY","ACCOUNT"].map(group=><div className="sp-nav-group" key={group}><span className="sp-nav-label">{group}</span>{nav.filter(item=>item.group===group&&(item.id!=="settings"||isGuest)).map(item=><button key={item.id} className={section===item.id?"active":""} onClick={()=>navigate(item.id)}><i>{item.icon}</i>{item.label}{section===item.id&&<b/>}</button>)}</div>)}</div>
-      <div className="sp-sidebar-bottom"><div className="sp-sidebar-tip"><span>✦ ACADEMIC COMPANION</span><b>Progress over perfection.</b><small>Your next chapter starts here.</small></div><button className="sp-signout" onClick={()=>void signOut()}>↗ Sign out</button></div>
+      <div className="sp-nav-scroll">{workspaceNavigation.map(group=><section className="sp-nav-group" key={group.label}><button type="button" className="sp-nav-label sp-nav-group-toggle" aria-expanded={expandedNav.includes(group.label)} onClick={()=>toggleNav(group.label)}><span><i>{group.icon}</i>{group.label}</span><b>{expandedNav.includes(group.label)?"−":"＋"}</b></button>{expandedNav.includes(group.label)&&group.branches.map(branch=><div className="sp-nav-branch" key={branch.label}><button type="button" className="sp-nav-branch-toggle" aria-expanded={expandedNav.includes(branch.label)} onClick={()=>toggleNav(branch.label)}><i>{branch.icon}</i><span>{branch.label}</span><b>{expandedNav.includes(branch.label)?"⌄":"›"}</b></button>{expandedNav.includes(branch.label)&&<div className="sp-nav-leaves">{branch.children.filter(item=>item.id!=="settings"||isGuest||!isGuest).map((item,index)=><button type="button" key={branch.label+"-"+item.label+"-"+index} className={"sp-nav-leaf"+(section===item.id&&!item.comingSoon?" active":"")+(item.comingSoon?" is-coming":"")} onClick={()=>item.comingSoon?setNotice(item.label+" is coming soon."):navigate(item.id)}><i>{item.icon}</i><span>{item.label}</span>{item.comingSoon?<small>SOON</small>:section===item.id&&<b/>}</button>)}</div>}</div>)}</section>)}</div>
+      <div className="sp-sidebar-bottom"><div className="sp-sidebar-tip"><span>✦ GRADLY ACADEMIC COMPANION</span><b>Progress over perfection.</b><small>Your next chapter starts here.</small></div><button className="sp-signout" onClick={()=>void signOut()}>↗ Sign out</button></div>
     </aside>
     {mobileOpen&&<button className="sp-backdrop" aria-label="Close menu" onClick={()=>setMobileOpen(false)}/>}
     <main className="sp-main">
