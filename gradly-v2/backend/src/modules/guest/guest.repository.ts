@@ -78,7 +78,10 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
 
 export async function listGuestInstitutionOptions() {
   const result = await pool.query(
-    "SELECT id, name FROM institutions ORDER BY name"
+    `SELECT id::text AS id, name,
+       COALESCE(to_jsonb(i)->>'city', to_jsonb(i)->>'district', '') AS city,
+       COALESCE(to_jsonb(i)->>'state', '') AS state
+     FROM public.institutions i ORDER BY name`
   );
   return result.rows;
 }
