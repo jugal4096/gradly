@@ -94,7 +94,7 @@ export async function getInstitutionRequestStatus(req:Request,res:Response) {
   if(typeof token==="string"&&token){const guest=await getGuestSession(token);if(!guest)return res.status(401).json({message:"Guest session is invalid or expired."});ownerColumn="guest_session_id";ownerId=guest.id;}
   else if(req.headers.authorization?.startsWith("Bearer ")){try{const decoded=await firebaseAuth.verifyIdToken(req.headers.authorization.slice(7));ownerColumn="requester_uid";ownerId=decoded.uid;}catch{return res.status(401).json({message:"Sign-in session expired."});}}
   else return res.status(401).json({message:"A valid guest or student session is required."});
-  const sql="SELECT id,college_name AS \\\"institutionName\\\",state,city,district,institution_type AS \\\"institutionType\\\",status,created_at AS \\\"createdAt\\\",reviewed_at AS \\\"reviewedAt\\\",reviewed_note AS \\\"reviewNote\\\" FROM public.guest_institution_requests WHERE id=$1 AND "+ownerColumn+"=$2 LIMIT 1";
+  const sql="SELECT id,status FROM public.guest_institution_requests WHERE id=$1 AND "+ownerColumn+"=$2 LIMIT 1";
   const r=await pool.query(sql,[id,ownerId]);
   if(!r.rowCount)return res.status(404).json({message:"Request not found."});
   return res.json({request:r.rows[0]});
