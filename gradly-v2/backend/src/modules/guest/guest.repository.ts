@@ -218,3 +218,41 @@ export async function setGuestInstitution(guestSessionId: string, institutionId:
   );
   return result.rows[0] ?? null;
 }
+
+/**
+ * Delete the guest session identified by its bearer token. The caller never
+ * supplies a guest UUID, so one guest cannot target another guest's profile.
+ * Guest-generated audit events are removed in the same transaction.
+ */
+export async function deleteOwnGuestSession(sessionToken: string) {
+  const tokenHash = hashGuestToken(sessionToken);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT id FROM guest_sessions
+       WHERE session_token_hash = $1
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND COALESCE(metadata->>'account_status', 'ACTIVE') = 'ACTIVE'
+       FOR UPDATE`,
+      [tokenHash]
+    );
+    if (!existing.rowCount) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    const guestSessionId = existing.rows[0].id;
+    await client.query(
+      `DELETE FROM audit_logs WHERE actor_type = 'GUEST' AND actor_id::text = $1::text`,
+      [guestSessionId]
+    );
+    await client.query(`DELETE FROM guest_sessions WHERE id = $1`, [guestSessionId]);
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
