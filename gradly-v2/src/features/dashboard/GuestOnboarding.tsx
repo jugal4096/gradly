@@ -22,6 +22,7 @@ export default function GuestOnboarding({onComplete}:{onComplete:()=>void}){
  const [guestId,setGuestId]=useState(()=>localStorage.getItem(ID_KEY)||"");
  const [institutions,setInstitutions]=useState<Institution[]>([]);
  const [institutionsLoading,setInstitutionsLoading]=useState(false);
+ const [institutionsLoaded,setInstitutionsLoaded]=useState(false);
  const [selected,setSelected]=useState("");
  const [query,setQuery]=useState("");
  const [searchResults,setSearchResults]=useState<SearchInstitution[]>([]);
@@ -38,14 +39,14 @@ export default function GuestOnboarding({onComplete}:{onComplete:()=>void}){
  const valid=/^[A-Z0-9][A-Z0-9_-]{3,23}$/.test(normalized);
 
  useEffect(()=>{
-   if(step!=="institution"||institutions.length||institutionsLoading)return;
+   if(step!=="institution"||institutionsLoaded||institutionsLoading)return;
    let active=true;
    setInstitutionsLoading(true);
    loadInstitutions().then(data=>{if(active)setInstitutions(data);})
      .catch(e=>{if(active)setError(e instanceof Error?e.message:"Could not load institutions.");})
-     .finally(()=>{if(active)setInstitutionsLoading(false);});
+     .finally(()=>{if(active){setInstitutionsLoading(false);setInstitutionsLoaded(true);}});
    return()=>{active=false;};
- },[step,institutions.length,institutionsLoading]);
+ },[step,institutionsLoaded,institutionsLoading]);
 
  useEffect(()=>{
    const trimmed=query.trim();
@@ -146,7 +147,7 @@ export default function GuestOnboarding({onComplete}:{onComplete:()=>void}){
            <option value="">{institutionsLoading?"Loading institutions…":"Choose an institution"}</option>
            {institutions.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
          </select>
-         {!institutionsLoading&&institutions.length===0&&<div className="guest-inline-error">Institution list is unavailable. Check your connection and retry.</div>}
+         {!institutionsLoading&&institutions.length===0&&<button type="button" className="guest-retry" onClick={()=>{institutionRequest=null;setInstitutionsLoaded(false);}}>Institution list unavailable · Retry</button>}
          <button className="guest-button guest-button-primary" disabled={!selected||loading||institutionsLoading} onClick={()=>void startGuest()}>{loading?"Creating your workspace…":"Enter my workspace"} <span>→</span></button>
          <div className="guest-divider"><span/> OR <span/></div>
          <div className="guest-request-box">
