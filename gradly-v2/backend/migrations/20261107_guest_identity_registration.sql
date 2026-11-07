@@ -11,3 +11,9 @@ ON public.guest_sessions (last_seen_at DESC);
 CREATE INDEX IF NOT EXISTS audit_logs_guest_activity_timeline_idx
 ON public.audit_logs (actor_id, created_at DESC)
 WHERE actor_type = 'GUEST';
+
+ALTER TABLE public.guest_institution_requests
+  ADD COLUMN IF NOT EXISTS guest_session_id UUID REFERENCES public.guest_sessions(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS guest_institution_requests_guest_timeline_idx
+  ON public.guest_institution_requests (guest_session_id, created_at DESC)
+  WHERE guest_session_id IS NOT NULL;
