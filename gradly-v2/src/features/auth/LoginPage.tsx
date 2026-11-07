@@ -18,7 +18,10 @@ export default function LoginPage() {
   const { loginWithGoogle, createGuestIdentity } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);\n  const [guestSetup, setGuestSetup] = useState(false);\n  const [guestId, setGuestId] = useState("");\n  const [availability, setAvailability] = useState<"idle"|"checking"|"available"|"taken"|"invalid">("idle");
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [guestSetup, setGuestSetup] = useState(false);
+  const [guestId, setGuestId] = useState("");
+  const [availability, setAvailability] = useState<"idle"|"checking"|"available"|"taken"|"invalid">("idle");
 
   async function handleGoogleLogin() {
     try {
