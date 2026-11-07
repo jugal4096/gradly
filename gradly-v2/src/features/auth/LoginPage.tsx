@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "../../student-entry.css";
@@ -15,10 +15,10 @@ function GoogleMark() {
 }
 
 export default function LoginPage() {
-  const { loginWithGoogle, continueAsGuest } = useAuth();
+  const { loginWithGoogle, createGuestIdentity } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);\n  const [guestSetup, setGuestSetup] = useState(false);\n  const [guestId, setGuestId] = useState("");\n  const [availability, setAvailability] = useState<"idle"|"checking"|"available"|"taken"|"invalid">("idle");
 
   async function handleGoogleLogin() {
     try {
@@ -34,9 +34,33 @@ export default function LoginPage() {
     }
   }
 
-  function handleGuest() {
-    continueAsGuest();
-    navigate("/dashboard", { replace: true });
+  useEffect(() => {
+    const value = guestId.trim();
+    if (!guestSetup || !value) { setAvailability("idle"); return; }
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{3,23}$/.test(value)) { setAvailability("invalid"); return; }
+    setAvailability("checking");
+    const timer = window.setTimeout(async () => {
+      try {
+        const base = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+        const response = await fetch(`${base}/api/guest/guest-id-availability?guestId=${encodeURIComponent(value)}`);
+        const data = await response.json().catch(() => ({}));
+        setAvailability(response.ok && data.available ? "available" : response.status === 409 || data.valid ? "taken" : "invalid");
+      } catch { setAvailability("idle"); }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [guestId, guestSetup]);
+
+  async function handleGuestCreate() {
+    if (availability !== "available") return;
+    try {
+      setError("");
+      setLoggingIn(true);
+      await createGuestIdentity(guestId.trim());
+      navigate("/dashboard", { replace: true });
+    } catch (guestError) {
+      setError(guestError instanceof Error ? guestError.message : "Guest identity could not be created.");
+      setAvailability("idle");
+    } finally { setLoggingIn(false); }
   }
 
   return (
@@ -56,12 +80,29 @@ export default function LoginPage() {
           <div className="eyebrow"><span className="eyebrow-line" /> A smarter way to move forward</div>
           <h1>Your next academic<br /><span>breakthrough</span> starts here.</h1>
           <p className="entry-description">One place to understand your progress, explore what’s possible and make your next semester count.</p>
-          <div className="entry-actions">
-            <button className="google-button" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
-              <GoogleMark /><span>{loggingIn ? "Connecting to Google…" : "Continue with Google"}</span>{!loggingIn && <span className="button-arrow">↗</span>}
-            </button>
-            <button className="guest-button" type="button" onClick={handleGuest}>Continue as a guest <span aria-hidden="true">→</span></button>
-          </div>
+          {guestSetup ? (
+            <div className="guest-identity-panel">
+              <button className="guest-back" type="button" onClick={() => { setGuestSetup(false); setError(""); }}>← Back</button>
+              <h2>Create Your Guest Identity</h2>
+              <p>Your Guest ID will identify your saved academic workspace.</p>
+              <label htmlFor="guest-id-input">Choose a Guest ID</label>
+              <input id="guest-id-input" autoComplete="off" maxLength={24} value={guestId} onChange={e => setGuestId(e.target.value)} placeholder="e.g. JUGAL2026" />
+              <small>4–24 characters · letters, numbers, hyphens or underscores</small>
+              <p className={`guest-id-status guest-id-${availability}`} role="status">
+                {availability === "checking" ? "Checking availability…" : availability === "available" ? "✓ This Guest ID is available" : availability === "taken" ? "This Guest ID is already taken" : availability === "invalid" ? "Enter a valid Guest ID" : "Choose your unique ID to check availability"}
+              </p>
+              <button className="google-button guest-create-button" type="button" onClick={handleGuestCreate} disabled={availability !== "available" || loggingIn}>
+                {loggingIn ? "Creating your identity…" : "Create Guest Identity →"}
+              </button>
+            </div>
+          ) : (
+            <div className="entry-actions">
+              <button className="google-button" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
+                <GoogleMark /><span>{loggingIn ? "Connecting to Google…" : "Continue with Google"}</span>{!loggingIn && <span className="button-arrow">↗</span>}
+              </button>
+              <button className="guest-button" type="button" onClick={() => setGuestSetup(true)}>Continue as a guest <span aria-hidden="true">→</span></button>
+            </div>
+          )}
           {error && <p className="entry-error" role="alert">{error}</p>}
           <p className="entry-footnote">Choose how you want to use Gradly. Guest access is limited to manual SGPA and CGPA calculations; sign in to unlock the full student experience.</p>
           <div className="entry-proof">
@@ -83,3 +124,6 @@ export default function LoginPage() {
     </main>
   );
 }
+
+
+/* Guest identity setup: deliberately compact and mobile-first. */
