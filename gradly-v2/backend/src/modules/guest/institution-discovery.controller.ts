@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { pool } from "../../config/database";
 import { firebaseAuth } from "../../config/firebase-admin";
+import { getGuestSession } from "./guest.service";
+import { recordGuestActivity } from "./guest.repository";
 
 type Item = { id:string; name:string; aisheCode?:string; city:string; state:string; country:string; website:string|null; type:string; source:string; isInGradly:boolean; externalId?:string; branches?:unknown[] };
 const cache = new Map<string,{until:number;items:Item[];count:number}>();
@@ -60,7 +62,14 @@ export async function submitInstitutionRequest(req:Request,res:Response) {
  if(name.length<2||!state||!city||!type)return res.status(400).json({message:"Institution name, state, city and type are required."});
  if(website&&!/^https?:\/\//i.test(website))return res.status(400).json({message:"Website must begin with http:// or https://."});
  if(/[<>]/.test([name,state,city,district,affiliation,info].join(" ")))return res.status(400).json({message:"Please remove unsupported characters."});
- let uid:string|null=null,email:string|null=null,requester:string|null=null;
+ let uid:string|null=null,email:string|null=null,requester:string|null=null,guestSessionId:string|null=null,canonicalGuestId=guestId;
+ const guestToken=req.headers["x-guest-session"];
+ if(typeof guestToken==="string"&&guestToken){
+  const guest=await getGuestSession(guestToken);
+  if(!guest)return res.status(401).json({message:"Guest session is invalid, expired or disabled."});
+  guestSessionId=guest.id;
+  canonicalGuestId=String(guest.metadata?.guest_id||guest.metadata?.display_id||"");
+ }
  if(req.headers.authorization?.startsWith("Bearer ")){try{const d=await firebaseAuth.verifyIdToken(req.headers.authorization.slice(7));uid=d.uid;email=d.email||null;requester=d.name||null;}catch{return res.status(401).json({message:"Sign-in session expired. Please sign in again."});}}
  const locality=[city,district].filter(Boolean).join(", ").slice(0,160),client=await pool.connect();
  try{
@@ -70,8 +79,10 @@ export async function submitInstitutionRequest(req:Request,res:Response) {
   if(exists.rowCount){await client.query("ROLLBACK");return res.status(409).json({code:"INSTITUTION_ALREADY_EXISTS",message:"This institution is already in the Gradly directory.",institution:exists.rows[0]});}
   const duplicate=await client.query("SELECT id,status FROM public.guest_institution_requests WHERE lower(regexp_replace(college_name,'[^a-zA-Z0-9]','','g'))=lower(regexp_replace($1,'[^a-zA-Z0-9]','','g')) AND (lower(locality)=lower($2) OR lower(locality) LIKE lower($2)||'%' OR lower($2) LIKE lower(locality)||'%') AND (state IS NULL OR lower(state)=lower($3)) AND status IN ('PENDING','IN_REVIEW') ORDER BY created_at DESC LIMIT 1 FOR UPDATE",[name,locality,state]);
   if(duplicate.rowCount){await client.query("COMMIT");return res.status(200).json({message:"A request for this institution is already under review.",request:duplicate.rows[0],duplicate:true});}
-  const result=await client.query("INSERT INTO public.guest_institution_requests(college_name,locality,guest_id,external_institution_id,source,status,state,city,district,institution_type,affiliation,website,additional_info,requester_uid,requester_email,requester_name) VALUES($1,$2,NULLIF($3,''),NULLIF($4,''),'STUDENT_DISCOVERY','PENDING',$5,$6,NULLIF($7,''),$8,NULLIF($9,''),NULLIF($10,''),NULLIF($11,''),$12,$13,$14) RETURNING id,college_name AS \"institutionName\",locality,state,city,district,institution_type AS \"institutionType\",affiliation,website,additional_info AS \"additionalInfo\",status,created_at AS \"createdAt\"",[name,locality,guestId,externalId,state,city,district,type,affiliation,website,info,uid,email,requester]);
-  await client.query("COMMIT");return res.status(201).json({message:"Your institution request has been submitted for Super Admin review.",request:result.rows[0]});
+  const result=await client.query("INSERT INTO public.guest_institution_requests(college_name,locality,guest_id,external_institution_id,source,status,state,city,district,institution_type,affiliation,website,additional_info,requester_uid,requester_email,requester_name,guest_session_id) VALUES($1,$2,NULLIF($3,''),NULLIF($4,''),'STUDENT_DISCOVERY','PENDING',$5,$6,NULLIF($7,''),$8,NULLIF($9,''),NULLIF($10,''),NULLIF($11,''),$12,$13,$14,$15) RETURNING id,college_name AS \"institutionName\",locality,state,city,district,institution_type AS \"institutionType\",affiliation,website,additional_info AS \"additionalInfo\",status,created_at AS \"createdAt\"",[name,locality,canonicalGuestId,externalId,state,city,district,type,affiliation,website,info,uid,email,requester,guestSessionId]);
+  await client.query("COMMIT");
+  if(guestSessionId)await recordGuestActivity(guestSessionId,"GUEST_INSTITUTION_REQUEST_SUBMITTED",{requestId:result.rows[0].id,institutionName:name});
+  return res.status(201).json({message:"Your institution request has been submitted for Super Admin review.",request:result.rows[0]});
  }catch(e){await client.query("ROLLBACK");console.error("Institution request submission failed",e);return res.status(503).json({message:"We couldn't save your request. Please try again later."});}finally{client.release();}
 }
 
