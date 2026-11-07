@@ -10,9 +10,6 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
   if (guestId.length < 4 || guestId.length > 24 || !/^[A-Z0-9][A-Z0-9_-]*$/.test(guestId)) {
     throw new Error("Choose a Guest ID between 4 and 24 characters using letters, numbers, hyphens or underscores.");
   }
-  if (!institutionIdInput || typeof institutionIdInput !== "string") {
-    throw new Error("Select your institution to continue.");
-  }
 
   const client = await pool.connect();
   const rawToken = randomBytes(32).toString("hex");
@@ -48,22 +45,18 @@ export async function createGuestSession(guestIdInput: string, institutionIdInpu
         externalId: externalInstitution.externalId?.trim().slice(0, 200),
       };
     }
-    if (!institution) {
-      const error = new Error("Please select an institution from the list or live search.");
-      (error as Error & { code?: string }).code = "GUEST_INSTITUTION_INVALID";
-      throw error;
-    }
 
     const metadata = {
       source: "web",
       guest_id: guestId,
       display_id: guestId,
       display_name: guestId,
-      institution_id: institution.id,
-      institution_name: institution.name,
-      institution_locality: institution.locality ?? null,
-      institution_external_id: institution.externalId ?? null,
-      institution_source: institution.id ? "GRADLY_DIRECTORY" : "OPENALEX",
+      institution_id: institution?.id ?? null,
+      institution_name: institution?.name ?? null,
+      institution_locality: institution?.locality ?? null,
+      institution_external_id: institution?.externalId ?? null,
+      institution_source: institution?.id ? "GRADLY_DIRECTORY" : null,
+      account_status: "ACTIVE",
       guest_workspace: { subjects: [], semesters: [], lastActiveCalculator: "sgpa" },
     };
     const result = await client.query(
@@ -178,4 +171,37 @@ export async function recordGuestActivity(guestSessionId: string, action: string
     INSERT INTO audit_logs (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata)
     VALUES ('GUEST', $1, 'GUEST', $2, 'guest_sessions', $1, $3::jsonb)
   `, [guestSessionId, action, JSON.stringify(metadata)]);
+}
+
+
+export async function isGuestIdAvailable(guestIdInput: string) {
+  const guestId = guestIdInput.trim().toUpperCase();
+  if (guestId.length < 4 || guestId.length > 24 || !/^[A-Z0-9][A-Z0-9_-]*$/.test(guestId)) {
+    return { available: false, valid: false };
+  }
+  const result = await pool.query(
+    `SELECT 1 FROM guest_sessions
+     WHERE lower(COALESCE(metadata->>'guest_id', metadata->>'display_id')) = lower($1)
+       AND COALESCE(metadata->>'account_status', 'ACTIVE') <> 'DELETED'
+     LIMIT 1`,
+    [guestId]
+  );
+  return { available: result.rowCount === 0, valid: true };
+}
+
+export async function setGuestInstitution(guestSessionId: string, institutionId: string) {
+  const result = await pool.query(
+    `UPDATE guest_sessions gs
+     SET metadata = COALESCE(gs.metadata, '{}'::jsonb) || jsonb_build_object(
+       'institution_id', i.id::text,
+       'institution_name', i.name,
+       'institution_source', 'GRADLY_DIRECTORY'
+     ), last_seen_at = NOW()
+     FROM public.institutions i
+     WHERE gs.id = $1 AND i.id::text = $2
+       AND COALESCE(gs.metadata->>'account_status', 'ACTIVE') = 'ACTIVE'
+     RETURNING gs.id, gs.metadata, gs.last_seen_at`,
+    [guestSessionId, institutionId]
+  );
+  return result.rows[0] ?? null;
 }
