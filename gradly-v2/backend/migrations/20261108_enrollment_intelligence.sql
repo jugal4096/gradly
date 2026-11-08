@@ -70,3 +70,15 @@ VALUES
   (NULL, '05', 'Computer Science and Engineering'),
   (NULL, '06', 'Information Technology')
 ON CONFLICT (institution_id, branch_code) DO NOTHING;
+
+
+-- Apply the supplied July-June academic session convention to existing institutions.
+-- Institutions can override this with dated calendar rows for exceptional sessions.
+INSERT INTO public.institution_academic_calendars
+  (institution_id, academic_year_start_month, odd_semester_start_month, odd_semester_end_month)
+SELECT i.id, 7, 7, 12
+FROM public.institutions i
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.institution_academic_calendars cal
+  WHERE cal.institution_id = i.id
+);
