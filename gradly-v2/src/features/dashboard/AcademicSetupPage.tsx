@@ -67,7 +67,8 @@ export default function AcademicSetupPage() {
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
-  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || (/b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : /master|m\.?tech|mca/i.test(programmeLabel) ? 4 : 0);
+  const fallbackSemesterCount = /b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : /master|m\.?tech|mca/i.test(programmeLabel) ? 4 : Number(selectedCurriculum?.configured_semesters) || 0;
+  const semesterCount = Number(selectedCurriculum?.total_semesters) || fallbackSemesterCount;
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
   const selectedAdmissionMode = admissionModes.find(item => item.mode_name === confirmedAdmissionMode);
   const predictedEntrySemester = selectedAdmissionMode?.entry_semester ?? preview?.entrySemester ?? 1;
@@ -107,7 +108,7 @@ export default function AcademicSetupPage() {
 
   async function fetchEnrollmentDetails() {
     const sequence = ++previewSequence.current;
-    setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPredictionConfirmed(null);
+    setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]); setActualSemester(""); setPredictionConfirmed(null);
     const normalizedEnrollment = enrollment.trim().toUpperCase();
     const enrollmentError = validateEnrollmentNumber(normalizedEnrollment);
     if (enrollmentError) { setError(enrollmentError); return; }
@@ -179,7 +180,7 @@ export default function AcademicSetupPage() {
       const token = await user.getIdToken();
       const existing = await fetch(API + "/api/student/profile", { headers: { Authorization: "Bearer " + token } });
       const existingData = await existing.json();
-      const graduationYear = Number(preview.expected?.expectedGraduationSession?.slice(0, 4)) || null;
+      const graduationYear = confirmedAdmissionYear && semesterCount ? Number(confirmedAdmissionYear) + Math.ceil((semesterCount - predictedEntrySemester + 1) / 2) : Number(preview.expected?.expectedGraduationSession?.slice(0, 4)) || null;
       const response = await fetch(API + "/api/student/profile", {
         method: existingData.profile ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
