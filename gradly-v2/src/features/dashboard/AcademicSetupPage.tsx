@@ -6,7 +6,7 @@ import "./AcademicSetupPage.css";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
-type Curriculum = { id: string; scheme_name: string; version?: string | number | null; total_semesters?: number | null };
+type Curriculum = { id: string; scheme_name: string; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
 type AcademicStatus = "ENROLLED" | "GRADUATED";
 type EnrollmentPreview = {
   recognized: boolean; requiresConfirmation: boolean; unknown?: string; message?: string;
@@ -66,7 +66,7 @@ export default function AcademicSetupPage() {
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
-  const semesterCount = Number(selectedCurriculum?.total_semesters) || (/b\.?\s*tech|bachelor of technology/i.test(programmeLabel) ? 8 : 0);
+  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || (/b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : 0);
   const expectedSemesterBase = preview?.expected?.expectedSemester ?? null;
   const adjustedExpectedSemester = expectedSemesterBase === null ? null : Math.max(1, expectedSemesterBase - (Number(confirmedAdmissionYear || preview?.admissionYear || 0) - Number(preview?.admissionYear || 0)) * 2);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
