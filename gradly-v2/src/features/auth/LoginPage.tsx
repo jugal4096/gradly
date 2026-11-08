@@ -14,25 +14,6 @@ function GoogleMark() {
   );
 }
 
-function LearningPreview() {
-  return (
-    <div className="learning-stage" aria-label="Preview of the Gradly student workspace">
-      <div className="stage-orbit stage-orbit-one" />
-      <div className="stage-orbit stage-orbit-two" />
-      <div className="stage-floating-note stage-note-top"><span>✦</span><div><b>One clear view</b><small>Your academics, organised</small></div></div>
-      <div className="workspace-preview">
-        <div className="preview-chrome"><div className="preview-brand"><span className="preview-brand-mark">G</span> gradly <small>STUDENT SPACE</small></div><div className="preview-window-dots"><i/><i/><i/></div></div>
-        <div className="preview-body">
-          <div className="preview-welcome"><div><span>YOUR LEARNING SPACE</span><h2>Make every<br/><em>semester count.</em></h2><p>A little more clarity. A lot more direction.</p></div><div className="preview-seal">G<span>✦</span></div></div>
-          <div className="preview-stat-row"><div><small>ACADEMIC RECORD</small><b>SGPA <i>↗</i></b><span>Understand each result</span></div><div><small>BIG PICTURE</small><b>CGPA <i>↗</i></b><span>Track your progress</span></div></div>
-          <div className="preview-course-card"><div className="course-card-head"><span>YOUR NEXT STEP</span><b>01 / 03</b></div><div className="course-progress"><i/></div><div className="course-card-foot"><strong>Plan with purpose.</strong><span>Explore your workspace →</span></div></div>
-        </div>
-      </div>
-      <div className="stage-floating-note stage-note-bottom"><span>✓</span><div><b>Built for students</b><small>Focused on real academic work</small></div></div>
-    </div>
-  );
-}
-
 export default function LoginPage() {
   const { loginWithGoogle, continueAsGuest } = useAuth();
   const navigate = useNavigate();
@@ -60,34 +41,70 @@ export default function LoginPage() {
 
   return (
     <main className="entry-page">
-      <div className="entry-ambient entry-ambient-one" aria-hidden="true"/>
-      <div className="entry-ambient entry-ambient-two" aria-hidden="true"/>
+      <div className="entry-grid" aria-hidden="true" />
+      <div className="entry-glow entry-glow-a" aria-hidden="true" />
+      <div className="entry-glow entry-glow-b" aria-hidden="true" />
+      <div className="entry-glow entry-glow-c" aria-hidden="true" />
+      <div className="entry-orbit entry-orbit-a" aria-hidden="true" />
+      <div className="entry-orbit entry-orbit-b" aria-hidden="true" />
+      <div className="entry-prism" aria-hidden="true"><span>G</span></div>
+
       <header className="entry-nav">
-        <a className="brand-lockup" href="/" aria-label="Gradly home"><span className="brand-mark">G<span>✦</span></span><span>gradly</span></a>
-        <div className="entry-nav-note"><span className="nav-spark">✳</span> Your academic space, thoughtfully designed</div>
+        <a className="brand-lockup" href="/" aria-label="Gradly home">
+          <span className="brand-mark">G<span>✦</span></span>
+          <span>gradly</span>
+        </a>
+        <div className="entry-nav-note"><span className="nav-spark">✳</span> YOUR ACADEMIC SPACE</div>
       </header>
 
-      <section className="entry-hero">
-        <div className="entry-copy">
-          <div className="entry-overline"><span/> THE STUDENT PLATFORM</div>
-          <p className="entry-index">A BETTER WAY TO STAY ON TRACK <b>— 01</b></p>
-          <h1>Your academic life,<br/><em>in a clearer light.</em></h1>
-          <p className="entry-description">Bring your results, plans and academic essentials together. Spend less time figuring things out and more time moving forward.</p>
-          <div className="entry-choice-heading"><span>CHOOSE HOW TO CONTINUE</span><i/></div>
+      <section className="entry-center">
+        <div className="entry-eyebrow"><span className="eyebrow-line" /> THE STUDENT PLATFORM <span className="eyebrow-line" /></div>
+        <div className="entry-title-wrap">
+          <p className="entry-kicker">A LITTLE MORE CLARITY. A LOT MORE DIRECTION.</p>
+          <h1>Your next chapter<br /><em>starts here.</em></h1>
+          <p className="entry-description">Your academic world, in one place. Track your progress, make confident plans and keep moving forward.</p>
+        </div>
+
+        <div className="entry-choice">
+          <div className="entry-choice-heading"><span>CHOOSE HOW TO CONTINUE</span><i /></div>
           <div className="entry-actions">
             <button className="user-choice" type="button" onClick={handleUserLogin} disabled={loggingIn}>
-              <span className="choice-icon"><GoogleMark/></span><span className="choice-copy"><b>{loggingIn ? "Connecting…" : "Continue as User"}</b><small>Sign in to access your full student workspace</small></span><span className="choice-arrow">↗</span>
+              <span className="choice-icon"><GoogleMark /></span>
+              <span className="choice-copy"><b>{loggingIn ? "Connecting…" : "Continue as User"}</b><small>Sign in with Google for your full student workspace</small></span>
+              <span className="choice-arrow">↗</span>
             </button>
             <button className="guest-choice" type="button" onClick={handleGuest}>
-              <span className="guest-choice-icon">↗</span><span className="choice-copy"><b>Continue as Guest</b><small>Try the SGPA and CGPA calculators without signing in</small></span><span className="choice-arrow">→</span>
+              <span className="guest-choice-icon"><span>✦</span></span>
+              <span className="choice-copy"><b>Continue as Guest</b><small>Explore SGPA and CGPA calculators without signing in</small></span>
+              <span className="choice-arrow">→</span>
             </button>
           </div>
           {error && <p className="entry-error" role="alert">{error}</p>}
-          <div className="entry-assurance"><span>◇</span><p><b>Your choice, your pace.</b> Guest calculations stay on this device. Sign in whenever you're ready for the complete student experience.</p></div>
+          <p className="entry-assurance"><span>✧</span> No pressure. Start as a guest and sign in whenever you're ready.</p>
         </div>
-        <LearningPreview/>
+
+        <div className="entry-bottom-note">
+          <span className="bottom-dot" /> BUILT FOR YOUR JOURNEY <span className="bottom-separator">/</span> LEARN · TRACK · GROW
+        </div>
       </section>
-      <footer className="entry-footer"><span>© {new Date().getFullYear()} Gradly</span><span>LEARN <i>·</i> TRACK <i>·</i> GROW</span><span>Made for the work behind every result <b>✦</b></span></footer>
+
+      <div className="floating-card floating-grade" aria-hidden="true">
+        <span className="float-label">SEMESTER PERFORMANCE</span>
+        <strong>SGPA <b>↗</b></strong>
+        <span className="float-meter"><i /></span>
+        <small>Every result tells a story.</small>
+      </div>
+      <div className="floating-card floating-plan" aria-hidden="true">
+        <span className="float-plan-icon">✦</span>
+        <div><strong>Plan your progress</strong><small>One step at a time.</small></div>
+      </div>
+      <div className="floating-orb floating-orb-one" aria-hidden="true" />
+      <div className="floating-orb floating-orb-two" aria-hidden="true" />
+
+      <footer className="entry-footer">
+        <span>© {new Date().getFullYear()} Gradly</span>
+        <span>MADE FOR THE WORK BEHIND EVERY RESULT <b>✦</b></span>
+      </footer>
     </main>
   );
 }
