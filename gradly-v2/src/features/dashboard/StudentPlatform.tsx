@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";\nimport { Navigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import GuestOnboarding from "./GuestOnboarding";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
-type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
-type Institution = { id: string; name: string; branches: Branch[] };
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
 type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; curriculumSubjectId?: string };
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
@@ -14,7 +13,6 @@ type ChatMessage = { id: number; author: string; body: string; time: string; min
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
-const gradeNames = Object.keys(POINTS);
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
   { id:"home",label:"Overview",icon:"⌂",group:"WORKSPACE" },
@@ -87,11 +85,6 @@ export default function StudentPlatform() {
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
   const [fontFamily,setFontFamily] = useState(()=>localStorage.getItem("gradly_font_family")||"DM Sans");
   const [textSize,setTextSize] = useState(()=>Number(localStorage.getItem("gradly_text_size")||"14"));
-  const [institutions,setInstitutions] = useState<Institution[]>([]);
-  const [curricula,setCurricula] = useState<Array<{id:string;scheme_name:string;scheme_code?:string|null;version?:string|number|null;total_semesters?:number|null}>>([]);
-  const [curriculumLoading,setCurriculumLoading] = useState(false);
-  const [institutionLoading,setInstitutionLoading] = useState(true);
-  const [institutionError,setInstitutionError] = useState("");
   const [profile,setProfile] = useState<Profile>(() => {
     try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem("gradly_student_profile") || "{}") }; }
     catch { return emptyProfile; }
@@ -103,9 +96,6 @@ export default function StudentPlatform() {
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
   const [guestCgpaResult,setGuestCgpaResult] = useState<number|null>(null);
   const [loginGate,setLoginGate] = useState(false);
-  const [requestOpen,setRequestOpen] = useState(false);
-  const [requestName,setRequestName] = useState("");
-  const [requestReason,setRequestReason] = useState("");
   const [notice,setNotice] = useState("");
   const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isGuest) {
@@ -137,31 +127,6 @@ export default function StudentPlatform() {
   useEffect(() => {
     if (isGuest) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
   }, [isGuest, subjects]);
-
-  useEffect(() => {
-    // Guest calculators already have their selected institution ID. They do not need
-    // the full academic directory, so skip this network request entirely in guest mode.
-    if (isGuest) { setInstitutionLoading(false); return; }
-    const controller = new AbortController();
-    fetch(API+"/api/academic/institutions",{signal:controller.signal})
-      .then(async response => { const data=await response.json(); if(!response.ok) throw new Error(data.message || "Unable to load institutions."); return data; })
-      .then(data => setInstitutions(Array.isArray(data.data)?data.data:[]))
-      .catch(error => { if(error.name!=="AbortError") setInstitutionError(error instanceof Error?error.message:"Unable to load institutions."); })
-      .finally(() => setInstitutionLoading(false));
-    return () => controller.abort();
-  }, [isGuest]);
-
-
-  useEffect(() => {
-    if (isGuest || !profile.institutionId || !profile.programId || !profile.branchId) { setCurricula([]); return; }
-    const query = new URLSearchParams({ institutionId: profile.institutionId, programId: profile.programId, branchId: profile.branchId });
-    setCurriculumLoading(true);
-    fetch(API+"/api/academic/curricula?"+query.toString())
-      .then(async response => { const data=await response.json(); if(!response.ok) throw new Error(data.message||"Unable to load schemes."); return data; })
-      .then(data => setCurricula(Array.isArray(data.data)?data.data:[]))
-      .catch(error => setNotice(error instanceof Error?error.message:"Unable to load schemes."))
-      .finally(() => setCurriculumLoading(false));
-  }, [isGuest, profile.institutionId, profile.programId, profile.branchId]);
 
   useEffect(() => {
     if (isGuest || !user) return;
@@ -206,14 +171,6 @@ export default function StudentPlatform() {
     return ()=>{cancelled=true;};
   }, [isGuest, user, profile.curriculumId, profile.semester]);
 
-  const selectedInstitution = institutions.find(item=>item.id===(isGuest ? guestInstitutionId : profile.institutionId));
-  const institutionLabel = selectedInstitution?.name || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
-  const programs = useMemo(() => {
-    const map = new Map<string,{id:string;name:string;level?:string|null}>();
-    (selectedInstitution?.branches || []).forEach(branch=>map.set(branch.program_id,{id:branch.program_id,name:branch.program_name,level:branch.program_level}));
-    return Array.from(map.values());
-  },[selectedInstitution]);
-  const branches = (selectedInstitution?.branches || []).filter(item=>!profile.programId || item.program_id===profile.programId);
   const weighted = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+POINTS[s.grade]*s.credits,0);
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const computedSgpa = countedCredits ? weighted/countedCredits : 0;
@@ -222,25 +179,6 @@ export default function StudentPlatform() {
   const name = user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
 
-  async function saveProfile(next:Profile) {
-    if (!user) { setNotice("Sign in to save your academic profile."); return; }
-    try {
-      const token=await user.getIdToken();
-      const existing=await fetch(API+"/api/student/profile",{headers:{Authorization:"Bearer "+token}});
-      const existingData=await existing.json();
-      const method=existingData.profile?"PUT":"POST";
-      const response=await fetch(API+"/api/student/profile",{method,headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({
-        institutionId:next.institutionId,curriculumId:next.curriculumId,studentIdentifier:next.enrollment,
-        admissionYear:Number(next.admissionYear),currentSemesterNumber:Number(next.semester),
-        admissionModeId:null,graduationYear:null,targetCgpa:null
-      })});
-      const data=await response.json();
-      if(!response.ok) throw new Error(data.message||"Unable to save academic profile.");
-      setProfile(next); localStorage.setItem("gradly_student_profile",JSON.stringify(next));
-      setOnboarding(false); setNotice("Your academic profile is saved to Gradly.");
-    } catch(error) { setNotice(error instanceof Error?error.message:"Unable to save academic profile."); }
-  }
-  function updateProfile(patch:Partial<Profile>) { setProfile(current=>({...current,...patch})); }
   function addSubject() {
     if (isGuest && countedCredits >= 20) { setNotice("Guest mode allows a maximum of 20 credits per semester."); return; }
     setSubjects(current=>[...current,{id:Math.max(0,...current.map(s=>s.id))+1,name:isGuest?`Subject ${current.length+1}`:"",credits:isGuest?Math.min(1,Math.max(0,20-countedCredits)):3,grade:"A"}]); setSgpa(null);
@@ -296,11 +234,6 @@ export default function StudentPlatform() {
     event.preventDefault(); if(!aiInput.trim()) return;
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
-  function submitInstitutionRequest(event:FormEvent) {
-    event.preventDefault();
-    setNotice("Your institution request form is ready. Submission will be enabled when the student institution-request endpoint is added to the backend.");
-    setRequestOpen(false);
-  }
   const remainingCredits=Math.max(0,Number(totalCredits||0)-Number(earnedCredits||0));
   const desired=Number(targetSgpa);
   const programmeName=profile.programName.toLowerCase();
@@ -312,7 +245,8 @@ export default function StudentPlatform() {
   const requiredAverage=(desired*(completedCredits+remainingSemesters*averageFutureCredits)-completedWeightedPoints)/(remainingSemesters*averageFutureCredits);
   const sgpaScenarios=buildSgpaScenarios(Number(targetSgpa),subjects);
 
-  if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;\n  if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
+  if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
+  if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
 
   return <div className={"sp-shell "+(isGuest?"sp-guest-mode":"sp-user-mode")+(theme==="dark"?" sp-dark-theme":"")} style={{fontFamily:`"${fontFamily}", sans-serif`,fontSize:`${textSize}px`}}>
     <aside id="student-workspace-menu" className={"sp-sidebar "+(mobileOpen?"open":"")}>
