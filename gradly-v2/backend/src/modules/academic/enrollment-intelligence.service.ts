@@ -52,12 +52,13 @@ export function predictSemester(input: {
   durationYears: number;
   academicYearStartMonth: number;
   oddSemesterStartMonth: number;
+  oddSemesterEndMonth: number;
   date?: Date;
 }): SemesterPrediction {
   const date = input.date ?? new Date();
   const month = date.getMonth() + 1;
   const { startYear, label } = academicYearFor(date, input.academicYearStartMonth);
-  const semesterType: "ODD" | "EVEN" = month >= input.oddSemesterStartMonth && month < input.academicYearStartMonth ? "ODD" : "EVEN";
+  const semesterType: "ODD" | "EVEN" = month >= input.oddSemesterStartMonth && month <= input.oddSemesterEndMonth ? "ODD" : "EVEN";
   const semesterOffset = semesterType === "ODD" ? 0 : 1;
   const rawSemester = input.entrySemester + (startYear - input.admissionYear) * 2 + semesterOffset;
   const expectedGraduationYear = input.admissionYear + input.durationYears;
@@ -120,7 +121,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   if (!academicMatch) return { recognized: false, requiresConfirmation: true, unknown: "INSTITUTION_PROGRAM_OR_BRANCH", parsed };
 
   const calendarResult = await pool.query(
-    `SELECT academic_year_start_month, odd_semester_start_month
+    `SELECT academic_year_start_month, odd_semester_start_month, odd_semester_end_month
      FROM institution_academic_calendars
      WHERE institution_id = $1 AND (active_from IS NULL OR active_from <= $2::date)
        AND (active_to IS NULL OR active_to >= $2::date)
@@ -141,7 +142,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const prediction = predictSemester({
     admissionYear: parsed.admissionYear, entrySemester: Number(mode.entry_semester),
     totalSemesters, durationYears, academicYearStartMonth: Number(calendar.academic_year_start_month),
-    oddSemesterStartMonth: Number(calendar.odd_semester_start_month), date: now,
+    oddSemesterStartMonth: Number(calendar.odd_semester_start_month),
+    oddSemesterEndMonth: Number(calendar.odd_semester_end_month), date: now,
   });
   return {
     recognized: true, requiresConfirmation: false, parsed,
