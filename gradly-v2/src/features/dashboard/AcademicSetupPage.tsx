@@ -15,7 +15,6 @@ type EnrollmentInference = {
   admissionMode: AdmissionMode;
   entrySemester: number;
   branchCode: string;
-  branchLabel: string;
   schemeLabel: string;
 };
 
@@ -24,13 +23,6 @@ function inferEnrollment(value: string): EnrollmentInference | null {
   const match = normalized.match(/^(BT|BE|MC|MT)(\d{2})([FS])(\d{2})$/);
   if (!match) return null;
   const [, programmePrefix, yearPart, modeCode, branchCode] = match;
-  const branchLabels: Record<string, string> = {
-    "01": "Civil Engineering", "02": "Mechanical Engineering", "03": "Electrical Engineering",
-    "04": "Electronics and Telecommunication", "05": "Computer Science and Engineering",
-    "06": "Branch code 06", "07": "Branch code 07",
-  };
-  const branchLabel = branchLabels[branchCode];
-  if (!branchLabel) return null;
   const programmeLabels: Record<string, string> = {
     BT: "Bachelor of Technology", BE: "Bachelor of Engineering",
     MC: "Master of Computer Applications", MT: "Master of Technology",
@@ -42,7 +34,7 @@ function inferEnrollment(value: string): EnrollmentInference | null {
     programmePrefix, programmeLabel: programmeLabels[programmePrefix],
     admissionYear: 2000 + Number(yearPart), admissionMode: effectiveMode,
     entrySemester: effectiveMode === "Direct Second Year" ? 3 : 1,
-    branchCode, branchLabel,
+    branchCode,
     schemeLabel: programmePrefix === "BT" ? "NEP" : programmePrefix === "BE" ? "New CBCS" : "",
   };
 }
@@ -87,6 +79,7 @@ export default function AcademicSetupPage() {
   const [gapYears, setGapYears] = useState("0");
   const [enrollment, setEnrollment] = useState("");
   const [inferenceConfirmed, setInferenceConfirmed] = useState(false);
+  const [fetchAttempted, setFetchAttempted] = useState(false);
   const [searching, setSearching] = useState(false);
   const [loadingCurricula, setLoadingCurricula] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -140,29 +133,23 @@ export default function AcademicSetupPage() {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (!inference) return;
-    setInferenceConfirmed(true);
+    if (!inference || !inferenceConfirmed) return;
     setSemester("");
     setAcademicStatus("Enrolled");
     setGapYears("0");
-    const matchingProgram = programs.find(p =>
-      inference.programmePrefix === "BE"
-        ? /bachelor of engineering|\bBE\b/i.test(p.name)
-        : /bachelor of technology|\bB\.?Tech\b/i.test(p.name),
-    );
+    const matchingProgram = programs.find(p => {
+      const name = p.name.toLowerCase();
+      if (inference.programmePrefix === "BE") return /bachelor of engineering|\bbe\b/.test(name);
+      if (inference.programmePrefix === "BT") return /bachelor of technology|\bb\.?tech\b/.test(name);
+      if (inference.programmePrefix === "MC") return /master of computer applications|\bmca\b/.test(name);
+      return /master of technology|\bm\.?tech\b/.test(name);
+    });
     if (matchingProgram) {
       setProgramId(matchingProgram.id);
       const branchMatches = (selected?.branches || []).filter(b => b.program_id === matchingProgram.id);
       const branchMatch = branchMatches.find(b => {
         const code = String(b.code || "").toUpperCase().replace(/^0+/, "").padStart(2, "0");
-        const name = b.name.toLowerCase();
-        const byName = inference.branchCode === "01" ? /civil/.test(name)
-          : inference.branchCode === "02" ? /mechanical/.test(name)
-          : inference.branchCode === "03" ? /electrical/.test(name)
-          : inference.branchCode === "04" ? /electronics|entc|telecommunication/.test(name)
-          : inference.branchCode === "05" ? /computer science|\\bcse\\b/.test(name)
-          : false;
-        return code === inference.branchCode || byName;
+        return code === inference.branchCode;
       });
       setBranchId(branchMatch?.id || "");
       setCurricula([]);
@@ -170,7 +157,7 @@ export default function AcademicSetupPage() {
     }
   // Inference is intentionally applied only when the enrollment number changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enrollment, selected]);
+  }, [enrollment, selected, inferenceConfirmed]);
 
   useEffect(() => {
     if (!inference || !inferenceConfirmed || !curriculumId) return;
@@ -182,7 +169,7 @@ export default function AcademicSetupPage() {
   }, [inferenceConfirmed, curriculumId, enrollment]);
 
   useEffect(() => {
-    if (selected && programId && branchId && inference) void loadCurricula(programId, branchId);
+    if (selected && programId && branchId && inference && inferenceConfirmed) void loadCurricula(programId, branchId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, programId, branchId, inference?.branchCode]);
 
@@ -278,7 +265,7 @@ export default function AcademicSetupPage() {
   }
 
   function chooseInstitution(item: Institution) {
-    setSelected(item); setQuery(item.name); setInstitutions([]);
+    setSelected(item); setQuery(item.name); setInstitutions([]); setInferenceConfirmed(false); setFetchAttempted(false);
     setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester("");
   }
 
@@ -288,12 +275,12 @@ export default function AcademicSetupPage() {
       <aside className="academic-setup-intro">
         <span className="academic-setup-kicker">YOUR ACADEMIC IDENTITY</span>
         <h1>Let's build your<br/><em>academic profile.</em></h1>
-        <p>Start with your institution and enrollment number. Gradly will infer your admission path and eligible semester, and calculates your current semester automatically.</p>
+        <p>Choose your institution and enter your enrollment number. Fetch your academic details, then review the matching programme and curriculum.</p>
         <div className="academic-setup-steps"><b>01 <span>Institution</span></b><b>02 <span>Enrollment intelligence</span></b><b>03 <span>Programme & curriculum</span></b></div>
         <small>You can update these details later from Academic Profile.</small>
       </aside>
       <section className="academic-setup-card">
-        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution and enter your enrollment number. Gradly detects your programme, scheme, admission year, branch and entry path, then predicts your semester.</p></div>
+        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution, enter your enrollment number and fetch the matching academic details from Gradly's records.</p></div>
         {error && <div className="academic-setup-error" role="alert">{error}</div>}
         <form onSubmit={saveProfile}>
           <label>Institution name</label>
@@ -310,23 +297,11 @@ export default function AcademicSetupPage() {
           {selected && <>
             <div className="academic-setup-enrollment">
               <label htmlFor="student-enrollment">University enrollment / roll number</label>
-              <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setInferenceConfirmed(false); }} placeholder="e.g. BT24S05F004 or BE24F01…" autoComplete="off"/>
-              {inference ? <div className="academic-setup-inference">
-                <div className="academic-setup-inference-top"><span>GRADLY ENROLLMENT ANALYSIS</span><strong>{inference.programmeLabel}</strong></div>
-                <div className="academic-setup-inference-grid">
-                  <div><small>Admission year</small><b>{inference.admissionYear}</b></div>
-                  <div><small>Admission path</small><b>{inference.admissionMode}</b></div>
-                  <div><small>Entry semester</small><b>Semester {inference.entrySemester}</b></div>
-                  <div><small>Branch detected</small><b>{inference.branchLabel}</b></div>
-                  <div><small>Academic session</small><b>{sessionLabel}</b></div>
-                </div>
-                <p>Only the first seven characters are parsed. The remaining suffix is ignored. Confirm the detected programme, branch and scheme before saving.</p>
-              </div> : enrollmentEntryComplete ? <div className="academic-setup-manual">
-                <strong>Enrollment number not recognized.</strong>
-                <p>Enter a valid seven-character enrollment prefix (programme, admission year, admission path and branch code). Any characters after the first seven are ignored.</p>
-              </div> : null}
+              <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setInferenceConfirmed(false); setFetchAttempted(false); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester(""); }} placeholder="Enter your university enrollment number" autoComplete="off"/>
+              <button type="button" className="academic-setup-submit" disabled={!enrollment.trim()} onClick={() => { setFetchAttempted(true); if (!inference) { setInferenceConfirmed(false); setError("Enrollment number not recognized."); return; } setError(""); setInferenceConfirmed(true); }}>Fetch student details →</button>
+              {fetchAttempted && !inference && <div className="academic-setup-manual" role="alert"><strong>Enrollment number not recognized.</strong></div>}
             </div>
-            {inference && <div className="academic-setup-grid">
+            {inference && inferenceConfirmed && <div className="academic-setup-grid">
               <div><label>Programme</label><select required value={programId} onChange={e => { setProgramId(e.target.value); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester(""); }}><option value="">Select programme</option>{programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
               <div><label>Branch / specialization</label><select required disabled={!programId} value={branchId} onChange={e => { setBranchId(e.target.value); void loadCurricula(programId, e.target.value); }}><option value="">Select branch</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
               <div className="academic-setup-wide"><label>Curriculum / scheme</label><select required disabled={!branchId || loadingCurricula} value={curriculumId} onChange={e => { setCurriculumId(e.target.value); setSemester(""); }}><option value="">{loadingCurricula ? "Loading available schemes…" : "Select curriculum"}</option>{curricula.map(c => <option key={c.id} value={c.id}>{c.scheme_name}{c.version ? " · " + c.version : ""}</option>)}</select>{!loadingCurricula && branchId && !curricula.length && <small className="academic-setup-hint">No curriculum is configured for this branch yet. Use the institution request below or contact your institute administrator.</small>}</div>
@@ -335,7 +310,7 @@ export default function AcademicSetupPage() {
               <div><label>Academic status</label><select value={academicStatus} onChange={e => { setAcademicStatus(e.target.value as "Enrolled" | "Passed out"); if (e.target.value === "Passed out") setSemester(String(semesterCount)); else setSemester(String(predictedSemester)); }}><option value="Enrolled">Currently enrolled</option><option value="Passed out">Passed out</option></select></div>
               <div><label>Backlog / gap years</label><select value={gapYears} onChange={e => setGapYears(e.target.value)}><option value="0">No gap year</option>{[1,2,3,4].map(year => <option key={year} value={String(year)}>{year} {year === 1 ? "year" : "years"}</option>)}</select><small className="academic-setup-hint">Estimated from the difference between your predicted and selected semester. Adjust if you had a year gap or backlogs.</small></div>
             </div>}
-            <button className="academic-setup-submit" disabled={saving || !inference || !semester}>{saving ? "Saving profile…" : "Save verified academic profile →"}</button>
+            {inferenceConfirmed && <button className="academic-setup-submit" disabled={saving || !inference || !semester}>{saving ? "Saving profile…" : "Save academic profile →"}</button>}
           </>}
         </form>
         <div className="academic-setup-request">
