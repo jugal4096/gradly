@@ -66,7 +66,7 @@ const unresolved = (reason: string, message: string, parsed: EnrollmentComponent
 export async function previewEnrollment(institutionId: string, rawEnrollmentNumber: string, now = new Date()) {
   const initial = parseEnrollmentNumber(rawEnrollmentNumber);
   const rules = await pool.query(
-    `SELECT prefix, programme_name_pattern, programme_alternate_pattern, scheme_label, duration_years, total_semesters, year_pivot_start
+    `SELECT prefix, programme_name_pattern, programme_alternate_pattern, programme_alias_patterns, scheme_label, duration_years, total_semesters, year_pivot_start
      FROM enrollment_program_rules
      WHERE institution_id = $1 OR institution_id IS NULL
      ORDER BY (institution_id = $1) DESC NULLS LAST`, [institutionId],
@@ -77,8 +77,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
 
   const programResult = await pool.query(
     `SELECT id, name, level FROM programs
-     WHERE institution_id = $1 AND (name ILIKE $2 OR ($3::text IS NOT NULL AND name ILIKE $3)) ORDER BY name LIMIT 2`,
-    [institutionId, rule.programme_name_pattern, rule.programme_alternate_pattern ?? null],
+     WHERE institution_id = $1 AND (name ILIKE $2 OR ($3::text IS NOT NULL AND name ILIKE $3) OR name ILIKE ANY($4::text[])) ORDER BY name LIMIT 2`,
+    [institutionId, rule.programme_name_pattern, rule.programme_alternate_pattern ?? null, rule.programme_alias_patterns ?? []],
   );
   if (programResult.rows.length !== 1) {
     return unresolved("PROGRAMME", programResult.rows.length ? "More than one programme matches this enrollment prefix. Institutional mapping needs review." : "The matching programme is not available in this institution's academic directory.", parsed);
