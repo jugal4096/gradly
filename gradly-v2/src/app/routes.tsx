@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 import LoginPage from "../features/auth/LoginPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
-import StudentPlatform from "../features/dashboard/StudentPlatform";
+import StudentPlatform from "../features/dashboard/StudentPlatform";\nimport AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
