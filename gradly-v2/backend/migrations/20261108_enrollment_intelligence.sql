@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS public.enrollment_program_rules (
   programme_alternate_pattern TEXT NULL,
   programme_alias_patterns TEXT[] NOT NULL DEFAULT '{}',
   scheme_label TEXT NULL,
-  duration_years SMALLINT NOT NULL CHECK (duration_years BETWEEN 1 AND 10),
-  total_semesters SMALLINT NOT NULL CHECK (total_semesters BETWEEN 1 AND 20),
+  duration_years SMALLINT NULL CHECK (duration_years BETWEEN 1 AND 10),
+  total_semesters SMALLINT NULL CHECK (total_semesters BETWEEN 1 AND 20),
   regular_entry_semester SMALLINT NOT NULL DEFAULT 1,
   lateral_entry_semester SMALLINT NOT NULL DEFAULT 3,
   year_pivot_start SMALLINT NOT NULL DEFAULT 70 CHECK (year_pivot_start BETWEEN 0 AND 99),
@@ -57,8 +57,8 @@ INSERT INTO public.enrollment_program_rules
 VALUES
   (NULL, 'BE', '%Bachelor of Engineering%', '%B.E.%', ARRAY['%B.Tech%', '%Bachelor of Technology%'], 'New CBCS', 4, 8, 1, 3, 70),
   (NULL, 'BT', '%Bachelor of Technology%', '%B.Tech%', ARRAY['%Bachelor of Engineering%', '%B.E.%'], 'New CBCS', 4, 8, 1, 3, 70),
-  (NULL, 'MC', '%Master of Computer Applications%', NULL, ARRAY[]::text[], NULL, 2, 4, 1, 1, 70),
-  (NULL, 'MT', '%Master of Technology%', NULL, ARRAY[]::text[], NULL, 2, 4, 1, 1, 70)
+  (NULL, 'MC', '%Master of Computer Applications%', NULL, ARRAY[]::text[], NULL, NULL, NULL, 1, 1, 70),
+  (NULL, 'MT', '%Master of Technology%', NULL, ARRAY[]::text[], NULL, NULL, NULL, 1, 1, 70)
 ON CONFLICT (institution_id, prefix) DO NOTHING;
 
 -- Safe global defaults for admission markers and branch codes.
@@ -67,11 +67,7 @@ VALUES
   (NULL, 'F', 'BE', 'Regular Admission', 1),
   (NULL, 'S', 'BE', 'Direct Second Year', 3),
   (NULL, 'F', 'BT', 'Regular Admission', 1),
-  (NULL, 'S', 'BT', 'Direct Second Year', 3),
-  (NULL, 'F', 'MC', 'Regular Admission', 1),
-  (NULL, 'S', 'MC', 'Institutional Admission', 1),
-  (NULL, 'F', 'MT', 'Regular Admission', 1),
-  (NULL, 'S', 'MT', 'Institutional Admission', 1)
+  (NULL, 'S', 'BT', 'Direct Second Year', 3)
 ON CONFLICT (institution_id, mode_code, programme_prefix) DO NOTHING;
 
 INSERT INTO public.enrollment_branch_codes (institution_id, branch_code, programme_prefix, branch_name)
