@@ -34,7 +34,6 @@ export default function AcademicSetupPage() {
   const [previewBusy, setPreviewBusy] = useState(false);
   const [enrollment, setEnrollment] = useState("");
   const [searching, setSearching] = useState(false);
-  const [loadingCurricula, setLoadingCurricula] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [requestName, setRequestName] = useState("");
@@ -121,18 +120,6 @@ export default function AcademicSetupPage() {
     }
   }
 
-  async function loadCurricula(nextProgramId: string, nextBranchId: string) {
-    if (!selected || !nextProgramId || !nextBranchId) return;
-    setLoadingCurricula(true); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
-    try {
-      const params = new URLSearchParams({ institutionId: selected.id, programId: nextProgramId, branchId: nextBranchId });
-      const response = await fetch(API + "/api/academic/curricula?" + params.toString());
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Unable to load curriculum schemes.");
-      setCurricula(Array.isArray(data.data) ? data.data : []);
-    } catch (e) { setError(e instanceof Error ? e.message : "Unable to load curriculum schemes."); }
-    finally { setLoadingCurricula(false); }
-  }
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault(); setError("");
