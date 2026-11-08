@@ -168,7 +168,7 @@ router.get("/admission-modes", async (req: Request, res: Response): Promise<void
   }
   try {
     const result = await pool.query(
-      `SELECT id, mode_code, mode_name, entry_semester
+      `SELECT id, institution_id, programme_prefix, mode_code, mode_name, entry_semester
        FROM enrollment_admission_modes
        WHERE (institution_id = $1 OR institution_id IS NULL)
          AND (programme_prefix = $2 OR programme_prefix IS NULL)
