@@ -19,8 +19,9 @@ async function resolveStudentUser(req: AuthenticatedRequest, res: Response) {
 function readProfilePayload(body: Record<string, unknown>) {
   const {
     institutionId, curriculumId, admissionModeId, admissionModeName, studentIdentifier,
-    admissionYear, currentSemesterNumber, graduationYear, targetCgpa, academicStatus,
+    admissionYear, currentSemesterNumber, graduationYear, targetCgpa,
   } = body;
+  const academicStatus = body.academicStatus ?? "ENROLLED";
   if (
     typeof institutionId !== "string" || !institutionId ||
     typeof curriculumId !== "string" || !curriculumId ||
