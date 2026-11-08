@@ -103,6 +103,8 @@ test("supports a configured September academic session start", () => {
 });
 
 test("matches common branch labels and abbreviations", () => {
+  assert.equal(branchIdentityMatches("Electrical Engineering", "ELECTR", "ELECTR"), true);
+  assert.equal(branchIdentityMatches("Electrical Engineering", "EE", "EE"), true);
   assert.equal(branchIdentityMatches("Information Technology", "IT"), true);
   assert.equal(branchIdentityMatches("Computer Science and Engineering", "CSE"), true);
   assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "E&TC"), true);
