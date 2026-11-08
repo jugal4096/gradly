@@ -282,7 +282,7 @@ export default function AcademicSetupPage() {
                   <div><label htmlFor="edit-programme">Programme</label><select id="edit-programme" value={programId} onChange={e => { setProgramId(e.target.value); setBranchId(""); setCurricula([]); setCurriculumId(""); }}><option value="">Select programme</option>{programs.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
                   <div><label htmlFor="edit-branch">Branch</label><select id="edit-branch" value={branchId} onChange={async e => {
                     const nextBranchId=e.target.value; setBranchId(nextBranchId); setCurricula([]); setCurriculumId("");
-                    const nextBranch=selected?.branches.find(item=>item.id===nextBranchId);
+                    const nextBranch=branches.find(item=>item.id===nextBranchId);
                     if(!selected || !nextBranch || !user) return;
                     try { const token=await user.getIdToken(); const params=new URLSearchParams({institutionId:selected.id,programId:nextBranch.program_id,branchId:nextBranchId}); const response=await fetch(API+"/api/academic/curricula?"+params.toString()); const payload=await response.json(); if(!response.ok) throw new Error(payload.message||"Unable to load the selected branch curriculum."); const options=Array.isArray(payload.data)?payload.data as Curriculum[]:[]; setCurricula(options); if(options.length===1) setCurriculumId(options[0].id); } catch(e) { setError(e instanceof Error?e.message:"Unable to load curriculum options."); }
                   }}><option value="">Select branch</option>{branches.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
