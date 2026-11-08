@@ -98,4 +98,60 @@ router.get(
   }
 );
 
-export default router;
+
+
+/** Available curricula for a selected institution/program/branch. */
+router.get("/curricula", async (req: Request, res: Response): Promise<void> => {
+  const { institutionId, programId, branchId } = req.query;
+  if (typeof institutionId !== "string" || typeof programId !== "string" || typeof branchId !== "string") {
+    res.status(400).json({ success: false, message: "Institution, programme and branch are required." });
+    return;
+  }
+  try {
+    const result = await pool.query(
+      `SELECT c.id, c.version, c.status, c.total_semesters, c.total_credits,
+              c.scheme_id, sc.name AS scheme_name, sc.code AS scheme_code,
+              COUNT(DISTINCT sem.id)::int AS configured_semesters
+       FROM curricula c
+       LEFT JOIN schemes sc ON sc.id = c.scheme_id
+       LEFT JOIN curriculum_subjects cs ON cs.curriculum_id = c.id AND cs.active = TRUE
+       LEFT JOIN semesters sem ON sem.id = cs.semester_id
+       WHERE c.institution_id = $1 AND c.program_id = $2 AND c.branch_id = $3
+       GROUP BY c.id, sc.name, sc.code
+       ORDER BY c.version DESC NULLS LAST, sc.name ASC`,
+      [institutionId, programId, branchId],
+    );
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error("GET /api/academic/curricula error:", error);
+    res.status(500).json({ success: false, message: "Failed to load curricula." });
+  }
+});
+
+/** Curriculum subjects for a specific semester, used by the student manual-entry form. */
+router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async (req: Request, res: Response): Promise<void> => {
+  const { curriculumId, semesterNumber } = req.params;
+  const number = Number(semesterNumber);
+  if (!Number.isInteger(number) || number < 1 || number > 12) {
+    res.status(400).json({ success: false, message: "Invalid semester number." });
+    return;
+  }
+  try {
+    const result = await pool.query(
+      `SELECT cs.id, cs.course_code AS code, cs.course_name AS name,
+              cs.credits, cs.course_type AS "courseType", cs.mandatory,
+              sem.id AS "semesterId", sem.semester_number AS semester
+       FROM curriculum_subjects cs
+       JOIN semesters sem ON sem.id = cs.semester_id
+       WHERE cs.curriculum_id = $1 AND sem.semester_number = $2
+         AND cs.active = TRUE
+       ORDER BY cs.course_code, cs.course_name`,
+      [curriculumId, number],
+    );
+    res.status(200).json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error("GET curriculum subjects error:", error);
+    res.status(500).json({ success: false, message: "Failed to load curriculum subjects." });
+  }
+});
+\nexport default router;
