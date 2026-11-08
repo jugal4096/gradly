@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./AcademicSetupPage.css";
@@ -11,7 +11,7 @@ type Curriculum = { id: string; scheme_name: string; version?: string | number |
 export default function AcademicSetupPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState("");\n  const searchTimer = useRef<number | undefined>(undefined);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selected, setSelected] = useState<Institution | null>(null);
   const [programId, setProgramId] = useState("");
@@ -30,6 +30,31 @@ export default function AcademicSetupPage() {
   const [requestCity, setRequestCity] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(API + "/api/student/profile", { headers: { Authorization: "Bearer " + token } });
+        const data = await response.json();
+        if (response.ok && data.profile && !cancelled) {
+          const p = data.profile;
+          localStorage.setItem("gradly_student_profile", JSON.stringify({
+            institutionId: p.institution_id || "", institutionName: p.institution_name || "",
+            programId: p.program_id || "", programName: p.program_name || "",
+            branchId: p.branch_id || "", branchName: p.branch_name || "",
+            curriculumId: p.curriculum_id || "", semester: String(p.current_semester_number || ""),
+            enrollment: p.student_identifier || "", admissionYear: String(p.admission_year || ""),
+            admissionMode: p.admission_mode_name || "Regular", admissionNumber: "", scheme: p.scheme_name || "",
+          }));
+          navigate("/dashboard", { replace: true });
+        }
+      } catch { /* A missing profile is expected during first-time setup. */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user, navigate]);
 
   async function searchInstitutions(value: string) {
     setQuery(value);
@@ -128,7 +153,7 @@ export default function AcademicSetupPage() {
         {error && <div className="academic-setup-error" role="alert">{error}</div>}
         <form onSubmit={saveProfile}>
           <label>Institution name</label>
-          <input value={query} onChange={e => void searchInstitutions(e.target.value)} placeholder="Start typing your college or university…" autoComplete="organization"/>
+          <input value={query} onChange={e => { const value=e.target.value; setQuery(value); window.clearTimeout(searchTimer.current); searchTimer.current=window.setTimeout(() => void searchInstitutions(value), 250); }} placeholder="Start typing your college or university…" autoComplete="organization"/>
           {searching && <small className="academic-setup-hint">Searching Gradly institutions…</small>}
           {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => { setSelected(item); setQuery(item.name); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); }}><strong>{item.name}</strong><span>{item.branches.length} programme / branch options</span></button>)}</div>}
           {selected && <div className="academic-setup-selected"><span>SELECTED INSTITUTION</span><strong>{selected.name}</strong><button type="button" onClick={() => { setSelected(null); setQuery(""); setProgramId(""); setBranchId(""); setCurricula([]); }}>Change</button></div>}
