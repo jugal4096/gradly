@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { parseEnrollmentNumber, predictSemester } from "./enrollment-intelligence.service";
+import { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
 const predict = (admissionYear: number, entrySemester: number, date: string, totalSemesters = 8) =>
