@@ -12,7 +12,7 @@ type EnrollmentPreview = {
   recognized: boolean; requiresConfirmation: boolean; unknown?: string; message?: string;
   programme?: string; programId?: string; branch?: string; branchId?: string;
   curriculumId?: string; curriculumName?: string; scheme?: string;
-  admissionYear?: number; admissionMode?: string; entrySemester?: number;
+  admissionYear?: number; admissionMode?: string; admissionModeId?: string | null; entrySemester?: number;
   expected?: { expectedSemester: number | null; academicYear: string; semesterType: "ODD" | "EVEN"; expectedDurationEnded: boolean; expectedGraduationSession: string; academicYearLabel: string | null };
 };
 
@@ -150,7 +150,7 @@ export default function AcademicSetupPage() {
         body: JSON.stringify({
           institutionId: selected.id, curriculumId, studentIdentifier: enrollment.trim(),
           admissionYear: preview.admissionYear, currentSemesterNumber: completed && academicStatus !== "APPROVED_EXTENSION" && academicStatus !== "PENDING_BACKLOGS" ? null : Number(actualSemester),
-          admissionModeId: null, admissionModeName: preview.admissionMode, graduationYear, targetCgpa: null,
+          admissionModeId: preview.admissionModeId || null, admissionModeName: preview.admissionMode, graduationYear, targetCgpa: null,
           academicStatus,
         }),
       });
