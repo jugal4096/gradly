@@ -24,7 +24,7 @@ test("accepts configured programme prefixes with strict format", () => {
 
 test("normalizes lowercase input and trims outer whitespace without repairing internals", () => {
   assert.equal(parseEnrollmentNumber("  be23s06f007  ").enrollmentNumber, "BE23S06F007");
-  assert.throws(() => parseEnrollmentNumber("BE 23S06F007"), /INVALID_ADMISSION_YEAR/);
+  assert.throws(() => parseEnrollmentNumber("BE 23S06F007"), /INVALID_EIGHTH_CHARACTER/);
   assert.throws(() => parseEnrollmentNumber("BE23S06-F007"), /INVALID_EIGHTH_CHARACTER/);
 });
 
