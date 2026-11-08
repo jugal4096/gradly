@@ -90,8 +90,6 @@ export default function AcademicSetupPage() {
   const [requestSent, setRequestSent] = useState(false);
 
   const inference = inferEnrollment(enrollment);
-  const normalizedEnrollment = enrollment.trim().toUpperCase().replace(/[\s-]+/g, "");
-  const enrollmentEntryComplete = normalizedEnrollment.length >= 7;
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   const branches = (selected?.branches || []).filter(b => b.program_id === programId);
   const selectedProgramName = programs.find(p => p.id === programId)?.name || "";
@@ -280,7 +278,7 @@ export default function AcademicSetupPage() {
         <small>You can update these details later from Academic Profile.</small>
       </aside>
       <section className="academic-setup-card">
-        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution, enter your enrollment number and fetch the matching academic details from Gradly's records.</p></div>
+        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution, enter your enrollment number and fetch the matching programme, branch and curriculum options from Gradly's academic records.</p></div>
         {error && <div className="academic-setup-error" role="alert">{error}</div>}
         <form onSubmit={saveProfile}>
           <label>Institution name</label>
@@ -298,7 +296,7 @@ export default function AcademicSetupPage() {
             <div className="academic-setup-enrollment">
               <label htmlFor="student-enrollment">University enrollment / roll number</label>
               <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setInferenceConfirmed(false); setFetchAttempted(false); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester(""); }} placeholder="Enter your university enrollment number" autoComplete="off"/>
-              <button type="button" className="academic-setup-submit" disabled={!enrollment.trim()} onClick={() => { setFetchAttempted(true); if (!inference) { setInferenceConfirmed(false); setError("Enrollment number not recognized."); return; } setError(""); setInferenceConfirmed(true); }}>Fetch student details →</button>
+              <button type="button" className="academic-setup-submit" disabled={!enrollment.trim()} onClick={() => { setFetchAttempted(true); if (!inference) { setInferenceConfirmed(false); setError("Enrollment number not recognized."); return; } setError(""); setInferenceConfirmed(true); }}>Fetch matching academic options →</button>
               {fetchAttempted && !inference && <div className="academic-setup-manual" role="alert"><strong>Enrollment number not recognized.</strong></div>}
             </div>
             {inference && inferenceConfirmed && <div className="academic-setup-grid">
