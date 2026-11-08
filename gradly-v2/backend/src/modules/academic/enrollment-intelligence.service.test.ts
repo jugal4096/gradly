@@ -116,4 +116,5 @@ test("uses branch directory code as an additional branch identity", () => {
 test("does not match unrelated branch labels by loose substring", () => {
   assert.equal(branchIdentityMatches("Information Technology", "Electrical Engineering", "EE"), false);
   assert.equal(branchIdentityMatches("Computer Science and Engineering", "Computer Engineering", "CE"), false);
+  assert.equal(branchIdentityMatches("Information Technology", "IT and Computer Science", null), false);
 });
