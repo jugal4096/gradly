@@ -20,11 +20,11 @@ function validateEnrollmentNumber(value: string): string | null {
   if (!value) return "Enter your enrollment number."; 
   if (!/^(BE|BT|MC|MT)/.test(value)) return "Invalid enrollment number. Programme prefix is not recognized."; 
   if (value.length !== 11) return "Invalid enrollment number. It must contain exactly 11 characters."; 
-  if (!/^\\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
+  if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
   if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number. Admission mode must be F or S."; 
-  if (!/^\\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
+  if (!/^\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
   if (value[7] !== "F") return "Invalid enrollment number. The 8th character must be F."; 
-  if (!/^\\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
+  if (!/^\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
   return null;
 }
 export default function AcademicSetupPage() {
