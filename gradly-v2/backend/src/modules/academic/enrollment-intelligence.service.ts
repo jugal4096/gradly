@@ -50,7 +50,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     ? orderedBranchRules.filter(rule => rule.institution_specific === preferredRule.institution_specific && rule.prefix_specific === preferredRule.prefix_specific && rule.program_specific === preferredRule.program_specific)
     : [];
   if (!branchRules.length) {
-    return unresolved("BRANCH_CODE", "This branch code is not configured for the detected programme. Please request verification.", parsed);
+    return unresolved("BRANCH_CODE", "Unrecognized branch code. Please verify your enrollment number.", parsed);
   }
 
   // Resolve against the programme-scoped branch directory instead of one exact display-name string.
@@ -68,7 +68,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       "BRANCH",
       uniqueBranches.length
         ? "More than one branch matches this enrollment code under the detected programme. Institutional mapping needs review."
-        : "The branch code is configured, but its name or abbreviation does not match any branch under the detected programme. Check the branch mapping in the academic directory.",
+        : "Unrecognized branch code. Please verify your enrollment number.",
       parsed,
     );
   }
