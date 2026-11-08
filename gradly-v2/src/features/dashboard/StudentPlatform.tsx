@@ -176,6 +176,7 @@ export default function StudentPlatform() {
   const computedSgpa = countedCredits ? weighted/countedCredits : 0;
   const cgpaCredits = results.reduce((sum,r)=>sum+r.credits,0);
   const cgpaValue = cgpaCredits ? results.reduce((sum,r)=>sum+r.sgpa*r.credits,0)/cgpaCredits : 0;
+  const institutionLabel = profile.institutionName || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
   const name = user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
 
@@ -336,6 +337,6 @@ export default function StudentPlatform() {
     </main>
 
     {loginGate&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">GRADLY ACCOUNT</span><h2>Unlock your student workspace</h2><p>This feature is available to signed-in students. Your guest calculations remain on this device.</p></div><button onClick={()=>setLoginGate(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" onClick={()=>void loginWithGoogle()}>Continue with Google →</button><button className="sp-secondary" onClick={()=>setLoginGate(false)}>Maybe later</button></div></section></div>}
-    {requestOpen&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">INSTITUTION REQUEST</span><h2>Request an institution</h2><p>Send the institution name and context for Super Admin review.</p></div><button onClick={()=>setRequestOpen(false)}>×</button></div><form onSubmit={submitInstitutionRequest}><label>Institution name<input required value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder="College or university name"/></label><label>Additional details<textarea value={requestReason} onChange={e=>setRequestReason(e.target.value)} placeholder="City, university affiliation, website…" rows={3}/></label><div className="sp-modal-actions"><button type="button" className="sp-secondary" onClick={()=>setRequestOpen(false)}>Cancel</button><button className="sp-primary">Submit request →</button></div></form></section></div>}
+
   </div>;
 }
