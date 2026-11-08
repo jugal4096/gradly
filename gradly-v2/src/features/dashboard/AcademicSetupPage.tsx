@@ -28,14 +28,11 @@ export default function AcademicSetupPage() {
   const [branchId, setBranchId] = useState("");
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [curriculumId, setCurriculumId] = useState("");
-  const [semester, setSemester] = useState("");
   const [academicStatus, setAcademicStatus] = useState<AcademicStatus>("ENROLLED");
   const [actualSemester, setActualSemester] = useState("");
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [enrollment, setEnrollment] = useState("");
-  const [inferenceConfirmed, setInferenceConfirmed] = useState(false);
-  const [fetchAttempted, setFetchAttempted] = useState(false);
   const [searching, setSearching] = useState(false);
   const [loadingCurricula, setLoadingCurricula] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -126,7 +123,7 @@ export default function AcademicSetupPage() {
 
   async function loadCurricula(nextProgramId: string, nextBranchId: string) {
     if (!selected || !nextProgramId || !nextBranchId) return;
-    setLoadingCurricula(true); setCurricula([]); setCurriculumId(""); setSemester("");
+    setLoadingCurricula(true); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
     try {
       const params = new URLSearchParams({ institutionId: selected.id, programId: nextProgramId, branchId: nextBranchId });
       const response = await fetch(API + "/api/academic/curricula?" + params.toString());
@@ -158,7 +155,7 @@ export default function AcademicSetupPage() {
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({
           institutionId: selected.id, curriculumId, studentIdentifier: enrollment.trim(),
-          admissionYear: preview.admissionYear, currentSemesterNumber: Number(actualSemester || semesterCount),
+          admissionYear: preview.admissionYear, currentSemesterNumber: completed && academicStatus !== "APPROVED_EXTENSION" && academicStatus !== "PENDING_BACKLOGS" ? null : Number(actualSemester),
           admissionModeId: null, admissionModeName: preview.admissionMode, graduationYear, targetCgpa: null,
           academicStatus,
         }),
@@ -218,7 +215,7 @@ export default function AcademicSetupPage() {
           <label>Institution name</label>
           <input value={query} onChange={e => {
             const value = e.target.value;
-            setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester("");
+            setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
             window.clearTimeout(searchTimer.current);
             searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
           }} placeholder="Search institutions in Gradly's database…" autoComplete="organization"/>
