@@ -107,7 +107,7 @@ export default function AcademicSetupPage() {
       const options = Array.isArray(curriculumPayload.data) ? curriculumPayload.data as Curriculum[] : [];
       setCurricula(options);
       if (!options.some(item => item.id === result.curriculumId)) { setError("The detected curriculum is no longer available in the institution directory. Please verify with your institution."); setCurriculumId(""); }
-    } catch (e) { setPreview(null); setError(e instanceof Error ? e.message : "Unable to identify academic details."); }
+    } catch (e) { if (sequence === previewSequence.current) { setPreview(null); setError(e instanceof Error ? e.message : "Unable to identify academic details."); } }
     finally { if (sequence === previewSequence.current) setPreviewBusy(false); }
   }
 
@@ -209,14 +209,14 @@ export default function AcademicSetupPage() {
           <label>Institution name</label>
           <input value={query} onChange={e => {
             const value = e.target.value;
-            setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
+            previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
             window.clearTimeout(searchTimer.current);
             searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
           }} placeholder="Search institutions in Gradly's database…" autoComplete="organization"/>
           {searching && <small className="academic-setup-hint">Searching Gradly's institution directory…</small>}
           {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-hint">No matching institution found. You can request it below.</small>}
           {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><strong>{item.name}</strong><span>{item.branches.length} programme / branch options</span></button>)}</div>}
-          {selected && <div className="academic-setup-selected"><span>SELECTED INSTITUTION</span><strong>{selected.name}</strong><button type="button" onClick={() => { setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); }}>Change</button></div>}
+          {selected && <div className="academic-setup-selected"><span>SELECTED INSTITUTION</span><strong>{selected.name}</strong><button type="button" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); }}>Change</button></div>}
           {selected && <>
             <div className="academic-setup-enrollment">
               <label htmlFor="student-enrollment">University enrollment / roll number</label>
