@@ -141,6 +141,7 @@ export default function AcademicSetupPage() {
     }
     if (predictionConfirmed !== true) { setError("Please confirm the predicted academic details before continuing."); return; }
     if (hasBacklogs === null) { setError("Please confirm whether you have any pending backlogs."); return; }
+    if (!hasBacklogs && academicStatus === "PENDING_BACKLOGS") { setError("You selected no pending backlogs. Please choose a different academic status."); return; }
     const parsedBacklogCount = hasBacklogs ? Number(backlogCount) : 0;
     if (!Number.isInteger(parsedBacklogCount) || parsedBacklogCount < 0 || parsedBacklogCount > 100 || (hasBacklogs && parsedBacklogCount < 1)) {
       setError("Enter a valid pending backlog count between 0 and 100."); return;
