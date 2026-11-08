@@ -56,8 +56,8 @@ INSERT INTO public.enrollment_program_rules
 VALUES
   (NULL, 'BE', '%Bachelor of Engineering%', '%B.E.%', ARRAY['%B.Tech%', '%Bachelor of Technology%'], 'New CBCS', 4, 8, 1, 3, 70),
   (NULL, 'BT', '%Bachelor of Technology%', '%B.Tech%', ARRAY['%Bachelor of Engineering%', '%B.E.%'], 'New CBCS', 4, 8, 1, 3, 70),
-  (NULL, 'MC', '%Master of Computer Applications%', NULL, 2, 4, 1, 1, 70),
-  (NULL, 'MT', '%Master of Technology%', NULL, 2, 4, 1, 1, 70)
+  (NULL, 'MC', '%Master of Computer Applications%', NULL, ARRAY[]::text[], NULL, 2, 4, 1, 1, 70),
+  (NULL, 'MT', '%Master of Technology%', NULL, ARRAY[]::text[], NULL, 2, 4, 1, 1, 70)
 ON CONFLICT (institution_id, prefix) DO NOTHING;
 
 -- Safe global defaults for admission markers and branch codes.
