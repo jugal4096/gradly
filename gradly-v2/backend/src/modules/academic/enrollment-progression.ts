@@ -41,7 +41,7 @@ const branchAliasGroups: string[][] = [
   ["information technology", "information tech", "it"],
   ["computer science and engineering", "computer science", "cse", "cs"],
   ["electronics and telecommunication", "electronics and communication", "electronics telecommunication", "e and tc", "etc", "extc", "ece"],
-  ["electrical", "electrical engineering", "ee"],
+  ["electrical", "electrical engineering", "electr", "ee"],
   ["mechanical", "mechanical engineering", "me"],
   ["civil", "civil engineering", "ce"],
   ["artificial intelligence and data science", "artificial intelligence data science", "ai and ds", "aids"],
