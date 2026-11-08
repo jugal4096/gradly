@@ -39,7 +39,7 @@ export async function findStudentProfileByUserId(userId: string) {
 
 const returningColumns = `
   id, user_id, institution_id, curriculum_id, admission_mode_id,
-  student_identifier, admission_year, current_semester_number,
+  student_identifier, admission_year, current_semester_number, academic_status,
   graduation_year, target_cgpa, current_cgpa, current_earned_credits,
   created_at, updated_at
 `;
@@ -48,7 +48,7 @@ function profileValues(data: CreateStudentProfileData) {
   return [
     data.userId, data.institutionId, data.curriculumId,
     data.admissionModeId ?? null, data.admissionModeName ?? null, data.studentIdentifier.trim(),
-    data.admissionYear, data.currentSemesterNumber,
+    data.admissionYear, data.currentSemesterNumber, data.academicStatus,
     data.graduationYear ?? null, data.targetCgpa ?? null,
   ];
 }
@@ -57,9 +57,9 @@ export async function createStudentProfile(data: CreateStudentProfileData) {
   const result = await pool.query(`
     INSERT INTO student_profiles (
       user_id, institution_id, curriculum_id, admission_mode_id,
-      student_identifier, admission_year, current_semester_number,
+      student_identifier, admission_year, current_semester_number, academic_status,
       graduation_year, target_cgpa
-    ) VALUES ($1,$2,$3,COALESCE($4,(SELECT id FROM admission_modes WHERE LOWER(name)=LOWER($5) LIMIT 1)),$6,$7,$8,$9,$10)
+    ) VALUES ($1,$2,$3,COALESCE($4,(SELECT id FROM admission_modes WHERE LOWER(name)=LOWER($5) LIMIT 1)),$6,$7,$8,$9,$10,$11)
     RETURNING ${returningColumns};
   `, profileValues(data));
   return result.rows[0];
@@ -74,8 +74,9 @@ export async function updateStudentProfile(data: CreateStudentProfileData) {
         student_identifier = $6,
         admission_year = $7,
         current_semester_number = $8,
-        graduation_year = $9,
-        target_cgpa = $10,
+        academic_status = $9,
+        graduation_year = $10,
+        target_cgpa = $11,
         updated_at = NOW()
     WHERE user_id = $1
     RETURNING ${returningColumns};
