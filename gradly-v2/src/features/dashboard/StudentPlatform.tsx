@@ -158,7 +158,6 @@ export default function StudentPlatform() {
     let cancelled=false;
     void (async()=>{
       try {
-        const token=await user.getIdToken();
         const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${encodeURIComponent(profile.semester)}/subjects`);
         const data=await response.json();
         if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
