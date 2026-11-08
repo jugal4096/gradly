@@ -21,6 +21,9 @@ function readProfilePayload(body: Record<string, unknown>) {
     institutionId, curriculumId, admissionModeId, admissionModeName, studentIdentifier,
     admissionYear, currentSemesterNumber, graduationYear, targetCgpa,
   } = body;
+  const academicProfileConfirmed = body.academicProfileConfirmed === true;
+  const pendingBacklogCount = body.pendingBacklogCount === undefined || body.pendingBacklogCount === null
+    ? null : Number(body.pendingBacklogCount);
   const academicStatus = body.academicStatus ?? "ENROLLED";
   if (
     typeof institutionId !== "string" || !institutionId ||
@@ -34,6 +37,9 @@ function readProfilePayload(body: Record<string, unknown>) {
     ((academicStatus === "ENROLLED" || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS") &&
       (currentSemesterNumber === null || currentSemesterNumber === undefined))
   ) return null;
+
+  if (body.pendingBacklogCount !== undefined && body.pendingBacklogCount !== null &&
+      (!Number.isInteger(pendingBacklogCount) || Number(pendingBacklogCount) < 0 || Number(pendingBacklogCount) > 100)) return null;
 
   const parsedTarget = targetCgpa === undefined || targetCgpa === null || targetCgpa === ""
     ? null : Number(targetCgpa);
@@ -49,6 +55,8 @@ function readProfilePayload(body: Record<string, unknown>) {
     graduationYear: graduationYear === undefined || graduationYear === null || graduationYear === ""
       ? null : Number(graduationYear),
     targetCgpa: parsedTarget,
+    academicProfileConfirmed,
+    pendingBacklogCount,
   };
 }
 
