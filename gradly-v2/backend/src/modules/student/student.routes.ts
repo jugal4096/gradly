@@ -12,6 +12,8 @@ router.use(authenticateFirebaseToken);
 router.get("/profile", getProfile);
 router.post("/syllabus-feedback", submitStudentSyllabusFeedback);
 router.post("/profile", createStudentProfileController);
-router.put("/profile", updateStudentProfileController);\nrouter.get("/academic/records", listStudentAcademicRecords);\nrouter.post("/academic/semesters", saveStudentSemesterResult);
+router.put("/profile", updateStudentProfileController);
+router.get("/academic/records", listStudentAcademicRecords);
+router.post("/academic/semesters", saveStudentSemesterResult);
 
 export default router;
