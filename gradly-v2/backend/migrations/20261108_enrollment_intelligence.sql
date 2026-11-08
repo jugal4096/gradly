@@ -17,9 +17,10 @@ CREATE TABLE IF NOT EXISTS public.enrollment_admission_modes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   institution_id UUID NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
   mode_code CHAR(1) NOT NULL,
+  programme_prefix CHAR(2) NULL,
   mode_name TEXT NOT NULL,
   entry_semester SMALLINT NOT NULL CHECK (entry_semester BETWEEN 1 AND 20),
-  UNIQUE NULLS NOT DISTINCT (institution_id, mode_code)
+  UNIQUE NULLS NOT DISTINCT (institution_id, mode_code, programme_prefix)
 );
 
 CREATE TABLE IF NOT EXISTS public.enrollment_branch_codes (
@@ -57,9 +58,17 @@ VALUES
 ON CONFLICT (institution_id, prefix) DO NOTHING;
 
 -- Safe global defaults for admission markers and branch codes.
-INSERT INTO public.enrollment_admission_modes (institution_id, mode_code, mode_name, entry_semester)
-VALUES (NULL, 'F', 'Regular Admission', 1), (NULL, 'S', 'Direct Second Year', 3)
-ON CONFLICT (institution_id, mode_code) DO NOTHING;
+INSERT INTO public.enrollment_admission_modes (institution_id, mode_code, programme_prefix, mode_name, entry_semester)
+VALUES
+  (NULL, 'F', 'BE', 'Regular Admission', 1),
+  (NULL, 'S', 'BE', 'Direct Second Year', 3),
+  (NULL, 'F', 'BT', 'Regular Admission', 1),
+  (NULL, 'S', 'BT', 'Direct Second Year', 3),
+  (NULL, 'F', 'MC', 'Regular Admission', 1),
+  (NULL, 'S', 'MC', 'Institutional Admission', 1),
+  (NULL, 'F', 'MT', 'Regular Admission', 1),
+  (NULL, 'S', 'MT', 'Institutional Admission', 1)
+ON CONFLICT (institution_id, mode_code, programme_prefix) DO NOTHING;
 
 INSERT INTO public.enrollment_branch_codes (institution_id, branch_code, branch_name)
 VALUES
