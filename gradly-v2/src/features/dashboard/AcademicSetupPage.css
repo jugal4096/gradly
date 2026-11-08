@@ -327,3 +327,21 @@
 @media(prefers-reduced-motion:reduce){
  .academic-setup-page,.academic-setup-page *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+.theme-dark .academic-setup-choice{border-color:var(--as-border);background:var(--as-field);color:var(--as-text)}
+.theme-dark .academic-setup-choice:hover:not(:disabled){border-color:#8876d2;background:#302b47}
+.theme-dark .academic-setup-choice.primary-choice{border-color:#806dd2;background:#6652bd;color:#fff}
+.theme-dark .academic-setup-journey-options button{border-color:var(--as-border);background:var(--as-field);color:var(--as-text)}
+.theme-dark .academic-setup-journey-options button:hover{border-color:#8876d2;background:#302b47}
+.theme-dark .academic-setup-journey-options button.selected{border-color:#8e7be0;background:#342d52;color:#e5ddff}
+.theme-dark .academic-setup-confirmed-state{border-color:#355d49;background:#1c3027}
+.theme-dark .academic-setup-confirmed-state strong{color:#9fe0b9}
+.theme-dark .academic-setup-confirmed-state small{color:#a3c6b0}
+.theme-dark .academic-setup-confirmed-state>span{background:#274b38;color:#9fe0b9}
+.theme-dark .academic-setup-confirmed-state button{color:#c1b4ff}
+.theme-dark .academic-setup-first-step-note{color:var(--as-muted)}
+.theme-dark .academic-setup-institution-request summary{color:var(--as-muted)}
+.theme-dark .academic-setup-institution-request input{background:var(--as-field);color:var(--as-field-text)}
+.theme-dark .academic-setup-request-success{color:#9fe0b9}
+.theme-dark .academic-setup-selected button{color:#c1b4ff}
+.theme-dark .academic-setup-results button small{color:var(--as-muted)}
