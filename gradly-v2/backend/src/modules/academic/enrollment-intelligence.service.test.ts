@@ -2,50 +2,101 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { parseEnrollmentNumber, predictSemester } from "./enrollment-intelligence.service";
 
-test("parses only the first seven characters and preserves the suffix", () => {
-  const parsed = parseEnrollmentNumber("BE23S06F007");
-  assert.equal(parsed.classificationKey, "BE23S06");
-  assert.equal(parsed.prefix, "BE");
-  assert.equal(parsed.admissionYear, 2023);
-  assert.equal(parsed.admissionModeCode, "S");
-  assert.equal(parsed.branchCode, "06");
-  assert.equal(parsed.suffix, "F007");
+const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
+const predict = (admissionYear: number, entrySemester: number, date: string, totalSemesters = 8) =>
+  predictSemester({ admissionYear, entrySemester, totalSemesters, ...calendar, date: new Date(date) });
+
+test("BE23S06F007 resolves its first seven characters and preserves the suffix", () => {
+  const p = parseEnrollmentNumber("BE23S06F007");
+  assert.deepEqual(
+    [p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.classificationKey, p.suffix],
+    ["BE", 2023, "S", "06", "BE23S06", "F007"],
+  );
 });
 
-test("supports configurable century pivot", () => {
-  assert.equal(parseEnrollmentNumber("BE99F05XYZ", 70).admissionYear, 1999);
-  assert.equal(parseEnrollmentNumber("BE23F05XYZ", 70).admissionYear, 2023);
+test("parses regular BTech enrollment and IT branch code", () => {
+  const p = parseEnrollmentNumber("BE23F06007");
+  assert.equal(p.prefix, "BE");
+  assert.equal(p.admissionYear, 2023);
+  assert.equal(p.admissionModeCode, "F");
+  assert.equal(p.branchCode, "06");
+});
+
+test("parses 2024 DSY enrollment", () => {
+  const p = parseEnrollmentNumber("BE24S06007");
+  assert.equal(p.admissionYear, 2024);
+  assert.equal(p.admissionModeCode, "S");
+  assert.equal(p.branchCode, "06");
+});
+
+test("parses 2024 regular enrollment", () => {
+  const p = parseEnrollmentNumber("BE24F06007");
+  assert.equal(p.admissionYear, 2024);
+  assert.equal(p.admissionModeCode, "F");
+  assert.equal(p.branchCode, "06");
+});
+
+test("uses configurable century boundary", () => {
+  assert.equal(parseEnrollmentNumber("BE69F05001", 70).admissionYear, 2069);
+  assert.equal(parseEnrollmentNumber("BE70F05001", 70).admissionYear, 1970);
 });
 
 test("rejects malformed enrollment numbers", () => {
-  assert.throws(() => parseEnrollmentNumber("BE23S6F007"), /INVALID_ENROLLMENT_NUMBER/);
-  assert.throws(() => parseEnrollmentNumber("??23S06F007"), /INVALID_ENROLLMENT_NUMBER/);
+  for (const value of ["", "BE23S6F007", "??23S06F007", "BE2XS06F007", "BE23S06"]) {
+    assert.throws(() => parseEnrollmentNumber(value), /INVALID_ENROLLMENT_NUMBER/);
+  }
 });
 
-test("predicts regular BTech semester 7 in the 2026-27 odd session", () => {
-  const result = predictSemester({
-    admissionYear: 2023, entrySemester: 1, totalSemesters: 8, durationYears: 4,
-    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12, date: new Date("2026-11-08T12:00:00+05:30"),
-  });
-  assert.equal(result.expectedSemester, 7);
-  assert.equal(result.academicYearLabel, "Final Year");
+test("BE23S06F007 in November 2026 has completed expected DSY programme duration", () => {
+  const p = predict(2023, 3, "2026-11-08T12:00:00+05:30");
+  assert.equal(p.expectedSemester, null);
+  assert.equal(p.expectedDurationEnded, true);
+  assert.equal(p.academicYear, "2026-27");
 });
 
-test("predicts DSY progression beyond the final semester instead of clamping to semester 8", () => {
-  const result = predictSemester({
-    admissionYear: 2023, entrySemester: 3, totalSemesters: 8, durationYears: 3,
-    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12, date: new Date("2026-11-08T12:00:00+05:30"),
-  });
-  assert.equal(result.expectedSemester, null);
-  assert.equal(result.expectedDurationEnded, true);
-  assert.equal(result.academicYearLabel, null);
+test("BE23F06007 in November 2026 is expected in semester 7", () => {
+  const p = predict(2023, 1, "2026-11-08T12:00:00+05:30");
+  assert.equal(p.expectedSemester, 7);
+  assert.equal(p.expectedDurationEnded, false);
 });
 
-test("calculates even semester in the January-June period", () => {
-  const result = predictSemester({
-    admissionYear: 2023, entrySemester: 1, totalSemesters: 8, durationYears: 4,
-    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12, date: new Date("2027-03-01T12:00:00+05:30"),
+test("BE24S06007 in November 2026 follows the same DSY rule and is expected in semester 7", () => {
+  const p = predict(2024, 3, "2026-11-08T12:00:00+05:30");
+  assert.equal(p.expectedSemester, 7);
+  assert.equal(p.expectedDurationEnded, false);
+});
+
+test("BE24F06007 in November 2026 is expected in semester 5", () => {
+  const p = predict(2024, 1, "2026-11-08T12:00:00+05:30");
+  assert.equal(p.expectedSemester, 5);
+});
+
+test("January-June maps to the even semester and July-December to odd", () => {
+  assert.equal(predict(2023, 1, "2027-03-01T12:00:00+05:30").expectedSemester, 8);
+  assert.equal(predict(2023, 1, "2026-09-01T12:00:00+05:30").expectedSemester, 7);
+});
+
+test("completed programme never clamps expected semester to the final semester", () => {
+  const p = predict(2023, 3, "2027-03-01T12:00:00+05:30");
+  assert.equal(p.expectedSemester, null);
+  assert.equal(p.expectedDurationEnded, true);
+});
+
+test("supports a four-semester postgraduate programme", () => {
+  const p = predictSemester({
+    admissionYear: 2025, entrySemester: 1, totalSemesters: 4,
+    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12,
+    date: new Date("2026-11-08T12:00:00+05:30"),
   });
-  assert.equal(result.expectedSemester, 8);
-  assert.equal(result.semesterType, "EVEN");
+  assert.equal(p.expectedSemester, 3);
+});
+
+test("supports delayed academic session start configured for September", () => {
+  const p = predictSemester({
+    admissionYear: 2023, entrySemester: 1, totalSemesters: 8,
+    academicYearStartMonth: 9, oddSemesterStartMonth: 9, oddSemesterEndMonth: 2,
+    date: new Date("2026-11-08T12:00:00+05:30"),
+  });
+  assert.equal(p.academicYear, "2026-27");
+  assert.equal(p.semesterType, "ODD");
 });
