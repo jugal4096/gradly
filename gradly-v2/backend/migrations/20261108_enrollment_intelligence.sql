@@ -27,9 +27,10 @@ CREATE TABLE IF NOT EXISTS public.enrollment_branch_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   institution_id UUID NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
   branch_code CHAR(2) NOT NULL,
+  programme_prefix CHAR(2) NULL,
   branch_name TEXT NOT NULL,
   program_name_pattern TEXT NULL,
-  UNIQUE NULLS NOT DISTINCT (institution_id, branch_code)
+  UNIQUE NULLS NOT DISTINCT (institution_id, branch_code, programme_prefix)
 );
 
 CREATE TABLE IF NOT EXISTS public.institution_academic_calendars (
@@ -70,15 +71,21 @@ VALUES
   (NULL, 'S', 'MT', 'Institutional Admission', 1)
 ON CONFLICT (institution_id, mode_code, programme_prefix) DO NOTHING;
 
-INSERT INTO public.enrollment_branch_codes (institution_id, branch_code, branch_name)
+INSERT INTO public.enrollment_branch_codes (institution_id, branch_code, programme_prefix, branch_name)
 VALUES
-  (NULL, '01', 'Civil Engineering'),
-  (NULL, '02', 'Mechanical Engineering'),
-  (NULL, '03', 'Electrical Engineering'),
-  (NULL, '04', 'Electronics and Telecommunication Engineering'),
-  (NULL, '05', 'Computer Science and Engineering'),
-  (NULL, '06', 'Information Technology')
-ON CONFLICT (institution_id, branch_code) DO NOTHING;
+  (NULL, '01', 'BE', 'Civil Engineering'),
+  (NULL, '02', 'BE', 'Mechanical Engineering'),
+  (NULL, '03', 'BE', 'Electrical Engineering'),
+  (NULL, '04', 'BE', 'Electronics and Telecommunication Engineering'),
+  (NULL, '05', 'BE', 'Computer Science and Engineering'),
+  (NULL, '06', 'BE', 'Information Technology'),
+  (NULL, '01', 'BT', 'Civil Engineering'),
+  (NULL, '02', 'BT', 'Mechanical Engineering'),
+  (NULL, '03', 'BT', 'Electrical Engineering'),
+  (NULL, '04', 'BT', 'Electronics and Telecommunication Engineering'),
+  (NULL, '05', 'BT', 'Computer Science and Engineering'),
+  (NULL, '06', 'BT', 'Information Technology')
+ON CONFLICT (institution_id, branch_code, programme_prefix) DO NOTHING;
 
 
 -- Apply the supplied July-June academic session convention to existing institutions.
