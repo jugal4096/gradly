@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.enrollment_program_rules (
   institution_id UUID NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
   prefix VARCHAR(2) NOT NULL,
   programme_name_pattern TEXT NOT NULL,
+  programme_alternate_pattern TEXT NULL,
   scheme_label TEXT NULL,
   duration_years SMALLINT NOT NULL CHECK (duration_years BETWEEN 1 AND 10),
   total_semesters SMALLINT NOT NULL CHECK (total_semesters BETWEEN 1 AND 20),
@@ -50,10 +51,10 @@ CREATE INDEX IF NOT EXISTS idx_institution_academic_calendars_active ON public.i
 
 -- Configurable global programme aliases. Institution-specific rows can override these defaults.
 INSERT INTO public.enrollment_program_rules
-  (institution_id, prefix, programme_name_pattern, scheme_label, duration_years, total_semesters, regular_entry_semester, lateral_entry_semester, year_pivot_start)
+  (institution_id, prefix, programme_name_pattern, programme_alternate_pattern, scheme_label, duration_years, total_semesters, regular_entry_semester, lateral_entry_semester, year_pivot_start)
 VALUES
-  (NULL, 'BE', '%Bachelor of Engineering%', 'New CBCS', 4, 8, 1, 3, 70),
-  (NULL, 'BT', '%Bachelor of Technology%', 'New CBCS', 4, 8, 1, 3, 70),
+  (NULL, 'BE', '%Bachelor of Engineering%', '%B.E.%', 'New CBCS', 4, 8, 1, 3, 70),
+  (NULL, 'BT', '%Bachelor of Technology%', '%B.Tech%', 'New CBCS', 4, 8, 1, 3, 70),
   (NULL, 'MC', '%Master of Computer Applications%', NULL, 2, 4, 1, 1, 70),
   (NULL, 'MT', '%Master of Technology%', NULL, 2, 4, 1, 1, 70)
 ON CONFLICT (institution_id, prefix) DO NOTHING;
