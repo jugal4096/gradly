@@ -66,7 +66,7 @@ const unresolved = (reason: string, message: string, parsed: EnrollmentComponent
 export async function previewEnrollment(institutionId: string, rawEnrollmentNumber: string, now = new Date()) {
   const initial = parseEnrollmentNumber(rawEnrollmentNumber);
   const rules = await pool.query(
-    `SELECT prefix, programme_name_pattern, scheme_label, duration_years, total_semesters, year_pivot_start
+    `SELECT prefix, programme_name_pattern, programme_alternate_pattern, scheme_label, duration_years, total_semesters, year_pivot_start
      FROM enrollment_program_rules
      WHERE institution_id = $1 OR institution_id IS NULL
      ORDER BY (institution_id = $1) DESC NULLS LAST`, [institutionId],
@@ -77,8 +77,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
 
   const programResult = await pool.query(
     `SELECT id, name, level FROM programs
-     WHERE institution_id = $1 AND name ILIKE $2 ORDER BY name LIMIT 2`,
-    [institutionId, rule.programme_name_pattern],
+     WHERE institution_id = $1 AND (name ILIKE $2 OR ($3::text IS NOT NULL AND name ILIKE $3)) ORDER BY name LIMIT 2`,
+    [institutionId, rule.programme_name_pattern, rule.programme_alternate_pattern ?? null],
   );
   if (programResult.rows.length !== 1) {
     return unresolved("PROGRAMME", programResult.rows.length ? "More than one programme matches this enrollment prefix. Institutional mapping needs review." : "The matching programme is not available in this institution's academic directory.", parsed);
@@ -117,10 +117,13 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return { ...unresolved("SCHEME", "The academic scheme mapping for this programme needs institutional configuration.", parsed), programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id, admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester) };
   }
   const curriculumResult = await pool.query(
-    `SELECT c.id, c.total_semesters, c.version, sc.name AS scheme_name
+    `SELECT c.id, COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS total_semesters, c.version, sc.name AS scheme_name
      FROM curricula c JOIN schemes sc ON sc.id = c.scheme_id
+     LEFT JOIN curriculum_subjects cs ON cs.curriculum_id = c.id AND cs.active = TRUE
+     LEFT JOIN semesters sem ON sem.id = cs.semester_id
      WHERE c.institution_id = $1 AND c.program_id = $2 AND c.branch_id = $3
        AND sc.name ILIKE $4
+     GROUP BY c.id, sc.name
      ORDER BY c.version DESC NULLS LAST LIMIT 2`,
     [institutionId, program.id, branch.id, `%${rule.scheme_label}%`],
   );
