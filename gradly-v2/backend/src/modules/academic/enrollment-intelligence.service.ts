@@ -88,8 +88,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const branchResult = await pool.query(
     `SELECT branch_name, program_name_pattern FROM enrollment_branch_codes
      WHERE branch_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
-     ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
-    [parsed.branchCode, institutionId],
+       AND (programme_prefix = $3 OR programme_prefix IS NULL)
+     ORDER BY (institution_id = $2) DESC NULLS LAST, (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
+    [parsed.branchCode, institutionId, parsed.prefix],
   );
   const branchRule = branchResult.rows[0];
   if (!branchRule) return unresolved("BRANCH_CODE", "This branch code is not configured. Please request verification.", parsed);
