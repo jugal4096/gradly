@@ -8,7 +8,8 @@ export interface CreateStudentProfileData {
   admissionModeName?: string | null;
   studentIdentifier: string;
   admissionYear: number;
-  currentSemesterNumber: number;
+  currentSemesterNumber: number | null;
+  academicStatus: string;
   graduationYear?: number | null;
   targetCgpa?: number | null;
 }
@@ -18,7 +19,7 @@ export async function findStudentProfileByUserId(userId: string) {
     SELECT
       sp.id, sp.user_id, sp.institution_id, sp.curriculum_id,
       sp.admission_mode_id, sp.student_identifier, sp.admission_year,
-      sp.current_semester_number, sp.graduation_year, sp.target_cgpa,
+      sp.current_semester_number, sp.academic_status, sp.graduation_year, sp.target_cgpa,
       sp.current_cgpa, sp.current_earned_credits, sp.created_at, sp.updated_at,
       i.name AS institution_name, p.name AS program_name,
       b.name AS branch_name, s.name AS scheme_name,
