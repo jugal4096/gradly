@@ -87,7 +87,9 @@ export default function StudentPlatform() {
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
   const [fontFamily,setFontFamily] = useState(()=>localStorage.getItem("gradly_font_family")||"DM Sans");
   const [textSize,setTextSize] = useState(()=>Number(localStorage.getItem("gradly_text_size")||"14"));
-  const [institutions,setInstitutions] = useState<Institution[]>([]);\n  const [curricula,setCurricula] = useState<Array<{id:string;scheme_name:string;scheme_code?:string|null;version?:string|number|null;total_semesters?:number|null}>>([]);\n  const [curriculumLoading,setCurriculumLoading] = useState(false);
+  const [institutions,setInstitutions] = useState<Institution[]>([]);
+  const [curricula,setCurricula] = useState<Array<{id:string;scheme_name:string;scheme_code?:string|null;version?:string|number|null;total_semesters?:number|null}>>([]);
+  const [curriculumLoading,setCurriculumLoading] = useState(false);
   const [institutionLoading,setInstitutionLoading] = useState(true);
   const [institutionError,setInstitutionError] = useState("");
   const [profile,setProfile] = useState<Profile>(() => {
