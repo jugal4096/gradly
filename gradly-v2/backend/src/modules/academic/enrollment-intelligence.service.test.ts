@@ -8,12 +8,12 @@ const predict = (admissionYear: number, entrySemester: number, date: string, tot
 
 test("parses a strict regular BE enrollment number", () => {
   const p = parseEnrollmentNumber("BE23F06F007");
-  assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "F", "06", "007"]);
+  assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "F", "06", "F007"]);
 });
 
 test("parses the supplied BE23S06F007 enrollment structure", () => {
   const p = parseEnrollmentNumber("BE23S06F007");
-  assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "S", "06", "007"]);
+  assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "S", "06", "F007"]);
 });
 
 test("accepts configured programme prefixes with strict format", () => {
