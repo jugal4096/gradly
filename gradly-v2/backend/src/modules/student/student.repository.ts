@@ -4,7 +4,7 @@ export interface CreateStudentProfileData {
   userId: string;
   institutionId: string;
   curriculumId: string;
-  admissionModeId?: string | null;
+  admissionModeId?: string | null;\n  admissionModeName?: string | null;
   studentIdentifier: string;
   admissionYear: number;
   currentSemesterNumber: number;
@@ -45,7 +45,7 @@ const returningColumns = `
 function profileValues(data: CreateStudentProfileData) {
   return [
     data.userId, data.institutionId, data.curriculumId,
-    data.admissionModeId ?? null, data.studentIdentifier.trim(),
+    data.admissionModeId ?? null, data.admissionModeName ?? null, data.studentIdentifier.trim(),
     data.admissionYear, data.currentSemesterNumber,
     data.graduationYear ?? null, data.targetCgpa ?? null,
   ];
