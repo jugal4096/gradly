@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public.institution_academic_calendars (
   academic_year_start_month SMALLINT NOT NULL DEFAULT 7 CHECK (academic_year_start_month BETWEEN 1 AND 12),
   odd_semester_start_month SMALLINT NOT NULL DEFAULT 7 CHECK (odd_semester_start_month BETWEEN 1 AND 12),
   odd_semester_end_month SMALLINT NOT NULL DEFAULT 12 CHECK (odd_semester_end_month BETWEEN 1 AND 12),
+  timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata',
   active_from DATE NULL,
   active_to DATE NULL,
   CHECK (active_to IS NULL OR active_from IS NULL OR active_to >= active_from)
