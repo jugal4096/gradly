@@ -142,12 +142,12 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return unresolved("PROGRAMME_DURATION", "Programme duration or semester count is not configured correctly.", parsed);
   }
   const calendarResult = await pool.query(
-    `SELECT academic_year_start_month, odd_semester_start_month, odd_semester_end_month
+    `SELECT academic_year_start_month, odd_semester_start_month, odd_semester_end_month, timezone
      FROM institution_academic_calendars
      WHERE institution_id = $1 AND (active_from IS NULL OR active_from <= $2::date)
        AND (active_to IS NULL OR active_to >= $2::date)
      ORDER BY active_from DESC NULLS LAST LIMIT 1`,
-    [institutionId, now.toISOString().slice(0, 10)],
+    [institutionId, new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)],
   );
   const calendar = calendarResult.rows[0];
   if (!calendar) {
@@ -157,7 +157,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     admissionYear: parsed.admissionYear, entrySemester: Number(mode.entry_semester), totalSemesters,
     academicYearStartMonth: Number(calendar.academic_year_start_month),
     oddSemesterStartMonth: Number(calendar.odd_semester_start_month),
-    oddSemesterEndMonth: Number(calendar.odd_semester_end_month), date: now,
+    oddSemesterEndMonth: Number(calendar.odd_semester_end_month),
+    date: (() => { const parts = new Intl.DateTimeFormat('en-US', { timeZone: calendar.timezone || 'Asia/Kolkata', year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(now); const part = (type: string) => Number(parts.find(p => p.type === type)?.value); return new Date(part('year'), part('month') - 1, part('day'), 12); })(),
   });
   return {
     recognized: true, requiresConfirmation: false, parsed,
