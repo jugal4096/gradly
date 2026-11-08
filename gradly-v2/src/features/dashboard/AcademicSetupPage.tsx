@@ -20,8 +20,8 @@ type EnrollmentInference = {
 };
 
 function inferEnrollment(value: string): EnrollmentInference | null {
-  const normalized = value.trim().toUpperCase().replace(/[\\s-]+/g, "").slice(0, 7);
-  const match = normalized.match(/^(BT|BE|MC|MT)(\\d{2})([FS])(\\d{2})$/);
+  const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, "").slice(0, 7);
+  const match = normalized.match(/^(BT|BE|MC|MT)(\d{2})([FS])(\d{2})$/);
   if (!match) return null;
   const [, programmePrefix, yearPart, modeCode, branchCode] = match;
   const branchLabels: Record<string, string> = {
@@ -97,6 +97,8 @@ export default function AcademicSetupPage() {
   const [requestSent, setRequestSent] = useState(false);
 
   const inference = inferEnrollment(enrollment);
+  const normalizedEnrollment = enrollment.trim().toUpperCase().replace(/[\s-]+/g, "");
+  const enrollmentEntryComplete = normalizedEnrollment.length >= 7;
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   const branches = (selected?.branches || []).filter(b => b.program_id === programId);
   const selectedProgramName = programs.find(p => p.id === programId)?.name || "";
@@ -319,10 +321,10 @@ export default function AcademicSetupPage() {
                   <div><small>Academic session</small><b>{sessionLabel}</b></div>
                 </div>
                 <p>Only the first seven characters are parsed. The remaining suffix is ignored. Confirm the detected programme, branch and scheme before saving.</p>
-              </div> : <div className="academic-setup-manual">
+              </div> : enrollmentEntryComplete ? <div className="academic-setup-manual">
                 <strong>Enrollment number not recognized.</strong>
-                <p>Gradly currently identifies the admission year, admission path and semester from supported enrollment-number formats. Check the number and try again.</p>
-              </div>}
+                <p>Enter a valid seven-character enrollment prefix (programme, admission year, admission path and branch code). Any characters after the first seven are ignored.</p>
+              </div> : null}
             </div>
             {inference && <div className="academic-setup-grid">
               <div><label>Programme</label><select required value={programId} onChange={e => { setProgramId(e.target.value); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester(""); }}><option value="">Select programme</option>{programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
