@@ -22,6 +22,7 @@ export default function AcademicSetupPage() {
   const [query, setQuery] = useState("");
   const searchTimer = useRef<number | undefined>(undefined);
   const searchSequence = useRef(0);
+  const previewSequence = useRef(0);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selected, setSelected] = useState<Institution | null>(null);
   const [programId, setProgramId] = useState("");
@@ -42,7 +43,11 @@ export default function AcademicSetupPage() {
   const [requestSent, setRequestSent] = useState(false);
 
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
+  if (preview?.programId && preview.programme && !programs.some(p => p.id === preview.programId)) programs.push({ id: preview.programId, name: preview.programme });
   const branches = (selected?.branches || []).filter(b => b.program_id === programId);
+  if (preview?.branchId && preview.branch && preview.programId === programId && !branches.some(b => b.id === preview.branchId)) {
+    branches.push({ id: preview.branchId, name: preview.branch, program_id: preview.programId, program_name: preview.programme || "", code: null });
+  }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const semesterCount = Number(selectedCurriculum?.total_semesters) || 0;
   const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
@@ -78,6 +83,7 @@ export default function AcademicSetupPage() {
 
 
   async function fetchEnrollmentDetails() {
+    const sequence = ++previewSequence.current;
     setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester("");
     if (!selected || !enrollment.trim() || !user) { setError("Select your institution and enter your enrollment number first."); return; }
     setPreviewBusy(true);
@@ -85,6 +91,7 @@ export default function AcademicSetupPage() {
       const token = await user.getIdToken();
       const response = await fetch(API + "/api/student/enrollment/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim() }) });
       const payload = await response.json();
+      if (sequence !== previewSequence.current) return;
       if (!response.ok) throw new Error(payload.message || "Unable to identify academic details.");
       const result = payload.data as EnrollmentPreview;
       setPreview(result);
@@ -95,12 +102,13 @@ export default function AcademicSetupPage() {
       const params = new URLSearchParams({ institutionId: selected.id, programId: result.programId, branchId: result.branchId });
       const curriculumResponse = await fetch(API + "/api/academic/curricula?" + params.toString());
       const curriculumPayload = await curriculumResponse.json();
+      if (sequence !== previewSequence.current) return;
       if (!curriculumResponse.ok) throw new Error(curriculumPayload.message || "Unable to load the matched curriculum.");
       const options = Array.isArray(curriculumPayload.data) ? curriculumPayload.data as Curriculum[] : [];
       setCurricula(options);
       if (!options.some(item => item.id === result.curriculumId)) { setError("The detected curriculum is no longer available in the institution directory. Please verify with your institution."); setCurriculumId(""); }
     } catch (e) { setPreview(null); setError(e instanceof Error ? e.message : "Unable to identify academic details."); }
-    finally { setPreviewBusy(false); }
+    finally { if (sequence === previewSequence.current) setPreviewBusy(false); }
   }
 
   async function searchInstitutions(value: string) {
@@ -180,7 +188,7 @@ export default function AcademicSetupPage() {
   }
 
   function chooseInstitution(item: Institution) {
-    setSelected(item); setQuery(item.name); setInstitutions([]); setInferenceConfirmed(false); setFetchAttempted(false);
+    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]); setInferenceConfirmed(false); setFetchAttempted(false);
     setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
   }
 
@@ -212,7 +220,7 @@ export default function AcademicSetupPage() {
           {selected && <>
             <div className="academic-setup-enrollment">
               <label htmlFor="student-enrollment">University enrollment / roll number</label>
-              <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); }} placeholder="Enter your university enrollment number" autoComplete="off"/>
+              <input id="student-enrollment" required value={enrollment} onChange={e => { previewSequence.current += 1; setPreviewBusy(false); setEnrollment(e.target.value.toUpperCase()); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); }} placeholder="Enter your university enrollment number" autoComplete="off"/>
               <button type="button" className="academic-setup-submit" disabled={!enrollment.trim() || previewBusy} onClick={() => void fetchEnrollmentDetails()}>{previewBusy ? "Identifying academic details…" : "Fetch matching academic options →"}</button>
             </div>
             {preview?.recognized && !preview.requiresConfirmation && preview.expected && <div className="academic-setup-grid">
