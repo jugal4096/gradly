@@ -118,7 +118,7 @@ export default function AcademicSetupPage() {
 
   useEffect(() => {
     if (!inference) return;
-    setInferenceConfirmed(false);
+    setInferenceConfirmed(true);
     setSemester("");
     const matchingProgram = programs.find(p =>
       inference.programmePrefix === "BE"
@@ -173,7 +173,7 @@ export default function AcademicSetupPage() {
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault(); setError("");
-    if (!user || !selected || !curriculumId || !enrollment.trim() || !inference || !semester || !inferenceConfirmed) {
+    if (!user || !selected || !curriculumId || !enrollment.trim() || !inference || !semester) {
       setError("Enter a supported enrollment number and complete the remaining required fields."); return;
     }
     if (!availableSemesters.includes(Number(semester))) {
@@ -238,12 +238,12 @@ export default function AcademicSetupPage() {
       <aside className="academic-setup-intro">
         <span className="academic-setup-kicker">YOUR ACADEMIC IDENTITY</span>
         <h1>Let's build your<br/><em>academic profile.</em></h1>
-        <p>Start with your institution and enrollment number. Gradly will infer your admission path and eligible semester, then let you verify everything before saving.</p>
+        <p>Start with your institution and enrollment number. Gradly will infer your admission path and eligible semester, and calculates your current semester automatically.</p>
         <div className="academic-setup-steps"><b>01 <span>Institution</span></b><b>02 <span>Enrollment intelligence</span></b><b>03 <span>Programme & curriculum</span></b></div>
         <small>You can update these details later from Academic Profile.</small>
       </aside>
       <section className="academic-setup-card">
-        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution, enter your enrollment number and verify Gradly's inference.</p></div>
+        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution and enter your enrollment number. Gradly identifies your admission path and current semester automatically.</p></div>
         {error && <div className="academic-setup-error" role="alert">{error}</div>}
         <form onSubmit={saveProfile}>
           <label>Institution name</label>
@@ -262,15 +262,14 @@ export default function AcademicSetupPage() {
               <label htmlFor="student-enrollment">University enrollment / roll number</label>
               <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setInferenceConfirmed(false); }} placeholder="e.g. BE23S06F009 or BT26S07F007" autoComplete="off"/>
               {inference ? <div className="academic-setup-inference">
-                <div className="academic-setup-inference-top"><span>GRADLY INFERENCE · PLEASE VERIFY</span><strong>{inference.programmeLabel}</strong></div>
+                <div className="academic-setup-inference-top"><span>GRADLY ENROLLMENT ANALYSIS</span><strong>{inference.programmeLabel}</strong></div>
                 <div className="academic-setup-inference-grid">
                   <div><small>Admission year</small><b>{inference.admissionYear}</b></div>
                   <div><small>Admission path</small><b>{inference.admissionMode}</b></div>
                   <div><small>Entry semester</small><b>Semester {inference.entrySemester}</b></div>
                   <div><small>Academic session</small><b>{sessionLabel}</b></div>
                 </div>
-                <p>We decoded this using the currently supported enrollment pattern. Please verify it; unfamiliar institution formats should be entered manually.</p>
-                <button type="button" className={inferenceConfirmed ? "academic-setup-confirm is-confirmed" : "academic-setup-confirm"} onClick={() => setInferenceConfirmed(true)}>{inferenceConfirmed ? "✓ Details confirmed" : "Confirm inferred details"}</button>
+                <p>Admission year, admission path and current semester are inferred from your enrollment number and the academic calendar.</p>
               </div> : <div className="academic-setup-manual">
                 <strong>Enrollment number not recognized.</strong>
                 <p>Gradly currently identifies the admission year, admission path and semester from supported enrollment-number formats. Check the number and try again.</p>
@@ -281,9 +280,9 @@ export default function AcademicSetupPage() {
               <div><label>Branch / specialization</label><select required disabled={!programId} value={branchId} onChange={e => { setBranchId(e.target.value); void loadCurricula(programId, e.target.value); }}><option value="">Select branch</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
               <div className="academic-setup-wide"><label>Curriculum / scheme</label><select required disabled={!branchId || loadingCurricula} value={curriculumId} onChange={e => { setCurriculumId(e.target.value); setSemester(""); }}><option value="">{loadingCurricula ? "Loading available schemes…" : "Select curriculum"}</option>{curricula.map(c => <option key={c.id} value={c.id}>{c.scheme_name}{c.version ? " · " + c.version : ""}</option>)}</select>{!loadingCurricula && branchId && !curricula.length && <small className="academic-setup-hint">No curriculum is configured for this branch yet. Use the institution request below or contact your institute administrator.</small>}</div>
               <div className="academic-setup-wide academic-setup-session"><span>{sessionLabel}</span><strong>Inferred current semester: {semesterPlan.passedOut ? semesterCount : semesterPlan.expectedSemester}{semesterPlan.passedOut ? " · Passed out" : ""}</strong><small>Earlier eligible semesters remain available for backlog or pending results. Future semesters are hidden.</small></div>
-              <div className="academic-setup-wide"><label>{semesterPlan.passedOut ? "Semester to add or review academic records" : "Current semester or backlog semester"}</label><select required value={semester} onChange={e => setSemester(e.target.value)}><option value="">Select semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}{number === semesterPlan.expectedSemester && !semesterPlan.passedOut ? " · Current" : ""}</option>)}</select><small className="academic-setup-hint">{admissionMode === "Direct Second Year" ? "Direct Second Year entry starts at Semester 3; Semesters 1 and 2 are excluded." : "Only semesters up to your current academic session are available."}</small></div>
+              <div className="academic-setup-wide"><label>{semesterPlan.passedOut ? "Semester to add or review academic records" : "Current semester or backlog semester"}</label><select required value={semester} onChange={e => setSemester(e.target.value)}><option value="">Select semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}{number === semesterPlan.expectedSemester && !semesterPlan.passedOut ? " · Current" : ""}</option>)}</select><small className="academic-setup-hint">{inferredAdmissionMode === "Direct Second Year" ? "Direct Second Year entry starts at Semester 3; Semesters 1 and 2 are excluded." : "Only semesters up to your current academic session are available."}</small></div>
             </div>}
-            <button className="academic-setup-submit" disabled={saving || !inference || !inferenceConfirmed || !semester}>{saving ? "Saving profile…" : "Save verified academic profile →"}</button>
+            <button className="academic-setup-submit" disabled={saving || !inference || !semester}>{saving ? "Saving profile…" : "Save verified academic profile →"}</button>
           </>}
         </form>
         <div className="academic-setup-request">
