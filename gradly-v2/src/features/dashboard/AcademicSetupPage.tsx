@@ -40,7 +40,7 @@ export default function AcademicSetupPage() {
   const [branchId, setBranchId] = useState("");
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [curriculumId, setCurriculumId] = useState("");
-  const [academicStatus, setAcademicStatus] = useState<AcademicStatus>("ENROLLED");
+  const academicStatus: AcademicStatus = studentJourney === "COMPLETED" ? "GRADUATED" : "ENROLLED";
   const [actualSemester, setActualSemester] = useState("");
   const [predictionConfirmed, setPredictionConfirmed] = useState<boolean | null>(null);
   const [editingPrediction, setEditingPrediction] = useState(false);
@@ -116,7 +116,6 @@ export default function AcademicSetupPage() {
       if (!result.recognized || result.requiresConfirmation) { setError(result.message || "Some academic details could not be resolved. Please contact your institution administrator."); return; }
       if (!result.programId || !result.branchId || !result.curriculumId || !result.expected) { setError("Programme, branch, curriculum or academic calendar is unresolved. No semester prediction was generated."); return; }
       setProgramId(result.programId); setBranchId(result.branchId); setCurriculumId(result.curriculumId);
-      setAcademicStatus("ENROLLED");
       setPredictionConfirmed(null); setEditingPrediction(false); setStudentJourney("");
       setConfirmedAdmissionYear(String(result.admissionYear || "")); setConfirmedAdmissionMode(result.admissionMode || "");
       const params = new URLSearchParams({ institutionId: selected.id, programId: result.programId, branchId: result.branchId });
@@ -160,7 +159,7 @@ export default function AcademicSetupPage() {
     }
     const completed = studentJourney === "COMPLETED";
     if (!completed && (!actualSemester || !availableSemesters.includes(Number(actualSemester)))) { setError("Select your current semester."); return; }
-    const finalAcademicStatus: AcademicStatus = completed ? "GRADUATED" : "ENROLLED";
+    const finalAcademicStatus: AcademicStatus = academicStatus;
     setSaving(true);
     try {
       const token = await user.getIdToken();
@@ -305,8 +304,8 @@ export default function AcademicSetupPage() {
             <section className="academic-setup-confirmation academic-setup-journey">
               <div className="academic-setup-confirmation-heading"><h2>Where are you in your academic journey?</h2><p>Your selection—not the prediction—sets your academic status.</p></div>
               <div className="academic-setup-journey-options">
-                <button type="button" className={studentJourney === "STUDYING" ? "selected" : ""} aria-pressed={studentJourney === "STUDYING"} onClick={() => { setStudentJourney("STUDYING"); setAcademicStatus("ENROLLED"); setActualSemester(""); }}>I am currently studying</button>
-                <button type="button" className={studentJourney === "COMPLETED" ? "selected" : ""} aria-pressed={studentJourney === "COMPLETED"} onClick={() => { setStudentJourney("COMPLETED"); setAcademicStatus("GRADUATED"); setActualSemester(""); }}>I have completed my programme</button>
+                <button type="button" className={studentJourney === "STUDYING" ? "selected" : ""} aria-pressed={studentJourney === "STUDYING"} onClick={() => { setStudentJourney("STUDYING"); setActualSemester(""); }}>I am currently studying</button>
+                <button type="button" className={studentJourney === "COMPLETED" ? "selected" : ""} aria-pressed={studentJourney === "COMPLETED"} onClick={() => { setStudentJourney("COMPLETED"); setActualSemester(""); }}>I have completed my programme</button>
               </div>
               {studentJourney === "STUDYING" && <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Select your current semester</label><select id="actual-semester" required value={actualSemester} onChange={e => setActualSemester(e.target.value)}><option value="">Choose semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}</select></div>}
               {studentJourney === "STUDYING" && actualSemester && <div className="academic-setup-delay">
