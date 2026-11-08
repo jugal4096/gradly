@@ -48,17 +48,19 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const branch = branchResultMatch.rows[0];
 
   const modeResult = await pool.query(
-    `SELECT mode_code, mode_name, entry_semester FROM enrollment_admission_modes
-     WHERE mode_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
-       AND (programme_prefix = $3 OR programme_prefix IS NULL)
-     ORDER BY (institution_id = $2) DESC NULLS LAST, (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
+    `SELECT em.mode_code, em.mode_name, em.entry_semester, am.id AS admission_mode_id
+     FROM enrollment_admission_modes em
+     LEFT JOIN admission_modes am ON LOWER(am.name) = LOWER(em.mode_name)
+     WHERE em.mode_code = $1 AND (em.institution_id = $2 OR em.institution_id IS NULL)
+       AND (em.programme_prefix = $3 OR em.programme_prefix IS NULL)
+     ORDER BY (em.institution_id = $2) DESC NULLS LAST, (em.programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
     [parsed.admissionModeCode, institutionId, parsed.prefix],
   );
   const mode = modeResult.rows[0];
   if (!mode) return unresolved("ADMISSION_MODE", "This admission-mode code is not configured for the detected programme.", parsed);
 
   if (!rule.scheme_label) {
-    return { ...unresolved("SCHEME", "The academic scheme mapping for this programme needs institutional configuration.", parsed), programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id, admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester) };
+    return { ...unresolved("SCHEME", "The academic scheme mapping for this programme needs institutional configuration.", parsed), programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id, admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null, entrySemester: Number(mode.entry_semester) };
   }
   const curriculumResult = await pool.query(
     `SELECT c.id, COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS total_semesters, c.version, sc.name AS scheme_name
@@ -111,7 +113,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     recognized: true, requiresConfirmation: false, parsed,
     programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
     curriculumId: curriculum.id, curriculumName: curriculum.scheme_name,
-    admissionYear: parsed.admissionYear, admissionMode: mode.mode_name,
+    admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
     entrySemester: Number(mode.entry_semester), scheme: curriculum.scheme_name,
     expected,
     verified: { actualEnrolledSemester: null, academicDelay: null, gapYears: null, graduationStatus: "NOT_VERIFIED" },
