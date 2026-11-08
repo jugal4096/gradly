@@ -30,7 +30,10 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const program = programResult.rows[0];
 
   const branchResult = await pool.query(
-    `SELECT branch_name, program_name_pattern
+    `SELECT branch_name, program_name_pattern,
+            (institution_id = $2) AS institution_specific,
+            (programme_prefix = $3) AS prefix_specific,
+            (program_name_pattern IS NOT NULL) AS program_specific
      FROM enrollment_branch_codes
      WHERE branch_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
        AND (programme_prefix = $3 OR programme_prefix IS NULL)
@@ -41,7 +44,11 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      LIMIT 20`,
     [parsed.branchCode, institutionId, parsed.prefix, program.name],
   );
-  const branchRules = branchResult.rows as Array<{ branch_name: string; program_name_pattern: string | null }>;
+  const orderedBranchRules = branchResult.rows as Array<{ branch_name: string; program_name_pattern: string | null; institution_specific: boolean; prefix_specific: boolean; program_specific: boolean }>;
+  const preferredRule = orderedBranchRules[0];
+  const branchRules = preferredRule
+    ? orderedBranchRules.filter(rule => rule.institution_specific === preferredRule.institution_specific && rule.prefix_specific === preferredRule.prefix_specific && rule.program_specific === preferredRule.program_specific)
+    : [];
   if (!branchRules.length) {
     return unresolved("BRANCH_CODE", "This branch code is not configured for the detected programme. Please request verification.", parsed);
   }
