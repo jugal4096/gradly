@@ -15,6 +15,37 @@ const router = Router();
  * data is needed to populate institution selectors before an
  * authenticated application is submitted.
  */
+router.get("/institutions/search", async (req: Request, res: Response): Promise<void> => {
+  const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+  if (query.length < 2) { res.status(200).json({ success: true, data: [] }); return; }
+  try {
+    const result = await pool.query(
+      `SELECT i.id AS institution_id, i.name AS institution_name,
+              b.id AS branch_id, b.name AS branch_name, b.code AS branch_code,
+              p.id AS program_id, p.name AS program_name, p.level AS program_level
+       FROM institutions i
+       LEFT JOIN programs p ON p.institution_id = i.id
+       LEFT JOIN branches b ON b.program_id = p.id
+       WHERE i.name ILIKE $1
+       ORDER BY i.name, p.name, b.name
+       LIMIT 120`,
+      [`%${query}%`],
+    );
+    const map = new Map<string, { id: string; name: string; branches: Array<{ id: string; name: string; code: string | null; program_id: string; program_name: string; program_level: string | null }> }>();
+    for (const row of result.rows) {
+      if (!map.has(row.institution_id)) map.set(row.institution_id, { id: row.institution_id, name: row.institution_name, branches: [] });
+      if (row.branch_id) map.get(row.institution_id)!.branches.push({
+        id: row.branch_id, name: row.branch_name, code: row.branch_code,
+        program_id: row.program_id, program_name: row.program_name, program_level: row.program_level,
+      });
+    }
+    res.status(200).json({ success: true, data: Array.from(map.values()) });
+  } catch (error) {
+    console.error("Institution search failed:", error);
+    res.status(500).json({ success: false, message: "Unable to search institutions." });
+  }
+});
+
 router.get(
   "/institutions",
   async (_req: Request, res: Response): Promise<void> => {
