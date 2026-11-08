@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS public.institution_academic_calendars (
   institution_id UUID NOT NULL REFERENCES public.institutions(id) ON DELETE CASCADE,
   academic_year_start_month SMALLINT NOT NULL DEFAULT 7 CHECK (academic_year_start_month BETWEEN 1 AND 12),
   odd_semester_start_month SMALLINT NOT NULL DEFAULT 7 CHECK (odd_semester_start_month BETWEEN 1 AND 12),
+  odd_semester_end_month SMALLINT NOT NULL DEFAULT 12 CHECK (odd_semester_end_month BETWEEN 1 AND 12),
   active_from DATE NULL,
   active_to DATE NULL,
   CHECK (active_to IS NULL OR active_from IS NULL OR active_to >= active_from)
@@ -45,8 +46,17 @@ CREATE INDEX IF NOT EXISTS idx_enrollment_program_rules_institution_prefix ON pu
 CREATE INDEX IF NOT EXISTS idx_enrollment_branch_codes_institution_code ON public.enrollment_branch_codes(institution_id, branch_code);
 CREATE INDEX IF NOT EXISTS idx_institution_academic_calendars_active ON public.institution_academic_calendars(institution_id, active_from, active_to);
 
--- Safe global defaults for admission markers and branch codes. Prefix/scheme mappings and
--- institution calendars are intentionally not seeded: they require verified institutional data.
+-- Configurable global programme aliases. Institution-specific rows can override these defaults.
+INSERT INTO public.enrollment_program_rules
+  (institution_id, prefix, programme_name_pattern, scheme_label, duration_years, total_semesters, regular_entry_semester, lateral_entry_semester, year_pivot_start)
+VALUES
+  (NULL, 'BE', '%Bachelor of Engineering%', 'New CBCS', 4, 8, 1, 3, 70),
+  (NULL, 'BT', '%Bachelor of Technology%', 'New CBCS', 4, 8, 1, 3, 70),
+  (NULL, 'MC', '%Master of Computer Applications%', NULL, 2, 4, 1, 1, 70),
+  (NULL, 'MT', '%Master of Technology%', NULL, 2, 4, 1, 1, 70)
+ON CONFLICT (institution_id, prefix) DO NOTHING;
+
+-- Safe global defaults for admission markers and branch codes.
 INSERT INTO public.enrollment_admission_modes (institution_id, mode_code, mode_name, entry_semester)
 VALUES (NULL, 'F', 'Regular Admission', 1), (NULL, 'S', 'Direct Second Year', 3)
 ON CONFLICT (institution_id, mode_code) DO NOTHING;
