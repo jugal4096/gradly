@@ -19,11 +19,11 @@ type EnrollmentPreview = {
 function validateEnrollmentNumber(value: string): string | null {
   if (!value) return "Enter your enrollment number."; 
   if (!/^(BE|BT|MC|MT)/.test(value)) return "Invalid enrollment number. Programme prefix is not recognized."; 
+  if (value[7] !== "F") return "Invalid enrollment number. The 8th character must be F."; 
   if (value.length !== 11) return "Invalid enrollment number. It must contain exactly 11 characters."; 
   if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
   if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number. Admission mode must be F or S."; 
   if (!/^\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
-  if (value[7] !== "F") return "Invalid enrollment number. The 8th character must be F."; 
   if (!/^\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
   return null;
 }
@@ -67,7 +67,8 @@ export default function AcademicSetupPage() {
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
   const semesterCount = Number(selectedCurriculum?.total_semesters) || (/b\.?\s*tech|bachelor of technology/i.test(programmeLabel) ? 8 : 0);
-  const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
+  const expectedSemesterBase = preview?.expected?.expectedSemester ?? null;
+  const adjustedExpectedSemester = expectedSemesterBase === null ? null : Math.max(1, expectedSemesterBase - (Number(confirmedAdmissionYear || preview?.admissionYear || 0) - Number(preview?.admissionYear || 0)) * 2);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
 
   useEffect(() => {
@@ -269,7 +270,7 @@ export default function AcademicSetupPage() {
             <section className="academic-setup-predicted" aria-live="polite">
               <div className="academic-setup-predicted-heading">
                 <span className="academic-setup-predicted-sparkle">✦</span>
-                <div><h2>Predicted Academic Details</h2><p>Review the information Gradly identified from your enrollment.</p></div>
+                <div><h2>Academic details identified</h2><p>Review the information Gradly identified from your enrollment.</p></div>
                 <span className="academic-setup-auto-tag"><i /> AUTO-DETECTED</span>
               </div>
               <dl className="academic-setup-predicted-grid">
@@ -279,7 +280,6 @@ export default function AcademicSetupPage() {
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
-              {predictionComplete && <p className="academic-setup-predicted-note">Please confirm your current academic status below. Expected duration does not mean that you have graduated.</p>}
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
                 <div className="academic-setup-data-question">Is this data correct?</div>
                 {!editingPrediction ? <div className="academic-setup-choice-row">
@@ -309,8 +309,8 @@ export default function AcademicSetupPage() {
               </div>
               {studentJourney === "STUDYING" && <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Select your current semester</label><select id="actual-semester" required value={actualSemester} onChange={e => setActualSemester(e.target.value)}><option value="">Choose semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}</select></div>}
               {studentJourney === "STUDYING" && actualSemester && <div className="academic-setup-delay">
-                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{Math.max(0, Number(preview.expected?.expectedSemester || 0) - Number(actualSemester))} semester(s) · {Math.max(0, Number(preview.expected?.expectedSemester || 0) - Number(actualSemester)) / 2} year(s)</strong></div><div><span>Verified gap years</span><strong>Not verified</strong></div></div>
-                <p>Expected semester is a comparison only. Backlogs and academic delay are not proof of gap years.</p>
+                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : Math.max(0, adjustedExpectedSemester - Number(actualSemester)) + " semester(s) · " + (Math.max(0, adjustedExpectedSemester - Number(actualSemester)) / 2) + " year(s)"}</strong></div><div><span>Verified gap years</span><strong>Not verified</strong></div></div>
+                <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + actualSemester + "."} Academic delay is an estimate, not a verified gap year. Backlogs are not treated as gap years.</p>
               </div>}
               {studentJourney === "COMPLETED" && <div className="academic-setup-completed-message">✓ You confirmed that you have completed your programme.</div>}
             </section>
