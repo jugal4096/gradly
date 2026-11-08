@@ -4,7 +4,8 @@ export interface CreateStudentProfileData {
   userId: string;
   institutionId: string;
   curriculumId: string;
-  admissionModeId?: string | null;\n  admissionModeName?: string | null;
+  admissionModeId?: string | null;
+  admissionModeName?: string | null;
   studentIdentifier: string;
   admissionYear: number;
   currentSemesterNumber: number;
@@ -57,7 +58,7 @@ export async function createStudentProfile(data: CreateStudentProfileData) {
       user_id, institution_id, curriculum_id, admission_mode_id,
       student_identifier, admission_year, current_semester_number,
       graduation_year, target_cgpa
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    ) VALUES ($1,$2,$3,COALESCE($4,(SELECT id FROM admission_modes WHERE LOWER(name)=LOWER($5) LIMIT 1)),$6,$7,$8,$9,$10)
     RETURNING ${returningColumns};
   `, profileValues(data));
   return result.rows[0];
@@ -68,12 +69,12 @@ export async function updateStudentProfile(data: CreateStudentProfileData) {
     UPDATE student_profiles
     SET institution_id = $2,
         curriculum_id = $3,
-        admission_mode_id = $4,
-        student_identifier = $5,
-        admission_year = $6,
-        current_semester_number = $7,
-        graduation_year = $8,
-        target_cgpa = $9,
+        admission_mode_id = COALESCE($4,(SELECT id FROM admission_modes WHERE LOWER(name)=LOWER($5) LIMIT 1)),
+        student_identifier = $6,
+        admission_year = $7,
+        current_semester_number = $8,
+        graduation_year = $9,
+        target_cgpa = $10,
         updated_at = NOW()
     WHERE user_id = $1
     RETURNING ${returningColumns};
