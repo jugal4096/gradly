@@ -154,4 +154,5 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
     res.status(500).json({ success: false, message: "Failed to load curriculum subjects." });
   }
 });
-\nexport default router;
+
+export default router;
