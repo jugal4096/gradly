@@ -25,7 +25,7 @@ test("rejects malformed enrollment numbers", () => {
 test("predicts regular BTech semester 7 in the 2026-27 odd session", () => {
   const result = predictSemester({
     admissionYear: 2023, entrySemester: 1, totalSemesters: 8, durationYears: 4,
-    academicYearStartMonth: 7, oddSemesterStartMonth: 7, date: new Date("2026-11-08T12:00:00+05:30"),
+    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12, date: new Date("2026-11-08T12:00:00+05:30"),
   });
   assert.equal(result.expectedSemester, 7);
   assert.equal(result.academicYearLabel, "Final Year");
@@ -34,7 +34,7 @@ test("predicts regular BTech semester 7 in the 2026-27 odd session", () => {
 test("predicts DSY progression beyond the final semester instead of clamping to semester 8", () => {
   const result = predictSemester({
     admissionYear: 2023, entrySemester: 3, totalSemesters: 8, durationYears: 3,
-    academicYearStartMonth: 7, oddSemesterStartMonth: 7, date: new Date("2026-11-08T12:00:00+05:30"),
+    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12, date: new Date("2026-11-08T12:00:00+05:30"),
   });
   assert.equal(result.expectedSemester, null);
   assert.equal(result.expectedDurationEnded, true);
@@ -44,7 +44,7 @@ test("predicts DSY progression beyond the final semester instead of clamping to 
 test("calculates even semester in the January-June period", () => {
   const result = predictSemester({
     admissionYear: 2023, entrySemester: 1, totalSemesters: 8, durationYears: 4,
-    academicYearStartMonth: 7, oddSemesterStartMonth: 7, date: new Date("2027-03-01T12:00:00+05:30"),
+    academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12, date: new Date("2027-03-01T12:00:00+05:30"),
   });
   assert.equal(result.expectedSemester, 8);
   assert.equal(result.semesterType, "EVEN");
