@@ -25,10 +25,10 @@ export function parseEnrollmentNumber(input: string, pivotStart = 70): Enrollmen
 function normalizeBranchLabel(value: string): string {
   return String(value ?? "")
     .normalize("NFKD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/&/g, " and ")
-    .replace(/\\b(department|engineering|branch|of|the|and)\\b/g, " ")
+    .replace(/\b(department|engineering|branch|of|the|and)\b/g, " ")
     .replace(/[^a-z0-9]+/g, "");
 }
 
