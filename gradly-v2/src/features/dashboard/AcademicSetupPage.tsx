@@ -33,6 +33,8 @@ function inferEnrollment(value: string): EnrollmentInference | null {
   };
 }
 
+function inferenceEntrySemester(mode: AdmissionMode) { return mode === "Direct Second Year" ? 3 : 1; }
+
 function getAcademicSession(date = new Date()) {
   const month = date.getMonth() + 1;
   return month >= 7 ? "odd" : "even";
@@ -67,6 +69,8 @@ export default function AcademicSetupPage() {
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [curriculumId, setCurriculumId] = useState("");
   const [semester, setSemester] = useState("");
+  const [academicStatus, setAcademicStatus] = useState<"Enrolled" | "Passed out">("Enrolled");
+  const [gapYears, setGapYears] = useState("0");
   const [enrollment, setEnrollment] = useState("");
   const [inferenceConfirmed, setInferenceConfirmed] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -88,7 +92,10 @@ export default function AcademicSetupPage() {
   const inferredAdmissionYear = inference?.admissionYear ?? new Date().getFullYear();
   const inferredAdmissionMode = inference?.admissionMode ?? "Regular";
   const semesterPlan = getSemesterPlan(inferredAdmissionYear, inferredAdmissionMode, Math.max(1, semesterCount));
-  const availableSemesters = semesterPlan.eligibleSemesters.filter(number => number <= semesterCount);
+  const availableSemesters = Array.from({ length: Math.max(0, semesterCount - inferenceEntrySemester(inferredAdmissionMode) + 1) }, (_, index) => inferenceEntrySemester(inferredAdmissionMode) + index);
+  const predictedSemester = semesterPlan.passedOut ? semesterCount : semesterPlan.expectedSemester;
+  const selectedSemester = Number(semester || predictedSemester);
+  const inferredGapYears = Math.max(0, Math.floor((predictedSemester - selectedSemester) / 2));
   const sessionLabel = semesterPlan.session === "odd" ? "July–December · Odd semester" : "January–June · Even semester";
 
   useEffect(() => {
@@ -120,6 +127,8 @@ export default function AcademicSetupPage() {
     if (!inference) return;
     setInferenceConfirmed(true);
     setSemester("");
+    setAcademicStatus("Enrolled");
+    setGapYears("0");
     const matchingProgram = programs.find(p =>
       inference.programmePrefix === "BE"
         ? /bachelor of engineering|\bBE\b/i.test(p.name)
@@ -139,6 +148,8 @@ export default function AcademicSetupPage() {
     if (!inference || !inferenceConfirmed || !curriculumId) return;
     const plan = getSemesterPlan(inference.admissionYear, inference.admissionMode, semesterCount);
     setSemester(String(plan.passedOut ? semesterCount : plan.expectedSemester));
+    setAcademicStatus(plan.passedOut ? "Passed out" : "Enrolled");
+    setGapYears("0");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inferenceConfirmed, curriculumId, enrollment]);
 
@@ -176,7 +187,7 @@ export default function AcademicSetupPage() {
     if (!user || !selected || !curriculumId || !enrollment.trim() || !inference || !semester) {
       setError("Enter a supported enrollment number and complete the remaining required fields."); return;
     }
-    if (!availableSemesters.includes(Number(semester))) {
+    if (!availableSemesters.includes(Number(semester)) || (academicStatus === "Enrolled" && Number(semester) > predictedSemester)) {
       setError("That semester is not available in your current academic session or admission path."); return;
     }
     setSaving(true);
@@ -201,7 +212,7 @@ export default function AcademicSetupPage() {
         programName: selectedProgramName,
         branchId, branchName: branches.find(b => b.id === branchId)?.name || "",
         curriculumId, semester, enrollment: enrollment.trim(), admissionYear: inference.admissionYear,
-        admissionMode: inference.admissionMode, graduationYear, academicStatus: semesterPlan.passedOut ? "Passed out" : "Enrolled",
+        admissionMode: inference.admissionMode, graduationYear, academicStatus, gapYears: Number(gapYears),
         scheme: curricula.find(c => c.id === curriculumId)?.scheme_name || "",
       }));
       navigate("/dashboard", { replace: true });
@@ -279,8 +290,10 @@ export default function AcademicSetupPage() {
               <div><label>Programme</label><select required value={programId} onChange={e => { setProgramId(e.target.value); setBranchId(""); setCurricula([]); setCurriculumId(""); setSemester(""); }}><option value="">Select programme</option>{programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
               <div><label>Branch / specialization</label><select required disabled={!programId} value={branchId} onChange={e => { setBranchId(e.target.value); void loadCurricula(programId, e.target.value); }}><option value="">Select branch</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
               <div className="academic-setup-wide"><label>Curriculum / scheme</label><select required disabled={!branchId || loadingCurricula} value={curriculumId} onChange={e => { setCurriculumId(e.target.value); setSemester(""); }}><option value="">{loadingCurricula ? "Loading available schemes…" : "Select curriculum"}</option>{curricula.map(c => <option key={c.id} value={c.id}>{c.scheme_name}{c.version ? " · " + c.version : ""}</option>)}</select>{!loadingCurricula && branchId && !curricula.length && <small className="academic-setup-hint">No curriculum is configured for this branch yet. Use the institution request below or contact your institute administrator.</small>}</div>
-              <div className="academic-setup-wide academic-setup-session"><span>{sessionLabel}</span><strong>Inferred current semester: {semesterPlan.passedOut ? semesterCount : semesterPlan.expectedSemester}{semesterPlan.passedOut ? " · Passed out" : ""}</strong><small>Earlier eligible semesters remain available for backlog or pending results. Future semesters are hidden.</small></div>
-              <div className="academic-setup-wide"><label>{semesterPlan.passedOut ? "Semester to add or review academic records" : "Current semester or backlog semester"}</label><select required value={semester} onChange={e => setSemester(e.target.value)}><option value="">Select semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}{number === semesterPlan.expectedSemester && !semesterPlan.passedOut ? " · Current" : ""}</option>)}</select><small className="academic-setup-hint">{inferredAdmissionMode === "Direct Second Year" ? "Direct Second Year entry starts at Semester 3; Semesters 1 and 2 are excluded." : "Only semesters up to your current academic session are available."}</small></div>
+              <div className="academic-setup-wide academic-setup-session"><span>{sessionLabel}</span><strong>Predicted current semester: {predictedSemester}</strong><small>{semesterPlan.passedOut ? "The enrollment timeline indicates the expected course duration has ended." : "Based on your enrollment year and the current academic session."}</small></div>
+              <div className="academic-setup-wide"><label>Current semester (adjust if needed)</label><select required value={semester} onChange={e => { setSemester(e.target.value); setGapYears(String(Math.max(0, Math.floor((predictedSemester - Number(e.target.value)) / 2)))); }}><option value="">Select semester</option>{availableSemesters.filter(number => academicStatus === "Passed out" || number <= predictedSemester).map(number => <option key={number} value={String(number)}>Semester {number}{number === predictedSemester ? " · Predicted" : ""}</option>)}</select><small className="academic-setup-hint">{inferredAdmissionMode === "Direct Second Year" ? "Direct Second Year options start at Semester 3." : "Choose the semester you are currently studying in."}</small></div>
+              <div><label>Academic status</label><select value={academicStatus} onChange={e => { setAcademicStatus(e.target.value as "Enrolled" | "Passed out"); if (e.target.value === "Passed out") setSemester(String(semesterCount)); else setSemester(String(predictedSemester)); }}><option value="Enrolled">Currently enrolled</option><option value="Passed out">Passed out</option></select></div>
+              <div><label>Backlog / gap years</label><select value={gapYears} onChange={e => setGapYears(e.target.value)}><option value="0">No gap year</option>{[1,2,3,4].map(year => <option key={year} value={String(year)}>{year} {year === 1 ? "year" : "years"}</option>)}</select><small className="academic-setup-hint">Estimated from the difference between your predicted and selected semester. Adjust if you had a year gap or backlogs.</small></div>
             </div>}
             <button className="academic-setup-submit" disabled={saving || !inference || !semester}>{saving ? "Saving profile…" : "Save verified academic profile →"}</button>
           </>}
