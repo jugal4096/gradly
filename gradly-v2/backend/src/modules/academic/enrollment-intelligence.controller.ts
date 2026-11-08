@@ -6,7 +6,7 @@ export async function previewEnrollmentController(req: AuthenticatedRequest, res
   try {
     const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
     const enrollmentNumber = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber : "";
-    if (!institutionId || !enrollmentNumber || enrollmentNumber.length > 64) {
+    if (!institutionId || !enrollmentNumber) {
       res.status(400).json({ success: false, message: "Institution and a valid enrollment number are required." });
       return;
     }
