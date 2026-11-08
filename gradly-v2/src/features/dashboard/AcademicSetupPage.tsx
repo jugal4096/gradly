@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import "./AcademicSetupPage.css";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
-type Branch = { id: string; name: string; program_id: string; program_name: string; program_level?: string | null };
+type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
 type Curriculum = { id: string; scheme_name: string; version?: string | number | null; total_semesters?: number | null };
 type AdmissionMode = "Regular" | "Direct Second Year" | "Transfer" | "Other";
@@ -14,22 +14,36 @@ type EnrollmentInference = {
   admissionYear: number;
   admissionMode: AdmissionMode;
   entrySemester: number;
+  branchCode: string;
+  branchLabel: string;
+  schemeLabel: string;
 };
 
 function inferEnrollment(value: string): EnrollmentInference | null {
-  const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, "");
-  // Initial supported formats are the two patterns supplied for Gradly.
-  // Keep this deliberately conservative; unknown formats use manual confirmation.
-  const match = normalized.match(/^(BE|BT)(\d{2})S(06|07)[A-Z0-9]*$/);
+  const normalized = value.trim().toUpperCase().replace(/[\\s-]+/g, "").slice(0, 7);
+  const match = normalized.match(/^(BT|BE|MC|MT)(\\d{2})([FS])(\\d{2})$/);
   if (!match) return null;
-  const admissionYear = 2000 + Number(match[2]);
-  const admissionMode: AdmissionMode = match[3] === "06" ? "Direct Second Year" : "Regular";
+  const [, programmePrefix, yearPart, modeCode, branchCode] = match;
+  const branchLabels: Record<string, string> = {
+    "01": "Civil Engineering", "02": "Mechanical Engineering", "03": "Electrical Engineering",
+    "04": "Electronics and Telecommunication", "05": "Computer Science and Engineering",
+    "06": "Branch code 06", "07": "Branch code 07",
+  };
+  const branchLabel = branchLabels[branchCode];
+  if (!branchLabel) return null;
+  const programmeLabels: Record<string, string> = {
+    BT: "Bachelor of Technology", BE: "Bachelor of Engineering",
+    MC: "Master of Computer Applications", MT: "Master of Technology",
+  };
+  const admissionMode: AdmissionMode = modeCode === "S" ? "Direct Second Year" : "Regular";
+  // F/S is an engineering admission-mode marker. Postgraduate courses start in semester 1.
+  const effectiveMode: AdmissionMode = programmePrefix === "BT" || programmePrefix === "BE" ? admissionMode : "Regular";
   return {
-    programmePrefix: match[1],
-    programmeLabel: match[1] === "BE" ? "Bachelor of Engineering" : "Bachelor of Technology",
-    admissionYear,
-    admissionMode,
-    entrySemester: admissionMode === "Direct Second Year" ? 3 : 1,
+    programmePrefix, programmeLabel: programmeLabels[programmePrefix],
+    admissionYear: 2000 + Number(yearPart), admissionMode: effectiveMode,
+    entrySemester: effectiveMode === "Direct Second Year" ? 3 : 1,
+    branchCode, branchLabel,
+    schemeLabel: programmePrefix === "BT" ? "NEP" : programmePrefix === "BE" ? "New CBCS" : "",
   };
 }
 
@@ -136,13 +150,25 @@ export default function AcademicSetupPage() {
     );
     if (matchingProgram) {
       setProgramId(matchingProgram.id);
-      setBranchId("");
+      const branchMatches = (selected?.branches || []).filter(b => b.program_id === matchingProgram.id);
+      const branchMatch = branchMatches.find(b => {
+        const code = String(b.code || "").toUpperCase().replace(/^0+/, "").padStart(2, "0");
+        const name = b.name.toLowerCase();
+        const byName = inference.branchCode === "01" ? /civil/.test(name)
+          : inference.branchCode === "02" ? /mechanical/.test(name)
+          : inference.branchCode === "03" ? /electrical/.test(name)
+          : inference.branchCode === "04" ? /electronics|entc|telecommunication/.test(name)
+          : inference.branchCode === "05" ? /computer science|\\bcse\\b/.test(name)
+          : false;
+        return code === inference.branchCode || byName;
+      });
+      setBranchId(branchMatch?.id || "");
       setCurricula([]);
       setCurriculumId("");
     }
   // Inference is intentionally applied only when the enrollment number changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enrollment]);
+  }, [enrollment, selected]);
 
   useEffect(() => {
     if (!inference || !inferenceConfirmed || !curriculumId) return;
@@ -153,7 +179,7 @@ export default function AcademicSetupPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inferenceConfirmed, curriculumId, enrollment]);
 
-  async function searchInstitutions(value: string) {
+  useEffect(() => {\n    if (selected && programId && branchId && inference) void loadCurricula(programId, branchId);\n  // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [selected?.id, programId, branchId, inference?.branchCode]);\n\n  useEffect(() => {\n    if (!curricula.length || curriculumId || !inference?.schemeLabel) return;\n    const match = curricula.find(c => c.scheme_name.toLowerCase().includes(inference.schemeLabel.toLowerCase()));\n    if (match) setCurriculumId(match.id);\n  }, [curricula, curriculumId, inference?.schemeLabel]);\n\n  async function searchInstitutions(value: string) {
     const sequence = ++searchSequence.current;
     if (value.trim().length < 2) { setInstitutions([]); setSearching(false); return; }
     setSearching(true);
@@ -202,7 +228,7 @@ export default function AcademicSetupPage() {
         body: JSON.stringify({
           institutionId: selected.id, curriculumId, studentIdentifier: enrollment.trim(),
           admissionYear: inference.admissionYear, currentSemesterNumber: Number(semester),
-          admissionModeId: null, graduationYear, targetCgpa: null,
+          admissionModeId: null, admissionModeName: inference.admissionMode, graduationYear, targetCgpa: null,
         }),
       });
       const data = await response.json();
@@ -254,7 +280,7 @@ export default function AcademicSetupPage() {
         <small>You can update these details later from Academic Profile.</small>
       </aside>
       <section className="academic-setup-card">
-        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution and enter your enrollment number. Gradly identifies your admission path and current semester automatically.</p></div>
+        <div className="academic-setup-card-head"><span>ACADEMIC INTELLIGENCE · STUDENT SETUP</span><h2>Let's identify your academic path.</h2><p>Choose your institution and enter your enrollment number. Gradly detects your programme, scheme, admission year, branch and entry path, then predicts your semester.</p></div>
         {error && <div className="academic-setup-error" role="alert">{error}</div>}
         <form onSubmit={saveProfile}>
           <label>Institution name</label>
@@ -271,16 +297,16 @@ export default function AcademicSetupPage() {
           {selected && <>
             <div className="academic-setup-enrollment">
               <label htmlFor="student-enrollment">University enrollment / roll number</label>
-              <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setInferenceConfirmed(false); }} placeholder="e.g. BE23S06F009 or BT26S07F007" autoComplete="off"/>
+              <input id="student-enrollment" required value={enrollment} onChange={e => { setEnrollment(e.target.value.toUpperCase()); setInferenceConfirmed(false); }} placeholder="e.g. BT24S05F004 or BE24F01…" autoComplete="off"/>
               {inference ? <div className="academic-setup-inference">
                 <div className="academic-setup-inference-top"><span>GRADLY ENROLLMENT ANALYSIS</span><strong>{inference.programmeLabel}</strong></div>
                 <div className="academic-setup-inference-grid">
                   <div><small>Admission year</small><b>{inference.admissionYear}</b></div>
                   <div><small>Admission path</small><b>{inference.admissionMode}</b></div>
-                  <div><small>Entry semester</small><b>Semester {inference.entrySemester}</b></div>
+                  <div><small>Entry semester</small><b>Semester {inference.entrySemester}</b></div>\n                  <div><small>Branch detected</small><b>{inference.branchLabel}</b></div>
                   <div><small>Academic session</small><b>{sessionLabel}</b></div>
                 </div>
-                <p>Admission year, admission path and current semester are inferred from your enrollment number and the academic calendar.</p>
+                <p>Only the first seven characters are parsed. The remaining suffix is ignored. Confirm the detected programme, branch and scheme before saving.</p>
               </div> : <div className="academic-setup-manual">
                 <strong>Enrollment number not recognized.</strong>
                 <p>Gradly currently identifies the admission year, admission path and semester from supported enrollment-number formats. Check the number and try again.</p>
