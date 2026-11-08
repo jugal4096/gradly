@@ -58,9 +58,6 @@ export default function AcademicSetupPage() {
   const semesterCount = Number(selectedCurriculum?.total_semesters) || 0;
   const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
-  const academicSessionLabel = preview?.expected
-    ? `${preview.expected.academicYear} · ${preview.expected.semesterType === "ODD" ? "Odd" : "Even"} semester`
-    : "";
 
   useEffect(() => {
     if (!user) return;
@@ -79,6 +76,7 @@ export default function AcademicSetupPage() {
             curriculumId: p.curriculum_id || "", semester: String(p.current_semester_number || ""),
             enrollment: p.student_identifier || "", admissionYear: String(p.admission_year || ""),
             admissionMode: p.admission_mode_name || "Regular", admissionNumber: "", scheme: p.scheme_name || "",
+            academicProfileConfirmed: Boolean(p.academic_profile_confirmed), pendingBacklogCount: p.pending_backlog_count ?? null,
           }));
           navigate("/dashboard", { replace: true });
         }
@@ -317,7 +315,7 @@ export default function AcademicSetupPage() {
               {saving ? <><span className="academic-setup-button-spinner" /> Saving your profile…</> : <>Continue <span>→</span></>}
             </button>
             <p className="academic-setup-footnote">Your information is saved to your authenticated Gradly student profile.</p>
-          </>}}
+          </>}
         </form>
 
         {!selected && <p className="academic-setup-first-step-note">Start by selecting your college or university. Your enrollment number comes next.</p>}
