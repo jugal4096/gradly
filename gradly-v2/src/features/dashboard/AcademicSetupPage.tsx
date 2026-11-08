@@ -11,7 +11,8 @@ type Curriculum = { id: string; scheme_name: string; version?: string | number |
 export default function AcademicSetupPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");\n  const searchTimer = useRef<number | undefined>(undefined);
+  const [query, setQuery] = useState("");
+  const searchTimer = useRef<number | undefined>(undefined);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selected, setSelected] = useState<Institution | null>(null);
   const [programId, setProgramId] = useState("");
