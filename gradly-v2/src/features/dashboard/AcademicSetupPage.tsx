@@ -179,7 +179,18 @@ export default function AcademicSetupPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inferenceConfirmed, curriculumId, enrollment]);
 
-  useEffect(() => {\n    if (selected && programId && branchId && inference) void loadCurricula(programId, branchId);\n  // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [selected?.id, programId, branchId, inference?.branchCode]);\n\n  useEffect(() => {\n    if (!curricula.length || curriculumId || !inference?.schemeLabel) return;\n    const match = curricula.find(c => c.scheme_name.toLowerCase().includes(inference.schemeLabel.toLowerCase()));\n    if (match) setCurriculumId(match.id);\n  }, [curricula, curriculumId, inference?.schemeLabel]);\n\n  async function searchInstitutions(value: string) {
+  useEffect(() => {
+    if (selected && programId && branchId && inference) void loadCurricula(programId, branchId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id, programId, branchId, inference?.branchCode]);
+
+  useEffect(() => {
+    if (!curricula.length || curriculumId || !inference?.schemeLabel) return;
+    const match = curricula.find(c => c.scheme_name.toLowerCase().includes(inference.schemeLabel.toLowerCase()));
+    if (match) setCurriculumId(match.id);
+  }, [curricula, curriculumId, inference?.schemeLabel]);
+
+  async function searchInstitutions(value: string) {
     const sequence = ++searchSequence.current;
     if (value.trim().length < 2) { setInstitutions([]); setSearching(false); return; }
     setSearching(true);
@@ -303,7 +314,8 @@ export default function AcademicSetupPage() {
                 <div className="academic-setup-inference-grid">
                   <div><small>Admission year</small><b>{inference.admissionYear}</b></div>
                   <div><small>Admission path</small><b>{inference.admissionMode}</b></div>
-                  <div><small>Entry semester</small><b>Semester {inference.entrySemester}</b></div>\n                  <div><small>Branch detected</small><b>{inference.branchLabel}</b></div>
+                  <div><small>Entry semester</small><b>Semester {inference.entrySemester}</b></div>
+                  <div><small>Branch detected</small><b>{inference.branchLabel}</b></div>
                   <div><small>Academic session</small><b>{sessionLabel}</b></div>
                 </div>
                 <p>Only the first seven characters are parsed. The remaining suffix is ignored. Confirm the detected programme, branch and scheme before saving.</p>
