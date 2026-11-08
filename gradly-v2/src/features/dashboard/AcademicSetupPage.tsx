@@ -6,8 +6,8 @@ import "./AcademicSetupPage.css";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
-type Curriculum = { id: string; scheme_name: string; version?: string | number | null; total_semesters?: number | null };
-type AcademicStatus = "ENROLLED" | "AWAITING_RESULTS" | "PENDING_BACKLOGS" | "APPROVED_EXTENSION" | "GRADUATED";
+type Curriculum = { id: string; scheme_name: string; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
+type AcademicStatus = "ENROLLED" | "GRADUATED";
 type EnrollmentPreview = {
   recognized: boolean; requiresConfirmation: boolean; unknown?: string; message?: string;
   programme?: string; programId?: string; branch?: string; branchId?: string;
@@ -16,6 +16,17 @@ type EnrollmentPreview = {
   expected?: { expectedSemester: number | null; academicYear: string; semesterType: "ODD" | "EVEN"; expectedDurationEnded: boolean; expectedGraduationSession: string; academicYearLabel: string | null };
 };
 
+function validateEnrollmentNumber(value: string): string | null {
+  if (!value) return "Enter your enrollment number."; 
+  if (!/^(BE|BT|MC|MT)/.test(value)) return "Invalid enrollment number. Programme prefix is not recognized."; 
+  if (value[7] !== "F") return "Invalid enrollment number. The 8th character must be F."; 
+  if (value.length !== 11) return "Invalid enrollment number. It must contain exactly 11 characters."; 
+  if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
+  if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number. Admission mode must be F or S."; 
+  if (!/^\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
+  if (!/^\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
+  return null;
+}
 export default function AcademicSetupPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -29,12 +40,11 @@ export default function AcademicSetupPage() {
   const [branchId, setBranchId] = useState("");
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [curriculumId, setCurriculumId] = useState("");
-  const [academicStatus, setAcademicStatus] = useState<AcademicStatus>("ENROLLED");
   const [actualSemester, setActualSemester] = useState("");
   const [predictionConfirmed, setPredictionConfirmed] = useState<boolean | null>(null);
   const [editingPrediction, setEditingPrediction] = useState(false);
-  const [hasBacklogs, setHasBacklogs] = useState<boolean | null>(null);
-  const [backlogCount, setBacklogCount] = useState("");
+  const [studentJourney, setStudentJourney] = useState<"STUDYING" | "COMPLETED" | "">("");
+  const academicStatus: AcademicStatus = studentJourney === "COMPLETED" ? "GRADUATED" : "ENROLLED";
   const [confirmedAdmissionYear, setConfirmedAdmissionYear] = useState("");
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
@@ -55,8 +65,10 @@ export default function AcademicSetupPage() {
     branches.push({ id: preview.branchId, name: preview.branch, program_id: preview.programId, program_name: preview.programme || "", code: null });
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
-  const semesterCount = Number(selectedCurriculum?.total_semesters) || 0;
-  const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
+  const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
+  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || (/b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : 0);
+  const expectedSemesterBase = preview?.expected?.expectedSemester ?? null;
+  const adjustedExpectedSemester = expectedSemesterBase === null ? null : Math.max(1, expectedSemesterBase - (Number(confirmedAdmissionYear || preview?.admissionYear || 0) - Number(preview?.admissionYear || 0)) * 2);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
 
   useEffect(() => {
@@ -88,12 +100,15 @@ export default function AcademicSetupPage() {
 
   async function fetchEnrollmentDetails() {
     const sequence = ++previewSequence.current;
-    setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester("");
-    if (!selected || !enrollment.trim() || !user) { setError("Select your institution and enter your enrollment number first."); return; }
+    setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPredictionConfirmed(null); setStudentJourney("");
+    const normalizedEnrollment = enrollment.trim().toUpperCase();
+    const enrollmentError = validateEnrollmentNumber(normalizedEnrollment);
+    if (enrollmentError) { setError(enrollmentError); return; }
+    if (!selected || !normalizedEnrollment || !user) { setError("Select your institution and enter your enrollment number first."); return; }
     setPreviewBusy(true);
     try {
       const token = await user.getIdToken();
-      const response = await fetch(API + "/api/student/enrollment/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim() }) });
+      const response = await fetch(API + "/api/student/enrollment/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: normalizedEnrollment }) });
       const payload = await response.json();
       if (sequence !== previewSequence.current) return;
       if (!response.ok) throw new Error(payload.message || "Unable to identify academic details.");
@@ -102,8 +117,7 @@ export default function AcademicSetupPage() {
       if (!result.recognized || result.requiresConfirmation) { setError(result.message || "Some academic details could not be resolved. Please contact your institution administrator."); return; }
       if (!result.programId || !result.branchId || !result.curriculumId || !result.expected) { setError("Programme, branch, curriculum or academic calendar is unresolved. No semester prediction was generated."); return; }
       setProgramId(result.programId); setBranchId(result.branchId); setCurriculumId(result.curriculumId);
-      setAcademicStatus(result.expected.expectedDurationEnded ? "AWAITING_RESULTS" : "ENROLLED");
-      setPredictionConfirmed(null); setEditingPrediction(false); setHasBacklogs(null); setBacklogCount("");
+      setPredictionConfirmed(null); setEditingPrediction(false); setStudentJourney("");
       setConfirmedAdmissionYear(String(result.admissionYear || "")); setConfirmedAdmissionMode(result.admissionMode || "");
       const params = new URLSearchParams({ institutionId: selected.id, programId: result.programId, branchId: result.branchId });
       const curriculumResponse = await fetch(API + "/api/academic/curricula?" + params.toString());
@@ -140,20 +154,13 @@ export default function AcademicSetupPage() {
       setError("Fetch and verify a complete academic profile before saving."); return;
     }
     if (predictionConfirmed !== true) { setError("Please confirm the predicted academic details before continuing."); return; }
-    if (hasBacklogs === null) { setError("Please confirm whether you have any pending backlogs."); return; }
-    if (!hasBacklogs && academicStatus === "PENDING_BACKLOGS") { setError("You selected no pending backlogs. Please choose a different academic status."); return; }
-    const parsedBacklogCount = hasBacklogs ? Number(backlogCount) : 0;
-    if (!Number.isInteger(parsedBacklogCount) || parsedBacklogCount < 0 || parsedBacklogCount > 100 || (hasBacklogs && parsedBacklogCount < 1)) {
-      setError("Enter a valid pending backlog count between 0 and 100."); return;
-    }
+    if (!studentJourney) { setError("Choose whether you are currently studying or have completed your programme."); return; }
     if (!confirmedAdmissionYear || !Number.isInteger(Number(confirmedAdmissionYear)) || Number(confirmedAdmissionYear) < 1900 || Number(confirmedAdmissionYear) > new Date().getFullYear()) {
       setError("Enter a valid admission year."); return;
     }
-    const completed = Boolean(preview.expected?.expectedDurationEnded);
-    const needsActualSemester = !completed || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS";
-    if (needsActualSemester && (!actualSemester || !availableSemesters.includes(Number(actualSemester)))) {
-      setError("Select your actual currently enrolled semester. This is separate from the expected progression."); return;
-    }
+    const completed = studentJourney === "COMPLETED";
+    if (!completed && (!actualSemester || !availableSemesters.includes(Number(actualSemester)))) { setError("Select your current semester."); return; }
+    const finalAcademicStatus: AcademicStatus = academicStatus;
     setSaving(true);
     try {
       const token = await user.getIdToken();
@@ -165,9 +172,9 @@ export default function AcademicSetupPage() {
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({
           institutionId: selected.id, curriculumId, studentIdentifier: enrollment.trim(),
-          admissionYear: Number(confirmedAdmissionYear), currentSemesterNumber: completed && academicStatus !== "APPROVED_EXTENSION" && academicStatus !== "PENDING_BACKLOGS" ? null : Number(actualSemester),
+          admissionYear: Number(confirmedAdmissionYear), currentSemesterNumber: completed ? null : Number(actualSemester),
           admissionModeId: confirmedAdmissionMode === preview.admissionMode ? preview.admissionModeId || null : null, admissionModeName: confirmedAdmissionMode, graduationYear, targetCgpa: null,
-          academicStatus, academicProfileConfirmed: true, pendingBacklogCount: parsedBacklogCount,
+          academicStatus: finalAcademicStatus, academicProfileConfirmed: true,
         }),
       });
       const data = await response.json();
@@ -176,10 +183,13 @@ export default function AcademicSetupPage() {
         institutionId: selected.id, institutionName: selected.name, programId,
         programName: programs.find(item => item.id === programId)?.name || preview.programme, branchId, branchName: branches.find(item => item.id === branchId)?.name || preview.branch,
         curriculumId, semester: actualSemester || "", enrollment: enrollment.trim(), admissionYear: Number(confirmedAdmissionYear),
-        admissionMode: confirmedAdmissionMode, graduationYear, academicStatus,
-        academicProfileConfirmed: true, pendingBacklogCount: parsedBacklogCount, hasPendingBacklogs: parsedBacklogCount > 0,
+        admissionMode: confirmedAdmissionMode, graduationYear, academicStatus: finalAcademicStatus,
+        academicProfileConfirmed: true,
         expectedSemester: preview.expected?.expectedSemester ?? null,
-        expectedDurationEnded: completed, verifiedGapYears: null, scheme: preview.curriculumName || preview.scheme || "",
+        expectedDurationEnded: Boolean(preview.expected?.expectedDurationEnded),
+        estimatedAcademicDelaySemesters: completed ? null : Math.max(0, Number(preview.expected?.expectedSemester || 0) - Number(actualSemester)),
+        estimatedAcademicDelayYears: completed ? null : Math.max(0, Number(preview.expected?.expectedSemester || 0) - Number(actualSemester)) / 2,
+        verifiedGapYears: null, gapYearsVerificationStatus: "NOT_VERIFIED", scheme: preview.curriculumName || preview.scheme || "",
       }));
       navigate("/dashboard", { replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
@@ -220,8 +230,8 @@ export default function AcademicSetupPage() {
       <section className="academic-setup-content">
         <div className="academic-setup-heading">
           <p className="academic-setup-eyebrow">ACADEMIC PROFILE</p>
-          <h1>Let's get you set up.</h1>
-          <p>Tell us a little about your academic journey. We'll take care of the rest.</p>
+          <h1>Let's set up your academic profile.</h1>
+          <p>Confirm a few details to make Gradly yours.</p>
         </div>
 
         {error && <div className="academic-setup-error" role="alert"><span>!</span>{error}</div>}
@@ -232,7 +242,7 @@ export default function AcademicSetupPage() {
             <div className="academic-setup-input-wrap">
               <input id="institution-search" value={query} onChange={e => {
                 const value = e.target.value;
-                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false); setHasBacklogs(null); setBacklogCount("");
+                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false); setStudentJourney("");
                 window.clearTimeout(searchTimer.current);
                 searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
               }} placeholder="Search your college or university" autoComplete="organization" />
@@ -260,7 +270,7 @@ export default function AcademicSetupPage() {
             <section className="academic-setup-predicted" aria-live="polite">
               <div className="academic-setup-predicted-heading">
                 <span className="academic-setup-predicted-sparkle">✦</span>
-                <div><h2>Predicted Academic Details</h2><p>Review the information Gradly identified from your enrollment.</p></div>
+                <div><h2>Academic details identified</h2><p>Review the information Gradly identified from your enrollment.</p></div>
                 <span className="academic-setup-auto-tag"><i /> AUTO-DETECTED</span>
               </div>
               <dl className="academic-setup-predicted-grid">
@@ -268,11 +278,8 @@ export default function AcademicSetupPage() {
                 <div><dt>Branch</dt><dd>{branches.find(item => item.id === branchId)?.name || preview.branch || "—"}</dd></div>
                 <div><dt>Admission year</dt><dd>{confirmedAdmissionYear || "—"}</dd></div>
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
-                <div><dt>Entry semester</dt><dd>{preview.entrySemester ? `Semester ${preview.entrySemester}` : "—"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
-                <div className="academic-setup-predicted-wide"><dt>Academic progression</dt><dd>{predictionComplete ? "Expected programme duration completed" : preview.expected.expectedSemester ? `Predicted current semester: Semester ${preview.expected.expectedSemester}` : "Semester prediction unavailable"}</dd></div>
               </dl>
-              {predictionComplete && <p className="academic-setup-predicted-note">Please confirm your current academic status below. Expected duration does not mean that you have graduated.</p>}
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
                 <div className="academic-setup-data-question">Is this data correct?</div>
                 {!editingPrediction ? <div className="academic-setup-choice-row">
@@ -294,26 +301,22 @@ export default function AcademicSetupPage() {
               </>}
             </section>
 
-            <section className="academic-setup-backlogs">
-              <div><h2>Do you have any pending backlogs?</h2><p>This information is provided by you, not inferred by Gradly.</p></div>
-              <div className="academic-setup-backlog-options">
-                <button type="button" className={hasBacklogs === false ? "selected" : ""} aria-pressed={hasBacklogs === false} onClick={() => { setHasBacklogs(false); setBacklogCount("0"); if (academicStatus === "PENDING_BACKLOGS") setAcademicStatus(predictionComplete ? "AWAITING_RESULTS" : "ENROLLED"); }}><span>{hasBacklogs === false ? "●" : "○"}</span>No backlogs</button>
-                <button type="button" className={hasBacklogs === true ? "selected" : ""} aria-pressed={hasBacklogs === true} onClick={() => { setHasBacklogs(true); setBacklogCount(value => value && Number(value)>0 ? value : "1"); if (academicStatus === "ENROLLED") setAcademicStatus("PENDING_BACKLOGS"); }}><span>{hasBacklogs === true ? "●" : "○"}</span>Yes, I have backlogs</button>
+            <section className="academic-setup-confirmation academic-setup-journey">
+              <div className="academic-setup-confirmation-heading"><h2>Where are you in your academic journey?</h2><p>Your selection—not the prediction—sets your academic status.</p></div>
+              <div className="academic-setup-journey-options">
+                <button type="button" className={studentJourney === "STUDYING" ? "selected" : ""} aria-pressed={studentJourney === "STUDYING"} onClick={() => { setStudentJourney("STUDYING"); setActualSemester(""); }}>I am currently studying</button>
+                <button type="button" className={studentJourney === "COMPLETED" ? "selected" : ""} aria-pressed={studentJourney === "COMPLETED"} onClick={() => { setStudentJourney("COMPLETED"); setActualSemester(""); }}>I have completed my programme</button>
               </div>
-              {hasBacklogs === true && <div className="academic-setup-backlog-count"><label htmlFor="backlog-count">How many pending backlogs do you have?</label><input id="backlog-count" type="number" min="1" max="100" step="1" required value={backlogCount} onChange={e => setBacklogCount(e.target.value)} placeholder="Enter number of backlogs" /></div>}
+              {studentJourney === "STUDYING" && <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Select your current semester</label><select id="actual-semester" required value={actualSemester} onChange={e => setActualSemester(e.target.value)}><option value="">Choose semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}</select></div>}
+              {studentJourney === "STUDYING" && actualSemester && <div className="academic-setup-delay">
+                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : Math.max(0, adjustedExpectedSemester - Number(actualSemester)) + " semester(s) · " + (Math.max(0, adjustedExpectedSemester - Number(actualSemester)) / 2) + " year(s)"}</strong></div><div><span>Verified gap years</span><strong>Not verified</strong></div></div>
+                <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + actualSemester + "."} Academic delay is an estimate, not a verified gap year. Backlogs are not treated as gap years.</p>
+              </div>}
+              {studentJourney === "COMPLETED" && <div className="academic-setup-completed-message">✓ You confirmed that you have completed your programme.</div>}
             </section>
 
-            <section className="academic-setup-confirmation">
-              <div className="academic-setup-confirm-fields">
-                <div><label htmlFor="academic-status">Academic status</label><select id="academic-status" value={academicStatus} onChange={e => setAcademicStatus(e.target.value as AcademicStatus)}>
-                  {predictionComplete ? <><option value="AWAITING_RESULTS">Awaiting results</option><option value="PENDING_BACKLOGS">Pending backlogs</option><option value="APPROVED_EXTENSION">Approved academic extension</option><option value="GRADUATED">Graduated</option></> : <><option value="ENROLLED">Currently enrolled</option><option value="PENDING_BACKLOGS">Pending backlogs</option><option value="APPROVED_EXTENSION">Approved academic extension</option><option value="AWAITING_RESULTS">Awaiting results</option></>}
-                </select></div>
-                {(!predictionComplete || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS") && <div><label htmlFor="actual-semester">Actual enrolled semester</label><select id="actual-semester" required value={actualSemester} onChange={e => setActualSemester(e.target.value)}><option value="">Choose semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}</select></div>}
-              </div>
-            </section>
-
-            <button className="academic-setup-continue" type="submit" disabled={saving || previewBusy || predictionConfirmed !== true || hasBacklogs === null || (hasBacklogs && !backlogCount.trim()) || !curriculumId}>
-              {saving ? <><span className="academic-setup-button-spinner" /> Saving your profile…</> : <>Continue <span>→</span></>}
+            <button className="academic-setup-continue" type="submit" disabled={saving || previewBusy || predictionConfirmed !== true || !studentJourney || (studentJourney === "STUDYING" && !actualSemester) || !curriculumId}>
+              {saving ? <><span className="academic-setup-button-spinner" /> Saving your profile…</> : <>Confirm &amp; Continue <span>→</span></>}
             </button>
             <p className="academic-setup-footnote">Your information is saved to your authenticated Gradly student profile.</p>
           </>}
