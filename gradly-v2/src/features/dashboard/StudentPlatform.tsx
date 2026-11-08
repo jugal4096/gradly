@@ -7,7 +7,7 @@ type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgp
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
-type Subject = { id: number; name: string; credits: number; grade: string };
+type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; curriculumSubjectId?: string };
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
 
@@ -186,6 +186,24 @@ export default function StudentPlatform() {
     return ()=>{cancelled=true;};
   }, [isGuest, user]);
 
+  useEffect(() => {
+    if (isGuest || !user || !profile.curriculumId || !profile.semester) return;
+    let cancelled=false;
+    void (async()=>{
+      try {
+        const token=await user.getIdToken();
+        const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${encodeURIComponent(profile.semester)}/subjects`);
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
+        if(!cancelled && Array.isArray(data.data) && data.data.length) {
+          setSubjects(data.data.map((item:any,index:number)=>({id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:"A",courseCode:item.code||"",curriculumSubjectId:item.id||""})));
+          setSgpa(null);
+        }
+      } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
+    })();
+    return ()=>{cancelled=true;};
+  }, [isGuest, user, profile.curriculumId, profile.semester]);
+
   const selectedInstitution = institutions.find(item=>item.id===(isGuest ? guestInstitutionId : profile.institutionId));
   const institutionLabel = selectedInstitution?.name || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
   const programs = useMemo(() => {
@@ -238,7 +256,7 @@ export default function StudentPlatform() {
       try {
         const token=await user.getIdToken();
         const response=await fetch(API+"/api/student/academic/semesters",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({
-          semesterNumber,attemptNumber:1,courses:subjects.filter(subject=>subject.name.trim()&&subject.credits>0).map(subject=>({courseName:subject.name,credits:subject.credits,gradeSymbol:subject.grade,gradePoint:POINTS[subject.grade]}))
+          semesterNumber,attemptNumber:1,courses:subjects.filter(subject=>subject.name.trim()&&subject.credits>0).map(subject=>({courseCode:subject.courseCode||"",courseName:subject.name,credits:subject.credits,gradeSymbol:subject.grade,gradePoint:POINTS[subject.grade]}))
         })});
         const data=await response.json();
         if(!response.ok) throw new Error(data.message||"Unable to save semester result.");
