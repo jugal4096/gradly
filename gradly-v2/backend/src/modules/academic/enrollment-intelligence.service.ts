@@ -96,7 +96,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const modeResult = await pool.query(
     `SELECT mode_code, mode_name, entry_semester FROM enrollment_admission_modes
      WHERE mode_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
-     ORDER BY institution_id NULLS LAST`, [parsed.admissionModeCode, institutionId],
+       AND (programme_prefix = $3 OR programme_prefix IS NULL)
+     ORDER BY institution_id NULLS LAST, programme_prefix NULLS LAST`, [parsed.admissionModeCode, institutionId, parsed.prefix],
   );
   const mode = modeResult.rows[0];
   if (!mode) return { recognized: false, requiresConfirmation: true, unknown: "ADMISSION_MODE", parsed };
@@ -133,7 +134,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   if (!calendar || !durationYears || !totalSemesters || !prefixRule.scheme_label) {
     return {
       recognized: true, requiresConfirmation: true, parsed,
-      programme: academicMatch.program_name, branch: academicMatch.branch_name,
+      programme: academicMatch.program_name, programId: academicMatch.program_id,
+      branch: academicMatch.branch_name, branchId: academicMatch.branch_id,
       admissionYear: parsed.admissionYear, admissionMode: mode.mode_name,
       scheme: prefixRule.scheme_label ?? null,
       configurationRequired: !calendar ? "ACADEMIC_CALENDAR" : !prefixRule.scheme_label ? "ACADEMIC_SCHEME" : "PROGRAMME_DURATION",
