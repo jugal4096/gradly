@@ -96,6 +96,7 @@ export default function StudentPlatform() {
   });
   const [onboarding,setOnboarding] = useState(() => !isGuest && !profile.institutionId);
   const [guestInstitutionId] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
+  const [guestSemester] = useState("1");
   
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
   const [guestCgpaResult,setGuestCgpaResult] = useState<number|null>(null);
