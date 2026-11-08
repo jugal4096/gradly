@@ -43,7 +43,6 @@ export default function AcademicSetupPage() {
 
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   const branches = (selected?.branches || []).filter(b => b.program_id === programId);
-  const selectedProgramName = programs.find(p => p.id === programId)?.name || "";
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const semesterCount = Number(selectedCurriculum?.total_semesters) || 0;
   const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
