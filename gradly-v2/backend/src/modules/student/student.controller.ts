@@ -18,7 +18,7 @@ async function resolveStudentUser(req: AuthenticatedRequest, res: Response) {
 
 function readProfilePayload(body: Record<string, unknown>) {
   const {
-    institutionId, curriculumId, admissionModeId, studentIdentifier,
+    institutionId, curriculumId, admissionModeId, admissionModeName, studentIdentifier,
     admissionYear, currentSemesterNumber, graduationYear, targetCgpa,
   } = body;
   if (
@@ -37,7 +37,7 @@ function readProfilePayload(body: Record<string, unknown>) {
 
   return {
     institutionId, curriculumId,
-    admissionModeId: typeof admissionModeId === "string" && admissionModeId ? admissionModeId : null,
+    admissionModeId: typeof admissionModeId === "string" && admissionModeId ? admissionModeId : null,\n    admissionModeName: typeof admissionModeName === "string" ? admissionModeName : null,
     studentIdentifier, admissionYear: Number(admissionYear),
     currentSemesterNumber: Number(currentSemesterNumber),
     graduationYear: graduationYear === undefined || graduationYear === null || graduationYear === ""
