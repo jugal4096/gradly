@@ -9,6 +9,8 @@ type Profile = { institutionId: string; institutionName: string; programId: stri
 type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; curriculumSubjectId?: string };
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
+type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null };
+type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; id?: string | number | null };
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
@@ -90,7 +92,6 @@ export default function StudentPlatform() {
     catch { return emptyProfile; }
   });
   const [onboarding,setOnboarding] = useState(() => !isGuest && !profile.institutionId);
-  const [guestInstitutionId] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
   const [guestSemester] = useState("1");
   
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
@@ -145,7 +146,7 @@ export default function StudentPlatform() {
         const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
         const recordsData=await recordsResponse.json();
         if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
-          const saved:SemesterResult[]=recordsData.records.map((row:any)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
+          const saved:SemesterResult[]=(recordsData.records as AcademicRecordApi[]).map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
           setResults(saved); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
         }
       } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
@@ -162,7 +163,7 @@ export default function StudentPlatform() {
         const data=await response.json();
         if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
         if(!cancelled && Array.isArray(data.data) && data.data.length) {
-          setSubjects(data.data.map((item:any,index:number)=>({id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:"A",courseCode:item.code||"",curriculumSubjectId:item.id||""})));
+          setSubjects((data.data as CurriculumSubjectApi[]).map((item,index)=>({id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:"A",courseCode:item.code||"",curriculumSubjectId:String(item.id||"")})));
           setSgpa(null);
         }
       } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
