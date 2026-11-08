@@ -149,7 +149,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   });
   return {
     recognized: true, requiresConfirmation: false, parsed,
-    programme: academicMatch.program_name, branch: academicMatch.branch_name,
+    programme: academicMatch.program_name, programId: academicMatch.program_id,
+    branch: academicMatch.branch_name, branchId: academicMatch.branch_id,
     admissionYear: parsed.admissionYear, admissionMode: mode.mode_name,
     entrySemester: Number(mode.entry_semester), scheme: prefixRule.scheme_label,
     expected: prediction,
