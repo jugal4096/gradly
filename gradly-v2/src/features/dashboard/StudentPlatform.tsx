@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";\nimport { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import GuestOnboarding from "./GuestOnboarding";
@@ -312,7 +312,7 @@ export default function StudentPlatform() {
   const requiredAverage=(desired*(completedCredits+remainingSemesters*averageFutureCredits)-completedWeightedPoints)/(remainingSemesters*averageFutureCredits);
   const sgpaScenarios=buildSgpaScenarios(Number(targetSgpa),subjects);
 
-  if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
+  if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;\n  if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
 
   return <div className={"sp-shell "+(isGuest?"sp-guest-mode":"sp-user-mode")+(theme==="dark"?" sp-dark-theme":"")} style={{fontFamily:`"${fontFamily}", sans-serif`,fontSize:`${textSize}px`}}>
     <aside id="student-workspace-menu" className={"sp-sidebar "+(mobileOpen?"open":"")}>
@@ -401,22 +401,6 @@ export default function StudentPlatform() {
       <footer className="sp-footer"><span>© {new Date().getFullYear()} Gradly</span><span>CALCULATE · UNDERSTAND · PLAN</span><span>Built for your next chapter ✦</span></footer>
     </main>
 
-    {onboarding&&!isGuest&&<div className="sp-modal-backdrop"><section className="sp-modal"><div className="sp-modal-head"><div><span className="sp-kicker">WELCOME TO GRADLY</span><h2>Set up your academic profile</h2><p>Choose your institution and academic details to personalise your workspace.</p></div><button onClick={()=>{if(profile.institutionId)setOnboarding(false);}}>×</button></div>
-      <form onSubmit={e=>{e.preventDefault();if(!profile.institutionId||!profile.programId||!profile.branchId||!profile.curriculumId||!profile.enrollment||!profile.admissionYear||!profile.semester){setNotice("Complete all required academic profile fields and select a curriculum.");return;}void saveProfile(profile);}}>
-        <label className="sp-field-full">Institution<select required value={profile.institutionId} onChange={e=>{const item=institutions.find(x=>x.id===e.target.value);updateProfile({...emptyProfile,institutionId:e.target.value,institutionName:item?.name||""});}}><option value="">Select institution</option>{institutions.map(i=><option key={i.id} value={i.id}>{i.name}</option>)}</select></label>
-        {institutionLoading&&<p className="sp-muted">Loading institutions from Gradly database…</p>}
-        {institutionError&&<p className="sp-error">{institutionError} Check that the Gradly API is available.</p>}
-        <label>Programme<select required disabled={!profile.institutionId} value={profile.programId} onChange={e=>{const p=programs.find(x=>x.id===e.target.value);updateProfile({programId:e.target.value,programName:p?.name||"",branchId:"",branchName:""});}}><option value="">Select programme</option>{programs.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-        <label>Branch<select required disabled={!profile.programId} value={profile.branchId} onChange={e=>{const b=branches.find(x=>x.id===e.target.value);updateProfile({branchId:e.target.value,branchName:b?.name||""});}}><option value="">Select branch</option>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
-        <label>Current semester<select required value={profile.semester} onChange={e=>updateProfile({semester:e.target.value})}><option value="">Select semester</option>{Array.from({length:profile.programName.toLowerCase().includes("b.tech")||profile.programName.toLowerCase().includes("btech")?8:4},(_,i)=><option key={i+1} value={String(i+1)}>Semester {i+1}</option>)}</select></label>
-        <label>Enrollment number<input required value={profile.enrollment} onChange={e=>updateProfile({enrollment:e.target.value})} placeholder="Your university enrollment"/></label>
-        <label>Admission mode<select value={profile.admissionMode} onChange={e=>updateProfile({admissionMode:e.target.value})}><option>Regular</option><option>Direct Second Year</option><option>Transfer</option><option>Other</option></select></label>
-        <label>Admission number<input value={profile.admissionNumber} onChange={e=>updateProfile({admissionNumber:e.target.value})} placeholder="Optional"/></label>
-        <label className="sp-field-full">Curriculum scheme<select required disabled={!profile.branchId||curriculumLoading} value={profile.curriculumId} onChange={e=>{const item=curricula.find(x=>x.id===e.target.value);updateProfile({curriculumId:e.target.value,scheme:item?.scheme_name||"Selected curriculum"});}}><option value="">{curriculumLoading?"Loading curricula…":"Select scheme / curriculum"}</option>{curricula.map(item=><option key={item.id} value={item.id}>{item.scheme_name||"Curriculum"}{item.version?" · v"+item.version:""}</option>)}</select></label>
-        <label>Admission year<input required type="number" min="1900" max="2100" value={profile.admissionYear} onChange={e=>updateProfile({admissionYear:e.target.value})}/></label>
-        <div className="sp-modal-actions"><button type="button" className="sp-secondary" onClick={()=>setRequestOpen(true)}>College not listed?</button><button className="sp-primary" disabled={institutionLoading}>Save profile →</button></div>
-      </form>
-    </section></div>}
     {loginGate&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">GRADLY ACCOUNT</span><h2>Unlock your student workspace</h2><p>This feature is available to signed-in students. Your guest calculations remain on this device.</p></div><button onClick={()=>setLoginGate(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" onClick={()=>void loginWithGoogle()}>Continue with Google →</button><button className="sp-secondary" onClick={()=>setLoginGate(false)}>Maybe later</button></div></section></div>}
     {requestOpen&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">INSTITUTION REQUEST</span><h2>Request an institution</h2><p>Send the institution name and context for Super Admin review.</p></div><button onClick={()=>setRequestOpen(false)}>×</button></div><form onSubmit={submitInstitutionRequest}><label>Institution name<input required value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder="College or university name"/></label><label>Additional details<textarea value={requestReason} onChange={e=>setRequestReason(e.target.value)} placeholder="City, university affiliation, website…" rows={3}/></label><div className="sp-modal-actions"><button type="button" className="sp-secondary" onClick={()=>setRequestOpen(false)}>Cancel</button><button className="sp-primary">Submit request →</button></div></form></section></div>}
   </div>;
