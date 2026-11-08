@@ -39,8 +39,10 @@ export function predictSemester(input: {
   const date = input.date ?? new Date();
   const month = date.getMonth() + 1;
   const startYear = month >= input.academicYearStartMonth ? date.getFullYear() : date.getFullYear() - 1;
-  const semesterType: "ODD" | "EVEN" =
-    month >= input.oddSemesterStartMonth && month <= input.oddSemesterEndMonth ? "ODD" : "EVEN";
+  const inOddWindow = input.oddSemesterStartMonth <= input.oddSemesterEndMonth
+    ? month >= input.oddSemesterStartMonth && month <= input.oddSemesterEndMonth
+    : month >= input.oddSemesterStartMonth || month <= input.oddSemesterEndMonth;
+  const semesterType: "ODD" | "EVEN" = inOddWindow ? "ODD" : "EVEN";
   const sessionOffset = semesterType === "ODD" ? 0 : 1;
   const expected = input.entrySemester + (startYear - input.admissionYear) * 2 + sessionOffset;
   const expectedSemester = expected < input.entrySemester || expected > input.totalSemesters ? null : expected;
