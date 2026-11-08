@@ -188,7 +188,7 @@ export default function AcademicSetupPage() {
   }
 
   function chooseInstitution(item: Institution) {
-    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]); setInferenceConfirmed(false); setFetchAttempted(false);
+    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]);
     setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
   }
 

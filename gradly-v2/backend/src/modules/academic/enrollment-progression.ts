@@ -18,6 +18,57 @@ export function parseEnrollmentNumber(input: string, pivotStart = 70): Enrollmen
   };
 }
 
+/**
+ * Compares academic branch labels without relying on punctuation or display-name suffixes.
+ * Abbreviations are limited to well-known engineering branch names; unknown labels require an exact normalized match.
+ */
+function normalizeBranchLabel(value: string): string {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/\b(department|engineering|branch|of|the|and)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+const branchAliasGroups: string[][] = [
+  ["information technology", "information tech", "it"],
+  ["computer science and engineering", "computer science", "cse", "cs"],
+  ["electronics and telecommunication", "electronics and communication", "electronics telecommunication", "e and tc", "etc", "extc", "ece"],
+  ["electrical", "electrical engineering", "ee"],
+  ["mechanical", "mechanical engineering", "me"],
+  ["civil", "civil engineering", "ce"],
+  ["artificial intelligence and data science", "artificial intelligence data science", "ai and ds", "aids"],
+  ["artificial intelligence and machine learning", "artificial intelligence machine learning", "ai and ml", "aiml"],
+];
+
+function branchAliasKey(value: string): string | null {
+  const normalized = normalizeBranchLabel(value);
+  if (!normalized) return null;
+  for (const group of branchAliasGroups) {
+    const aliases = group.map(normalizeBranchLabel);
+    if (aliases.some(alias => normalized === alias || (alias.length >= 8 && normalized.startsWith(alias)) || (normalized.length >= 8 && alias.startsWith(normalized)))) {
+      return aliases[0];
+    }
+  }
+  return null;
+}
+
+export function branchIdentityMatches(configuredName: string, actualName: string, actualCode?: string | null): boolean {
+  const configured = normalizeBranchLabel(configuredName);
+  const actual = normalizeBranchLabel(actualName);
+  if (configured && actual && configured === actual) return true;
+  const configuredAlias = branchAliasKey(configuredName);
+  if (configuredAlias && configuredAlias === branchAliasKey(actualName)) return true;
+  if (actualCode) {
+    const code = normalizeBranchLabel(actualCode);
+    if (configured && code && configured === code) return true;
+    const codeAlias = branchAliasKey(actualCode);
+    if (configuredAlias && configuredAlias === codeAlias) return true;
+  }
+  return false;
+}
 export type SemesterPrediction = {
   expectedSemester: number | null;
   academicYear: string;

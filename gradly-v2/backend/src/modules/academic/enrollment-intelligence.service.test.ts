@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
+import { branchIdentityMatches, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
 const predict = (admissionYear: number, entrySemester: number, date: string, totalSemesters = 8) =>
@@ -99,4 +99,22 @@ test("supports delayed academic session start configured for September", () => {
   });
   assert.equal(p.academicYear, "2026-27");
   assert.equal(p.semesterType, "ODD");
+});
+
+test("matches configured branch names despite common academic naming differences", () => {
+  assert.equal(branchIdentityMatches("Information Technology", "IT"), true);
+  assert.equal(branchIdentityMatches("Information Technology", "Information Technology Engineering"), true);
+  assert.equal(branchIdentityMatches("Computer Science and Engineering", "CSE"), true);
+  assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "E&TC"), true);
+});
+
+test("uses branch directory code as an additional branch identity", () => {
+  assert.equal(branchIdentityMatches("Information Technology", "Department of IT", "IT"), true);
+  assert.equal(branchIdentityMatches("Mechanical Engineering", "Mechanical", "ME"), true);
+});
+
+test("does not match unrelated branch labels by loose substring", () => {
+  assert.equal(branchIdentityMatches("Information Technology", "Electrical Engineering", "EE"), false);
+  assert.equal(branchIdentityMatches("Computer Science and Engineering", "Computer Engineering", "CE"), false);
+  assert.equal(branchIdentityMatches("Information Technology", "IT and Computer Science", null), false);
 });
