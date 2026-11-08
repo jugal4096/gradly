@@ -4,20 +4,25 @@ export type EnrollmentComponents = {
 };
 
 export function parseEnrollmentNumber(input: string, pivotStart = 70): EnrollmentComponents {
-  const enrollmentNumber = String(input ?? "").trim().toUpperCase().replace(/[\s-]+/g, "");
-  if (enrollmentNumber.length < 8 || !/^[A-Z]{2}\d{2}[A-Z]\d{2}[A-Z0-9]+$/.test(enrollmentNumber)) {
-    throw new Error("INVALID_ENROLLMENT_NUMBER");
-  }
+  // Normalize case and outer whitespace only. Never repair or remove internal characters.
+  const enrollmentNumber = String(input ?? "").trim().toUpperCase();
+  if (!enrollmentNumber) throw new Error("EMPTY_ENROLLMENT_NUMBER");
+  if (!/^(BE|BT|MC|MT)/.test(enrollmentNumber)) throw new Error("INVALID_PROGRAMME_PREFIX");
+  if (enrollmentNumber.length !== 11) throw new Error("INVALID_ENROLLMENT_LENGTH");
+  if (!/^\d{2}$/.test(enrollmentNumber.slice(2, 4))) throw new Error("INVALID_ADMISSION_YEAR");
+  if (!/^[FS]$/.test(enrollmentNumber.slice(4, 5))) throw new Error("INVALID_ADMISSION_MODE");
+  if (!/^\d{2}$/.test(enrollmentNumber.slice(5, 7))) throw new Error("INVALID_BRANCH_CODE");
+  if (enrollmentNumber[7] !== "F") throw new Error("INVALID_EIGHTH_CHARACTER");
+  if (!/^\d{3}$/.test(enrollmentNumber.slice(-3))) throw new Error("INVALID_STUDENT_SERIAL");
   const yy = Number(enrollmentNumber.slice(2, 4));
   return {
     enrollmentNumber, classificationKey: enrollmentNumber.slice(0, 7),
     prefix: enrollmentNumber.slice(0, 2),
     admissionYear: yy >= pivotStart ? 1900 + yy : 2000 + yy,
     admissionModeCode: enrollmentNumber.slice(4, 5),
-    branchCode: enrollmentNumber.slice(5, 7), suffix: enrollmentNumber.slice(7),
+    branchCode: enrollmentNumber.slice(5, 7), suffix: enrollmentNumber.slice(8),
   };
 }
-
 /**
  * Compares academic branch labels without relying on punctuation or display-name suffixes.
  * Abbreviations are limited to well-known engineering branch names; unknown labels require an exact normalized match.
