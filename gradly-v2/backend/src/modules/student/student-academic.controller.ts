@@ -132,10 +132,15 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
     const inserted = await client.query(
       `INSERT INTO student_semesters
-         (student_profile_id, curriculum_id, semester_id, attempt_number)
-       VALUES ($1, $2, $3, $4)
+         (student_profile_id, curriculum_id, semester_id, attempt_number,
+         status, result_publication_status, result_source, verified,
+         credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
+       VALUES ($1, $2, $3, $4, 'COMPLETED', 'DECLARED', 'MANUAL_ENTRY', FALSE,
+               $5, $6, $7, NOW(), NOW())
        RETURNING id, semester_id, attempt_number`,
-      [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber],
+      [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
+       creditsRegistered, normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0),
+       Number(sgpa.toFixed(2))],
     );
     const semesterRecord = inserted.rows[0];
     for (const course of normalized) {
@@ -151,10 +156,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         `INSERT INTO student_semester_courses
           (student_semester_id, curriculum_subject_id, course_code_snapshot,
            course_name_snapshot, credits, registration_status, grade_symbol,
-           grade_point, result_status, result_source)
-         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7, 'DECLARED', 'MANUAL_ENTRY')`,
+           grade_point, result_status, result_source, attempt_number)
+         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7, 'DECLARED', 'MANUAL_ENTRY', $8)`,
         [semesterRecord.id, curriculumSubject.rows[0]?.id ?? null, course.code || null,
-         course.name, course.credits, course.grade || null, course.point],
+         course.name, course.credits, course.grade || null, course.point, attemptNumber],
       );
     }
     await client.query("COMMIT");
