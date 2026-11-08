@@ -30,22 +30,42 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const program = programResult.rows[0];
 
   const branchResult = await pool.query(
-    `SELECT branch_name, program_name_pattern FROM enrollment_branch_codes
+    `SELECT branch_name, program_name_pattern
+     FROM enrollment_branch_codes
      WHERE branch_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
        AND (programme_prefix = $3 OR programme_prefix IS NULL)
-     ORDER BY (institution_id = $2) DESC NULLS LAST, (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
-    [parsed.branchCode, institutionId, parsed.prefix],
+       AND (program_name_pattern IS NULL OR $4::text ILIKE program_name_pattern)
+     ORDER BY (institution_id = $2) DESC NULLS LAST,
+              (programme_prefix = $3) DESC NULLS LAST,
+              (program_name_pattern IS NOT NULL) DESC NULLS LAST
+     LIMIT 20`,
+    [parsed.branchCode, institutionId, parsed.prefix, program.name],
   );
-  const branchRule = branchResult.rows[0];
-  if (!branchRule) return unresolved("BRANCH_CODE", "This branch code is not configured. Please request verification.", parsed);
-  const branchResultMatch = await pool.query(
-    `SELECT id, name FROM branches WHERE program_id = $1 AND name ILIKE $2 LIMIT 2`,
-    [program.id, branchRule.branch_name],
-  );
-  if (branchResultMatch.rows.length !== 1) {
-    return unresolved("BRANCH", branchResultMatch.rows.length ? "Multiple branch records match this code." : "The matching branch is not configured under this programme.", parsed);
+  const branchRules = branchResult.rows as Array<{ branch_name: string; program_name_pattern: string | null }>;
+  if (!branchRules.length) {
+    return unresolved("BRANCH_CODE", "This branch code is not configured for the detected programme. Please request verification.", parsed);
   }
-  const branch = branchResultMatch.rows[0];
+
+  // Resolve against the programme-scoped branch directory instead of one exact display-name string.
+  // Institutions commonly store abbreviations or expanded names, such as IT and Information Technology.
+  const branchDirectory = await pool.query(
+    `SELECT id, name, code FROM branches WHERE program_id = $1 ORDER BY name`,
+    [program.id],
+  );
+  const matchedBranches = branchDirectory.rows.filter((candidate: { id: string; name: string; code?: string | null }) =>
+    branchRules.some(rule => branchIdentityMatches(rule.branch_name, candidate.name, candidate.code ?? null)),
+  );
+  const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string }) => [candidate.id, candidate])).values());
+  if (uniqueBranches.length !== 1) {
+    return unresolved(
+      "BRANCH",
+      uniqueBranches.length
+        ? "More than one branch matches this enrollment code under the detected programme. Institutional mapping needs review."
+        : "The branch code is configured, but its name or abbreviation does not match any branch under the detected programme. Check the branch mapping in the academic directory.",
+      parsed,
+    );
+  }
+  const branch = uniqueBranches[0];
 
   const modeResult = await pool.query(
     `SELECT em.mode_code, em.mode_name, em.entry_semester, am.id AS admission_mode_id
