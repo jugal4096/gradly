@@ -37,7 +37,8 @@ function readProfilePayload(body: Record<string, unknown>) {
 
   return {
     institutionId, curriculumId,
-    admissionModeId: typeof admissionModeId === "string" && admissionModeId ? admissionModeId : null,\n    admissionModeName: typeof admissionModeName === "string" ? admissionModeName : null,
+    admissionModeId: typeof admissionModeId === "string" && admissionModeId ? admissionModeId : null,
+    admissionModeName: typeof admissionModeName === "string" ? admissionModeName : null,
     studentIdentifier, admissionYear: Number(admissionYear),
     currentSemesterNumber: Number(currentSemesterNumber),
     graduationYear: graduationYear === undefined || graduationYear === null || graduationYear === ""
