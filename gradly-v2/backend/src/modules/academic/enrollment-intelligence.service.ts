@@ -142,14 +142,17 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return unresolved("PROGRAMME_DURATION", "Programme duration or semester count is not configured correctly.", parsed);
   }
   const calendarResult = await pool.query(
-    `SELECT academic_year_start_month, odd_semester_start_month, odd_semester_end_month, timezone
+    `SELECT academic_year_start_month, odd_semester_start_month, odd_semester_end_month, timezone, active_from, active_to
      FROM institution_academic_calendars
-     WHERE institution_id = $1 AND (active_from IS NULL OR active_from <= $2::date)
-       AND (active_to IS NULL OR active_to >= $2::date)
-     ORDER BY active_from DESC NULLS LAST LIMIT 1`,
-    [institutionId, new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)],
+     WHERE institution_id = $1
+     ORDER BY active_from DESC NULLS LAST`,
+    [institutionId],
   );
-  const calendar = calendarResult.rows[0];
+  const calendar = calendarResult.rows.find((row: any) => {
+    const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: row.timezone || 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    return (!row.active_from || String(row.active_from).slice(0, 10) <= localDate) &&
+      (!row.active_to || String(row.active_to).slice(0, 10) >= localDate);
+  });
   if (!calendar) {
     return { ...unresolved("ACADEMIC_CALENDAR", "The institution's academic calendar is not configured for today's date.", parsed), programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id, curriculumId: curriculum.id };
   }
