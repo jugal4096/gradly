@@ -168,21 +168,15 @@ router.get("/admission-modes", async (req: Request, res: Response): Promise<void
   }
   try {
     const result = await pool.query(
-      `SELECT id, institution_id, programme_prefix, mode_code, mode_name, entry_semester
+      `SELECT DISTINCT ON (mode_code) id, mode_code, mode_name, entry_semester
        FROM enrollment_admission_modes
        WHERE (institution_id = $1 OR institution_id IS NULL)
          AND (programme_prefix = $2 OR programme_prefix IS NULL)
-       ORDER BY (institution_id = $1) DESC NULLS LAST,
-                (programme_prefix = $2) DESC NULLS LAST,
-                mode_code`,
+       ORDER BY mode_code, (institution_id = $1) DESC NULLS LAST,
+                (programme_prefix = $2) DESC NULLS LAST`,
       [institutionId, programmePrefix],
     );
-    const preferred = result.rows[0];
-    const rows = preferred ? result.rows.filter((row: any) =>
-      (row.institution_id ?? null) === (preferred.institution_id ?? null) &&
-      (row.programme_prefix ?? null) === (preferred.programme_prefix ?? null)
-    ) : [];
-    res.status(200).json({ success: true, data: rows });
+    res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
     console.error("GET /api/academic/admission-modes error:", error);
     res.status(500).json({ success: false, message: "Failed to load admission modes." });
