@@ -40,11 +40,11 @@ export default function AcademicSetupPage() {
   const [branchId, setBranchId] = useState("");
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [curriculumId, setCurriculumId] = useState("");
-  const academicStatus: AcademicStatus = studentJourney === "COMPLETED" ? "GRADUATED" : "ENROLLED";
   const [actualSemester, setActualSemester] = useState("");
   const [predictionConfirmed, setPredictionConfirmed] = useState<boolean | null>(null);
   const [editingPrediction, setEditingPrediction] = useState(false);
   const [studentJourney, setStudentJourney] = useState<"STUDYING" | "COMPLETED" | "">("");
+  const academicStatus: AcademicStatus = studentJourney === "COMPLETED" ? "GRADUATED" : "ENROLLED";
   const [confirmedAdmissionYear, setConfirmedAdmissionYear] = useState("");
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
@@ -66,7 +66,7 @@ export default function AcademicSetupPage() {
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
-  const semesterCount = Number(selectedCurriculum?.total_semesters) || (/b\\.?\\s*tech|bachelor of technology/i.test(programmeLabel) ? 8 : 0);
+  const semesterCount = Number(selectedCurriculum?.total_semesters) || (/b\.?\s*tech|bachelor of technology/i.test(programmeLabel) ? 8 : 0);
   const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
 
