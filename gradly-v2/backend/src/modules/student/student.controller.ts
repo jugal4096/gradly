@@ -19,16 +19,19 @@ async function resolveStudentUser(req: AuthenticatedRequest, res: Response) {
 function readProfilePayload(body: Record<string, unknown>) {
   const {
     institutionId, curriculumId, admissionModeId, admissionModeName, studentIdentifier,
-    admissionYear, currentSemesterNumber, graduationYear, targetCgpa,
+    admissionYear, currentSemesterNumber, graduationYear, targetCgpa, academicStatus,
   } = body;
   if (
     typeof institutionId !== "string" || !institutionId ||
     typeof curriculumId !== "string" || !curriculumId ||
     typeof studentIdentifier !== "string" || !studentIdentifier.trim() ||
     !Number.isInteger(Number(admissionYear)) ||
-    !Number.isInteger(Number(currentSemesterNumber)) ||
     Number(admissionYear) < 1900 ||
-    Number(currentSemesterNumber) < 1 || Number(currentSemesterNumber) > 12
+    !["ENROLLED", "AWAITING_RESULTS", "PENDING_BACKLOGS", "APPROVED_EXTENSION", "GRADUATED"].includes(String(academicStatus)) ||
+    (currentSemesterNumber !== null && currentSemesterNumber !== undefined &&
+      (!Number.isInteger(Number(currentSemesterNumber)) || Number(currentSemesterNumber) < 1 || Number(currentSemesterNumber) > 12)) ||
+    ((academicStatus === "ENROLLED" || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS") &&
+      (currentSemesterNumber === null || currentSemesterNumber === undefined))
   ) return null;
 
   const parsedTarget = targetCgpa === undefined || targetCgpa === null || targetCgpa === ""
@@ -40,7 +43,8 @@ function readProfilePayload(body: Record<string, unknown>) {
     admissionModeId: typeof admissionModeId === "string" && admissionModeId ? admissionModeId : null,
     admissionModeName: typeof admissionModeName === "string" ? admissionModeName : null,
     studentIdentifier, admissionYear: Number(admissionYear),
-    currentSemesterNumber: Number(currentSemesterNumber),
+    currentSemesterNumber: currentSemesterNumber === null || currentSemesterNumber === undefined ? null : Number(currentSemesterNumber),
+    academicStatus: String(academicStatus),
     graduationYear: graduationYear === undefined || graduationYear === null || graduationYear === ""
       ? null : Number(graduationYear),
     targetCgpa: parsedTarget,
