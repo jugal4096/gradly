@@ -65,7 +65,8 @@ export default function AcademicSetupPage() {
     branches.push({ id: preview.branchId, name: preview.branch, program_id: preview.programId, program_name: preview.programme || "", code: null });
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
-  const semesterCount = Number(selectedCurriculum?.total_semesters) || 0;
+  const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
+  const semesterCount = Number(selectedCurriculum?.total_semesters) || (/b\\.?\\s*tech|bachelor of technology/i.test(programmeLabel) ? 8 : 0);
   const predictionComplete = Boolean(preview?.expected?.expectedDurationEnded);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
 
