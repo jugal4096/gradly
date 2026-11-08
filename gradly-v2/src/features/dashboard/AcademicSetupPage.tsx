@@ -7,6 +7,7 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").repla
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
 type Curriculum = { id: string; scheme_name: string; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
+type AdmissionMode = { id: string; mode_code: string; mode_name: string; entry_semester: number };
 type AcademicStatus = "ENROLLED" | "GRADUATED";
 type EnrollmentPreview = {
   recognized: boolean; requiresConfirmation: boolean; unknown?: string; message?: string;
@@ -40,11 +41,11 @@ export default function AcademicSetupPage() {
   const [branchId, setBranchId] = useState("");
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [curriculumId, setCurriculumId] = useState("");
+  const [admissionModes, setAdmissionModes] = useState<AdmissionMode[]>([]);
+  const [theme, setTheme] = useState<"light" | "dark">(() => typeof window !== "undefined" && window.localStorage.getItem("gradly-academic-theme") === "dark" ? "dark" : "light");
   const [actualSemester, setActualSemester] = useState("");
   const [predictionConfirmed, setPredictionConfirmed] = useState<boolean | null>(null);
   const [editingPrediction, setEditingPrediction] = useState(false);
-  const [studentJourney, setStudentJourney] = useState<"STUDYING" | "COMPLETED" | "">("");
-  const academicStatus: AcademicStatus = studentJourney === "COMPLETED" ? "GRADUATED" : "ENROLLED";
   const [confirmedAdmissionYear, setConfirmedAdmissionYear] = useState("");
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
@@ -66,10 +67,16 @@ export default function AcademicSetupPage() {
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
-  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || (/b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : 0);
-  const expectedSemesterBase = preview?.expected?.expectedSemester ?? null;
-  const adjustedExpectedSemester = expectedSemesterBase === null ? null : Math.max(1, expectedSemesterBase - (Number(confirmedAdmissionYear || preview?.admissionYear || 0) - Number(preview?.admissionYear || 0)) * 2);
+  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || (/b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : /master|m\.?tech|mca/i.test(programmeLabel) ? 4 : 0);
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
+  const selectedAdmissionMode = admissionModes.find(item => item.mode_name === confirmedAdmissionMode);
+  const predictedEntrySemester = selectedAdmissionMode?.entry_semester ?? preview?.entrySemester ?? 1;
+  const sessionYear = Number(preview?.expected?.academicYear?.slice(0, 4));
+  const sessionOffset = preview?.expected?.semesterType === "EVEN" ? 1 : 0;
+  const calculatedExpected = preview?.admissionYear && sessionYear ? predictedEntrySemester + (sessionYear - preview.admissionYear) * 2 + sessionOffset : null;
+  const adjustedExpectedSemester = calculatedExpected !== null && calculatedExpected >= predictedEntrySemester && calculatedExpected <= semesterCount ? calculatedExpected : null;
+
+  useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
 
   useEffect(() => {
     if (!user) return;
@@ -100,7 +107,7 @@ export default function AcademicSetupPage() {
 
   async function fetchEnrollmentDetails() {
     const sequence = ++previewSequence.current;
-    setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPredictionConfirmed(null); setStudentJourney("");
+    setError(""); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPredictionConfirmed(null);
     const normalizedEnrollment = enrollment.trim().toUpperCase();
     const enrollmentError = validateEnrollmentNumber(normalizedEnrollment);
     if (enrollmentError) { setError(enrollmentError); return; }
@@ -117,8 +124,15 @@ export default function AcademicSetupPage() {
       if (!result.recognized || result.requiresConfirmation) { setError(result.message || "Some academic details could not be resolved. Please contact your institution administrator."); return; }
       if (!result.programId || !result.branchId || !result.curriculumId || !result.expected) { setError("Programme, branch, curriculum or academic calendar is unresolved. No semester prediction was generated."); return; }
       setProgramId(result.programId); setBranchId(result.branchId); setCurriculumId(result.curriculumId);
-      setPredictionConfirmed(null); setEditingPrediction(false); setStudentJourney("");
+      setPredictionConfirmed(null); setEditingPrediction(false);
       setConfirmedAdmissionYear(String(result.admissionYear || "")); setConfirmedAdmissionMode(result.admissionMode || "");
+      const modeParams = new URLSearchParams({ institutionId: selected.id, programmePrefix: normalizedEnrollment.slice(0, 2) });
+      const modeResponse = await fetch(API + "/api/academic/admission-modes?" + modeParams.toString());
+      const modePayload = await modeResponse.json();
+      if (!modeResponse.ok) throw new Error(modePayload.message || "Unable to load admission modes.");
+      const modeOptions = Array.isArray(modePayload.data) ? modePayload.data as AdmissionMode[] : [];
+      setAdmissionModes(modeOptions);
+      if (modeOptions.length && !modeOptions.some(item => item.mode_name === (result.admissionMode || ""))) setConfirmedAdmissionMode(modeOptions[0].mode_name);
       const params = new URLSearchParams({ institutionId: selected.id, programId: result.programId, branchId: result.branchId });
       const curriculumResponse = await fetch(API + "/api/academic/curricula?" + params.toString());
       const curriculumPayload = await curriculumResponse.json();
@@ -154,13 +168,12 @@ export default function AcademicSetupPage() {
       setError("Fetch and verify a complete academic profile before saving."); return;
     }
     if (predictionConfirmed !== true) { setError("Please confirm the predicted academic details before continuing."); return; }
-    if (!studentJourney) { setError("Choose whether you are currently studying or have completed your programme."); return; }
     if (!confirmedAdmissionYear || !Number.isInteger(Number(confirmedAdmissionYear)) || Number(confirmedAdmissionYear) < 1900 || Number(confirmedAdmissionYear) > new Date().getFullYear()) {
       setError("Enter a valid admission year."); return;
     }
-    const completed = studentJourney === "COMPLETED";
-    if (!completed && (!actualSemester || !availableSemesters.includes(Number(actualSemester)))) { setError("Select your current semester."); return; }
-    const finalAcademicStatus: AcademicStatus = academicStatus;
+    const completed = actualSemester === "COMPLETED";
+    if (!actualSemester || (!completed && !availableSemesters.includes(Number(actualSemester)))) { setError("Select your current semester."); return; }
+    const finalAcademicStatus: AcademicStatus = completed ? "GRADUATED" : "ENROLLED";
     setSaving(true);
     try {
       const token = await user.getIdToken();
@@ -171,9 +184,9 @@ export default function AcademicSetupPage() {
         method: existingData.profile ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({
-          institutionId: selected.id, curriculumId, studentIdentifier: enrollment.trim(),
+          institutionId: selected.id, curriculumId, studentIdentifier: enrollment,
           admissionYear: Number(confirmedAdmissionYear), currentSemesterNumber: completed ? null : Number(actualSemester),
-          admissionModeId: confirmedAdmissionMode === preview.admissionMode ? preview.admissionModeId || null : null, admissionModeName: confirmedAdmissionMode, graduationYear, targetCgpa: null,
+          admissionModeId: selectedAdmissionMode?.id || (confirmedAdmissionMode === preview.admissionMode ? preview.admissionModeId || null : null), admissionModeName: confirmedAdmissionMode, graduationYear, targetCgpa: null,
           academicStatus: finalAcademicStatus, academicProfileConfirmed: true,
         }),
       });
@@ -182,7 +195,7 @@ export default function AcademicSetupPage() {
       localStorage.setItem("gradly_student_profile", JSON.stringify({
         institutionId: selected.id, institutionName: selected.name, programId,
         programName: programs.find(item => item.id === programId)?.name || preview.programme, branchId, branchName: branches.find(item => item.id === branchId)?.name || preview.branch,
-        curriculumId, semester: actualSemester || "", enrollment: enrollment.trim(), admissionYear: Number(confirmedAdmissionYear),
+        curriculumId, semester: actualSemester || "", enrollment, admissionYear: Number(confirmedAdmissionYear),
         admissionMode: confirmedAdmissionMode, graduationYear, academicStatus: finalAcademicStatus,
         academicProfileConfirmed: true,
         expectedSemester: preview.expected?.expectedSemester ?? null,
@@ -216,14 +229,14 @@ export default function AcademicSetupPage() {
 
   function chooseInstitution(item: Institution) {
     previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]);
-    setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null);
+    setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]); setActualSemester(""); setPreview(null);
   }
 
-  return <main className="academic-setup-page">
+  return <main className={"academic-setup-page theme-" + theme}>
     <div className="academic-setup-wrap">
       <header className="academic-setup-header">
         <a href="/" className="academic-setup-brand" aria-label="Gradly home"><span className="academic-setup-logo">G</span><span>gradly</span></a>
-        <span className="academic-setup-step">STEP 02 <i /> OF 03</span>
+        <div className="academic-setup-header-actions"><span className="academic-setup-step">STEP 02 <i /> OF 03</span><button type="button" className="academic-setup-theme-toggle" onClick={() => setTheme(current => current === "light" ? "dark" : "light")} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} title={theme === "light" ? "Dark theme" : "Light theme"}>{theme === "light" ? "☾" : "☼"}</button></div>
       </header>
       <div className="academic-setup-progress" aria-label="Step 2 of 3"><span /></div>
 
@@ -242,7 +255,7 @@ export default function AcademicSetupPage() {
             <div className="academic-setup-input-wrap">
               <input id="institution-search" value={query} onChange={e => {
                 const value = e.target.value;
-                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false); setStudentJourney("");
+                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
                 window.clearTimeout(searchTimer.current);
                 searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
               }} placeholder="Search your college or university" autoComplete="organization" />
@@ -257,7 +270,7 @@ export default function AcademicSetupPage() {
           {selected && <section className="academic-setup-field-section enrollment-section">
             <label htmlFor="student-enrollment">Your enrollment number</label>
             <div className="academic-setup-enrollment-control">
-              <input id="student-enrollment" required value={enrollment} onChange={e => { previewSequence.current += 1; setPreviewBusy(false); setEnrollment(e.target.value.toUpperCase()); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPredictionConfirmed(null); setEditingPrediction(false); setHasBacklogs(null); setBacklogCount(""); }} placeholder="e.g. BE23S06F007" autoComplete="off" />
+              <input id="student-enrollment" required value={enrollment} onChange={e => { previewSequence.current += 1; setPreviewBusy(false); setEnrollment(e.target.value); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setActualSemester(""); setPredictionConfirmed(null); setEditingPrediction(false);  }} placeholder="e.g. BE23S06F007" autoComplete="off" />
               <button type="button" disabled={!enrollment.trim() || previewBusy} onClick={() => void fetchEnrollmentDetails()}>
                 {previewBusy ? <><span className="academic-setup-button-spinner" /> Checking</> : <>Identify <span>→</span></>}
               </button>
@@ -276,7 +289,6 @@ export default function AcademicSetupPage() {
               <dl className="academic-setup-predicted-grid">
                 <div><dt>Programme</dt><dd>{programs.find(item => item.id === programId)?.name || preview.programme || "—"}</dd></div>
                 <div><dt>Branch</dt><dd>{branches.find(item => item.id === branchId)?.name || preview.branch || "—"}</dd></div>
-                <div><dt>Admission year</dt><dd>{confirmedAdmissionYear || "—"}</dd></div>
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
@@ -294,28 +306,26 @@ export default function AcademicSetupPage() {
                     try { const token=await user.getIdToken(); const params=new URLSearchParams({institutionId:selected.id,programId:nextBranch.program_id,branchId:nextBranchId}); const response=await fetch(API+"/api/academic/curricula?"+params.toString()); const payload=await response.json(); if(!response.ok) throw new Error(payload.message||"Unable to load the selected branch curriculum."); const options=Array.isArray(payload.data)?payload.data as Curriculum[]:[]; setCurricula(options); if(options.length===1) setCurriculumId(options[0].id); } catch(e) { setError(e instanceof Error?e.message:"Unable to load curriculum options."); }
                   }}><option value="">Select branch</option>{branches.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
                   <div className="academic-setup-edit-wide"><label htmlFor="edit-scheme">Academic scheme</label><select id="edit-scheme" value={curriculumId} onChange={e => setCurriculumId(e.target.value)}><option value="">Select scheme</option>{curricula.map(item => <option key={item.id} value={item.id}>{item.scheme_name}{item.version ? " · "+item.version : ""}</option>)}</select></div>
-                  <div><label htmlFor="edit-admission-year">Admission year</label><input id="edit-admission-year" type="number" min="1900" max={new Date().getFullYear()} value={confirmedAdmissionYear} onChange={e => setConfirmedAdmissionYear(e.target.value)} /></div>
-                  <div><label htmlFor="edit-admission-mode">Admission mode</label><input id="edit-admission-mode" value={confirmedAdmissionMode} onChange={e => setConfirmedAdmissionMode(e.target.value)} placeholder="e.g. Regular, Lateral Entry" /></div>
+                  <div className="academic-setup-edit-wide"><label htmlFor="edit-admission-mode">Admission mode</label><select id="edit-admission-mode" value={selectedAdmissionMode?.id || ""} onChange={e => { const mode = admissionModes.find(item => item.id === e.target.value); setConfirmedAdmissionMode(mode?.mode_name || ""); }}><option value="">Select admission mode</option>{admissionModes.map(item => <option key={item.id} value={item.id}>{item.mode_name}</option>)}</select></div>
                   <div className="academic-setup-edit-actions"><button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(false); setPredictionConfirmed(null); }}>Cancel</button><button type="button" className="academic-setup-choice primary-choice" disabled={!programId || !branchId || !curriculumId || !confirmedAdmissionYear || !confirmedAdmissionMode.trim()} onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>Confirm updated details</button></div>
                 </div>}
               </>}
             </section>
 
             <section className="academic-setup-confirmation academic-setup-journey">
-              <div className="academic-setup-confirmation-heading"><h2>Where are you in your academic journey?</h2><p>Your selection—not the prediction—sets your academic status.</p></div>
-              <div className="academic-setup-journey-options">
-                <button type="button" className={studentJourney === "STUDYING" ? "selected" : ""} aria-pressed={studentJourney === "STUDYING"} onClick={() => { setStudentJourney("STUDYING"); setActualSemester(""); }}>I am currently studying</button>
-                <button type="button" className={studentJourney === "COMPLETED" ? "selected" : ""} aria-pressed={studentJourney === "COMPLETED"} onClick={() => { setStudentJourney("COMPLETED"); setActualSemester(""); }}>I have completed my programme</button>
+              <div className="academic-setup-confirmation-heading"><h2>Your Academic Journey</h2><p>Choose the semester you are actually in. The prediction is only a comparison reference.</p></div>
+              <div className="academic-setup-journey-grid">
+                <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Current Semester</label><select id="actual-semester" required value={actualSemester} onChange={e => setActualSemester(e.target.value)}><option value="">Choose your current semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}<option value="COMPLETED">Completed Programme</option></select></div>
+                <div className="academic-setup-prediction-reference"><span>Predicted current semester</span><strong>{adjustedExpectedSemester ? "Semester " + adjustedExpectedSemester : preview.expected?.expectedDurationEnded ? "Expected duration completed" : "Not available"}</strong><small>Based on your enrollment details and selected admission mode</small></div>
               </div>
-              {studentJourney === "STUDYING" && <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Select your current semester</label><select id="actual-semester" required value={actualSemester} onChange={e => setActualSemester(e.target.value)}><option value="">Choose semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}</select></div>}
-              {studentJourney === "STUDYING" && actualSemester && <div className="academic-setup-delay">
-                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : Math.max(0, adjustedExpectedSemester - Number(actualSemester)) + " semester(s) · " + (Math.max(0, adjustedExpectedSemester - Number(actualSemester)) / 2) + " year(s)"}</strong></div><div><span>Verified gap years</span><strong>Not verified</strong></div></div>
-                <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + actualSemester + "."} Academic delay is an estimate, not a verified gap year. Backlogs are not treated as gap years.</p>
+              {actualSemester && actualSemester !== "COMPLETED" && <div className="academic-setup-delay">
+                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : Math.max(0, adjustedExpectedSemester - Number(actualSemester)) + " semester(s) · " + (Math.max(0, adjustedExpectedSemester - Number(actualSemester)) / 2) + " year(s)"}</strong></div></div>
+                <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + actualSemester + "."} This is an estimate, not a verified gap-year record.</p>
               </div>}
-              {studentJourney === "COMPLETED" && <div className="academic-setup-completed-message">✓ You confirmed that you have completed your programme.</div>}
+              {actualSemester === "COMPLETED" && <div className="academic-setup-completed-message">✓ You selected Completed Programme. Gradly will mark your academic status as completed.</div>}
             </section>
 
-            <button className="academic-setup-continue" type="submit" disabled={saving || previewBusy || predictionConfirmed !== true || !studentJourney || (studentJourney === "STUDYING" && !actualSemester) || !curriculumId}>
+            <button className="academic-setup-continue" type="submit" disabled={saving || previewBusy || predictionConfirmed !== true || !actualSemester || !curriculumId}>
               {saving ? <><span className="academic-setup-button-spinner" /> Saving your profile…</> : <>Confirm &amp; Continue <span>→</span></>}
             </button>
             <p className="academic-setup-footnote">Your information is saved to your authenticated Gradly student profile.</p>
