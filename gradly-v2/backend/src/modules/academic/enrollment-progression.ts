@@ -20,7 +20,7 @@ export function parseEnrollmentNumber(input: string, pivotStart = 70): Enrollmen
     prefix: enrollmentNumber.slice(0, 2),
     admissionYear: yy >= pivotStart ? 1900 + yy : 2000 + yy,
     admissionModeCode: enrollmentNumber.slice(4, 5),
-    branchCode: enrollmentNumber.slice(5, 7), suffix: enrollmentNumber.slice(8),
+    branchCode: enrollmentNumber.slice(5, 7), suffix: enrollmentNumber.slice(7),
   };
 }
 /**
