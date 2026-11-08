@@ -88,9 +88,7 @@ export default function AcademicSetupPage() {
   const semesterCount = Number(curricula.find(c => c.id === curriculumId)?.total_semesters) ||
     (isEngineering ? 8 : 4);
   const semesterPlan = getSemesterPlan(Number(admissionYear), admissionMode, Math.max(1, semesterCount));
-  const availableSemesters = semesterPlan.passedOut
-    ? [semesterCount]
-    : semesterPlan.eligibleSemesters.filter(number => number <= semesterCount);
+  const availableSemesters = semesterPlan.eligibleSemesters.filter(number => number <= semesterCount);
   const sessionLabel = semesterPlan.session === "odd" ? "July–December · Odd semester" : "January–June · Even semester";
 
   useEffect(() => {
@@ -290,7 +288,7 @@ export default function AcademicSetupPage() {
               <div><label>Branch / specialization</label><select required disabled={!programId} value={branchId} onChange={e => { setBranchId(e.target.value); void loadCurricula(programId, e.target.value); }}><option value="">Select branch</option>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
               <div className="academic-setup-wide"><label>Curriculum / scheme</label><select required disabled={!branchId || loadingCurricula} value={curriculumId} onChange={e => { setCurriculumId(e.target.value); setSemester(""); }}><option value="">{loadingCurricula ? "Loading available schemes…" : "Select curriculum"}</option>{curricula.map(c => <option key={c.id} value={c.id}>{c.scheme_name}{c.version ? " · " + c.version : ""}</option>)}</select>{!loadingCurricula && branchId && !curricula.length && <small className="academic-setup-hint">No curriculum is configured for this branch yet. Use the institution request below or contact your institute administrator.</small>}</div>
               <div className="academic-setup-wide academic-setup-session"><span>{sessionLabel}</span><strong>{semesterPlan.passedOut ? "Graduation expected: " + semesterPlan.graduationYear + " · Passed-out status" : "Expected current semester: " + semesterPlan.expectedSemester}</strong><small>Earlier eligible semesters remain available for backlog or pending results. Future semesters are hidden.</small></div>
-              <div className="academic-setup-wide"><label>{semesterPlan.passedOut ? "Final semester / last enrolled semester" : "Current semester or backlog semester"}</label><select required value={semester} onChange={e => setSemester(e.target.value)}><option value="">Select semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}{number === semesterPlan.expectedSemester && !semesterPlan.passedOut ? " · Current" : ""}</option>)}</select><small className="academic-setup-hint">{admissionMode === "Direct Second Year" ? "Direct Second Year entry starts at Semester 3; Semesters 1 and 2 are excluded." : "Only semesters up to your current academic session are available."}</small></div>
+              <div className="academic-setup-wide"><label>{semesterPlan.passedOut ? "Semester to add or review academic records" : "Current semester or backlog semester"}</label><select required value={semester} onChange={e => setSemester(e.target.value)}><option value="">Select semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}{number === semesterPlan.expectedSemester && !semesterPlan.passedOut ? " · Current" : ""}</option>)}</select><small className="academic-setup-hint">{admissionMode === "Direct Second Year" ? "Direct Second Year entry starts at Semester 3; Semesters 1 and 2 are excluded." : "Only semesters up to your current academic session are available."}</small></div>
             </div>
             <button className="academic-setup-submit" disabled={saving || !inferenceConfirmed || !semester}>{saving ? "Saving profile…" : "Save verified academic profile →"}</button>
           </>}
