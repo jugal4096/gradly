@@ -158,7 +158,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   }
   const selectedModeName = String(input.admissionModeName ?? "").trim().toLowerCase();
   const configuredModeName = String(mode.mode_name).trim().toLowerCase();
-  const isPostgraduateRegularAlias = (parsed.prefix === "ME" || parsed.prefix === "MT") &&
+  const isPostgraduateRegularAlias = (parsed.prefix === "ME" || parsed.prefix === "MT" || parsed.prefix === "MC") &&
     ["regular", "regular admission", "first year", "first year admission", "fy"].includes(selectedModeName) &&
     ["regular", "regular admission", "first year", "first year admission", "fy"].includes(configuredModeName);
   if (selectedModeName !== configuredModeName && !isPostgraduateRegularAlias) {
