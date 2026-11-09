@@ -1,3 +1,11 @@
+/** Full academic-year gaps inferred from the distance below the predicted semester. */
+export function calculateAcademicGapYears(predictedSemester: number | null, selectedSemester: string): number {
+  if (predictedSemester === null || !selectedSemester || selectedSemester === "COMPLETED") return 0;
+  const selected = Number(selectedSemester);
+  if (!Number.isInteger(selected) || selected < 1 || selected >= predictedSemester) return 0;
+  return Math.floor((predictedSemester - selected) / 2);
+}
+
 export type StudentAcademicStatus = "ENROLLED" | "GRADUATED";
 export type SemesterPeriod = "ODD" | "EVEN";
 
