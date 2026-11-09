@@ -145,8 +145,7 @@ router.get("/curricula", async (req: Request, res: Response): Promise<void> => {
               COUNT(DISTINCT sem.id)::int AS configured_semesters
        FROM curricula c
        LEFT JOIN schemes sc ON sc.id = c.scheme_id
-       LEFT JOIN curriculum_subjects cs ON cs.curriculum_id = c.id AND cs.active = TRUE
-       LEFT JOIN semesters sem ON sem.id = cs.semester_id
+       LEFT JOIN semesters sem ON sem.curriculum_id = c.id
        WHERE c.institution_id = $1 AND c.program_id = $2 AND c.branch_id = $3
        GROUP BY c.id, sc.name, sc.code
        ORDER BY c.version DESC NULLS LAST, sc.name ASC`,
