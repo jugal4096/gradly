@@ -125,9 +125,23 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     );
     mode = fallback.rows[0];
   }
-  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT")) {
-    const regularMode = await pool.query(`SELECT id AS admission_mode_id, 'F' AS mode_code, name AS mode_name, 1 AS entry_semester FROM admission_modes WHERE LOWER(name) = 'regular' LIMIT 1`);
-    mode = regularMode.rows[0];
+  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT") && parsed.admissionModeCode === "F") {
+    // Postgraduate enrollment rules already restrict ME/MT to Regular, Semester-1
+    // entry. Do not make that institutional rule depend on a legacy lookup-table row.
+    const regularMode = await pool.query(
+      `SELECT id AS admission_mode_id, 'F' AS mode_code, name AS mode_name, 1 AS entry_semester
+       FROM admission_modes
+       WHERE LOWER(BTRIM(name)) = ANY(ARRAY['regular','regular admission','first year','first year admission','fy']::text[])
+       ORDER BY CASE WHEN LOWER(BTRIM(name)) = 'regular admission' THEN 0
+                     WHEN LOWER(BTRIM(name)) = 'regular' THEN 1 ELSE 2 END
+       LIMIT 1`,
+    );
+    mode = regularMode.rows[0] ?? {
+      admission_mode_id: null,
+      mode_code: "F",
+      mode_name: "Regular Admission",
+      entry_semester: 1,
+    };
   }
   if (!mode) return unresolved("ADMISSION_MODE", "This admission-mode code is not configured for the detected programme.", parsed);
   if ((parsed.prefix === "ME" || parsed.prefix === "MT") && (parsed.admissionModeCode !== "F" || Number(mode.entry_semester) !== 1 || !/regular/i.test(String(mode.mode_name)))) {
