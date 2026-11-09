@@ -71,7 +71,7 @@ test("parses the supplied BE23S06F007 enrollment structure", () => {
 });
 
 test("accepts configured programme prefixes with 11 characters, F at position 8 and a numeric three-digit serial", () => {
-  for (const value of ["BE23S06F007", "BT24S02F999", "MC23F01F123", "MT23F01F123", "ME23F09F001"]) {
+  for (const value of ["BE23S06F007", "BT24S02F999", "MC23F01F123", "MT23F01F123", "ME22F09F001"]) {
     assert.equal(parseEnrollmentNumber(value).enrollmentNumber, value);
   }
 });
@@ -263,9 +263,10 @@ test("GECA branch codes are decoded deterministically without enrollment_branch_
   assert.equal(resolveEnrollmentBranchCode("Other University", "BT", "06"), null);
 });
 
-test("ME is regular-only New CBCS through 2023; MT is regular-only NEP from 2023", () => {
-  assert.equal(parseEnrollmentNumber("ME23F09F001", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2023);
-  assert.throws(() => parseEnrollmentNumber("ME23S09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /POSTGRADUATE_REGULAR_ADMISSION_ONLY/);
+test("ME is regular-only New CBCS through 2022; MT is regular-only NEP from 2023", () => {
+  assert.equal(parseEnrollmentNumber("ME22F09F001", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2022);
+  assert.throws(() => parseEnrollmentNumber("ME22S09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /POSTGRADUATE_REGULAR_ADMISSION_ONLY/);
+  assert.throws(() => parseEnrollmentNumber("ME23F09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /ME_CBCS_DISCONTINUED/);
   assert.throws(() => parseEnrollmentNumber("ME24F09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /ME_CBCS_DISCONTINUED/);
   assert.throws(() => parseEnrollmentNumber("MT22F09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /MT_NEP_NOT_STARTED/);
   assert.equal(parseEnrollmentNumber("MT23F09F001", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2023);
