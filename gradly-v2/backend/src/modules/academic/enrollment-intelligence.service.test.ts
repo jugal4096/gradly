@@ -129,12 +129,12 @@ test("matches common branch labels and abbreviations", () => {
 
 
 test("semester choices respect odd/even calendar and predicted progress", () => {
-  assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 3]);
-  assert.deepEqual(availableSemesterOptions(8, 3, 7, "ODD"), [3, 5, 7]);
-  assert.deepEqual(availableSemesterOptions(8, 1, 4, "EVEN"), [2, 4]);
-  assert.deepEqual(availableSemesterOptions(8, 3, 4, "EVEN"), [4]);
-  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 5, 7]);
-  assert.deepEqual(availableSemesterOptions(8, 1, null, "EVEN", true), [2, 4, 6, 8]);
+  assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 2, 3]);
+  assert.deepEqual(availableSemesterOptions(8, 3, 7, "ODD"), [3, 4, 5, 6, 7]);
+  assert.deepEqual(availableSemesterOptions(8, 1, 4, "EVEN"), [1, 2, 3, 4]);
+  assert.deepEqual(availableSemesterOptions(8, 3, 4, "EVEN"), [3, 4]);
+  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(availableSemesterOptions(8, 1, null, "EVEN", true), [1, 2, 3, 4, 5, 6, 7, 8]);
 });
 
 test("successful prediction initializes the controlled current-semester value", () => {
@@ -215,4 +215,19 @@ test("GECA branch codes are decoded deterministically without enrollment_branch_
   }
   assert.equal(resolveEnrollmentBranchCode(institution, "BT", "07"), null);
   assert.equal(resolveEnrollmentBranchCode("Other University", "BT", "06"), null);
+});
+
+test("BE23S remains valid while BE23F and BE24 are rejected after CBCS discontinuation", () => {
+  const inNovember2027 = new Date("2027-11-09T12:00:00+05:30");
+  assert.equal(parseEnrollmentNumber("BE23S06F007", 70, inNovember2027).admissionYear, 2023);
+  assert.throws(() => parseEnrollmentNumber("BE23F06F007", 70, inNovember2027), /BE23_FIRST_YEAR_NOT_ALLOWED/);
+  assert.throws(() => parseEnrollmentNumber("BE24S06F007", 70, inNovember2027), /BE_CBCS_DISCONTINUED/);
+  assert.equal(parseEnrollmentNumber("BE22F06F007", 70, inNovember2027).admissionYear, 2022);
+});
+
+test("BT enrollment years cannot precede NEP or enter before their July academic session", () => {
+  assert.throws(() => parseEnrollmentNumber("BT22S06F007", 70, new Date("2027-11-09T12:00:00+05:30")), /BT_NEP_NOT_STARTED/);
+  assert.equal(parseEnrollmentNumber("BT27S06F007", 70, new Date("2027-11-09T12:00:00+05:30")).admissionYear, 2027);
+  assert.throws(() => parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-06-30T12:00:00+05:30")), /FUTURE_ADMISSION_YEAR/);
+  assert.equal(parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-07-01T12:00:00+05:30")).admissionYear, 2028);
 });
