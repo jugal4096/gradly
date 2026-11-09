@@ -19,7 +19,7 @@ export function validateEnrollmentYear(
   // the FY cohort for Y-1 has completed its first year and the Y session starts.
   // With a July session boundary, 2026-27 FY entrants become eligible for the
   // corresponding DSE intake only from July 2027 (enrollment year 2027).
-  if (admissionModeCode === "S" && admissionYear > latestStartedAdmissionYear) {
+  if (prefix === "BT" && admissionModeCode === "S" && admissionYear > latestStartedAdmissionYear) {
     throw new Error("DSE_ADMISSION_CYCLE_NOT_STARTED");
   }
   if (admissionYear > latestStartedAdmissionYear) {
@@ -187,8 +187,8 @@ export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: 
   // Older records may be titled B.E. while newer directory rows say B.Tech (or vice versa).
   // Keep the match token-based; never match an unrelated degree by substring.
   const engineeringDegreePatterns = [
-    /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|bachelor of engg|bachelor in engg|b engg|b e|be)(?: |$)/,
-    /(?:^| )(?:bachelor of technology|bachelor in technology|bachelors of technology|bachelors in technology|bachelor technology|bachelor of tech|b tech|b t e c h|btech|bt)(?: |$)/,
+    /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|bachelors engineering|bachelor of engg|bachelor in engg|bachelor engg|b engg|b e|be)(?: |$)/,
+    /(?:^| )(?:bachelor of technology|bachelor in technology|bachelors of technology|bachelors in technology|bachelor technology|bachelors technology|bachelor of tech|b tech|b t e c h|btech|bt)(?: |$)/,
   ];
   const postgraduatePatterns: Record<string, RegExp> = {
     MC: /(?:^| )(?:master of computer applications|master in computer applications|masters of computer applications|master computer applications|m c a|mca|mc)(?: |$)/,
@@ -196,7 +196,7 @@ export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: 
     MT: /(?:^| )(?:master of technology|master in technology|masters of technology|master technology|master of tech|m tech|m t e c h|mtech|mt)(?: |$)/,
   };
 
-  if (prefix === "BE" || prefix === "BT") return engineeringDegreePatterns.some(pattern => pattern.test(name));
+  if (prefix === "BE" || prefix === "BT") return name === "engineering" || name === "undergraduate engineering" || engineeringDegreePatterns.some(pattern => pattern.test(name));
   return Boolean(postgraduatePatterns[prefix]?.test(name));
 }
 
