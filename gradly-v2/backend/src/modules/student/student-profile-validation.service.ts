@@ -25,7 +25,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
       BE23_FIRST_YEAR_NOT_ALLOWED: "BE23F is invalid because first-year admissions had moved to NEP. BE23S Direct Second Year remains valid.",
       BT_NEP_NOT_STARTED: "BT enrollment numbers before 2023 are invalid because the NEP scheme had not started.",
       POSTGRADUATE_REGULAR_ADMISSION_ONLY: "M.E. and M.Tech. enrollment numbers must use Regular admission (F) and begin in Semester 1.",
-      ME_CBCS_DISCONTINUED: "The ME New CBCS scheme was discontinued after 2023. ME24 and later ME enrollment years are invalid.",
+      ME_CBCS_DISCONTINUED: "The ME New CBCS scheme ended before the 2023 NEP transition. ME23 and later ME enrollment years are invalid.",
       MT_NEP_NOT_STARTED: "MT enrollment numbers before 2023 are invalid because the NEP scheme had not started.",
     };
     throw new StudentProfileValidationError(code, messageByCode[code] ?? "Enrollment number is invalid. Check the 11-character format and try again.");
