@@ -41,8 +41,7 @@ function readProfilePayload(body: Record<string, unknown>) {
     (parsedGapYears !== null && (!Number.isInteger(parsedGapYears) || parsedGapYears < 0 || parsedGapYears > 10)) ||
     (currentSemesterNumber !== null && currentSemesterNumber !== undefined &&
       (!Number.isInteger(Number(currentSemesterNumber)) || Number(currentSemesterNumber) < 1 || Number(currentSemesterNumber) > 20)) ||
-    ((academicStatus === "ENROLLED" || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS") &&
-      (currentSemesterNumber === null || currentSemesterNumber === undefined))
+    (academicStatus !== "GRADUATED" && (currentSemesterNumber === null || currentSemesterNumber === undefined))
   ) return null;
 
   if (body.pendingBacklogCount !== undefined && body.pendingBacklogCount !== null &&
