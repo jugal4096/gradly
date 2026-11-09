@@ -295,6 +295,11 @@ test("GECA M.Tech specialization codes resolve through their stored department b
   assert.equal(enrollmentBranchMatches("MT", "Computer Science and Engineering", {
     name: "Computer Science and Engineering", code: "CSE",
   }), true);
+  // Electronics Engineering must not also match Electronics & Telecommunication.
+  assert.equal(enrollmentBranchMatches("MT", "Electronics Engineering", {
+    name: "ELECTRONICS", code: "ELECTRONICS",
+    specializationName: "Electronics and Telecommunication Engineering", specializationCode: "ENTC",
+  }), false);
 });
 
 test("GECA MT specialization codes use only the supplied mappings", () => {
