@@ -44,7 +44,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const decodedBranchName = resolveEnrollmentBranchCode(institutionName, parsed.prefix, parsed.branchCode);
   // ME codes are institution-specific: resolve only an exact code already stored in the
   // institution branch directory. MT uses the explicitly supplied GECA specialization map.
-  if (!decodedBranchName && parsed.prefix !== "ME") {
+  if (!decodedBranchName && parsed.prefix !== "ME" && parsed.prefix !== "MT") {
     return unresolved("BRANCH_CODE", "This branch code is not supported by the built-in enrollment decoder for this institution. Select the branch manually or request an enrollment mapping review.", parsed);
   }
 
@@ -55,7 +55,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     [program.id],
   );
   const matchedBranches = branchDirectory.rows.filter((candidate: { id: string; name: string; code?: string | null }) =>
-    parsed.prefix === "ME"
+    (parsed.prefix === "ME" || (parsed.prefix === "MT" && !decodedBranchName))
       ? String(candidate.code ?? "").trim().toUpperCase() === parsed.branchCode
       : branchIdentityMatches(String(decodedBranchName), candidate.name, candidate.code ?? null),
   );
