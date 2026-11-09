@@ -17,6 +17,36 @@ test("programme resolution follows enrollment degree prefix rather than stale ru
   assert.equal(programmeMatchesEnrollmentPrefix("MT", "Master of Technology"), true);
 });
 
+test("matches degree abbreviations with punctuation and common programme-name variants", () => {
+  for (const name of ["B.E.", "B E", "Bachelor in Engineering", "Engineering - B.E."]) {
+    assert.equal(programmeMatchesEnrollmentPrefix("BE", name), true, name);
+  }
+  for (const name of ["B.Tech.", "B Tech", "Bachelor in Technology", "Technology - B.Tech."]) {
+    assert.equal(programmeMatchesEnrollmentPrefix("BT", name), true, name);
+  }
+  for (const name of ["M.C.A.", "M C A", "Master in Computer Applications"]) {
+    assert.equal(programmeMatchesEnrollmentPrefix("MC", name), true, name);
+  }
+  for (const name of ["M.Tech.", "M Tech", "Master in Technology"]) {
+    assert.equal(programmeMatchesEnrollmentPrefix("MT", name), true, name);
+  }
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Technology"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), false);
+});
+
+test("DSE admission for the 2026-27 FY cohort starts only after July 2027", () => {
+  assert.throws(
+    () => parseEnrollmentNumber("BT27S06F007", 70, new Date("2027-06-30T12:00:00+05:30")),
+    /DSE_ADMISSION_CYCLE_NOT_STARTED/,
+  );
+  assert.equal(
+    parseEnrollmentNumber("BT27S06F007", 70, new Date("2027-07-01T12:00:00+05:30")).admissionYear,
+    2027,
+  );
+  // Previously issued DSE enrollment numbers remain valid in their own session.
+  assert.equal(parseEnrollmentNumber("BT24S06F007", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2024);
+});
+
 test("parses a strict regular BE enrollment number", () => {
   const p = parseEnrollmentNumber("BE22F06F007");
   assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "F", "06", "F007"]);
