@@ -123,10 +123,6 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (!Number.isInteger(selected) || selected < entrySemester || selected > totalSemesters) {
     throw new StudentProfileValidationError("CURRENT_SEMESTER_OUT_OF_RANGE", "Current semester must be within the selected programme's semester range and admission entry point.");
   }
-  const parity = prediction.semesterType === "ODD" ? 1 : 0;
-  if (selected % 2 !== parity) {
-    throw new StudentProfileValidationError("CURRENT_SEMESTER_PERIOD_MISMATCH", `The current date is in the ${prediction.semesterType.toLowerCase()} semester period. Select a semester from that period.`);
-  }
   const highestAllowed = prediction.expectedSemester ?? (prediction.expectedDurationEnded
     ? (totalSemesters % 2 === parity ? totalSemesters : totalSemesters - 1)
     : 0);
