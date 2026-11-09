@@ -125,3 +125,21 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
   return (prefix === "MC" || prefix === "MT") && normalized.length > 0;
 }
 
+
+
+/** Deterministic GECA enrollment branch decoding. The database is not consulted to interpret these codes. */
+export function resolveEnrollmentBranchCode(institutionName: string, prefix: string, branchCode: string): string | null {
+  const institution = String(institutionName ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const isGeCa = institution.includes("government college of engineering") &&
+    (institution.includes("aurangabad") || institution.includes("chhatrapati sambhajinagar") || institution.includes("sambhajinagar"));
+  if (!isGeCa || !["BE", "BT"].includes(prefix)) return null;
+  const branches: Record<string, string> = {
+    "01": "Civil Engineering",
+    "02": "Mechanical Engineering",
+    "03": "Electrical Engineering",
+    "04": "Electronics and Telecommunication Engineering",
+    "05": "Computer Science and Engineering",
+    "06": "Information Technology",
+  };
+  return branches[branchCode] ?? null;
+}
