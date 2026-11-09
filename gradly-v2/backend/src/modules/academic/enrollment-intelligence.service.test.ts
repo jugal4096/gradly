@@ -161,3 +161,9 @@ test("MC and MT require a configured non-empty curriculum scheme", () => {
 test("BE23S direct-second-year progression reaches semester 7 in the 2025-26 odd session", () => {
   assert.equal(predict(2023, 3, "2025-11-09T12:00:00+05:30").expectedSemester, 7);
 });
+
+test("BT24S06F007 direct-second-year enrollment predicts semester 7 in the 2026-27 odd session", () => {
+  const parsed = parseEnrollmentNumber("BT24S06F007");
+  assert.deepEqual([parsed.prefix, parsed.admissionYear, parsed.admissionModeCode, parsed.branchCode], ["BT", 2024, "S", "06"]);
+  assert.equal(predict(parsed.admissionYear, 3, "2026-11-09T12:00:00+05:30").expectedSemester, 7);
+});
