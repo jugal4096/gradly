@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./AcademicSetupPage.css";
-import { availableSemesterOptions, resolveCurrentSemesterSelection } from "./academic-setup-state";
+import { academicDelayDeclarations, availableSemesterOptions, resolveCurrentSemesterSelection, shouldAskAcademicDelayReason, type AcademicDelayReason } from "./academic-setup-state";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
@@ -57,6 +57,7 @@ export default function AcademicSetupPage() {
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [academicGapYears, setAcademicGapYears] = useState("");
   const [pendingBacklogCount, setPendingBacklogCount] = useState("");
+  const [academicDelayReason, setAcademicDelayReason] = useState<AcademicDelayReason | "">("");
   const [grievanceCategory, setGrievanceCategory] = useState("INVALID_ENROLLMENT");
   const [grievanceDescription, setGrievanceDescription] = useState("");
   const [grievanceBusy, setGrievanceBusy] = useState(false);
@@ -91,7 +92,7 @@ export default function AcademicSetupPage() {
     if (enrollmentPrefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized) && !/\b(cbcs|legacy)\b/.test(normalized);
     return enrollmentPrefix === "MC" || enrollmentPrefix === "MT";
   });
-  const adjustedExpectedSemester = expectedSemester !== null && expectedSemester >= predictedEntrySemester && expectedSemester <= semesterCount ? expectedSemester : null;
+  const adjustedExpectedSemester = expectedSemester !== null && expectedSemester >= predictedEntrySemester && expectedSemester <= semesterCount ? expectedSemester : null;\n  const askAcademicDelayReason = shouldAskAcademicDelayReason(adjustedExpectedSemester, selectedCurrentSemester, selectedCurrentSemester === "COMPLETED");\n  const delayDeclarations = academicDelayDeclarations(academicDelayReason, academicGapYears, pendingBacklogCount, askAcademicDelayReason);
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
 
@@ -147,7 +148,7 @@ export default function AcademicSetupPage() {
     setError("");
     if (!curriculumRecheck) {
       setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]);
-      setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setExpectedDurationEnded(false); setAcademicGapYears(""); setPendingBacklogCount("");
+      setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setExpectedDurationEnded(false); setAcademicGapYears(""); setPendingBacklogCount(""); setAcademicDelayReason("");
       hasManuallySelectedSemester.current = false; setPredictionConfirmed(null);
     } else if (requestedCurriculumId) {
       setCurriculumId(requestedCurriculumId);
@@ -317,7 +318,7 @@ export default function AcademicSetupPage() {
     }
     const completed = selectedCurrentSemester === "COMPLETED";
     if (!selectedCurrentSemester || (!completed && !availableSemesters.includes(Number(selectedCurrentSemester)))) { setError("Select your current semester."); return; }
-    if (completed && Number(pendingBacklogCount || 0) > 0) { setError("You cannot mark the degree as completed while you still have pending backlogs."); return; }
+    if (completed && Number(pendingBacklogCount || 0) > 0) { setError("You cannot mark the degree as completed while you still have pending backlogs."); return; }\n    if (askAcademicDelayReason && !academicDelayReason) { setError("Please tell Gradly why your actual semester differs from the prediction."); return; }
     const finalAcademicStatus: AcademicStatus = completed ? "GRADUATED" : "ENROLLED";
     setSaving(true);
     try {
@@ -336,7 +337,7 @@ export default function AcademicSetupPage() {
           predictedSemesterNumber: expectedSemester,
           academicGapYears: academicGapYears === "" ? null : Number(academicGapYears),
           pendingBacklogCount: pendingBacklogCount === "" ? null : Number(pendingBacklogCount),
-          academicProfileOverrides: { programme: programId !== preview.programId, branch: branchId !== preview.branchId, curriculum: curriculumId !== preview.curriculumId, admissionYear: Number(confirmedAdmissionYear) !== Number(preview.admissionYear), admissionMode: confirmedAdmissionMode !== preview.admissionMode },
+          academicProfileOverrides: { academicDelayReason: askAcademicDelayReason ? academicDelayReason : null, programme: programId !== preview.programId, branch: branchId !== preview.branchId, curriculum: curriculumId !== preview.curriculumId, admissionYear: Number(confirmedAdmissionYear) !== Number(preview.admissionYear), admissionMode: confirmedAdmissionMode !== preview.admissionMode },
         }),
       });
       const data = await response.json();
@@ -352,7 +353,7 @@ export default function AcademicSetupPage() {
         expectedDurationEnded: Boolean(expectedDurationEnded),
         estimatedAcademicDelaySemesters: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)),
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)) / 2,
-        verifiedGapYears: academicGapYears === "" ? null : Number(academicGapYears), gapYearsVerificationStatus: "STUDENT_DECLARED", academicGapYears: academicGapYears === "" ? null : Number(academicGapYears), pendingBacklogCount: pendingBacklogCount === "" ? null : Number(pendingBacklogCount), scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
+        verifiedGapYears: delayDeclarations.academicGapYears, gapYearsVerificationStatus: delayDeclarations.academicGapYears === null ? null : "STUDENT_DECLARED", academicGapYears: delayDeclarations.academicGapYears, pendingBacklogCount: delayDeclarations.pendingBacklogCount, academicDelayReason: askAcademicDelayReason ? academicDelayReason : null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
       navigate("/dashboard", { replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
@@ -511,19 +512,27 @@ export default function AcademicSetupPage() {
                 <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + selectedCurrentSemester + "."} This is an estimate, not a verified gap-year record.</p>
               </div>}
               {selectedCurrentSemester === "COMPLETED" && <div className="academic-setup-completed-message">✓ You selected Completed Programme. Gradly will mark your academic status as completed.</div>}
-              <div className="academic-setup-journey-grid academic-setup-history-fields">
-                <div className="academic-setup-current-semester">
-                  <label htmlFor="academic-gap-years">Academic gap (student-declared)</label>
+              {askAcademicDelayReason && <div className="academic-setup-delay-clarification">
+                <div className="academic-setup-confirmation-heading"><h3>Help us understand the difference</h3><p>Your selected semester differs from Gradly's estimate. This is not an error—tell us what explains it.</p></div>
+                <label htmlFor="academic-delay-reason">Why are you in a different semester?</label>
+                <select id="academic-delay-reason" required value={academicDelayReason} onChange={e => { setAcademicDelayReason(e.target.value as AcademicDelayReason | ""); setAcademicGapYears(""); setPendingBacklogCount(""); }}>
+                  <option value="">Choose a reason</option>
+                  <option value="PENDING_BACKLOGS">I have pending backlogs</option>
+                  <option value="ACADEMIC_GAP">I had an academic gap / break</option>
+                  <option value="OTHER">Other reason / institutional delay</option>
+                </select>
+                {academicDelayReason === "PENDING_BACKLOGS" && <div className="academic-setup-current-semester">
+                  <label htmlFor="pending-backlogs">How many pending backlogs do you currently have?</label>
+                  <input id="pending-backlogs" type="number" min="0" max="100" value={pendingBacklogCount} onChange={e=>setPendingBacklogCount(e.target.value)} placeholder="Enter count" />
+                </div>}
+                {academicDelayReason === "ACADEMIC_GAP" && <div className="academic-setup-current-semester">
+                  <label htmlFor="academic-gap-years">How many years was your academic gap?</label>
                   <select id="academic-gap-years" value={academicGapYears} onChange={e => setAcademicGapYears(e.target.value)}>
-                    <option value="">Not specified</option><option value="0">No gap</option>
+                    <option value="">Select duration</option>
                     {Array.from({length:10},(_,index)=>index+1).map(year=><option key={year} value={String(year)}>{year} {year===1?"year":"years"}</option>)}
                   </select>
-                </div>
-                <div className="academic-setup-current-semester">
-                  <label htmlFor="pending-backlogs">Pending backlogs (optional)</label>
-                  <input id="pending-backlogs" type="number" min="0" max="100" value={pendingBacklogCount} onChange={e=>setPendingBacklogCount(e.target.value)} placeholder="Enter count" />
-                </div>
-              </div>
+                </div>}
+              </div>}
           
             </section>
 
