@@ -60,18 +60,39 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      ORDER BY b.name, sp.name`,
     [program.id, parsed.prefix === "MT"],
   );
+
+  // Institution-configured enrollment codes are the source of truth for
+  // MCA/M.E. streams; they are intentionally not inferred from unrelated codes.
+  const configuredBranchCode = await pool.query(
+    `SELECT branch_name
+     FROM enrollment_branch_codes
+     WHERE BTRIM(branch_code) = $1
+       AND (institution_id = $2 OR institution_id IS NULL)
+       AND (programme_prefix = $3 OR programme_prefix IS NULL)
+     ORDER BY (institution_id = $2) DESC NULLS LAST,
+              (programme_prefix = $3) DESC NULLS LAST
+     LIMIT 1`,
+    [parsed.branchCode, institutionId, parsed.prefix],
+  );
+  const configuredBranchName = String(configuredBranchCode.rows[0]?.branch_name ?? "").trim();
+  const resolvedBranchName = decodedBranchName || configuredBranchName;
   let matchedBranches = branchDirectory.rows.filter((candidate: {
     id: string; name: string; code?: string | null;
     specialization_id?: string | null; specialization_name?: string | null; specialization_code?: string | null;
-  }) => parsed.prefix === "ME" || parsed.prefix === "MC"
-    ? String(candidate.code ?? "").trim().toUpperCase() === parsed.branchCode
-    : Boolean(decodedBranchName && enrollmentBranchMatches(parsed.prefix, decodedBranchName, {
-        name: candidate.name,
-        code: candidate.code ?? null,
-        specializationName: candidate.specialization_name ?? null,
-        specializationCode: candidate.specialization_code ?? null,
-      })),
-  );
+  }) => {
+    if (parsed.prefix === "ME" || parsed.prefix === "MC") {
+      const exactCodeMatch = String(candidate.code ?? "").trim().toUpperCase() === parsed.branchCode;
+      return exactCodeMatch || Boolean(configuredBranchName && enrollmentBranchMatches(parsed.prefix, configuredBranchName, {
+        name: candidate.name, code: candidate.code ?? null,
+      }));
+    }
+    return Boolean(resolvedBranchName && enrollmentBranchMatches(parsed.prefix, resolvedBranchName, {
+      name: candidate.name,
+      code: candidate.code ?? null,
+      specializationName: candidate.specialization_name ?? null,
+      specializationCode: candidate.specialization_code ?? null,
+    }));
+  });
 
   // If no exact specialization row matched, retry against the department only.
   // This supports existing curriculum headers whose specialization_id is NULL,
@@ -89,9 +110,17 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       [candidate.id, { ...candidate, specialization_id: null, specialization_name: null, specialization_code: null }],
     )).values());
   }
-  const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string; specialization_id?: string | null }) =>
+  let uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string; specialization_id?: string | null }) =>
     [`${candidate.id}:${candidate.specialization_id ?? ""}`, candidate],
   )).values());
+
+  // MCA programmes at this institution may have a single academic branch and
+  // encode a campus/course identifier in the two-digit slot. In that case,
+  // resolve the sole configured branch rather than requiring a fabricated map.
+  if (parsed.prefix === "MC" && uniqueBranches.length === 0) {
+    const distinctBranches = Array.from(new Map(branchDirectory.rows.map((candidate: { id: string }) => [candidate.id, candidate])).values());
+    if (distinctBranches.length === 1) uniqueBranches = [distinctBranches[0]];
+  }
   if (uniqueBranches.length !== 1) {
     return unresolved(
       "BRANCH",
@@ -125,7 +154,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     );
     mode = fallback.rows[0];
   }
-  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT") && parsed.admissionModeCode === "F") {
+  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT" || parsed.prefix === "MC") && parsed.admissionModeCode === "F") {
     // Postgraduate enrollment rules already restrict ME/MT to Regular, Semester-1
     // entry. Do not make that institutional rule depend on a legacy lookup-table row.
     const regularMode = await pool.query(
