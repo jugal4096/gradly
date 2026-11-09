@@ -108,7 +108,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const schemeMatches = (scheme: string) => curriculumOptions.filter(option => option.scheme_name.trim().toLowerCase() === scheme.trim().toLowerCase());
 
   let curriculum: (typeof curriculumOptions)[number] | undefined;
-  let curriculumResolutionReason = "EXPLICIT_INSTITUTION_PREFIX_RULE";
+  let curriculumResolutionReason: string;
 
   if (requestedCurriculumId) {
     curriculum = allowedOptions.find(option => option.id === requestedCurriculumId);
