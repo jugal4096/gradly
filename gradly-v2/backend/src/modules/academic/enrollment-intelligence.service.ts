@@ -75,7 +75,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     `SELECT em.mode_code, em.mode_name, em.entry_semester, am.id AS admission_mode_id
      FROM enrollment_admission_modes em
      LEFT JOIN admission_modes am ON LOWER(am.name) = LOWER(em.mode_name)
-     WHERE em.mode_code = $1 AND (em.institution_id = $2 OR em.institution_id IS NULL)
+     WHERE (UPPER(BTRIM(em.mode_code)) = $1 OR ($1 = 'F' AND LOWER(BTRIM(em.mode_name)) IN ('regular','first year','fy')) OR ($1 = 'S' AND LOWER(BTRIM(em.mode_name)) IN ('direct second year','dsy','dse','lateral entry'))) AND (em.institution_id = $2 OR em.institution_id IS NULL)
        AND (em.programme_prefix = $3 OR em.programme_prefix IS NULL)
      ORDER BY (em.institution_id = $2) DESC NULLS LAST, (em.programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
     [parsed.admissionModeCode, institutionId, parsed.prefix],
