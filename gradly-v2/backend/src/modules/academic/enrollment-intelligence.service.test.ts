@@ -307,9 +307,12 @@ test("GECA MT specialization codes use only the supplied mappings", () => {
   const expected: Record<string, string> = {
     "09": "Structural Engineering", "08": "Water Resources Engineering", "16": "Geotechnical Engineering",
     "15": "Electrical Machines and Drives", "12": "Electrical Power Systems",
-    "13": "Electronics Engineering", "05": "Computer Engineering",
+    "13": "Electronics and Telecommunication Engineering", "05": "Computer Science and Engineering",
   };
   for (const [code, branch] of Object.entries(expected)) assert.equal(resolveEnrollmentBranchCode(institution, "MT", code), branch);
+  const geotechnical = parseEnrollmentNumber("MT25F16F008", 70, new Date("2026-11-09T12:00:00+05:30"));
+  assert.deepEqual([geotechnical.prefix, geotechnical.admissionYear, geotechnical.admissionModeCode, geotechnical.branchCode], ["MT", 2025, "F", "16"]);
+  assert.equal(resolveEnrollmentBranchCode(institution, geotechnical.prefix, geotechnical.branchCode), "Geotechnical Engineering");
   assert.equal(resolveEnrollmentBranchCode(institution, "MT", "99"), null);
   assert.equal(resolveEnrollmentBranchCode(institution, "ME", "09"), null);
 });
