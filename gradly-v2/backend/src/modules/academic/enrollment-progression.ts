@@ -136,16 +136,36 @@ export type EnrollmentBranchCandidate = {
  * (for example Applied Mechanics). Match the specialization first; use the
  * department only when that curriculum has no specialization record.
  */
+// Some GECA M.Tech curricula are stored against their department branch
+// without a specialization_id. These parent-department relationships are
+// explicitly defined by the institution's M.Tech curriculum structure.
+const mtechDepartmentFallbacks: Record<string, string[]> = {
+  "structural engineering": ["applied mechanics"],
+  "water resources engineering": ["civil"],
+  "geotechnical engineering": ["civil"],
+};
+
 export function enrollmentBranchMatches(
   prefix: string,
   decodedBranchName: string,
   candidate: EnrollmentBranchCandidate,
 ): boolean {
-  if (prefix === "MT" && String(candidate.specializationName ?? "").trim()) {
-    return branchIdentityMatches(
-      decodedBranchName,
-      String(candidate.specializationName),
-      candidate.specializationCode ?? null,
+  if (prefix === "MT") {
+    const specializationName = String(candidate.specializationName ?? "").trim();
+    if (specializationName) {
+      return branchIdentityMatches(
+        decodedBranchName,
+        specializationName,
+        candidate.specializationCode ?? null,
+      );
+    }
+
+    // Older or department-level curriculum records may not carry a
+    // specialization_id. Resolve only explicitly documented department links;
+    // never treat every M.Tech specialization as a generic department match.
+    const departmentNames = mtechDepartmentFallbacks[decodedBranchName.trim().toLowerCase()] ?? [];
+    return departmentNames.some(departmentName =>
+      branchIdentityMatches(departmentName, candidate.name, candidate.code ?? null),
     );
   }
   return branchIdentityMatches(decodedBranchName, candidate.name, candidate.code ?? null);
