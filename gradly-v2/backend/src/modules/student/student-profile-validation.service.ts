@@ -74,7 +74,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (input.academicProfileOverrides?.branch !== true) {
     const institutionResult = await pool.query(`SELECT name FROM public.institutions WHERE id = $1 LIMIT 1`, [input.institutionId]);
     const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
-    const branchMatches = parsed.prefix === "ME"
+    const branchMatches = parsed.prefix === "ME" || parsed.prefix === "MC"
       ? String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
       : Boolean(decodedBranchName && enrollmentBranchMatches(parsed.prefix, decodedBranchName, {
           name: String(curriculum.branch_name ?? ""),
