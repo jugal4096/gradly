@@ -401,3 +401,5 @@
 .theme-dark .academic-setup-gap-period-heading span,.theme-dark .academic-setup-gap-period-fields label{color:#c1bdd1}
 .theme-dark .academic-setup-gap-period-fields select{border-color:#514a66;background:#fff;color:#252a40}
 @media(max-width:460px){.academic-setup-gap-period-fields{grid-template-columns:1fr}}
+
+.academic-setup-confirmation.academic-setup-journey{margin:18px 0 0;padding:17px 0 0;border:0;border-top:1px solid rgba(132,116,196,.18);background:transparent;box-shadow:none;border-radius:0}
