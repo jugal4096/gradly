@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableSemesterOptions, resolveCurrentSemesterSelection } from "../src/features/dashboard/academic-setup-state.ts";
+import { academicDelayDeclarations, availableSemesterOptions, resolveCurrentSemesterSelection, shouldAskAcademicDelayReason } from "../src/features/dashboard/academic-setup-state.ts";
 
 test("regular admission exposes every semester from the first", () => {
   assert.deepEqual(availableSemesterOptions(8, 1), [1, 2, 3, 4, 5, 6, 7, 8]);
@@ -36,4 +36,27 @@ test("even semester window excludes odd semesters", () => {
 
 test("when normal programme duration has ended, delayed students can select only the current term parity", () => {
   assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 5, 7]);
+});
+
+
+test("delay clarification appears only when an enrolled student's actual semester differs", () => {
+  assert.equal(shouldAskAcademicDelayReason(5, "5"), false);
+  assert.equal(shouldAskAcademicDelayReason(5, "3"), true);
+  assert.equal(shouldAskAcademicDelayReason(null, "3"), false);
+  assert.equal(shouldAskAcademicDelayReason(5, "COMPLETED", true), false);
+});
+
+test("backlog and academic-gap values are stored only for their selected mismatch reason", () => {
+  assert.deepEqual(academicDelayDeclarations("PENDING_BACKLOGS", "2", "4", true), {
+    academicGapYears: null, pendingBacklogCount: 4,
+  });
+  assert.deepEqual(academicDelayDeclarations("ACADEMIC_GAP", "2", "4", true), {
+    academicGapYears: 2, pendingBacklogCount: null,
+  });
+  assert.deepEqual(academicDelayDeclarations("OTHER", "2", "4", true), {
+    academicGapYears: null, pendingBacklogCount: null,
+  });
+  assert.deepEqual(academicDelayDeclarations("PENDING_BACKLOGS", "2", "4", false), {
+    academicGapYears: null, pendingBacklogCount: null,
+  });
 });
