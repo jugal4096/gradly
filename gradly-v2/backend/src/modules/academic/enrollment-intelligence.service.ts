@@ -15,7 +15,11 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      WHERE institution_id = $1 OR institution_id IS NULL
      ORDER BY (institution_id = $1) DESC NULLS LAST`, [institutionId],
   );
-  const rule = (rules.rows as Array<{ prefix: string; programme_name_pattern: string; programme_alternate_pattern: string | null; programme_alias_patterns: string[]; scheme_label: string | null; duration_years: number | null; total_semesters: number | null; year_pivot_start: number | null }>).find(row => row.prefix === initial.prefix);
+  const configuredRule = (rules.rows as Array<{ prefix: string; programme_name_pattern: string; programme_alternate_pattern: string | null; programme_alias_patterns: string[]; scheme_label: string | null; duration_years: number | null; total_semesters: number | null; year_pivot_start: number | null }>).find(row => row.prefix === initial.prefix);
+  const rule = configuredRule ?? (initial.prefix === "ME" || initial.prefix === "MT" ? {
+    prefix: initial.prefix, programme_name_pattern: "", programme_alternate_pattern: null, programme_alias_patterns: [],
+    scheme_label: initial.prefix === "ME" ? "New CBCS" : "NEP", duration_years: null, total_semesters: null, year_pivot_start: 70,
+  } : null);
   if (!rule) return unresolved("PROGRAMME_PREFIX", "This programme prefix is not configured for your institution.", initial);
   const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70), now);
 
@@ -76,7 +80,11 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      ORDER BY (em.institution_id = $2) DESC NULLS LAST, (em.programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
     [parsed.admissionModeCode, institutionId, parsed.prefix],
   );
-  const mode = modeResult.rows[0];
+  let mode = modeResult.rows[0];
+  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT")) {
+    const regularMode = await pool.query(`SELECT id AS admission_mode_id, 'F' AS mode_code, name AS mode_name, 1 AS entry_semester FROM admission_modes WHERE LOWER(name) = 'regular' LIMIT 1`);
+    mode = regularMode.rows[0];
+  }
   if (!mode) return unresolved("ADMISSION_MODE", "This admission-mode code is not configured for the detected programme.", parsed);
   if ((parsed.prefix === "ME" || parsed.prefix === "MT") && (parsed.admissionModeCode !== "F" || Number(mode.entry_semester) !== 1 || !/regular/i.test(String(mode.mode_name)))) {
     return unresolved("ADMISSION_MODE", "M.E. and M.Tech. admissions must be Regular first-year entry in Semester 1.", parsed);
