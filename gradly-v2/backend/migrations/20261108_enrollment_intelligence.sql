@@ -56,7 +56,7 @@ INSERT INTO public.enrollment_program_rules
   (institution_id, prefix, programme_name_pattern, programme_alternate_pattern, programme_alias_patterns, scheme_label, duration_years, total_semesters, regular_entry_semester, lateral_entry_semester, year_pivot_start)
 VALUES
   (NULL, 'BE', '%Bachelor of Engineering%', '%B.E.%', ARRAY['%B.Tech%', '%Bachelor of Technology%'], 'New CBCS', 4, 8, 1, 3, 70),
-  (NULL, 'BT', '%Bachelor of Technology%', '%B.Tech%', ARRAY['%Bachelor of Engineering%', '%B.E.%'], 'New CBCS', 4, 8, 1, 3, 70),
+  (NULL, 'BT', '%Bachelor of Technology%', '%B.Tech%', ARRAY['%Bachelor of Engineering%', '%B.E.%'], NULL, 4, 8, 1, 3, 70), -- Legacy scheme must be institution-mapped; never infer NEW CBCS.
   (NULL, 'MC', '%Master of Computer Applications%', NULL, ARRAY[]::text[], NULL, NULL, NULL, 1, 1, 70),
   (NULL, 'MT', '%Master of Technology%', NULL, ARRAY[]::text[], NULL, NULL, NULL, 1, 1, 70)
 ON CONFLICT (institution_id, prefix) DO NOTHING;

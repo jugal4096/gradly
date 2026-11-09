@@ -1,13 +1,13 @@
 import { pool } from "../../config/database";
 
-import { branchIdentityMatches, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 export { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 import type { EnrollmentComponents } from "./enrollment-progression";
 
 const unresolved = (reason: string, message: string, parsed: EnrollmentComponents) =>
   ({ recognized: false, requiresConfirmation: true, unknown: reason, message, parsed });
 
-export async function previewEnrollment(institutionId: string, rawEnrollmentNumber: string, now = new Date()) {
+export async function previewEnrollment(institutionId: string, rawEnrollmentNumber: string, now = new Date(), requestedCurriculumId?: string) {
   const initial = parseEnrollmentNumber(rawEnrollmentNumber);
   const rules = await pool.query(
     `SELECT prefix, programme_name_pattern, programme_alternate_pattern, programme_alias_patterns, scheme_label, duration_years, total_semesters, year_pivot_start
@@ -15,7 +15,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      WHERE institution_id = $1 OR institution_id IS NULL
      ORDER BY (institution_id = $1) DESC NULLS LAST`, [institutionId],
   );
-  const rule = rules.rows.find((row: any) => row.prefix === initial.prefix);
+  const rule = (rules.rows as Array<{ prefix: string; programme_name_pattern: string; programme_alternate_pattern: string | null; programme_alias_patterns: string[]; scheme_label: string | null; duration_years: number | null; total_semesters: number | null; year_pivot_start: number | null }>).find(row => row.prefix === initial.prefix);
   if (!rule) return unresolved("PROGRAMME_PREFIX", "This programme prefix is not configured for your institution.", initial);
   const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70));
 
@@ -86,31 +86,92 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const mode = modeResult.rows[0];
   if (!mode) return unresolved("ADMISSION_MODE", "This admission-mode code is not configured for the detected programme.", parsed);
 
-  if (!rule.scheme_label) {
-    return { ...unresolved("SCHEME", "The academic scheme mapping for this programme needs institutional configuration.", parsed), programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id, admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null, entrySemester: Number(mode.entry_semester) };
-  }
-  const curriculumResult = await pool.query(
-    `SELECT c.id, COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS total_semesters, c.version, sc.name AS scheme_name
-     FROM curricula c JOIN schemes sc ON sc.id = c.scheme_id
-     LEFT JOIN curriculum_subjects cs ON cs.curriculum_id = c.id AND cs.active = TRUE
-     LEFT JOIN semesters sem ON sem.id = cs.semester_id
+  const curriculumOptionsResult = await pool.query(
+    `SELECT c.id, c.scheme_id, sc.name AS scheme_name, sc.code AS scheme_code,
+            c.version, c.total_semesters,
+            COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS resolved_total_semesters,
+            COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS configured_semesters
+     FROM curricula c
+     JOIN schemes sc ON sc.id = c.scheme_id
+     LEFT JOIN semesters sem ON sem.curriculum_id = c.id
      WHERE c.institution_id = $1 AND c.program_id = $2 AND c.branch_id = $3
-       AND sc.name ILIKE $4
-     GROUP BY c.id, sc.name
-     ORDER BY c.version DESC NULLS LAST LIMIT 2`,
-    [institutionId, program.id, branch.id, `%${rule.scheme_label}%`],
+     GROUP BY c.id, sc.name, sc.code
+     ORDER BY sc.name, c.version DESC NULLS LAST`,
+    [institutionId, program.id, branch.id],
   );
-  if (curriculumResult.rows.length !== 1) {
+  const curriculumOptions = curriculumOptionsResult.rows as Array<{
+    id: string; scheme_id: string; scheme_name: string; scheme_code: string | null;
+    version: string | number | null; total_semesters: number | null; resolved_total_semesters: number;
+  }>;
+  const configuredScheme = String(rule.scheme_label ?? "").trim();
+  const configuredNewCbcs = isAllowedSchemeForEnrollmentPrefix("BE", configuredScheme);
+  if (parsed.prefix === "BE" && !configuredNewCbcs) {
     return {
-      ...unresolved("CURRICULUM", curriculumResult.rows.length ? "Multiple curricula match the configured scheme. Please verify the curriculum mapping." : "No matching curriculum is configured for this programme and branch.", parsed),
+      ...unresolved("SCHEME", "BE enrollment numbers must map to the institution's NEW CBCS scheme. Configure the exact scheme mapping before continuing.", parsed),
       programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-      admissionYear: parsed.admissionYear, admissionMode: mode.mode_name,
-      entrySemester: Number(mode.entry_semester), scheme: rule.scheme_label,
+      admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
+      entrySemester: Number(mode.entry_semester), curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
     };
   }
-  const curriculum = curriculumResult.rows[0];
-  const totalSemesters = Number(curriculum.total_semesters);
-  const durationYears = Number(rule.duration_years);
+  const requiresManualScheme = !configuredScheme || (parsed.prefix === "BT" && configuredNewCbcs);
+  if (requiresManualScheme && !requestedCurriculumId) {
+    return {
+      ...unresolved("SCHEME", parsed.prefix === "BT"
+        ? "The BT enrollment prefix is not allowed to inherit NEW CBCS. Select the correct legacy curriculum configured by your institution."
+        : "Select the curriculum configured for this programme and branch.",
+      parsed),
+      programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+      admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
+      entrySemester: Number(mode.entry_semester), curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
+    };
+  }
+
+  let curriculum: (typeof curriculumOptions)[number] | undefined;
+  if (requestedCurriculumId) {
+    curriculum = curriculumOptions.find(option => option.id === requestedCurriculumId);
+    if (!curriculum) {
+      return {
+        ...unresolved("CURRICULUM", "The selected curriculum does not belong to the detected institution, programme and branch.", parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
+        curriculumOptions,
+      };
+    }
+    if (parsed.prefix === "BE" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
+      return {
+        ...unresolved("SCHEME", "BE enrollment numbers require the NEW CBCS curriculum. Choose the institution's configured NEW CBCS option.", parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
+        curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
+      };
+    }
+    if (parsed.prefix === "BT" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
+      return {
+        ...unresolved("SCHEME", "NEW CBCS cannot be selected for a BT enrollment number. Choose the correct legacy curriculum.", parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
+        curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
+      };
+    }
+  } else {
+    const matches = curriculumOptions.filter(option => option.scheme_name.toLowerCase() === configuredScheme.toLowerCase());
+    if (matches.length !== 1) {
+      return {
+        ...unresolved("CURRICULUM", matches.length
+          ? "Multiple curricula match the configured scheme. Please verify the curriculum mapping."
+          : "No curriculum matches the configured scheme for this programme and branch.",
+        parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
+        scheme: configuredScheme, curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
+      };
+    }
+    curriculum = matches[0];
+  }
+  const totalSemesters = Number(curriculum.resolved_total_semesters);
+  const curriculumId = curriculum.id;
+  const curriculumSchemeName = curriculum.scheme_name;
+  const durationYears = Number(rule.duration_years ?? totalSemesters / 2);
   if (!Number.isInteger(totalSemesters) || totalSemesters < Number(mode.entry_semester) || !Number.isFinite(durationYears) || durationYears < 1) {
     return unresolved("PROGRAMME_DURATION", "Programme duration or semester count is not configured correctly.", parsed);
   }
@@ -121,7 +182,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      ORDER BY active_from DESC NULLS LAST`,
     [institutionId],
   );
-  const calendar = calendarResult.rows.find((row: any) => {
+  const calendar = (calendarResult.rows as Array<{ timezone: string | null; active_from: string | Date | null; active_to: string | Date | null; academic_year_start_month: number; odd_semester_start_month: number; odd_semester_end_month: number }>).find(row => {
     const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: row.timezone || 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
     return (!row.active_from || String(row.active_from).slice(0, 10) <= localDate) &&
       (!row.active_to || String(row.active_to).slice(0, 10) >= localDate);
@@ -139,9 +200,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   return {
     recognized: true, requiresConfirmation: false, parsed,
     programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-    curriculumId: curriculum.id, curriculumName: curriculum.scheme_name,
+    curriculumId, curriculumName: curriculumSchemeName, schemeId: curriculum.scheme_id, schemeCode: curriculum.scheme_code, totalSemesters,
     admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
-    entrySemester: Number(mode.entry_semester), scheme: curriculum.scheme_name,
+    entrySemester: Number(mode.entry_semester), scheme: curriculumSchemeName,
     expected,
     verified: { actualEnrolledSemester: null, academicDelay: null, gapYears: null, graduationStatus: "NOT_VERIFIED" },
   };

@@ -113,3 +113,14 @@ export function predictSemester(input: {
     progressionStatus: "ESTIMATED",
   };
 }
+
+
+/** Prefix-specific scheme guard. Unknown/blank schemes must be resolved manually. */
+export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: string | null | undefined): boolean {
+  const name = String(schemeName ?? "").trim();
+  if (!name) return false;
+  const isNewCbcs = name.toLowerCase().replaceAll(" ", "").startsWith("newcbcs");
+  if (prefix === "BE") return isNewCbcs;
+  if (prefix === "BT") return !isNewCbcs;
+  return prefix === "MC" || prefix === "MT";
+}

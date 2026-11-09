@@ -10,7 +10,8 @@ export async function previewEnrollmentController(req: AuthenticatedRequest, res
       res.status(400).json({ success: false, message: "Institution and a valid enrollment number are required." });
       return;
     }
-    const result = await previewEnrollment(institutionId, enrollmentNumber);
+    const curriculumId = typeof req.body?.curriculumId === "string" ? req.body.curriculumId : undefined;
+    const result = await previewEnrollment(institutionId, enrollmentNumber, new Date(), curriculumId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof Error) {

@@ -15,6 +15,7 @@ type CurriculumSubjectApi = { name?: string | null; credits?: number | string | 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
+const gradeNames = Object.keys(POINTS);
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
   { id:"home",label:"Overview",icon:"⌂",group:"WORKSPACE" },
