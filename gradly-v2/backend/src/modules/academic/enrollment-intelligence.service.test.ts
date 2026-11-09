@@ -164,6 +164,8 @@ test("matches common branch labels and abbreviations", () => {
   assert.equal(branchIdentityMatches("Computer Science and Engineering", "CSE"), true);
   assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "E&TC"), true);
   assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "ENTC", "ENTC"), true);
+  assert.equal(branchIdentityMatches("Electronics Engineering", "ENTC", "ENTC"), true);
+  assert.equal(branchIdentityMatches("Computer Engineering", "Computer Engineering"), true);
   assert.equal(branchIdentityMatches("Electrical Engineering", "ELECT", "ELECT"), true);
   assert.equal(branchIdentityMatches("Mechanical Engineering", "MECH", "MECH"), true);
   assert.equal(branchIdentityMatches("Mechanical Engineering", "Mechanical", "ME"), true);
