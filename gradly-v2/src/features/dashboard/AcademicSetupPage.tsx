@@ -171,13 +171,17 @@ export default function AcademicSetupPage() {
       if (sequence !== previewSequence.current) return;
       if (!curriculumResponse.ok) throw new Error(curriculumPayload.message || "Unable to load the matched curriculum.");
       const options = Array.isArray(curriculumPayload.data) ? curriculumPayload.data as Curriculum[] : [];
-      setCurricula(options);
-      const selectedOption = options.find(item => item.id === result.curriculumId);
-      if (!selectedOption) {
-        setCurriculumId("");
-        setError("The detected curriculum is no longer available in the institution directory. Please verify with your institution.");
-        return;
-      }
+      const selectedOption = options.find(item => item.id === result.curriculumId) || {
+        id: result.curriculumId,
+        scheme_name: result.curriculumName || result.scheme || "Selected curriculum",
+        scheme_id: result.schemeId,
+        scheme_code: result.schemeCode,
+        total_semesters: result.totalSemesters,
+        configured_semesters: result.totalSemesters,
+      };
+      // The preview already validated this curriculum and returned its semester count.
+      // Keep that authoritative result usable even if the secondary directory refresh omits the row.
+      setCurricula(options.some(item => item.id === result.curriculumId) ? options : [...options, selectedOption]);
 
       const prediction = Number.isInteger(result.expected.expectedSemester) ? result.expected.expectedSemester : null;
       const semesterLimit = Number(result.totalSemesters || selectedOption.total_semesters || selectedOption.configured_semesters) || 0;
