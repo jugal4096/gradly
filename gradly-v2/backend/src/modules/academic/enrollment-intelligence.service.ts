@@ -1,6 +1,6 @@
 import { pool } from "../../config/database";
 
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, resolveEnrollmentBranchCode } from "./enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
 export { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 import type { EnrollmentComponents } from "./enrollment-progression";
 
