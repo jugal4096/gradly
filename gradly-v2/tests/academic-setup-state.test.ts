@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { academicDelayDeclarations, availableSemesterOptions, resolveCurrentSemesterSelection, shouldAskAcademicDelayReason } from "../src/features/dashboard/academic-setup-state.ts";
+import { academicDelayDeclarations, availableSemesterOptions, calculateAcademicGapYears, resolveCurrentSemesterSelection, shouldAskAcademicDelayReason } from "../src/features/dashboard/academic-setup-state.ts";
 
 test("regular admission exposes every semester from the first", () => {
   assert.deepEqual(availableSemesterOptions(8, 1), [1, 2, 3, 4, 5, 6, 7, 8]);
@@ -64,4 +64,13 @@ test("backlog and academic-gap values are stored only for their selected mismatc
 test("a regular student predicted in semester three can select semester two for a backlog", () => {
   assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 2, 3]);
   assert.equal(resolveCurrentSemesterSelection(3, 8, true, "2", 1, "ODD"), "2");
+});
+
+test("academic gap years default to zero and are calculated from semesters below prediction", () => {
+  assert.equal(calculateAcademicGapYears(3, "3"), 0);
+  assert.equal(calculateAcademicGapYears(3, "1"), 1);
+  assert.equal(calculateAcademicGapYears(5, "1"), 2);
+  assert.equal(calculateAcademicGapYears(3, "2"), 0);
+  assert.equal(calculateAcademicGapYears(3, "COMPLETED"), 0);
+  assert.equal(calculateAcademicGapYears(null, "1"), 0);
 });
