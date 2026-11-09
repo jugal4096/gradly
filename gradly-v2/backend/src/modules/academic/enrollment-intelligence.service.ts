@@ -16,9 +16,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      ORDER BY (institution_id = $1) DESC NULLS LAST`, [institutionId],
   );
   const configuredRule = (rules.rows as Array<{ prefix: string; programme_name_pattern: string; programme_alternate_pattern: string | null; programme_alias_patterns: string[]; scheme_label: string | null; duration_years: number | null; total_semesters: number | null; year_pivot_start: number | null }>).find(row => row.prefix === initial.prefix);
-  const rule = configuredRule ?? (initial.prefix === "ME" || initial.prefix === "MT" ? {
+  const rule = configuredRule ?? (initial.prefix === "ME" || initial.prefix === "MT" || initial.prefix === "MC" ? {
     prefix: initial.prefix, programme_name_pattern: "", programme_alternate_pattern: null, programme_alias_patterns: [],
-    scheme_label: initial.prefix === "ME" ? "New CBCS" : "NEP", duration_years: null, total_semesters: null, year_pivot_start: 70,
+    scheme_label: initial.prefix === "ME" ? "New CBCS" : initial.prefix === "MT" ? "NEP" : null, duration_years: null, total_semesters: null, year_pivot_start: 70,
   } : null);
   if (!rule) return unresolved("PROGRAMME_PREFIX", "This programme prefix is not configured for your institution.", initial);
   const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70), now);
