@@ -142,7 +142,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         ...unresolved("SCHEME", "BE enrollment numbers require the NEW CBCS curriculum. Choose the institution's configured NEW CBCS option.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        curriculumOptions,
+        curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
       };
     }
     if (parsed.prefix === "BT" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
@@ -163,7 +163,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        scheme: configuredScheme, curriculumOptions,
+        scheme: configuredScheme, curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
       };
     }
     curriculum = matches[0];
