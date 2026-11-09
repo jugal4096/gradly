@@ -6,7 +6,7 @@ UPDATE public.enrollment_program_rules
 SET scheme_label = NULL
 WHERE prefix = 'BT'
   AND scheme_label IS NOT NULL
-  AND lower(regexp_replace(trim(scheme_label), '\\s+', ' ', 'g')) = 'new cbcs';
+  AND lower(regexp_replace(trim(scheme_label), '[[:space:]]+', ' ', 'g')) = 'new cbcs';
 
 COMMIT;
 
