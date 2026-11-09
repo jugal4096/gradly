@@ -105,8 +105,7 @@ export default function AcademicSetupPage() {
         const data = await response.json();
         if (response.ok && data.profile && !cancelled) {
           const p = data.profile;
-          const expectedReferenceSemester = expectedSemester ?? (expectedDurationEnded ? semesterCount : null);
-      localStorage.setItem("gradly_student_profile", JSON.stringify({
+          localStorage.setItem("gradly_student_profile", JSON.stringify({
             institutionId: p.institution_id || "", institutionName: p.institution_name || "",
             programId: p.program_id || "", programName: p.program_name || "",
             branchId: p.branch_id || "", branchName: p.branch_name || "",
