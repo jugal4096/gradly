@@ -15,6 +15,13 @@ export function validateEnrollmentYear(
   now: Date = new Date(),
 ): void {
   const latestStartedAdmissionYear = academicSessionStartYear(now);
+  // A direct-second-year (DSE/DSY) intake for session Y cannot begin until
+  // the FY cohort for Y-1 has completed its first year and the Y session starts.
+  // With a July session boundary, 2026-27 FY entrants become eligible for the
+  // corresponding DSE intake only from July 2027 (enrollment year 2027).
+  if (admissionModeCode === "S" && admissionYear > latestStartedAdmissionYear) {
+    throw new Error("DSE_ADMISSION_CYCLE_NOT_STARTED");
+  }
   if (admissionYear > latestStartedAdmissionYear) {
     throw new Error("FUTURE_ADMISSION_YEAR");
   }
@@ -166,12 +173,17 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
 /** Degree identity comes from the enrollment prefix, not configurable programme-name patterns. */
 export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: string): boolean {
   const name = String(programmeName ?? "").normalize("NFKC").toLowerCase()
-    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim();
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!name) return false;
+
+  // Institutions commonly store abbreviations with punctuation/spaces (B.E., B. Tech,
+  // M.C.A., M. Tech), expanded names, or a degree followed by a specialization.
+  // Match the degree identity as a complete token phrase, never by a loose substring.
   const patterns: Record<string, RegExp> = {
-    BE: /(?:^| )(?:bachelor of engineering|bachelor engineering|b e|be)(?: |$)/,
-    BT: /(?:^| )(?:bachelor of technology|bachelor technology|b tech|btech|bt)(?: |$)/,
-    MC: /(?:^| )(?:master of computer applications|master computer applications|mca|mc)(?: |$)/,
-    MT: /(?:^| )(?:master of technology|master technology|m tech|mtech|mt)(?: |$)/,
+    BE: /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|b e|be)(?: |$)/,
+    BT: /(?:^| )(?:bachelor of technology|bachelor in technology|bachelors of technology|bachelors in technology|bachelor technology|b tech|b t e c h|btech|bt)(?: |$)/,
+    MC: /(?:^| )(?:master of computer applications|master in computer applications|masters of computer applications|master computer applications|m c a|mca|mc)(?: |$)/,
+    MT: /(?:^| )(?:master of technology|master in technology|masters of technology|master technology|m tech|m t e c h|mtech|mt)(?: |$)/,
   };
   return Boolean(patterns[prefix]?.test(name));
 }
