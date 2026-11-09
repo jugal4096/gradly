@@ -173,19 +173,24 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
 /** Degree identity comes from the enrollment prefix, not configurable programme-name patterns. */
 export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: string): boolean {
   const name = String(programmeName ?? "").normalize("NFKC").toLowerCase()
-    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\\s+/g, " ").trim();
   if (!name) return false;
 
-  // Institutions commonly store abbreviations with punctuation/spaces (B.E., B. Tech,
-  // M.C.A., M. Tech), expanded names, or a degree followed by a specialization.
-  // Match the degree identity as a complete token phrase, never by a loose substring.
-  const patterns: Record<string, RegExp> = {
-    BE: /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|b e|be)(?: |$)/,
-    BT: /(?:^| )(?:bachelor of technology|bachelor in technology|bachelors of technology|bachelors in technology|bachelor technology|b tech|b t e c h|btech|bt)(?: |$)/,
+  // BE and BT are two enrollment-prefix generations used for the same broad
+  // undergraduate engineering programme family in this institution's directory.
+  // Older records may be titled B.E. while newer directory rows say B.Tech (or vice versa).
+  // Keep the match token-based; never match an unrelated degree by substring.
+  const engineeringDegreePatterns = [
+    /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|bachelor of engg|bachelor in engg|b engg|b e|be)(?: |$)/,
+    /(?:^| )(?:bachelor of technology|bachelor in technology|bachelors of technology|bachelors in technology|bachelor technology|bachelor of tech|b tech|b t e c h|btech|bt)(?: |$)/,
+  ];
+  const postgraduatePatterns: Record<string, RegExp> = {
     MC: /(?:^| )(?:master of computer applications|master in computer applications|masters of computer applications|master computer applications|m c a|mca|mc)(?: |$)/,
-    MT: /(?:^| )(?:master of technology|master in technology|masters of technology|master technology|m tech|m t e c h|mtech|mt)(?: |$)/,
+    MT: /(?:^| )(?:master of technology|master in technology|masters of technology|master technology|master of tech|m tech|m t e c h|mtech|mt)(?: |$)/,
   };
-  return Boolean(patterns[prefix]?.test(name));
+
+  if (prefix === "BE" || prefix === "BT") return engineeringDegreePatterns.some(pattern => pattern.test(name));
+  return Boolean(postgraduatePatterns[prefix]?.test(name));
 }
 
 /** Deterministic GECA enrollment branch decoding. The database is not consulted to interpret these codes. */
