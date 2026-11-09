@@ -49,7 +49,7 @@ test("DSE admission for the 2026-27 FY cohort starts only after July 2027", () =
 
 test("parses a strict regular BE enrollment number", () => {
   const p = parseEnrollmentNumber("BE22F06F007");
-  assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "F", "06", "F007"]);
+  assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2022, "F", "06", "F007"]);
 });
 
 test("parses the supplied BE23S06F007 enrollment structure", () => {
