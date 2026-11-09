@@ -127,6 +127,20 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
 
 
 
+
+/** Degree identity comes from the enrollment prefix, not configurable programme-name patterns. */
+export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: string): boolean {
+  const name = String(programmeName ?? "").normalize("NFKC").toLowerCase()
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").trim();
+  const patterns: Record<string, RegExp> = {
+    BE: /(?:^| )(?:bachelor of engineering|bachelor engineering|b e|be)(?: |$)/,
+    BT: /(?:^| )(?:bachelor of technology|bachelor technology|b tech|btech|bt)(?: |$)/,
+    MC: /(?:^| )(?:master of computer applications|master computer applications|mca|mc)(?: |$)/,
+    MT: /(?:^| )(?:master of technology|master technology|m tech|mtech|mt)(?: |$)/,
+  };
+  return Boolean(patterns[prefix]?.test(name));
+}
+
 /** Deterministic GECA enrollment branch decoding. The database is not consulted to interpret these codes. */
 export function resolveEnrollmentBranchCode(institutionName: string, prefix: string, branchCode: string): string | null {
   const institution = String(institutionName ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
