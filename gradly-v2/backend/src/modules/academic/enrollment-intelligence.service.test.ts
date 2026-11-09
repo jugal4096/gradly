@@ -156,3 +156,8 @@ test("MC and MT require a configured non-empty curriculum scheme", () => {
   assert.equal(isAllowedSchemeForEnrollmentPrefix("MC", ""), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("MT", null), false);
 });
+
+
+test("BE23S direct-second-year progression reaches semester 7 in the 2025-26 odd session", () => {
+  assert.equal(predict(2023, 3, "2025-11-09T12:00:00+05:30").expectedSemester, 7);
+});
