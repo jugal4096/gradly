@@ -43,8 +43,12 @@ test("matches degree abbreviations with punctuation and common programme-name va
   for (const name of ["M.Tech.", "M Tech", "Master in Technology"]) {
     assert.equal(programmeMatchesEnrollmentPrefix("MT", name), true, name);
   }
-  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Technology"), false);
-  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), false);
+  // BE (legacy New CBCS) and BT (NEP) are two enrollment-prefix generations
+  // that may share one undergraduate engineering programme record in the directory.
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Technology"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Engineering"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Undergraduate Engineering"), true);
 });
 
 test("DSE admission for the 2026-27 FY cohort starts only after July 2027", () => {
