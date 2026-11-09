@@ -1,6 +1,6 @@
 import { pool } from "../../config/database";
 
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
+import { enrollmentBranchMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
 export { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 import type { EnrollmentComponents } from "./enrollment-progression";
 
@@ -48,18 +48,33 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return unresolved("BRANCH_CODE", "This branch code is not supported by the built-in enrollment decoder for this institution. Select the branch manually or request an enrollment mapping review.", parsed);
   }
 
-  // The code decoder determines the branch identity. The directory is used only to obtain
-  // the existing branch record ID needed by the selected curriculum/profile.
+  // M.Tech codes identify specializations; the existing curriculum is stored against
+  // the parent department branch. Keep both identities so the correct curriculum is selected.
   const branchDirectory = await pool.query(
-    `SELECT id, name, code FROM branches WHERE program_id = $1 ORDER BY name`,
-    [program.id],
+    `SELECT b.id, b.name, b.code,
+            sp.id AS specialization_id, sp.name AS specialization_name, sp.code AS specialization_code
+     FROM branches b
+     LEFT JOIN specializations sp
+       ON $2::boolean = TRUE AND sp.branch_id = b.id AND sp.program_id = b.program_id
+     WHERE b.program_id = $1
+     ORDER BY b.name, sp.name`,
+    [program.id, parsed.prefix === "MT"],
   );
-  const matchedBranches = branchDirectory.rows.filter((candidate: { id: string; name: string; code?: string | null }) =>
-    (parsed.prefix === "ME" || (parsed.prefix === "MT" && !decodedBranchName))
-      ? String(candidate.code ?? "").trim().toUpperCase() === parsed.branchCode
-      : branchIdentityMatches(String(decodedBranchName), candidate.name, candidate.code ?? null),
+  const matchedBranches = branchDirectory.rows.filter((candidate: {
+    id: string; name: string; code?: string | null;
+    specialization_id?: string | null; specialization_name?: string | null; specialization_code?: string | null;
+  }) => parsed.prefix === "ME"
+    ? String(candidate.code ?? "").trim().toUpperCase() === parsed.branchCode
+    : Boolean(decodedBranchName && enrollmentBranchMatches(parsed.prefix, decodedBranchName, {
+        name: candidate.name,
+        code: candidate.code ?? null,
+        specializationName: candidate.specialization_name ?? null,
+        specializationCode: candidate.specialization_code ?? null,
+      })),
   );
-  const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string }) => [candidate.id, candidate])).values());
+  const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string; specialization_id?: string | null }) =>
+    [`${candidate.id}:${candidate.specialization_id ?? ""}`, candidate],
+  )).values());
   if (uniqueBranches.length !== 1) {
     return unresolved(
       "BRANCH",
@@ -111,9 +126,10 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      JOIN schemes sc ON sc.id = c.scheme_id
      LEFT JOIN semesters sem ON sem.curriculum_id = c.id
      WHERE c.institution_id = $1 AND c.program_id = $2 AND c.branch_id = $3
+       AND ($4::boolean = FALSE OR c.specialization_id IS NOT DISTINCT FROM $5::uuid)
      GROUP BY c.id, sc.name, sc.code
      ORDER BY sc.name, c.version DESC NULLS LAST`,
-    [institutionId, program.id, branch.id],
+    [institutionId, program.id, branch.id, parsed.prefix === "MT", branch.specialization_id ?? null],
   );
   const curriculumOptions = curriculumOptionsResult.rows as Array<{
     id: string; scheme_id: string; scheme_name: string; scheme_code: string | null;
@@ -219,6 +235,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   return {
     recognized: true, requiresConfirmation: false, parsed,
     programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+    specialization: branch.specialization_name ?? null, specializationId: branch.specialization_id ?? null,
     curriculumId, curriculumName: curriculumSchemeName, curriculumResolutionReason, schemeId: curriculum.scheme_id, schemeCode: curriculum.scheme_code, totalSemesters,
     admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
     entrySemester: Number(mode.entry_semester), scheme: curriculumSchemeName,
