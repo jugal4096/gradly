@@ -11,11 +11,11 @@ export function availableSemesterOptions(
 ): number[] {
   if (!Number.isInteger(totalSemesters) || totalSemesters < 1) return [];
   const first = Number.isInteger(entrySemester) && entrySemester >= 1 && entrySemester <= totalSemesters ? entrySemester : 1;
-  if (!semesterPeriod) return Array.from({ length: totalSemesters - first + 1 }, (_, index) => first + index);
+  if (!_semesterPeriod) return Array.from({ length: totalSemesters - first + 1 }, (_, index) => first + index);
   const max = predictedSemester !== null && Number.isInteger(predictedSemester)
     ? Math.min(predictedSemester, totalSemesters)
     : expectedDurationEnded
-      ? (totalSemesters % 2 === parity ? totalSemesters : totalSemesters - 1)
+      ? totalSemesters
       : 0;
   if (max < first) return [];
   // Backlog students may be active in either semester parity. The prediction is an upper bound,
