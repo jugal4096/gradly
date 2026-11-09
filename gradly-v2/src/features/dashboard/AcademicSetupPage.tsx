@@ -73,7 +73,7 @@ export default function AcademicSetupPage() {
     branches.push({ id: preview.branchId, name: preview.branch, program_id: preview.programId, program_name: preview.programme || "", code: null });
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
-  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || 0;
+  const semesterCount = Number(preview?.totalSemesters || selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || 0;
   const availableSemesters = availableSemesterOptions(semesterCount);
   const selectedAdmissionMode = admissionModes.find(item => item.mode_name === confirmedAdmissionMode);
   const predictedEntrySemester = selectedAdmissionMode?.entry_semester ?? preview?.entrySemester ?? 1;
@@ -166,11 +166,18 @@ export default function AcademicSetupPage() {
       setCurriculumId(result.curriculumId);
       setPredictionConfirmed(null); setEditingPrediction(false);
       const params = new URLSearchParams({ institutionId: selected.id, programId: result.programId, branchId: result.branchId });
-      const curriculumResponse = await fetch(API + "/api/academic/curricula?" + params.toString());
-      const curriculumPayload = await curriculumResponse.json();
+      let options: Curriculum[] = [];
+      try {
+        const curriculumResponse = await fetch(API + "/api/academic/curricula?" + params.toString());
+        if (curriculumResponse.ok) {
+          const curriculumPayload = await curriculumResponse.json();
+          options = Array.isArray(curriculumPayload.data) ? curriculumPayload.data as Curriculum[] : [];
+        }
+      } catch {
+        // The enrollment preview already validated the curriculum and returned its semester count.
+        // A secondary directory refresh must not suppress the prediction or semester selection.
+      }
       if (sequence !== previewSequence.current) return;
-      if (!curriculumResponse.ok) throw new Error(curriculumPayload.message || "Unable to load the matched curriculum.");
-      const options = Array.isArray(curriculumPayload.data) ? curriculumPayload.data as Curriculum[] : [];
       const selectedOption = options.find(item => item.id === result.curriculumId) || {
         id: result.curriculumId,
         scheme_name: result.curriculumName || result.scheme || "Selected curriculum",
