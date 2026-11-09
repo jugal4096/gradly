@@ -323,3 +323,24 @@ test("BT enrollment years cannot precede NEP or enter before their July academic
   assert.throws(() => parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-06-30T12:00:00+05:30")), /FUTURE_ADMISSION_YEAR/);
   assert.equal(parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-07-01T12:00:00+05:30")).admissionYear, 2028);
 });
+
+test("GECA M.Tech specialization codes resolve department-level curricula when specialization_id is absent", () => {
+  // The institution stores Structural Engineering under the Applied Mechanics
+  // department, and Water Resources / Geotechnical under Civil. Some curriculum
+  // records are department-level and therefore have no specialization row.
+  assert.equal(enrollmentBranchMatches("MT", "Structural Engineering", {
+    name: "APPLIED MECHANICS", code: "APPLIED_MECHANICS",
+  }), true);
+  assert.equal(enrollmentBranchMatches("MT", "Water Resources Engineering", {
+    name: "CIVIL", code: "CIVIL",
+  }), true);
+  assert.equal(enrollmentBranchMatches("MT", "Geotechnical Engineering", {
+    name: "CIVIL", code: "CIVIL",
+  }), true);
+  assert.equal(enrollmentBranchMatches("MT", "Structural Engineering", {
+    name: "CIVIL", code: "CIVIL",
+  }), false);
+  assert.equal(enrollmentBranchMatches("MT", "Water Resources Engineering", {
+    name: "APPLIED MECHANICS", code: "APPLIED_MECHANICS",
+  }), false);
+});
