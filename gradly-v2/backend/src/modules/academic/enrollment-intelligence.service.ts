@@ -1,6 +1,6 @@
 import { pool } from "../../config/database";
 
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, resolveEnrollmentBranchCode } from "./enrollment-progression";
 export { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 import type { EnrollmentComponents } from "./enrollment-progression";
 
@@ -39,38 +39,21 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return unresolved("PROGRAMME_PREFIX_MISMATCH", "The programme directory mapping conflicts with the degree prefix in this enrollment number. Contact the institute administrator.", parsed);
   }
 
-  const branchResult = await pool.query(
-    `SELECT branch_name, program_name_pattern,
-            (institution_id = $2) AS institution_specific,
-            (programme_prefix = $3) AS prefix_specific,
-            (program_name_pattern IS NOT NULL) AS program_specific
-     FROM enrollment_branch_codes
-     WHERE branch_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
-       AND (programme_prefix = $3 OR programme_prefix IS NULL)
-       AND (program_name_pattern IS NULL OR $4::text ILIKE program_name_pattern)
-     ORDER BY (institution_id = $2) DESC NULLS LAST,
-              (programme_prefix = $3) DESC NULLS LAST,
-              (program_name_pattern IS NOT NULL) DESC NULLS LAST
-     LIMIT 20`,
-    [parsed.branchCode, institutionId, parsed.prefix, program.name],
-  );
-  const orderedBranchRules = branchResult.rows as Array<{ branch_name: string; program_name_pattern: string | null; institution_specific: boolean; prefix_specific: boolean; program_specific: boolean }>;
-  const preferredRule = orderedBranchRules[0];
-  const branchRules = preferredRule
-    ? orderedBranchRules.filter(rule => rule.institution_specific === preferredRule.institution_specific && rule.prefix_specific === preferredRule.prefix_specific && rule.program_specific === preferredRule.program_specific)
-    : [];
-  if (!branchRules.length) {
-    return unresolved("BRANCH_CODE", "Unrecognized branch code. Please verify your enrollment number.", parsed);
+  const institutionResult = await pool.query(`SELECT name FROM institutions WHERE id = $1 LIMIT 1`, [institutionId]);
+  const institutionName = String(institutionResult.rows[0]?.name ?? "");
+  const decodedBranchName = resolveEnrollmentBranchCode(institutionName, parsed.prefix, parsed.branchCode);
+  if (!decodedBranchName) {
+    return unresolved("BRANCH_CODE", "This branch code is not supported by the built-in enrollment decoder for this institution. Select the branch manually or request an enrollment mapping review.", parsed);
   }
 
-  // Resolve against the programme-scoped branch directory instead of one exact display-name string.
-  // Institutions commonly store abbreviations or expanded names, such as IT and Information Technology.
+  // The code decoder determines the branch identity. The directory is used only to obtain
+  // the existing branch record ID needed by the selected curriculum/profile.
   const branchDirectory = await pool.query(
     `SELECT id, name, code FROM branches WHERE program_id = $1 ORDER BY name`,
     [program.id],
   );
   const matchedBranches = branchDirectory.rows.filter((candidate: { id: string; name: string; code?: string | null }) =>
-    branchRules.some(rule => branchIdentityMatches(rule.branch_name, candidate.name, candidate.code ?? null)),
+    branchIdentityMatches(decodedBranchName, candidate.name, candidate.code ?? null),
   );
   const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string }) => [candidate.id, candidate])).values());
   if (uniqueBranches.length !== 1) {
@@ -146,7 +129,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       };
     }
     curriculum = candidates[0];
-    curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
+    curriculumResolutionReason = "UNIQUE_NEW_CBCS_CURRICULUM";
   } else if (parsed.prefix === "BT") {
     // BT is strictly NEP. Use an institution-specific scheme label only when it resolves to an eligible NEP curriculum.
     const configuredMatches = configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
