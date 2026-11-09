@@ -86,10 +86,10 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     if (parsed.prefix === "MC" && !branchMatches) {
       const branchCount = await pool.query(
         `SELECT COUNT(DISTINCT b.id)::int AS count
-         FROM public.branches b
-         JOIN public.programs p ON p.id = b.program_id
-         WHERE p.id = (SELECT c.program_id FROM public.curricula c WHERE c.id = $1)`,
-        [input.curriculumId],
+         FROM public.curricula c
+         WHERE c.institution_id = $2
+           AND c.program_id = (SELECT selected.program_id FROM public.curricula selected WHERE selected.id = $1)`,
+        [input.curriculumId, input.institutionId],
       );
       branchMatches = Number(branchCount.rows[0]?.count) === 1;
     }
