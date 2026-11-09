@@ -25,14 +25,15 @@ test("accepts configured programme prefixes with strict format", () => {
 
 test("normalizes lowercase input and trims outer whitespace without repairing internals", () => {
   assert.equal(parseEnrollmentNumber("  be23s06f007  ").enrollmentNumber, "BE23S06F007");
-  assert.throws(() => parseEnrollmentNumber("BE 23S06F007"), /INVALID_EIGHTH_CHARACTER/);
-  assert.throws(() => parseEnrollmentNumber("BE23S06-F007"), /INVALID_EIGHTH_CHARACTER/);
+  assert.throws(() => parseEnrollmentNumber("BE 23S06F007"), /INVALID_ENROLLMENT_LENGTH/);
+  assert.throws(() => parseEnrollmentNumber("BE23S06-F007"), /INVALID_ENROLLMENT_LENGTH/);
 });
 
 test("rejects incorrect eighth character with a specific validation error", () => {
-  for (const value of ["BE23S06007", "BE23S06A007", "BE23S06X007", "BE23S06@007"]) {
+  for (const value of ["BE23S06A007", "BE23S06X007", "BE23S06@007"]) {
     assert.throws(() => parseEnrollmentNumber(value), /INVALID_EIGHTH_CHARACTER/);
   }
+  assert.throws(() => parseEnrollmentNumber("BE23S06007"), /INVALID_ENROLLMENT_LENGTH/);
 });
 
 test("rejects non-numeric final three characters", () => {
