@@ -8,7 +8,7 @@ const unresolved = (reason: string, message: string, parsed: EnrollmentComponent
   ({ recognized: false, requiresConfirmation: true, unknown: reason, message, parsed });
 
 export async function previewEnrollment(institutionId: string, rawEnrollmentNumber: string, now = new Date(), requestedCurriculumId?: string) {
-  const initial = parseEnrollmentNumber(rawEnrollmentNumber);
+  const initial = parseEnrollmentNumber(rawEnrollmentNumber, 70, now);
   const rules = await pool.query(
     `SELECT prefix, programme_name_pattern, programme_alternate_pattern, programme_alias_patterns, scheme_label, duration_years, total_semesters, year_pivot_start
      FROM enrollment_program_rules
@@ -17,7 +17,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   );
   const rule = (rules.rows as Array<{ prefix: string; programme_name_pattern: string; programme_alternate_pattern: string | null; programme_alias_patterns: string[]; scheme_label: string | null; duration_years: number | null; total_semesters: number | null; year_pivot_start: number | null }>).find(row => row.prefix === initial.prefix);
   if (!rule) return unresolved("PROGRAMME_PREFIX", "This programme prefix is not configured for your institution.", initial);
-  const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70));
+  const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70), now);
 
   // Resolve programme candidates from the parsed degree prefix first. Rule-table
   // name patterns may be stale or overlapping, so they must never select a conflicting degree.
