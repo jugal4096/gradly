@@ -141,9 +141,10 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     curriculumResolutionReason = configuredScheme ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
   } else if (parsed.prefix === "BT") {
     // A stale global NEW CBCS rule is never allowed to shadow institution-specific legacy curricula.
-    const configuredMatches = configuredScheme && !isAllowedSchemeForEnrollmentPrefix("BT", configuredScheme)
-      ? [] : configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
-    const candidates = configuredMatches.length ? configuredMatches : allowedOptions;
+    const configuredIsForbiddenNewCbcs = configuredScheme && !isAllowedSchemeForEnrollmentPrefix("BT", configuredScheme);
+    const configuredMatches = configuredScheme && !configuredIsForbiddenNewCbcs
+      ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
+    const candidates = configuredIsForbiddenNewCbcs || !configuredScheme ? allowedOptions : configuredMatches;
     if (candidates.length === 1) {
       curriculum = candidates[0];
       curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_COMPATIBLE_LEGACY_CURRICULUM";
@@ -159,7 +160,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     }
   } else {
     const configuredMatches = configuredScheme ? schemeMatches(configuredScheme) : [];
-    const candidates = configuredMatches.length ? configuredMatches : curriculumOptions;
+    const candidates = configuredScheme ? configuredMatches : curriculumOptions;
     if (candidates.length !== 1) {
       return {
         ...unresolved("CURRICULUM", candidates.length > 1
