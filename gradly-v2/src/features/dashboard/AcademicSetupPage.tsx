@@ -196,6 +196,15 @@ export default function AcademicSetupPage() {
       if (sequence !== previewSequence.current) return;
       if (!modeResponse.ok) throw new Error(modePayload.message || "Unable to load admission modes.");
       const modeOptions = Array.isArray(modePayload.data) ? modePayload.data as AdmissionMode[] : [];
+      if ((normalizedEnrollment.startsWith("ME") || normalizedEnrollment.startsWith("MT")) &&
+          !modeOptions.some(item => /regular/i.test(item.mode_name))) {
+        modeOptions.push({
+          id: result.admissionModeId || "regular",
+          mode_code: "F",
+          mode_name: result.admissionMode || "Regular",
+          entry_semester: 1,
+        });
+      }
       setAdmissionModes(modeOptions);
       if (modeOptions.length && !modeOptions.some(item => item.mode_name === (result.admissionMode || ""))) {
         setConfirmedAdmissionMode(modeOptions[0].mode_name);
