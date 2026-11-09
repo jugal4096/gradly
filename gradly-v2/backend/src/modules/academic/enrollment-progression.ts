@@ -153,11 +153,9 @@ export function enrollmentBranchMatches(
   if (prefix === "MT") {
     const specializationName = String(candidate.specializationName ?? "").trim();
     if (specializationName) {
-      return branchIdentityMatches(
-        decodedBranchName,
-        specializationName,
-        candidate.specializationCode ?? null,
-      );
+      // Postgraduate branch codes identify a specific course/stream. Broad
+      // undergraduate aliases (e.g. Electronics vs E&TC) must not match here.
+      return normalizeBranchLabel(decodedBranchName) === normalizeBranchLabel(specializationName);
     }
 
     // A department-level curriculum may have no specialization_id. First
