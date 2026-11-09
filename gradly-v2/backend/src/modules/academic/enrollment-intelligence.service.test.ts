@@ -17,7 +17,7 @@ test("parses the supplied BE23S06F007 enrollment structure", () => {
   assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "S", "06", "F007"]);
 });
 
-test("accepts configured programme prefixes with strict format", () => {
+test("accepts configured programme prefixes with 11 characters, F at position 8 and a numeric three-digit serial", () => {
   for (const value of ["BE23S06F007", "BT24S02F999", "MC23F01F123", "MT23F01F123"]) {
     assert.equal(parseEnrollmentNumber(value).enrollmentNumber, value);
   }
