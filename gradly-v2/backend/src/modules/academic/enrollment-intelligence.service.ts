@@ -81,6 +81,18 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     [parsed.admissionModeCode, institutionId, parsed.prefix],
   );
   let mode = modeResult.rows[0];
+  if (!mode && (parsed.prefix === "BE" || parsed.prefix === "BT") && (parsed.admissionModeCode === "F" || parsed.admissionModeCode === "S")) {
+    const fallback = await pool.query(
+      `SELECT id AS admission_mode_id, name AS mode_name, $1::text AS mode_code, $2::int AS entry_semester
+       FROM admission_modes
+       WHERE LOWER(BTRIM(name)) = ANY($3::text[])
+       ORDER BY CASE WHEN LOWER(BTRIM(name)) = $4 THEN 0 ELSE 1 END LIMIT 1`,
+      [parsed.admissionModeCode, parsed.admissionModeCode === "F" ? 1 : 3,
+       parsed.admissionModeCode === "F" ? ["regular", "first year", "fy"] : ["direct second year", "dsy", "dse", "lateral entry"],
+       parsed.admissionModeCode === "F" ? "regular" : "direct second year"],
+    );
+    mode = fallback.rows[0];
+  }
   if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT")) {
     const regularMode = await pool.query(`SELECT id AS admission_mode_id, 'F' AS mode_code, name AS mode_name, 1 AS entry_semester FROM admission_modes WHERE LOWER(name) = 'regular' LIMIT 1`);
     mode = regularMode.rows[0];
