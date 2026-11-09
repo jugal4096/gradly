@@ -15,7 +15,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      WHERE institution_id = $1 OR institution_id IS NULL
      ORDER BY (institution_id = $1) DESC NULLS LAST`, [institutionId],
   );
-  const rule = rules.rows.find((row: any) => row.prefix === initial.prefix);
+  const rule = (rules.rows as Array<{ prefix: string; programme_name_pattern: string; programme_alternate_pattern: string | null; programme_alias_patterns: string[]; scheme_label: string | null; duration_years: number | null; total_semesters: number | null; year_pivot_start: number | null }>).find(row => row.prefix === initial.prefix);
   if (!rule) return unresolved("PROGRAMME_PREFIX", "This programme prefix is not configured for your institution.", initial);
   const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70));
 
@@ -182,7 +182,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      ORDER BY active_from DESC NULLS LAST`,
     [institutionId],
   );
-  const calendar = calendarResult.rows.find((row: any) => {
+  const calendar = (calendarResult.rows as Array<{ timezone: string | null; active_from: string | Date | null; active_to: string | Date | null; academic_year_start_month: number; odd_semester_start_month: number; odd_semester_end_month: number }>).find(row => {
     const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: row.timezone || 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
     return (!row.active_from || String(row.active_from).slice(0, 10) <= localDate) &&
       (!row.active_to || String(row.active_to).slice(0, 10) >= localDate);
