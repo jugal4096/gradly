@@ -19,25 +19,21 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   if (!rule) return unresolved("PROGRAMME_PREFIX", "This programme prefix is not configured for your institution.", initial);
   const parsed = parseEnrollmentNumber(rawEnrollmentNumber, Number(rule.year_pivot_start ?? 70));
 
-  const programResult = await pool.query(
-    `SELECT id, name, level FROM programs
-     WHERE institution_id = $1 AND (name ILIKE $2 OR ($3::text IS NOT NULL AND name ILIKE $3) OR name ILIKE ANY($4::text[])) ORDER BY name LIMIT 2`,
-    [institutionId, rule.programme_name_pattern, rule.programme_alternate_pattern ?? null, rule.programme_alias_patterns ?? []],
+  // Resolve programme candidates from the parsed degree prefix first. Rule-table
+  // name patterns may be stale or overlapping, so they must never select a conflicting degree.
+  const programDirectory = await pool.query(
+    `SELECT id, name, level FROM programs WHERE institution_id = $1 ORDER BY name`,
+    [institutionId],
   );
-  if (programResult.rows.length !== 1) {
-    return unresolved("PROGRAMME", programResult.rows.length ? "More than one programme matches this enrollment prefix. Institutional mapping needs review." : "The matching programme is not available in this institution's academic directory.", parsed);
+  const matchingPrograms = programDirectory.rows.filter((candidate: { name?: string | null }) =>
+    programmeMatchesEnrollmentPrefix(parsed.prefix, String(candidate.name ?? "")),
+  );
+  if (matchingPrograms.length !== 1) {
+    return unresolved("PROGRAMME", matchingPrograms.length
+      ? "Multiple programmes match the degree prefix in this institution's directory. Institutional programme records need review."
+      : "No programme in this institution's directory matches the degree prefix in the enrollment number.", parsed);
   }
-  const program = programResult.rows[0];
-  const programName = String(program.name || "");
-  const prefixProgramPatterns: Record<string, RegExp> = {
-    BE: /bachelor\s+of\s+engineering|\bb\.?e\.?\b/i,
-    BT: /bachelor\s+of\s+technology|\bb\.?tech\.?\b/i,
-    MC: /master\s+of\s+computer\s+applications|\bmca\b/i,
-    MT: /master\s+of\s+technology|\bm\.?tech\.?\b/i,
-  };
-  if (!prefixProgramPatterns[parsed.prefix]?.test(programName)) {
-    return unresolved("PROGRAMME_PREFIX_MISMATCH", "The programme directory mapping conflicts with the degree prefix in this enrollment number. Contact the institute administrator.", parsed);
-  }
+  const program = matchingPrograms[0];
 
   const institutionResult = await pool.query(`SELECT name FROM institutions WHERE id = $1 LIMIT 1`, [institutionId]);
   const institutionName = String(institutionResult.rows[0]?.name ?? "");
