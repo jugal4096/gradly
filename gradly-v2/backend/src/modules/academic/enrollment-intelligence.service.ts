@@ -137,7 +137,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         curriculumOptions,
       };
     }
-    if (!isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
+    if (parsed.prefix === "BE" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
       return {
         ...unresolved("SCHEME", "BE enrollment numbers require the NEW CBCS curriculum. Choose the institution's configured NEW CBCS option.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
