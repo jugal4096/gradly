@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./AcademicSetupPage.css";
-import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "./academic-setup-state";
+import { availableSemesterOptions, resolveCurrentSemesterSelection } from "./academic-setup-state";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
@@ -74,10 +74,10 @@ export default function AcademicSetupPage() {
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const semesterCount = Number(preview?.totalSemesters || selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || 0;
-  const availableSemesters = availableSemesterOptions(semesterCount);
   const selectedAdmissionMode = admissionModes.find(item => item.mode_name === confirmedAdmissionMode);
   const predictedEntrySemester = selectedAdmissionMode?.entry_semester ?? preview?.entrySemester ?? 1;
-  const adjustedExpectedSemester = expectedSemester !== null && expectedSemester <= semesterCount ? expectedSemester : null;
+  const availableSemesters = availableSemesterOptions(semesterCount, predictedEntrySemester);
+  const adjustedExpectedSemester = expectedSemester !== null && expectedSemester >= predictedEntrySemester && expectedSemester <= semesterCount ? expectedSemester : null;
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
 
@@ -203,7 +203,6 @@ export default function AcademicSetupPage() {
       );
       selectedCurrentSemesterRef.current = nextSelection;
       setSelectedCurrentSemester(nextSelection);
-      setAcademicStatus(academicStatusForSemester(nextSelection));
       if (hasManuallySelectedSemester.current && nextSelection !== selectedCurrentSemester) {
         hasManuallySelectedSemester.current = false;
       }
@@ -250,7 +249,6 @@ export default function AcademicSetupPage() {
     const nextSelection = resolveCurrentSemesterSelection(prediction, semesterCount, hasManuallySelectedSemester.current, previousSelection);
     selectedCurrentSemesterRef.current = nextSelection;
     setSelectedCurrentSemester(nextSelection);
-    setAcademicStatus(academicStatusForSemester(nextSelection));
     if (hasManuallySelectedSemester.current && nextSelection !== previousSelection) {
       hasManuallySelectedSemester.current = false;
     }
@@ -418,7 +416,7 @@ export default function AcademicSetupPage() {
             <section className="academic-setup-confirmation academic-setup-journey">
               <div className="academic-setup-confirmation-heading"><h2>Your Academic Journey</h2><p>Choose the semester you are actually in. The prediction is only a comparison reference.</p></div>
               <div className="academic-setup-journey-grid">
-                <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Current Semester</label><select id="actual-semester" required value={selectedCurrentSemester} onChange={e => { setSelectedCurrentSemester(e.target.value); selectedCurrentSemesterRef.current = e.target.value; setAcademicStatus(academicStatusForSemester(e.target.value)); hasManuallySelectedSemester.current = true; }}><option value="">Choose your current semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}<option value="COMPLETED">Completed Programme</option></select></div>
+                <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Current Semester</label><select id="actual-semester" required value={selectedCurrentSemester} onChange={e => { setSelectedCurrentSemester(e.target.value); selectedCurrentSemesterRef.current = e.target.value; hasManuallySelectedSemester.current = true; }}><option value="">Choose your current semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}<option value="COMPLETED">Completed Programme</option></select></div>
                 <div className="academic-setup-prediction-reference"><span>Predicted current semester</span><strong>{adjustedExpectedSemester ? "Semester " + adjustedExpectedSemester : expectedDurationEnded ? "Expected duration completed" : "Not available"}</strong><small>Based on your enrollment details and selected admission mode</small></div>
               </div>
               {selectedCurrentSemester && selectedCurrentSemester !== "COMPLETED" && <div className="academic-setup-delay">
