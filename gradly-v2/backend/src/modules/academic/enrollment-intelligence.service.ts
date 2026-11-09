@@ -104,70 +104,76 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     version: string | number | null; total_semesters: number | null; resolved_total_semesters: number;
   }>;
   const configuredScheme = String(rule.scheme_label ?? "").trim();
-  const configuredNewCbcs = isAllowedSchemeForEnrollmentPrefix("BE", configuredScheme);
-  if (parsed.prefix === "BE" && !configuredNewCbcs) {
-    return {
-      ...unresolved("SCHEME", "BE enrollment numbers must map to the institution's NEW CBCS scheme. Configure the exact scheme mapping before continuing.", parsed),
-      programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-      admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
-      entrySemester: Number(mode.entry_semester), curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
-    };
-  }
-  const requiresManualScheme = !configuredScheme || (parsed.prefix === "BT" && configuredNewCbcs);
-  if (requiresManualScheme && !requestedCurriculumId) {
-    return {
-      ...unresolved("SCHEME", parsed.prefix === "BT"
-        ? "The BT enrollment prefix is not allowed to inherit NEW CBCS. Select the correct legacy curriculum configured by your institution."
-        : "Select the curriculum configured for this programme and branch.",
-      parsed),
-      programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-      admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
-      entrySemester: Number(mode.entry_semester), curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
-    };
-  }
+  const allowedOptions = curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name));
+  const schemeMatches = (scheme: string) => curriculumOptions.filter(option => option.scheme_name.trim().toLowerCase() === scheme.trim().toLowerCase());
 
   let curriculum: (typeof curriculumOptions)[number] | undefined;
+  let curriculumResolutionReason = "EXPLICIT_INSTITUTION_PREFIX_RULE";
+
   if (requestedCurriculumId) {
-    curriculum = curriculumOptions.find(option => option.id === requestedCurriculumId);
+    curriculum = allowedOptions.find(option => option.id === requestedCurriculumId);
     if (!curriculum) {
       return {
-        ...unresolved("CURRICULUM", "The selected curriculum does not belong to the detected institution, programme and branch.", parsed),
+        ...unresolved("CURRICULUM", parsed.prefix === "BT"
+          ? "The selected curriculum is not an eligible legacy curriculum for this institution, programme and branch."
+          : "The selected curriculum does not belong to the detected institution, programme and branch.", parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
+        curriculumOptions: allowedOptions,
+      };
+    }
+    curriculumResolutionReason = "STUDENT_CONFIRMED_CURRICULUM";
+  } else if (parsed.prefix === "BE") {
+    const candidates = configuredScheme
+      ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BE", option.scheme_name))
+      : allowedOptions;
+    if (candidates.length !== 1) {
+      return {
+        ...unresolved("SCHEME", candidates.length > 1
+          ? "Multiple NEW CBCS curricula match this programme and branch. Institutional mapping needs review."
+          : "No unique NEW CBCS curriculum is configured for this programme and branch.", parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
+        curriculumOptions: allowedOptions,
+      };
+    }
+    curriculum = candidates[0];
+    curriculumResolutionReason = configuredScheme ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
+  } else if (parsed.prefix === "BT") {
+    // A stale global NEW CBCS rule is never allowed to shadow institution-specific legacy curricula.
+    const configuredMatches = configuredScheme && !isAllowedSchemeForEnrollmentPrefix("BT", configuredScheme)
+      ? [] : configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
+    const candidates = configuredMatches.length ? configuredMatches : allowedOptions;
+    if (candidates.length === 1) {
+      curriculum = candidates[0];
+      curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_COMPATIBLE_LEGACY_CURRICULUM";
+    } else {
+      return {
+        ...unresolved("SCHEME", candidates.length > 1
+          ? "Multiple eligible legacy curricula exist for this programme and branch. Confirm the curriculum used by your institution."
+          : "No eligible legacy curriculum exists for this programme and branch. Ask your institution administrator to configure the correct curriculum.", parsed),
+        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
+        entrySemester: Number(mode.entry_semester), curriculumOptions: allowedOptions,
+      };
+    }
+  } else {
+    const configuredMatches = configuredScheme ? schemeMatches(configuredScheme) : [];
+    const candidates = configuredMatches.length ? configuredMatches : curriculumOptions;
+    if (candidates.length !== 1) {
+      return {
+        ...unresolved("CURRICULUM", candidates.length > 1
+          ? "Multiple curricula match this programme and branch. Confirm the institution's configured curriculum."
+          : "No curriculum is configured for this programme and branch.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
         curriculumOptions,
       };
     }
-    if (parsed.prefix === "BE" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
-      return {
-        ...unresolved("SCHEME", "BE enrollment numbers require the NEW CBCS curriculum. Choose the institution's configured NEW CBCS option.", parsed),
-        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
-      };
-    }
-    if (parsed.prefix === "BT" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
-      return {
-        ...unresolved("SCHEME", "NEW CBCS cannot be selected for a BT enrollment number. Choose the correct legacy curriculum.", parsed),
-        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
-      };
-    }
-  } else {
-    const matches = curriculumOptions.filter(option => option.scheme_name.toLowerCase() === configuredScheme.toLowerCase());
-    if (matches.length !== 1) {
-      return {
-        ...unresolved("CURRICULUM", matches.length
-          ? "Multiple curricula match the configured scheme. Please verify the curriculum mapping."
-          : "No curriculum matches the configured scheme for this programme and branch.",
-        parsed),
-        programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-        admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        scheme: configuredScheme, curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
-      };
-    }
-    curriculum = matches[0];
+    curriculum = candidates[0];
+    curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_INSTITUTION_CURRICULUM";
   }
+  if (!curriculum) return unresolved("CURRICULUM", "No eligible curriculum could be resolved.", parsed);
   const totalSemesters = Number(curriculum.resolved_total_semesters);
   const curriculumId = curriculum.id;
   const curriculumSchemeName = curriculum.scheme_name;
@@ -200,7 +206,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   return {
     recognized: true, requiresConfirmation: false, parsed,
     programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-    curriculumId, curriculumName: curriculumSchemeName, schemeId: curriculum.scheme_id, schemeCode: curriculum.scheme_code, totalSemesters,
+    curriculumId, curriculumName: curriculumSchemeName, curriculumResolutionReason, schemeId: curriculum.scheme_id, schemeCode: curriculum.scheme_code, totalSemesters,
     admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
     entrySemester: Number(mode.entry_semester), scheme: curriculumSchemeName,
     expected,
