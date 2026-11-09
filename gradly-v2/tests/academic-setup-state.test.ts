@@ -60,3 +60,8 @@ test("backlog and academic-gap values are stored only for their selected mismatc
     academicGapYears: null, pendingBacklogCount: null,
   });
 });
+
+test("a regular student predicted in semester three can select semester two for a backlog", () => {
+  assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 2, 3]);
+  assert.equal(resolveCurrentSemesterSelection(3, 8, true, "2", 1, "ODD"), "2");
+});
