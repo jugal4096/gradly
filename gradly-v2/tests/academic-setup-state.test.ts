@@ -35,7 +35,7 @@ test("even semester window also permits earlier odd-semester backlog choices", (
 });
 
 test("when normal programme duration has ended, delayed students can select any semester through programme completion", () => {
-  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 4, 5, 6, 7]);
+  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 4, 5, 6, 7, 8]);
 });
 
 
