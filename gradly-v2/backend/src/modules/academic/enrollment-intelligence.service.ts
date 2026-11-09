@@ -89,7 +89,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const curriculumOptionsResult = await pool.query(
     `SELECT c.id, c.scheme_id, sc.name AS scheme_name, sc.code AS scheme_code,
             c.version, c.total_semesters,
-            COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS resolved_total_semesters
+            COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS resolved_total_semesters,
+            COALESCE(c.total_semesters, COUNT(DISTINCT sem.semester_number)::int) AS configured_semesters
      FROM curricula c
      JOIN schemes sc ON sc.id = c.scheme_id
      LEFT JOIN semesters sem ON sem.curriculum_id = c.id
@@ -103,7 +104,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     version: string | number | null; total_semesters: number | null; resolved_total_semesters: number;
   }>;
   const configuredScheme = String(rule.scheme_label ?? "").trim();
-  const configuredNewCbcs = /^new\\s*cbcs$/i.test(configuredScheme);
+  const configuredNewCbcs = /^new\s*cbcs$/i.test(configuredScheme);
   if (parsed.prefix === "BE" && !configuredNewCbcs) {
     return {
       ...unresolved("SCHEME", "BE enrollment numbers must map to the institution's NEW CBCS scheme. Configure the exact scheme mapping before continuing.", parsed),
@@ -136,7 +137,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         curriculumOptions,
       };
     }
-    if (parsed.prefix === "BE" && !/^new\\s*cbcs$/i.test(curriculum.scheme_name)) {
+    if (parsed.prefix === "BE" && !/^new\s*cbcs$/i.test(curriculum.scheme_name)) {
       return {
         ...unresolved("SCHEME", "BE enrollment numbers require the NEW CBCS curriculum. Choose the institution's configured NEW CBCS option.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
@@ -144,12 +145,12 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         curriculumOptions,
       };
     }
-    if (parsed.prefix === "BT" && /^new\\s*cbcs$/i.test(curriculum.scheme_name)) {
+    if (parsed.prefix === "BT" && /^new\s*cbcs$/i.test(curriculum.scheme_name)) {
       return {
         ...unresolved("SCHEME", "NEW CBCS cannot be selected for a BT enrollment number. Choose the correct legacy curriculum.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        curriculumOptions: curriculumOptions.filter(option => !/^new\\s*cbcs$/i.test(option.scheme_name)),
+        curriculumOptions: curriculumOptions.filter(option => !/^new\s*cbcs$/i.test(option.scheme_name)),
       };
     }
   } else {
@@ -170,8 +171,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const totalSemesters = Number(curriculum.resolved_total_semesters);
   const curriculumId = curriculum.id;
   const curriculumSchemeName = curriculum.scheme_name;
-  const totalSemesters = Number(curriculum.resolved_total_semesters);
-  const durationYears = Number(rule.duration_years);
+  const durationYears = Number(rule.duration_years ?? totalSemesters / 2);
   if (!Number.isInteger(totalSemesters) || totalSemesters < Number(mode.entry_semester) || !Number.isFinite(durationYears) || durationYears < 1) {
     return unresolved("PROGRAMME_DURATION", "Programme duration or semester count is not configured correctly.", parsed);
   }
@@ -200,7 +200,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   return {
     recognized: true, requiresConfirmation: false, parsed,
     programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
-    curriculumId, curriculumName: curriculumSchemeName, schemeId: curriculum.scheme_id, schemeCode: curriculum.scheme_code,
+    curriculumId, curriculumName: curriculumSchemeName, schemeId: curriculum.scheme_id, schemeCode: curriculum.scheme_code, totalSemesters,
     admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
     entrySemester: Number(mode.entry_semester), scheme: curriculumSchemeName,
     expected,
