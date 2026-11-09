@@ -55,13 +55,14 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     `SELECT DISTINCT b.id, b.name, b.code,
             sp.id AS specialization_id, sp.name AS specialization_name, sp.code AS specialization_code
      FROM branches b
-     LEFT JOIN curricula c
-       ON c.branch_id = b.id AND c.program_id = b.program_id AND c.institution_id = $3
      LEFT JOIN specializations sp
-       ON $2::boolean = TRUE AND sp.id = c.specialization_id
+       ON $2::boolean = TRUE
+      AND sp.program_id = b.program_id
+      AND sp.branch_id = b.id
+      AND COALESCE(sp.active, TRUE) = TRUE
      WHERE b.program_id = $1
      ORDER BY b.name, sp.name`,
-    [program.id, parsed.prefix === "MT", institutionId],
+    [program.id, parsed.prefix === "MT"],
   );
 
   // Institution-configured enrollment codes are the source of truth for
