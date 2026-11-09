@@ -525,8 +525,8 @@ export default function AcademicSetupPage() {
                 <div className="academic-setup-prediction-reference"><span>Predicted current semester</span><strong>{adjustedExpectedSemester ? "Semester " + adjustedExpectedSemester : expectedDurationEnded ? "Expected duration completed" : "Not available"}</strong><small>Based on your enrollment details and selected admission mode</small></div>
               </div>
               {selectedCurrentSemester && selectedCurrentSemester !== "COMPLETED" && <div className="academic-setup-delay">
-                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : adjustedExpectedSemester > Number(selectedCurrentSemester) ? (adjustedExpectedSemester - Number(selectedCurrentSemester)) + " semester(s) · " + ((adjustedExpectedSemester - Number(selectedCurrentSemester)) / 2) + " year(s)" : "No estimated delay"}</strong></div></div>
-                <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + selectedCurrentSemester + "."} This is an estimate, not a verified gap-year record.</p>
+                <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : academicGapYears + (academicGapYears === 1 ? " year" : " years")}</strong></div></div>
+                <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + selectedCurrentSemester + ". Gap years are calculated automatically."}</p>
               </div>}
               {selectedCurrentSemester === "COMPLETED" && <div className="academic-setup-completed-message">✓ You selected Completed Programme. Gradly will mark your academic status as completed.</div>}
               {academicGapYears > 0 && <div className="academic-setup-gap-period">
