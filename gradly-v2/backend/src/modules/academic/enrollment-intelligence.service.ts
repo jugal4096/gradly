@@ -28,6 +28,16 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return unresolved("PROGRAMME", programResult.rows.length ? "More than one programme matches this enrollment prefix. Institutional mapping needs review." : "The matching programme is not available in this institution's academic directory.", parsed);
   }
   const program = programResult.rows[0];
+  const programName = String(program.name || "");
+  const prefixProgramPatterns: Record<string, RegExp> = {
+    BE: /bachelor\s+of\s+engineering|\bb\.?e\.?\b/i,
+    BT: /bachelor\s+of\s+technology|\bb\.?tech\.?\b/i,
+    MC: /master\s+of\s+computer\s+applications|\bmca\b/i,
+    MT: /master\s+of\s+technology|\bm\.?tech\.?\b/i,
+  };
+  if (!prefixProgramPatterns[parsed.prefix]?.test(programName)) {
+    return unresolved("PROGRAMME_PREFIX_MISMATCH", "The programme directory mapping conflicts with the degree prefix in this enrollment number. Contact the institute administrator.", parsed);
+  }
 
   const branchResult = await pool.query(
     `SELECT branch_name, program_name_pattern,
@@ -115,7 +125,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     if (!curriculum) {
       return {
         ...unresolved("CURRICULUM", parsed.prefix === "BT"
-          ? "The selected curriculum is not an eligible legacy curriculum for this institution, programme and branch."
+          ? "The selected curriculum is not an eligible NEP curriculum for this institution, programme and branch."
           : "The selected curriculum does not belong to the detected institution, programme and branch.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
@@ -124,9 +134,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     }
     curriculumResolutionReason = "STUDENT_CONFIRMED_CURRICULUM";
   } else if (parsed.prefix === "BE") {
-    const candidates = configuredScheme
-      ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BE", option.scheme_name))
-      : allowedOptions;
+    const candidates = allowedOptions;
     if (candidates.length !== 1) {
       return {
         ...unresolved("SCHEME", candidates.length > 1
@@ -138,21 +146,19 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       };
     }
     curriculum = candidates[0];
-    curriculumResolutionReason = configuredScheme ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
+    curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
   } else if (parsed.prefix === "BT") {
-    // A stale global NEW CBCS rule is never allowed to shadow institution-specific legacy curricula.
-    const configuredIsForbiddenNewCbcs = configuredScheme && !isAllowedSchemeForEnrollmentPrefix("BT", configuredScheme);
-    const configuredMatches = configuredScheme && !configuredIsForbiddenNewCbcs
-      ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
-    const candidates = configuredIsForbiddenNewCbcs || !configuredScheme ? allowedOptions : configuredMatches;
+    // BT is strictly NEP. Use an institution-specific scheme label only when it resolves to an eligible NEP curriculum.
+    const configuredMatches = configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
+    const candidates = configuredMatches.length ? configuredMatches : allowedOptions;
     if (candidates.length === 1) {
       curriculum = candidates[0];
-      curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_COMPATIBLE_LEGACY_CURRICULUM";
+      curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEP_CURRICULUM";
     } else {
       return {
         ...unresolved("SCHEME", candidates.length > 1
-          ? "Multiple eligible legacy curricula exist for this programme and branch. Confirm the curriculum used by your institution."
-          : "No eligible legacy curriculum exists for this programme and branch. Ask your institution administrator to configure the correct curriculum.", parsed),
+          ? "Multiple NEP curricula exist for this programme and branch. Confirm the curriculum used by your institution."
+          : "No NEP curriculum exists for this programme and branch. Ask your institution administrator to configure the correct curriculum.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
         entrySemester: Number(mode.entry_semester), curriculumOptions: allowedOptions,

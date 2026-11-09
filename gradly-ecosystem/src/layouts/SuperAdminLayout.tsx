@@ -108,11 +108,17 @@ export default function SuperAdminLayout() {
     if (!token) return;
     try {
       const root = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
-      const response = await fetch(root + "/super-admin/platform-requests", { headers: { Authorization: "Bearer " + token, Accept: "application/json" } });
+      const headers = { Authorization: "Bearer " + token, Accept: "application/json" };
+      const [response, grievanceResponse] = await Promise.all([
+        fetch(root + "/super-admin/platform-requests", { headers }),
+        fetch(root + "/super-admin/enrollment-grievances", { headers }),
+      ]);
       if (!response.ok) return;
-      const data = await response.json();
-      setUnattendedCount(Number(data.counts?.unattended) || 0);
-      setNewCount(Number(data.counts?.unacknowledged) || 0);
+      const [data, grievanceData] = await Promise.all([response.json(), grievanceResponse.ok ? grievanceResponse.json() : Promise.resolve({ grievances: [] })]);
+      const openGrievances = (Array.isArray(grievanceData.grievances) ? grievanceData.grievances : []).filter((item: { status?: string }) => ["PENDING","IN_REVIEW","NEEDS_INFO"].includes(String(item.status || "").toUpperCase())).length;
+      const pendingGrievances = (Array.isArray(grievanceData.grievances) ? grievanceData.grievances : []).filter((item: { status?: string }) => String(item.status || "").toUpperCase() === "PENDING").length;
+      setUnattendedCount((Number(data.counts?.unattended) || 0) + openGrievances);
+      setNewCount((Number(data.counts?.unacknowledged) || 0) + pendingGrievances);
     } catch { /* Keep the last known badge count while offline. */ }
   }, []);
   useEffect(() => {

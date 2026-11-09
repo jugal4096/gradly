@@ -17,7 +17,7 @@ test("parses the supplied BE23S06F007 enrollment structure", () => {
   assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "S", "06", "F007"]);
 });
 
-test("accepts configured programme prefixes with strict format", () => {
+test("accepts configured programme prefixes with 11 characters, F at position 8 and a numeric three-digit serial", () => {
   for (const value of ["BE23S06F007", "BT24S02F999", "MC23F01F123", "MT23F01F123"]) {
     assert.equal(parseEnrollmentNumber(value).enrollmentNumber, value);
   }
@@ -115,6 +115,15 @@ test("matches common branch labels and abbreviations", () => {
 });
 
 
+test("semester choices respect odd/even calendar and predicted progress", () => {
+  assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 3]);
+  assert.deepEqual(availableSemesterOptions(8, 3, 7, "ODD"), [3, 5, 7]);
+  assert.deepEqual(availableSemesterOptions(8, 1, 4, "EVEN"), [2, 4]);
+  assert.deepEqual(availableSemesterOptions(8, 3, 4, "EVEN"), [4]);
+  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 5, 7]);
+  assert.deepEqual(availableSemesterOptions(8, 1, null, "EVEN", true), [2, 4, 6, 8]);
+});
+
 test("successful prediction initializes the controlled current-semester value", () => {
   assert.equal(resolveCurrentSemesterSelection(7, 8, false, ""), "7");
   assert.deepEqual(availableSemesterOptions(8), [1, 2, 3, 4, 5, 6, 7, 8]);
@@ -143,11 +152,18 @@ test("completed programme is available only as an explicit student selection", (
 });
 
 
-test("BE is restricted to NEW CBCS and BT cannot inherit NEW CBCS", () => {
+test("BE is restricted to NEW CBCS and BT is restricted to NEP", () => {
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS 2023"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS NEP"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "Legacy CBCS"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "New CBCS"), false);
-  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "Legacy CBCS"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "Legacy CBCS"), false);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "NEP"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "NEP 2020"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "NEP Legacy CBCS"), false);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "New Education Policy"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "National Education Policy (NEP) 2020"), true);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", null), false);
 });
 

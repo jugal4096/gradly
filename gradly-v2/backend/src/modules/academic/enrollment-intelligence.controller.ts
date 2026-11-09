@@ -1,6 +1,8 @@
 import type { Response } from "express";
 import type { AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { previewEnrollment } from "./enrollment-intelligence.service";
+import { pool } from "../../config/database";
+import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 
 export async function previewEnrollmentController(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
@@ -10,8 +12,19 @@ export async function previewEnrollmentController(req: AuthenticatedRequest, res
       res.status(400).json({ success: false, message: "Institution and a valid enrollment number are required." });
       return;
     }
+    const normalizedEnrollment = enrollmentNumber.trim().toUpperCase();
+    const user = req.firebaseUser?.uid ? await getGradlyUserByFirebaseUid(req.firebaseUser.uid) : null;
+    if (!user) { res.status(404).json({ success:false, message:"Gradly account was not found. Sign in again." }); return; }
+    const owner = await pool.query(
+      `SELECT user_id FROM public.student_profiles WHERE LOWER(BTRIM(student_identifier)) = LOWER(BTRIM($1)) LIMIT 1`,
+      [normalizedEnrollment],
+    );
+    if (owner.rows[0] && owner.rows[0].user_id !== user.id) {
+      res.status(409).json({ success:false, code:"ENROLLMENT_ALREADY_CLAIMED", message:"This enrollment number is already linked to another Gradly account. If this is your legitimate enrollment number, submit an enrollment grievance." });
+      return;
+    }
     const curriculumId = typeof req.body?.curriculumId === "string" ? req.body.curriculumId : undefined;
-    const result = await previewEnrollment(institutionId, enrollmentNumber, new Date(), curriculumId);
+    const result = await previewEnrollment(institutionId, normalizedEnrollment, new Date(), curriculumId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof Error) {

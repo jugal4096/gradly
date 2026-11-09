@@ -200,3 +200,9 @@ html[data-sa-theme="dark"] .sa-requests .sa-request-row-buttons button:first-chi
   border-color: #51416f !important;
 }
 html[data-sa-theme="dark"] .sa-requests .sa-request-section article:hover { background: #202b37; }
+
+.sa-grievance-correction{display:grid;gap:10px;margin-top:14px;padding:14px;border:1px solid #e4dcf2;border-radius:11px;background:#faf8ff}
+.sa-grievance-correction>strong{font-size:12px;color:#44316e}
+.sa-grievance-correction>small{font-size:11px;line-height:1.5;color:#827694}
+.sa-grievance-correction label{display:grid;gap:6px;font-size:11px;font-weight:700;color:#594b70}
+.sa-grievance-correction input,.sa-grievance-correction select{width:100%;border:1px solid #e0d8ed;border-radius:8px;background:#fff;color:#35264f;padding:10px;font:inherit}
