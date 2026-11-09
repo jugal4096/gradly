@@ -28,6 +28,13 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     throw new StudentProfileValidationError(code, messageByCode[code] ?? "Enrollment number is invalid. Check the 11-character format and try again.");
   }
 
+  if (input.admissionYear !== parsed.admissionYear && input.academicProfileOverrides?.admissionYear !== true) {
+    throw new StudentProfileValidationError(
+      "ADMISSION_YEAR_MISMATCH",
+      "The admission year does not match the year encoded in your enrollment number. Edit it only if the enrollment number itself has been officially corrected.",
+    );
+  }
+
   const programmeRule = await pool.query(
     `SELECT prefix FROM public.enrollment_program_rules
      WHERE prefix = $1 AND (institution_id = $2 OR institution_id IS NULL)
