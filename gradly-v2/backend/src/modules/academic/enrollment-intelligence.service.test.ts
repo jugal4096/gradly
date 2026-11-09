@@ -10,14 +10,14 @@ const predict = (admissionYear: number, entrySemester: number, date: string, tot
 
 test("programme resolution follows enrollment degree prefix rather than stale rule-table patterns", () => {
   assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Engineering"), true);
-  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Technology"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Technology"), true);
   assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Technology"), true);
-  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), true);
   assert.equal(programmeMatchesEnrollmentPrefix("MC", "Master of Computer Applications"), true);
   assert.equal(programmeMatchesEnrollmentPrefix("MT", "Master of Technology"), true);
 });
 
-test("matches degree abbreviations with punctuation and common programme-name variants", () => {
+test("BE and BT prefixes both resolve B.E. and B.Tech institutional programme labels", () => {\n  for (const prefix of ["BE", "BT"]) {\n    for (const name of ["B.E.", "B.E. Computer Engineering", "Bachelor of Engineering", "B.Tech.", "B.Tech Computer Engineering", "Bachelor of Technology"]) {\n      assert.equal(programmeMatchesEnrollmentPrefix(prefix, name), true, `${prefix}: ${name}`);\n    }\n  }\n  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Master of Technology"), false);\n  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Master of Computer Applications"), false);\n});\n\ntest("matches degree abbreviations with punctuation and common programme-name variants", () => {
   for (const name of ["B.E.", "B E", "Bachelor in Engineering", "Engineering - B.E."]) {
     assert.equal(programmeMatchesEnrollmentPrefix("BE", name), true, name);
   }
