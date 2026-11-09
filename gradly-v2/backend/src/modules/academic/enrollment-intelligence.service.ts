@@ -88,7 +88,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
        WHERE LOWER(BTRIM(name)) = ANY($3::text[])
        ORDER BY CASE WHEN LOWER(BTRIM(name)) = $4 THEN 0 ELSE 1 END LIMIT 1`,
       [parsed.admissionModeCode, parsed.admissionModeCode === "F" ? 1 : 3,
-       parsed.admissionModeCode === "F" ? ["regular", "first year", "fy"] : ["direct second year", "dsy", "dse", "lateral entry"],
+       parsed.admissionModeCode === "F" ? ["regular", "regular admission", "first year", "first year admission", "fy"] : ["direct second year", "direct second year admission", "dsy", "dse", "lateral entry"],
        parsed.admissionModeCode === "F" ? "regular" : "direct second year"],
     );
     mode = fallback.rows[0];
