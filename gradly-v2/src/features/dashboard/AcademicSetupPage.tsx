@@ -92,7 +92,9 @@ export default function AcademicSetupPage() {
     if (enrollmentPrefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized) && !/\b(cbcs|legacy)\b/.test(normalized);
     return enrollmentPrefix === "MC" || enrollmentPrefix === "MT";
   });
-  const adjustedExpectedSemester = expectedSemester !== null && expectedSemester >= predictedEntrySemester && expectedSemester <= semesterCount ? expectedSemester : null;\n  const askAcademicDelayReason = shouldAskAcademicDelayReason(adjustedExpectedSemester, selectedCurrentSemester, selectedCurrentSemester === "COMPLETED");\n  const delayDeclarations = academicDelayDeclarations(academicDelayReason, academicGapYears, pendingBacklogCount, askAcademicDelayReason);
+  const adjustedExpectedSemester = expectedSemester !== null && expectedSemester >= predictedEntrySemester && expectedSemester <= semesterCount ? expectedSemester : null;
+  const askAcademicDelayReason = shouldAskAcademicDelayReason(adjustedExpectedSemester, selectedCurrentSemester, selectedCurrentSemester === "COMPLETED");
+  const delayDeclarations = academicDelayDeclarations(academicDelayReason, academicGapYears, pendingBacklogCount, askAcademicDelayReason);
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
 
@@ -318,7 +320,8 @@ export default function AcademicSetupPage() {
     }
     const completed = selectedCurrentSemester === "COMPLETED";
     if (!selectedCurrentSemester || (!completed && !availableSemesters.includes(Number(selectedCurrentSemester)))) { setError("Select your current semester."); return; }
-    if (completed && Number(pendingBacklogCount || 0) > 0) { setError("You cannot mark the degree as completed while you still have pending backlogs."); return; }\n    if (askAcademicDelayReason && !academicDelayReason) { setError("Please tell Gradly why your actual semester differs from the prediction."); return; }
+    if (completed && Number(pendingBacklogCount || 0) > 0) { setError("You cannot mark the degree as completed while you still have pending backlogs."); return; }
+    if (askAcademicDelayReason && !academicDelayReason) { setError("Please tell Gradly why your actual semester differs from the prediction."); return; }
     const finalAcademicStatus: AcademicStatus = completed ? "GRADUATED" : "ENROLLED";
     setSaving(true);
     try {
