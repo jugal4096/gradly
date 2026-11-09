@@ -369,7 +369,7 @@ export default function AcademicSetupPage() {
         expectedSemester,
         expectedDurationEnded: Boolean(expectedDurationEnded),
         estimatedAcademicDelaySemesters: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)),
-        estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)) / 2,
+        estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
       navigate("/dashboard", { replace: true });
@@ -532,7 +532,7 @@ export default function AcademicSetupPage() {
               {academicGapYears > 0 && <div className="academic-setup-gap-period">
                 <div className="academic-setup-gap-period-heading"><strong>Academic gap: {academicGapYears} {academicGapYears === 1 ? "year" : "years"}</strong><span>Between which academic years did this gap occur?</span></div>
                 <div className="academic-setup-gap-period-fields">
-                  <label htmlFor="gap-year-from">From academic year<select id="gap-year-from" value={gapAcademicYearFrom} onChange={e => setGapAcademicYearFrom(e.target.value)} required><option value="">Select year</option>{academicYearOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                  <label htmlFor="gap-year-from">From academic year<select id="gap-year-from" value={gapAcademicYearFrom} onChange={e => { setGapAcademicYearFrom(e.target.value); setGapAcademicYearTo(String(Number(e.target.value) + academicGapYears)); }} required><option value="">Select year</option>{academicYearOptions.filter(option => Number(option.value) + academicGapYears <= currentAcademicYearStart).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
                   <label htmlFor="gap-year-to">To academic year<select id="gap-year-to" value={gapAcademicYearTo} onChange={e => setGapAcademicYearTo(e.target.value)} required><option value="">Select year</option>{academicYearOptions.filter(option => !gapAcademicYearFrom || Number(option.value) > Number(gapAcademicYearFrom)).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
                 </div>
               </div>}
