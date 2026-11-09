@@ -47,6 +47,7 @@ export default function AcademicSetupPage() {
   const [theme, setTheme] = useState<"light" | "dark">(() => typeof window !== "undefined" && window.localStorage.getItem("gradly-academic-theme") === "dark" ? "dark" : "light");
   const [expectedSemester, setExpectedSemester] = useState<number | null>(null);
   const [selectedCurrentSemester, setSelectedCurrentSemester] = useState("");
+  const selectedCurrentSemesterRef = useRef("");
   const [academicStatus, setAcademicStatus] = useState<AcademicStatus>("ENROLLED");
   const hasManuallySelectedSemester = useRef(false);
   const [predictionConfirmed, setPredictionConfirmed] = useState<boolean | null>(null);
@@ -112,7 +113,7 @@ export default function AcademicSetupPage() {
     setError("");
     if (!curriculumRecheck) {
       setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]);
-      setSelectedCurrentSemester(""); setExpectedSemester(null); setAcademicStatus("ENROLLED");
+      setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setAcademicStatus("ENROLLED");
       hasManuallySelectedSemester.current = false; setPredictionConfirmed(null);
     } else if (requestedCurriculumId) {
       setCurriculumId(requestedCurriculumId);
@@ -185,8 +186,9 @@ export default function AcademicSetupPage() {
         validPrediction ? prediction : null,
         semesterLimit,
         hasManuallySelectedSemester.current,
-        selectedCurrentSemester,
+        selectedCurrentSemesterRef.current,
       );
+      selectedCurrentSemesterRef.current = nextSelection;
       setSelectedCurrentSemester(nextSelection);
       setAcademicStatus(academicStatusForSemester(nextSelection));
       if (hasManuallySelectedSemester.current && nextSelection !== selectedCurrentSemester) {
@@ -381,7 +383,7 @@ export default function AcademicSetupPage() {
             <section className="academic-setup-confirmation academic-setup-journey">
               <div className="academic-setup-confirmation-heading"><h2>Your Academic Journey</h2><p>Choose the semester you are actually in. The prediction is only a comparison reference.</p></div>
               <div className="academic-setup-journey-grid">
-                <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Current Semester</label><select id="actual-semester" required value={selectedCurrentSemester} onChange={e => { setSelectedCurrentSemester(e.target.value); setAcademicStatus(academicStatusForSemester(e.target.value)); hasManuallySelectedSemester.current = true; }}><option value="">Choose your current semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}<option value="COMPLETED">Completed Programme</option></select></div>
+                <div className="academic-setup-current-semester"><label htmlFor="actual-semester">Current Semester</label><select id="actual-semester" required value={selectedCurrentSemester} onChange={e => { setSelectedCurrentSemester(e.target.value); selectedCurrentSemesterRef.current = e.target.value; setAcademicStatus(academicStatusForSemester(e.target.value)); hasManuallySelectedSemester.current = true; }}><option value="">Choose your current semester</option>{availableSemesters.map(number => <option key={number} value={String(number)}>Semester {number}</option>)}<option value="COMPLETED">Completed Programme</option></select></div>
                 <div className="academic-setup-prediction-reference"><span>Predicted current semester</span><strong>{adjustedExpectedSemester ? "Semester " + adjustedExpectedSemester : preview.expected?.expectedDurationEnded ? "Expected duration completed" : "Not available"}</strong><small>Based on your enrollment details and selected admission mode</small></div>
               </div>
               {selectedCurrentSemester && selectedCurrentSemester !== "COMPLETED" && <div className="academic-setup-delay">
