@@ -1,9 +1,40 @@
+function academicSessionStartYear(now: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "numeric",
+  }).formatToParts(now);
+  const year = Number(parts.find(part => part.type === "year")?.value);
+  const month = Number(parts.find(part => part.type === "month")?.value);
+  return month >= 7 ? year : year - 1;
+}
+
+/** Enforces scheme-era and academic-session admission-year boundaries. */
+export function validateEnrollmentYear(
+  prefix: string,
+  admissionYear: number,
+  admissionModeCode: string,
+  now: Date = new Date(),
+): void {
+  const latestStartedAdmissionYear = academicSessionStartYear(now);
+  if (admissionYear > latestStartedAdmissionYear) {
+    throw new Error("FUTURE_ADMISSION_YEAR");
+  }
+  if (prefix === "BE") {
+    if (admissionYear > 2023) throw new Error("BE_CBCS_DISCONTINUED");
+    if (admissionYear === 2023 && admissionModeCode !== "S") {
+      throw new Error("BE23_FIRST_YEAR_NOT_ALLOWED");
+    }
+  }
+  if (prefix === "BT" && admissionYear < 2023) {
+    throw new Error("BT_NEP_NOT_STARTED");
+  }
+}
+
 export type EnrollmentComponents = {
   enrollmentNumber: string; classificationKey: string; prefix: string; admissionYear: number;
   admissionModeCode: string; branchCode: string; suffix: string;
 };
 
-export function parseEnrollmentNumber(input: string, pivotStart = 70): EnrollmentComponents {
+export function parseEnrollmentNumber(input: string, pivotStart = 70, now: Date = new Date()): EnrollmentComponents {
   // Normalize case and outer whitespace only. Never repair or remove internal characters.
   const enrollmentNumber = String(input ?? "").trim().toUpperCase();
   if (!enrollmentNumber) throw new Error("EMPTY_ENROLLMENT_NUMBER");
@@ -15,11 +46,15 @@ export function parseEnrollmentNumber(input: string, pivotStart = 70): Enrollmen
   if (!/^\d{2}$/.test(enrollmentNumber.slice(5, 7))) throw new Error("INVALID_BRANCH_CODE");
   if (!/^\d{3}$/.test(enrollmentNumber.slice(-3))) throw new Error("INVALID_STUDENT_SERIAL");
   const yy = Number(enrollmentNumber.slice(2, 4));
+  const prefix = enrollmentNumber.slice(0, 2);
+  const admissionModeCode = enrollmentNumber.slice(4, 5);
+  const admissionYear = yy >= pivotStart ? 1900 + yy : 2000 + yy;
+  validateEnrollmentYear(prefix, admissionYear, admissionModeCode, now);
   return {
     enrollmentNumber, classificationKey: enrollmentNumber.slice(0, 7),
-    prefix: enrollmentNumber.slice(0, 2),
-    admissionYear: yy >= pivotStart ? 1900 + yy : 2000 + yy,
-    admissionModeCode: enrollmentNumber.slice(4, 5),
+    prefix,
+    admissionYear,
+    admissionModeCode,
     branchCode: enrollmentNumber.slice(5, 7), suffix: enrollmentNumber.slice(7),
   };
 }
