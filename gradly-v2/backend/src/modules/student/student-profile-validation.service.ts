@@ -18,7 +18,13 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   try { parsed = parseEnrollmentNumber(input.studentIdentifier); }
   catch (error) {
     const code = error instanceof Error ? error.message : "INVALID_ENROLLMENT_NUMBER";
-    throw new StudentProfileValidationError(code, "Enrollment number format is invalid. Check the 11-character format.");
+    const messageByCode: Record<string, string> = {
+      FUTURE_ADMISSION_YEAR: "This enrollment year has not started yet. Future-dated enrollment numbers are not accepted.",
+      BE_CBCS_DISCONTINUED: "The BE New CBCS scheme was discontinued after 2023. BE24 and later BE enrollment years are invalid.",
+      BE23_FIRST_YEAR_NOT_ALLOWED: "BE23F is invalid because first-year admissions had moved to NEP. BE23S Direct Second Year remains valid.",
+      BT_NEP_NOT_STARTED: "BT enrollment numbers before 2023 are invalid because the NEP scheme had not started.",
+    };
+    throw new StudentProfileValidationError(code, messageByCode[code] ?? "Enrollment number is invalid. Check the 11-character format and try again.");
   }
 
   const programmeRule = await pool.query(
