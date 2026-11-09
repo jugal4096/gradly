@@ -110,7 +110,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       ...unresolved("SCHEME", "BE enrollment numbers must map to the institution's NEW CBCS scheme. Configure the exact scheme mapping before continuing.", parsed),
       programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
       admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
-      entrySemester: Number(mode.entry_semester), curriculumOptions,
+      entrySemester: Number(mode.entry_semester), curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
     };
   }
   const requiresManualScheme = !configuredScheme || (parsed.prefix === "BT" && configuredNewCbcs);
@@ -122,7 +122,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       parsed),
       programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
       admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
-      entrySemester: Number(mode.entry_semester), curriculumOptions,
+      entrySemester: Number(mode.entry_semester), curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
     };
   }
 
