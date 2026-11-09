@@ -24,6 +24,9 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
       BE_CBCS_DISCONTINUED: "The BE New CBCS scheme was discontinued after 2023. BE24 and later BE enrollment years are invalid.",
       BE23_FIRST_YEAR_NOT_ALLOWED: "BE23F is invalid because first-year admissions had moved to NEP. BE23S Direct Second Year remains valid.",
       BT_NEP_NOT_STARTED: "BT enrollment numbers before 2023 are invalid because the NEP scheme had not started.",
+      POSTGRADUATE_REGULAR_ADMISSION_ONLY: "M.E. and M.Tech. enrollment numbers must use Regular admission (F) and begin in Semester 1.",
+      ME_CBCS_DISCONTINUED: "The ME New CBCS scheme was discontinued after 2023. ME24 and later ME enrollment years are invalid.",
+      MT_NEP_NOT_STARTED: "MT enrollment numbers before 2023 are invalid because the NEP scheme had not started.",
     };
     throw new StudentProfileValidationError(code, messageByCode[code] ?? "Enrollment number is invalid. Check the 11-character format and try again.");
   }
@@ -46,7 +49,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   const curriculumResult = await pool.query(
     `SELECT c.id, c.institution_id,
             COALESCE(c.total_semesters, (SELECT COUNT(*)::int FROM public.semesters sem WHERE sem.curriculum_id = c.id)) AS total_semesters,
-            p.name AS program_name, b.name AS branch_name, sc.name AS scheme_name
+            p.name AS program_name, b.name AS branch_name, b.code AS branch_code, sc.name AS scheme_name
      FROM public.curricula c
      JOIN public.programs p ON p.id = c.program_id
      JOIN public.branches b ON b.id = c.branch_id
@@ -62,14 +65,17 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     throw new StudentProfileValidationError("PROGRAMME_PREFIX_MISMATCH", "The selected programme does not match the degree prefix in your enrollment number.");
   }
   if (!isAllowedSchemeForEnrollmentPrefix(parsed.prefix, String(curriculum.scheme_name || ""))) {
-    const expected = parsed.prefix === "BE" ? "New CBCS" : parsed.prefix === "BT" ? "NEP" : "the configured postgraduate scheme";
+    const expected = parsed.prefix === "BE" || parsed.prefix === "ME" ? "New CBCS" : parsed.prefix === "BT" || parsed.prefix === "MT" ? "NEP" : "the configured MCA scheme";
     throw new StudentProfileValidationError("SCHEME_PREFIX_MISMATCH", `The selected academic scheme is not valid for this enrollment prefix. Expected ${expected}.`);
   }
 
   if (input.academicProfileOverrides?.branch !== true) {
     const institutionResult = await pool.query(`SELECT name FROM public.institutions WHERE id = $1 LIMIT 1`, [input.institutionId]);
     const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
-    if (!decodedBranchName || !branchIdentityMatches(decodedBranchName, String(curriculum.branch_name || ""))) {
+    const branchMatches = parsed.prefix === "ME"
+      ? String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
+      : Boolean(decodedBranchName && branchIdentityMatches(decodedBranchName, String(curriculum.branch_name || "")));
+    if (!branchMatches) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
     }
   }
@@ -87,6 +93,9 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   );
   const mode = modeResult.rows[0];
   if (!mode) throw new StudentProfileValidationError("ADMISSION_MODE_NOT_CONFIGURED", "This admission mode is not configured for the selected institute and programme.");
+  if ((parsed.prefix === "ME" || parsed.prefix === "MT") && (parsed.admissionModeCode !== "F" || !/regular/i.test(String(mode.mode_name)) || Number(mode.entry_semester) !== 1)) {
+    throw new StudentProfileValidationError("POSTGRADUATE_REGULAR_ADMISSION_ONLY", "M.E. and M.Tech. admissions must be Regular first-year entry in Semester 1.");
+  }
   if (String(input.admissionModeName ?? "").trim().toLowerCase() !== String(mode.mode_name).trim().toLowerCase()) {
     throw new StudentProfileValidationError("ADMISSION_MODE_MISMATCH", "Selected admission mode is not configured for this programme and institution.");
   }
