@@ -27,3 +27,24 @@ export async function requestStudentInstitution(req: AuthenticatedRequest, res: 
     return res.status(503).json({ message: "We couldn't submit your request right now. Please try again later." });
   }
 }
+
+
+export async function listStudentInstitutionRequests(req: AuthenticatedRequest, res: Response) {
+  if (!req.firebaseUser?.uid) return res.status(401).json({ message: "Authentication required." });
+  try {
+    const user = await getGradlyUserByFirebaseUid(req.firebaseUser.uid);
+    if (!user) return res.status(404).json({ message: "Gradly account was not found." });
+    const result = await pool.query(
+      `SELECT id, college_name AS "collegeName", locality, status, source,
+              created_at AS "createdAt", reviewed_at AS "reviewedAt"
+       FROM public.guest_institution_requests
+       WHERE requested_by_user_id = $1
+       ORDER BY created_at DESC LIMIT 100`,
+      [user.id],
+    );
+    return res.json({ success:true, requests:result.rows });
+  } catch (error) {
+    console.error("Student institution request tracking failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to load your institution requests." });
+  }
+}

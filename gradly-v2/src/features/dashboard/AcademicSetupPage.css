@@ -345,3 +345,44 @@
 .theme-dark .academic-setup-request-success{color:#9fe0b9}
 .theme-dark .academic-setup-selected button{color:#c1b4ff}
 .theme-dark .academic-setup-results button small{color:var(--as-muted)}
+
+
+.academic-setup-history-fields{margin-top:14px}
+.academic-setup-history-fields input,.academic-setup-history-fields select,
+.academic-setup-grievance textarea,.academic-setup-grievance select{
+  width:100%;min-width:0;border:1px solid var(--as-border);border-radius:10px;
+  background:var(--as-field);color:var(--as-field-text);padding:11px 12px;
+  font:600 11px Manrope,sans-serif;outline:none;
+}
+.academic-setup-history-fields input:focus,.academic-setup-history-fields select:focus,
+.academic-setup-grievance textarea:focus,.academic-setup-grievance select:focus{
+  border-color:#8c7bda;box-shadow:0 0 0 3px rgba(131,117,213,.10)
+}
+.academic-setup-request-tracking,.academic-setup-grievance-list{
+  margin-top:16px;padding:15px;border:1px solid var(--as-border);border-radius:13px;
+  background:var(--as-surface);color:var(--as-text)
+}
+.academic-setup-request-tracking h3,.academic-setup-grievance-list h3{
+  margin:0 0 10px;font-size:12px;color:var(--as-text)
+}
+.academic-setup-request-row,.academic-setup-grievance-list article{
+  display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--as-border)
+}
+.academic-setup-request-row div,.academic-setup-request-row strong,.academic-setup-request-row small,
+.academic-setup-grievance-list article>div,.academic-setup-grievance-list article small{display:block}
+.academic-setup-request-row strong,.academic-setup-grievance-list article strong{font-size:10px;color:var(--as-text)}
+.academic-setup-request-row small,.academic-setup-grievance-list article small{margin-top:4px;color:var(--as-muted);font-size:9px}
+.academic-setup-request-row>span,.academic-setup-grievance-list article>div span{
+  align-self:center;padding:5px 8px;border-radius:99px;background:var(--as-surface-2);
+  color:var(--as-muted);font-size:8px;font-weight:800;white-space:nowrap
+}
+.academic-setup-grievance form{display:grid;gap:12px;margin-top:14px;padding:15px;border:1px solid var(--as-border);border-radius:12px;background:var(--as-surface)}
+.academic-setup-grievance form label{display:grid;gap:6px;color:var(--as-text);font-size:10px;font-weight:750}
+.academic-setup-grievance textarea{resize:vertical;line-height:1.5}
+.academic-setup-grievance form button{justify-self:start;padding:10px 14px;border:0;border-radius:9px;background:#6755c4;color:#fff;font:700 10px Manrope,sans-serif;cursor:pointer}
+.academic-setup-grievance form button:disabled{opacity:.55;cursor:not-allowed}
+.academic-setup-grievance-list article{display:block}
+.academic-setup-grievance-list article>div{display:flex;justify-content:space-between;gap:10px}
+.academic-setup-grievance-list article p{margin:8px 0;color:var(--as-muted);font-size:10px;line-height:1.5}
+.theme-dark .academic-setup-request-tracking,.theme-dark .academic-setup-grievance-list{background:var(--as-surface)}
+@media(max-width:600px){.academic-setup-request-row{align-items:flex-start}.academic-setup-history-fields{grid-template-columns:1fr}}

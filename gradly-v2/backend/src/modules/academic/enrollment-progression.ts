@@ -119,8 +119,9 @@ export function predictSemester(input: {
 export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: string | null | undefined): boolean {
   const name = String(schemeName ?? "").trim();
   if (!name) return false;
-  const isNewCbcs = name.toLowerCase().replaceAll(" ", "").startsWith("newcbcs");
-  if (prefix === "BE") return isNewCbcs;
-  if (prefix === "BT") return !isNewCbcs;
-  return prefix === "MC" || prefix === "MT";
+  const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (prefix === "BE") return /^new cbcs(?:\s|$)/.test(normalized);
+  if (prefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized);
+  return (prefix === "MC" || prefix === "MT") && normalized.length > 0;
 }
+

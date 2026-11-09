@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { createProfile, getStudentProfile, updateProfile } from "./student.service";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
+import { StudentProfileValidationError, validateStudentProfileConfiguration } from "./student-profile-validation.service";
 
 async function resolveStudentUser(req: AuthenticatedRequest, res: Response) {
   if (!req.firebaseUser) {
@@ -19,12 +20,14 @@ async function resolveStudentUser(req: AuthenticatedRequest, res: Response) {
 function readProfilePayload(body: Record<string, unknown>) {
   const {
     institutionId, curriculumId, admissionModeId, admissionModeName, studentIdentifier,
-    admissionYear, currentSemesterNumber, graduationYear, targetCgpa,
+    admissionYear, currentSemesterNumber, graduationYear, targetCgpa, predictedSemesterNumber, academicGapYears,
   } = body;
   const academicProfileConfirmed = body.academicProfileConfirmed === true;
   const pendingBacklogCount = body.pendingBacklogCount === undefined || body.pendingBacklogCount === null
     ? null : Number(body.pendingBacklogCount);
   const academicStatus = body.academicStatus ?? "ENROLLED";
+  const parsedPredictedSemester = predictedSemesterNumber === undefined || predictedSemesterNumber === null || predictedSemesterNumber === "" ? null : Number(predictedSemesterNumber);
+  const parsedGapYears = academicGapYears === undefined || academicGapYears === null || academicGapYears === "" ? null : Number(academicGapYears);
   if (
     typeof institutionId !== "string" || !institutionId ||
     typeof curriculumId !== "string" || !curriculumId ||
@@ -32,6 +35,9 @@ function readProfilePayload(body: Record<string, unknown>) {
     !Number.isInteger(Number(admissionYear)) ||
     Number(admissionYear) < 1900 ||
     !["ENROLLED", "AWAITING_RESULTS", "PENDING_BACKLOGS", "APPROVED_EXTENSION", "GRADUATED"].includes(String(academicStatus)) ||
+    Number(admissionYear) > new Date().getFullYear() ||
+    (parsedPredictedSemester !== null && (!Number.isInteger(parsedPredictedSemester) || parsedPredictedSemester < 1 || parsedPredictedSemester > 20)) ||
+    (parsedGapYears !== null && (!Number.isInteger(parsedGapYears) || parsedGapYears < 0 || parsedGapYears > 10)) ||
     (currentSemesterNumber !== null && currentSemesterNumber !== undefined &&
       (!Number.isInteger(Number(currentSemesterNumber)) || Number(currentSemesterNumber) < 1 || Number(currentSemesterNumber) > 12)) ||
     ((academicStatus === "ENROLLED" || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS") &&
@@ -57,6 +63,9 @@ function readProfilePayload(body: Record<string, unknown>) {
     targetCgpa: parsedTarget,
     academicProfileConfirmed,
     pendingBacklogCount,
+    predictedSemesterNumber: parsedPredictedSemester,
+    academicGapYears: parsedGapYears,
+    academicProfileOverrides: body.academicProfileOverrides && typeof body.academicProfileOverrides === "object" && !Array.isArray(body.academicProfileOverrides) ? body.academicProfileOverrides : {},
   };
 }
 
@@ -78,9 +87,12 @@ export async function createStudentProfileController(req: AuthenticatedRequest, 
     if (!user) return;
     const payload = readProfilePayload(req.body ?? {});
     if (!payload) return res.status(400).json({ message: "Invalid or missing student profile fields." });
+    await validateStudentProfileConfiguration(payload);
     const profile = await createProfile({ ...payload, userId: user.id });
     return res.status(201).json({ message: "Student profile created successfully.", profile });
   } catch (error) {
+    if (error instanceof StudentProfileValidationError) return res.status(400).json({ success:false, code:error.code, message:error.message });
+    if ((error as { code?: string })?.code === "23505") return res.status(409).json({ success:false, code:"ENROLLMENT_ALREADY_CLAIMED", message:"This enrollment number is already linked to another Gradly account. Submit an enrollment grievance if this is your legitimate enrollment number." });
     if (error instanceof Error && error.message === "Student profile already exists.") {
       return res.status(409).json({ message: error.message });
     }
@@ -95,9 +107,12 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
     if (!user) return;
     const payload = readProfilePayload(req.body ?? {});
     if (!payload) return res.status(400).json({ message: "Invalid or missing student profile fields." });
+    await validateStudentProfileConfiguration(payload);
     const profile = await updateProfile({ ...payload, userId: user.id });
     return res.status(200).json({ message: "Student profile updated successfully.", profile });
   } catch (error) {
+    if (error instanceof StudentProfileValidationError) return res.status(400).json({ success:false, code:error.code, message:error.message });
+    if ((error as { code?: string })?.code === "23505") return res.status(409).json({ success:false, code:"ENROLLMENT_ALREADY_CLAIMED", message:"This enrollment number is already linked to another Gradly account. Submit an enrollment grievance if this is your legitimate enrollment number." });
     if (error instanceof Error && error.message === "Student profile not found.") {
       return res.status(404).json({ message: error.message });
     }
@@ -105,3 +120,4 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
     return res.status(500).json({ message: "Failed to update student profile." });
   }
 }
+
