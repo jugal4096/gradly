@@ -292,7 +292,7 @@ test("GECA M.Tech specialization codes resolve through their stored department b
     name: "ELECTRICAL", code: "ELECTRICAL",
     specializationName: "Electrical Power Systems", specializationCode: "EPS",
   }), false);
-  assert.equal(enrollmentBranchMatches("MT", "Computer Engineering", {
+  assert.equal(enrollmentBranchMatches("MT", "Computer Science and Engineering", {
     name: "Computer Science and Engineering", code: "CSE",
   }), true);
 });
