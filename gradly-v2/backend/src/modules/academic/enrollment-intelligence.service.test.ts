@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, resolveEnrollmentBranchCode } from "./enrollment-progression";
 import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "../../../../src/features/dashboard/academic-setup-state";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
@@ -183,4 +183,23 @@ test("BT24S06F007 direct-second-year enrollment predicts semester 7 in the 2026-
   const parsed = parseEnrollmentNumber("BT24S06F007");
   assert.deepEqual([parsed.prefix, parsed.admissionYear, parsed.admissionModeCode, parsed.branchCode], ["BT", 2024, "S", "06"]);
   assert.equal(predict(parsed.admissionYear, 3, "2026-11-09T12:00:00+05:30").expectedSemester, 7);
+});
+
+
+test("GECA branch codes are decoded deterministically without enrollment_branch_codes lookups", () => {
+  const institution = "Government College of Engineering, Aurangabad";
+  const expected: Record<string, string> = {
+    "01": "Civil Engineering",
+    "02": "Mechanical Engineering",
+    "03": "Electrical Engineering",
+    "04": "Electronics and Telecommunication Engineering",
+    "05": "Computer Science and Engineering",
+    "06": "Information Technology",
+  };
+  for (const [code, branch] of Object.entries(expected)) {
+    assert.equal(resolveEnrollmentBranchCode(institution, "BT", code), branch);
+    assert.equal(resolveEnrollmentBranchCode(institution, "BE", code), branch);
+  }
+  assert.equal(resolveEnrollmentBranchCode(institution, "BT", "07"), null);
+  assert.equal(resolveEnrollmentBranchCode("Other University", "BT", "06"), null);
 });
