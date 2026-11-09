@@ -8,8 +8,8 @@ export function parseEnrollmentNumber(input: string, pivotStart = 70): Enrollmen
   const enrollmentNumber = String(input ?? "").trim().toUpperCase();
   if (!enrollmentNumber) throw new Error("EMPTY_ENROLLMENT_NUMBER");
   if (!/^(BE|BT|MC|MT)/.test(enrollmentNumber)) throw new Error("INVALID_PROGRAMME_PREFIX");
-  if (enrollmentNumber[7] !== "F") throw new Error("INVALID_EIGHTH_CHARACTER");
   if (enrollmentNumber.length !== 11) throw new Error("INVALID_ENROLLMENT_LENGTH");
+  if (enrollmentNumber[7] !== "F") throw new Error("INVALID_EIGHTH_CHARACTER");
   if (!/^\d{2}$/.test(enrollmentNumber.slice(2, 4))) throw new Error("INVALID_ADMISSION_YEAR");
   if (!/^[FS]$/.test(enrollmentNumber.slice(4, 5))) throw new Error("INVALID_ADMISSION_MODE");
   if (!/^\d{2}$/.test(enrollmentNumber.slice(5, 7))) throw new Error("INVALID_BRANCH_CODE");
