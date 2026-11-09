@@ -259,7 +259,7 @@ export function resolveEnrollmentBranchCode(institutionName: string, prefix: str
   if (prefix === "MT") {
     const postgraduateBranches: Record<string, string> = {
       "09": "Structural Engineering", "08": "Water Resources Engineering", "16": "Geotechnical Engineering",
-      "15": "Electrical Machines and Drives", "12": "Electrical Power Systems", "13": "Electronics Engineering",
+      "15": "Electrical Machines and Drives", "12": "Electrical Power Systems", "13": "Electronics and Telecommunication Engineering",
       "05": "Computer Science and Engineering",
       // Production Engineering code has not been supplied; deliberately do not guess.
     };
