@@ -106,7 +106,8 @@ export default function AcademicSetupPage() {
         const data = await response.json();
         if (response.ok && data.profile && !cancelled) {
           const p = data.profile;
-          localStorage.setItem("gradly_student_profile", JSON.stringify({
+          const expectedReferenceSemester = expectedSemester ?? (expectedDurationEnded ? semesterCount : null);
+      localStorage.setItem("gradly_student_profile", JSON.stringify({
             institutionId: p.institution_id || "", institutionName: p.institution_name || "",
             programId: p.program_id || "", programName: p.program_name || "",
             branchId: p.branch_id || "", branchName: p.branch_name || "",
@@ -315,9 +316,10 @@ export default function AcademicSetupPage() {
     if (!confirmedAdmissionYear || !Number.isInteger(Number(confirmedAdmissionYear)) || Number(confirmedAdmissionYear) < 1900 || Number(confirmedAdmissionYear) > new Date().getFullYear()) {
       setError("Enter a valid admission year."); return;
     }
-    const completed = academicStatus === "GRADUATED";
+    const completed = selectedCurrentSemester === "COMPLETED";
     if (!selectedCurrentSemester || (!completed && !availableSemesters.includes(Number(selectedCurrentSemester)))) { setError("Select your current semester."); return; }
-    const finalAcademicStatus: AcademicStatus = academicStatus;
+    if (completed && Number(pendingBacklogCount || 0) > 0) { setError("You cannot mark the degree as completed while you still have pending backlogs."); return; }
+    const finalAcademicStatus: AcademicStatus = completed ? "GRADUATED" : "ENROLLED";
     setSaving(true);
     try {
       const token = await user.getIdToken();
@@ -348,8 +350,8 @@ export default function AcademicSetupPage() {
         academicProfileConfirmed: true,
         expectedSemester,
         expectedDurationEnded: Boolean(expectedDurationEnded),
-        estimatedAcademicDelaySemesters: completed ? null : Math.max(0, Number(expectedSemester || 0) - Number(selectedCurrentSemester)),
-        estimatedAcademicDelayYears: completed ? null : Math.max(0, Number(preview.expected?.expectedSemester || 0) - Number(selectedCurrentSemester)) / 2,
+        estimatedAcademicDelaySemesters: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)),
+        estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)) / 2,
         verifiedGapYears: academicGapYears === "" ? null : Number(academicGapYears), gapYearsVerificationStatus: "STUDENT_DECLARED", academicGapYears: academicGapYears === "" ? null : Number(academicGapYears), pendingBacklogCount: pendingBacklogCount === "" ? null : Number(pendingBacklogCount), scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
       navigate("/dashboard", { replace: true });

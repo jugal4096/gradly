@@ -29,6 +29,7 @@ function readProfilePayload(body: Record<string, unknown>) {
   const parsedPredictedSemester = predictedSemesterNumber === undefined || predictedSemesterNumber === null || predictedSemesterNumber === "" ? null : Number(predictedSemesterNumber);
   const parsedGapYears = academicGapYears === undefined || academicGapYears === null || academicGapYears === "" ? null : Number(academicGapYears);
   if (
+    !academicProfileConfirmed ||
     typeof institutionId !== "string" || !institutionId ||
     typeof curriculumId !== "string" || !curriculumId ||
     typeof studentIdentifier !== "string" || !studentIdentifier.trim() ||

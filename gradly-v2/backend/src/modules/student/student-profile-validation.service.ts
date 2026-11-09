@@ -9,6 +9,7 @@ type ProfileInput = {
   institutionId: string; curriculumId: string; studentIdentifier: string;
   admissionYear: number; admissionModeName: string | null; currentSemesterNumber: number | null;
   academicStatus: string;
+  pendingBacklogCount?: number | null;
   academicProfileOverrides?: Record<string, unknown>;
 };
 
@@ -106,6 +107,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     throw new StudentProfileValidationError("CURRICULUM_DURATION_INVALID", "The selected curriculum has an invalid semester configuration.");
   }
   if (input.academicStatus === "GRADUATED") {
+    if (Number(input.pendingBacklogCount || 0) > 0) throw new StudentProfileValidationError("GRADUATION_BACKLOG_CONFLICT", "A student with pending backlogs cannot be marked as having completed the degree.");
     if (input.currentSemesterNumber !== null) throw new StudentProfileValidationError("GRADUATION_SEMESTER_INVALID", "A completed programme cannot have an active current semester.");
     return null;
   }

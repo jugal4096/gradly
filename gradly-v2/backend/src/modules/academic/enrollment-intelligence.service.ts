@@ -146,13 +146,14 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       };
     }
     curriculum = candidates[0];
-    curriculumResolutionReason = configuredScheme ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
+    curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEW_CBCS_CURRICULUM";
   } else if (parsed.prefix === "BT") {
-    // BT is strictly NEP. If several NEP curricula exist, ask the student to select the right version.
-    const candidates = allowedOptions;
+    // BT is strictly NEP. Use an institution-specific scheme label only when it resolves to an eligible NEP curriculum.
+    const configuredMatches = configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
+    const candidates = configuredMatches.length ? configuredMatches : allowedOptions;
     if (candidates.length === 1) {
       curriculum = candidates[0];
-      curriculumResolutionReason = "UNIQUE_NEP_CURRICULUM";
+      curriculumResolutionReason = configuredMatches.length ? "EXPLICIT_INSTITUTION_PREFIX_RULE" : "UNIQUE_NEP_CURRICULUM";
     } else {
       return {
         ...unresolved("SCHEME", candidates.length > 1
