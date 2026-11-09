@@ -71,8 +71,7 @@ export default function AcademicSetupPage() {
   }
   const selectedCurriculum = curricula.find(item => item.id === curriculumId);
   const programmeLabel = programs.find(item => item.id === programId)?.name || preview?.programme || "";
-  const fallbackSemesterCount = /b\.?\s*tech|bachelor of technology|bachelor of engineering/i.test(programmeLabel) ? 8 : /master|m\.?tech|mca/i.test(programmeLabel) ? 4 : Number(selectedCurriculum?.configured_semesters) || 0;
-  const semesterCount = Number(selectedCurriculum?.total_semesters) || fallbackSemesterCount;
+  const semesterCount = Number(selectedCurriculum?.total_semesters || selectedCurriculum?.configured_semesters) || 0;
   const availableSemesters = Array.from({ length: semesterCount }, (_, index) => index + 1);
   const selectedAdmissionMode = admissionModes.find(item => item.mode_name === confirmedAdmissionMode);
   const predictedEntrySemester = selectedAdmissionMode?.entry_semester ?? preview?.entrySemester ?? 1;
