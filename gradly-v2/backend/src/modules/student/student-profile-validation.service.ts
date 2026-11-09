@@ -74,9 +74,25 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (input.academicProfileOverrides?.branch !== true) {
     const institutionResult = await pool.query(`SELECT name FROM public.institutions WHERE id = $1 LIMIT 1`, [input.institutionId]);
     const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
+    const configuredMapping = await pool.query(
+      `SELECT branch_name FROM public.enrollment_branch_codes
+       WHERE BTRIM(branch_code) = $1
+         AND (institution_id = $2 OR institution_id IS NULL)
+         AND (programme_prefix = $3 OR programme_prefix IS NULL)
+       ORDER BY (institution_id = $2) DESC NULLS LAST,
+                (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
+      [parsed.branchCode, input.institutionId, parsed.prefix],
+    );
+    const configuredBranchName = String(configuredMapping.rows[0]?.branch_name ?? "").trim();
+    const resolvedBranchName = decodedBranchName || configuredBranchName;
     let branchMatches = parsed.prefix === "ME" || parsed.prefix === "MC"
-      ? String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
-      : Boolean(decodedBranchName && enrollmentBranchMatches(parsed.prefix, decodedBranchName, {
+      ? configuredBranchName
+        ? enrollmentBranchMatches(parsed.prefix, configuredBranchName, {
+            name: String(curriculum.branch_name ?? ""),
+            code: curriculum.branch_code ?? null,
+          })
+        : String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
+      : Boolean(resolvedBranchName && enrollmentBranchMatches(parsed.prefix, resolvedBranchName, {
           name: String(curriculum.branch_name ?? ""),
           code: curriculum.branch_code ?? null,
           specializationName: curriculum.specialization_name ?? null,
@@ -93,28 +109,10 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
       );
       branchMatches = Number(branchCount.rows[0]?.count) === 1;
     }
-
-    if ((parsed.prefix === "ME" || parsed.prefix === "MC") && !branchMatches) {
-      const mapped = await pool.query(
-        `SELECT branch_name FROM public.enrollment_branch_codes
-         WHERE BTRIM(branch_code) = $1
-           AND (institution_id = $2 OR institution_id IS NULL)
-           AND (programme_prefix = $3 OR programme_prefix IS NULL)
-         ORDER BY (institution_id = $2) DESC NULLS LAST,
-                  (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
-        [parsed.branchCode, input.institutionId, parsed.prefix],
-      );
-      const mappedName = String(mapped.rows[0]?.branch_name ?? "").trim();
-      branchMatches = Boolean(mappedName && enrollmentBranchMatches(parsed.prefix, mappedName, {
-        name: String(curriculum.branch_name ?? ""),
-        code: curriculum.branch_code ?? null,
-      }));
-    }
     if (!branchMatches) {
-      throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
+      throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the configured enrollment mapping. If your institution uses a different code structure, request an enrollment mapping review.");
     }
   }
-
   const modeResult = await pool.query(
     `SELECT em.mode_name, em.entry_semester
      FROM public.enrollment_admission_modes em
