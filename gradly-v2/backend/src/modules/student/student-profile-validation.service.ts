@@ -92,6 +92,18 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     [parsed.admissionModeCode, input.institutionId, parsed.prefix, input.admissionModeName ?? "", input.academicProfileOverrides?.admissionMode === true],
   );
   let mode = modeResult.rows[0];
+  if (!mode && input.academicProfileOverrides?.admissionMode !== true && (parsed.prefix === "BE" || parsed.prefix === "BT") && (parsed.admissionModeCode === "F" || parsed.admissionModeCode === "S")) {
+    const fallback = await pool.query(
+      `SELECT name AS mode_name, $1::int AS entry_semester
+       FROM public.admission_modes
+       WHERE LOWER(BTRIM(name)) = ANY($2::text[])
+       ORDER BY CASE WHEN LOWER(BTRIM(name)) = $3 THEN 0 ELSE 1 END LIMIT 1`,
+      [parsed.admissionModeCode === "F" ? 1 : 3,
+       parsed.admissionModeCode === "F" ? ["regular", "first year", "fy"] : ["direct second year", "dsy", "dse", "lateral entry"],
+       parsed.admissionModeCode === "F" ? "regular" : "direct second year"],
+    );
+    mode = fallback.rows[0];
+  }
   if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT")) {
     const regularMode = await pool.query(`SELECT name AS mode_name, 1 AS entry_semester FROM public.admission_modes WHERE LOWER(name) = 'regular' LIMIT 1`);
     mode = regularMode.rows[0];
