@@ -44,7 +44,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
      ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
     [parsed.prefix, input.institutionId],
   );
-  if (!programmeRule.rows[0] && parsed.prefix !== "ME" && parsed.prefix !== "MT") throw new StudentProfileValidationError("PROGRAMME_PREFIX_NOT_CONFIGURED", "This enrollment prefix is not configured for the selected institution.");
+  if (!programmeRule.rows[0] && parsed.prefix !== "ME" && parsed.prefix !== "MT" && parsed.prefix !== "MC") throw new StudentProfileValidationError("PROGRAMME_PREFIX_NOT_CONFIGURED", "This enrollment prefix is not configured for the selected institution.");
 
   const curriculumResult = await pool.query(
     `SELECT c.id, c.institution_id,
@@ -74,7 +74,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (input.academicProfileOverrides?.branch !== true) {
     const institutionResult = await pool.query(`SELECT name FROM public.institutions WHERE id = $1 LIMIT 1`, [input.institutionId]);
     const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
-    const branchMatches = parsed.prefix === "ME" || parsed.prefix === "MC"
+    let branchMatches = parsed.prefix === "ME" || parsed.prefix === "MC"
       ? String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
       : Boolean(decodedBranchName && enrollmentBranchMatches(parsed.prefix, decodedBranchName, {
           name: String(curriculum.branch_name ?? ""),
@@ -82,6 +82,32 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
           specializationName: curriculum.specialization_name ?? null,
           specializationCode: curriculum.specialization_code ?? null,
         }));
+
+    if (parsed.prefix === "MC" && !branchMatches) {
+      const branchCount = await pool.query(
+        `SELECT COUNT(DISTINCT b.id)::int AS count
+         FROM public.branches b
+         JOIN public.programs p ON p.id = b.program_id
+         WHERE p.id = (SELECT c.program_id FROM public.curricula c WHERE c.id = $1)`,
+        [input.curriculumId],
+      );
+      branchMatches = Number(branchCount.rows[0]?.count) === 1;
+    }
+
+    if ((parsed.prefix === "ME" || parsed.prefix === "MC") && !branchMatches) {
+      const mapped = await pool.query(
+        `SELECT branch_name FROM public.enrollment_branch_codes
+         WHERE BTRIM(branch_code) = $1
+           AND (institution_id = $2 OR institution_id IS NULL)
+           AND (programme_prefix = $3 OR programme_prefix IS NULL)
+         ORDER BY (institution_id = $2) DESC NULLS LAST,
+                  (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
+        [parsed.branchCode, input.institutionId, parsed.prefix],
+      );
+      const mappedName = String(mapped.rows[0]?.branch_name ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const selectedName = String(curriculum.branch_name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+      branchMatches = Boolean(mappedName && mappedName === selectedName);
+    }
     if (!branchMatches) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
     }
@@ -112,7 +138,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     mode = fallback.rows[0];
   }
   if (!mode && input.academicProfileOverrides?.admissionMode !== true &&
-      (parsed.prefix === "ME" || parsed.prefix === "MT") && parsed.admissionModeCode === "F") {
+      (parsed.prefix === "ME" || parsed.prefix === "MT" || parsed.prefix === "MC") && parsed.admissionModeCode === "F") {
     // ME/MT are institutionally constrained to Regular admission in Semester 1.
     // Resolve legacy labels where present; otherwise use that deterministic rule
     // rather than requiring a separate admission_modes seed for every institution.
