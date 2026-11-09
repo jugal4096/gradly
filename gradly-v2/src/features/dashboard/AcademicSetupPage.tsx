@@ -336,7 +336,7 @@ export default function AcademicSetupPage() {
             {previewBusy && <div className="academic-setup-loading"><span className="academic-setup-button-spinner" /> Identifying your academic details…</div>}
           </section>}
 
-          {preview?.unknown === "SCHEME" && !preview.recognized && <section className="academic-setup-confirmation academic-setup-manual-scheme">
+          {(preview?.unknown === "SCHEME" || preview?.unknown === "CURRICULUM") && !preview.recognized && <section className="academic-setup-confirmation academic-setup-manual-scheme">
             <div className="academic-setup-confirmation-heading"><h2>Confirm your academic scheme</h2><p>Gradly will not guess a curriculum for this enrollment prefix. Choose the exact scheme used by your institution.</p></div>
             <label htmlFor="manual-scheme-choice">Available curricula</label>
             <select id="manual-scheme-choice" value={curriculumId} onChange={e => { const id = e.target.value; setCurriculumId(id); if (id) void fetchEnrollmentDetails(id); }}>
