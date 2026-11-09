@@ -153,9 +153,11 @@ export function enrollmentBranchMatches(
   if (prefix === "MT") {
     const specializationName = String(candidate.specializationName ?? "").trim();
     if (specializationName) {
-      // Postgraduate branch codes identify a specific course/stream. Broad
-      // undergraduate aliases (e.g. Electronics vs E&TC) must not match here.
-      return normalizeBranchLabel(decodedBranchName) === normalizeBranchLabel(specializationName);
+      // Postgraduate codes identify a specific specialization. Use the shared
+      // identity matcher so institutional labels such as "Electronics &
+      // Telecommunication Engineering (ENTC)" match the canonical GECA stream,
+      // without allowing the broader "Electronics Engineering" branch to match.
+      return branchIdentityMatches(decodedBranchName, specializationName, candidate.specializationCode ?? null);
     }
 
     // A department-level curriculum may have no specialization_id. First
