@@ -1,5 +1,5 @@
 import { pool } from "../../config/database";
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, resolveEnrollmentBranchCode } from "../academic/enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "../academic/enrollment-progression";
 
 export class StudentProfileValidationError extends Error {
   constructor(public code: string, message: string) { super(message); this.name = "StudentProfileValidationError"; }
@@ -19,6 +19,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   catch (error) {
     const code = error instanceof Error ? error.message : "INVALID_ENROLLMENT_NUMBER";
     const messageByCode: Record<string, string> = {
+      DSE_ADMISSION_CYCLE_NOT_STARTED: "Direct Second Year admission for this enrollment year has not started yet. The corresponding first-year batch must complete its first year; for the 2026-27 batch, DSE intake can begin only after July 2027.",
       FUTURE_ADMISSION_YEAR: "This enrollment year has not started yet. Future-dated enrollment numbers are not accepted.",
       BE_CBCS_DISCONTINUED: "The BE New CBCS scheme was discontinued after 2023. BE24 and later BE enrollment years are invalid.",
       BE23_FIRST_YEAR_NOT_ALLOWED: "BE23F is invalid because first-year admissions had moved to NEP. BE23S Direct Second Year remains valid.",
@@ -50,13 +51,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (!curriculum) throw new StudentProfileValidationError("CURRICULUM_INSTITUTION_MISMATCH", "Selected curriculum does not belong to the selected institution.");
 
   const programName = String(curriculum.program_name || "");
-  const programMatches: Record<string, RegExp> = {
-    BE: /bachelor\s+of\s+engineering|\bb\.?e\.?\b/i,
-    BT: /bachelor\s+of\s+technology|\bb\.?tech\.?\b/i,
-    MC: /master\s+of\s+computer\s+applications|\bmca\b/i,
-    MT: /master\s+of\s+technology|\bm\.?tech\.?\b/i,
-  };
-  if (!programMatches[parsed.prefix]?.test(programName)) {
+  if (!programmeMatchesEnrollmentPrefix(parsed.prefix, programName)) {
     throw new StudentProfileValidationError("PROGRAMME_PREFIX_MISMATCH", "The selected programme does not match the degree prefix in your enrollment number.");
   }
   if (!isAllowedSchemeForEnrollmentPrefix(parsed.prefix, String(curriculum.scheme_name || ""))) {
