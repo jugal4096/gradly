@@ -87,12 +87,11 @@ function normalizeBranchLabel(value: string): string {
 const branchAliasGroups: string[][] = [
   ["information technology", "information tech", "it"],
   ["computer science and engineering", "computer science", "cse", "cs"],
-  ["electronics and telecommunication", "electronics and communication", "electronics telecommunication", "e and tc", "etc", "extc", "ece", "entc"],
+  ["electronics and telecommunication", "electronics and communication", "electronics telecommunication", "electronics engineering", "e and tc", "etc", "extc", "ece", "entc"],
   ["electrical", "electrical engineering", "electr", "elect", "ee"],
   ["mechanical", "mechanical engineering", "mech", "me"],
   ["civil", "civil engineering", "ce"],
   ["computer engineering", "computer engg", "coe"],
-  ["electronics engineering", "entc", "electronics and telecommunication"],
   ["artificial intelligence and data science", "artificial intelligence data science", "ai and ds", "aids"],
   ["artificial intelligence and machine learning", "artificial intelligence machine learning", "ai and ml", "aiml"],
 ];
