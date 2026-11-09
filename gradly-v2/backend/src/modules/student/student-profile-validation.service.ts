@@ -1,5 +1,5 @@
 import { pool } from "../../config/database";
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester } from "../academic/enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, resolveEnrollmentBranchCode } from "../academic/enrollment-progression";
 
 export class StudentProfileValidationError extends Error {
   constructor(public code: string, message: string) { super(message); this.name = "StudentProfileValidationError"; }
@@ -59,28 +59,10 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   }
 
   if (input.academicProfileOverrides?.branch !== true) {
-    const branchRules = await pool.query(
-      `SELECT branch_name, (institution_id = $2) AS institution_specific,
-              (programme_prefix = $3) AS prefix_specific,
-              (program_name_pattern IS NOT NULL) AS program_specific
-       FROM public.enrollment_branch_codes
-       WHERE branch_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
-         AND (programme_prefix = $3 OR programme_prefix IS NULL)
-         AND (program_name_pattern IS NULL OR $4::text ILIKE program_name_pattern)
-       ORDER BY (institution_id = $2) DESC NULLS LAST,
-                (programme_prefix = $3) DESC NULLS LAST,
-                (program_name_pattern IS NOT NULL) DESC NULLS LAST LIMIT 20`,
-      [parsed.branchCode, input.institutionId, parsed.prefix, programName],
-    );
-    const preferredBranchRule = branchRules.rows[0];
-    const effectiveBranchRules = preferredBranchRule
-      ? branchRules.rows.filter((row: { institution_specific:boolean; prefix_specific:boolean; program_specific:boolean }) =>
-          row.institution_specific === preferredBranchRule.institution_specific &&
-          row.prefix_specific === preferredBranchRule.prefix_specific &&
-          row.program_specific === preferredBranchRule.program_specific)
-      : [];
-    if (!effectiveBranchRules.some((row: { branch_name: string }) => branchIdentityMatches(row.branch_name, String(curriculum.branch_name || "")))) {
-      throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the branch encoded in your enrollment number. If the mapping is incorrect, submit an enrollment grievance or explicitly correct the branch.");
+    const institutionResult = await pool.query(`SELECT name FROM public.institutions WHERE id = $1 LIMIT 1`, [input.institutionId]);
+    const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
+    if (!decodedBranchName || !branchIdentityMatches(decodedBranchName, String(curriculum.branch_name || ""))) {
+      throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
     }
   }
 
