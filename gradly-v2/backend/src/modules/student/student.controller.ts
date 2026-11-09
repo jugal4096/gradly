@@ -55,7 +55,7 @@ function readProfilePayload(body: Record<string, unknown>) {
     institutionId, curriculumId,
     admissionModeId: typeof admissionModeId === "string" && admissionModeId ? admissionModeId : null,
     admissionModeName: typeof admissionModeName === "string" ? admissionModeName : null,
-    studentIdentifier, admissionYear: Number(admissionYear),
+    studentIdentifier: String(studentIdentifier).trim().toUpperCase(), admissionYear: Number(admissionYear),
     currentSemesterNumber: currentSemesterNumber === null || currentSemesterNumber === undefined ? null : Number(currentSemesterNumber),
     academicStatus: String(academicStatus),
     graduationYear: graduationYear === undefined || graduationYear === null || graduationYear === ""

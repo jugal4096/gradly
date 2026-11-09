@@ -1,5 +1,6 @@
 import type { Response } from "express";
 import type { AuthenticatedRequest } from "../../middleware/auth.middleware";
+import type { AdminAuthenticatedRequest } from "../../middleware/admin-auth.middleware";
 import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 import { pool } from "../../config/database";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
@@ -54,6 +55,30 @@ export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res:
   } catch (error) {
     console.error("Student grievance tracking failed:", error);
     return res.status(500).json({ success:false, message:"Unable to load your enrollment grievances." });
+  }
+}
+
+
+export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRequest, res: Response) {
+  const institutionId = req.admin?.institutionId;
+  if (!req.admin?.adminId) return res.status(401).json({ success:false, message:"Admin authentication required." });
+  if (!institutionId) return res.status(403).json({ success:false, message:"This Admin account is not assigned to an institution." });
+  try {
+    const result = await pool.query(
+      `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description,
+              g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
+              g.updated_at AS "updatedAt"
+       FROM public.student_enrollment_grievances g
+       WHERE g.institution_id = $1
+       ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,
+                g.created_at DESC
+       LIMIT 300`,
+      [institutionId],
+    );
+    return res.json({ success:true, grievances:result.rows });
+  } catch (error) {
+    console.error("Institution Admin grievance list failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to load enrollment grievances for this institution." });
   }
 }
 

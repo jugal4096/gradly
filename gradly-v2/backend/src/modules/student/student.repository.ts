@@ -54,7 +54,7 @@ const returningColumns = `
 function profileValues(data: CreateStudentProfileData) {
   return [
     data.userId, data.institutionId, data.curriculumId,
-    data.admissionModeId ?? null, data.admissionModeName ?? null, data.studentIdentifier.trim(),
+    data.admissionModeId ?? null, data.admissionModeName ?? null, data.studentIdentifier.trim().toUpperCase(),
     data.admissionYear, data.currentSemesterNumber, data.academicStatus,
     data.graduationYear ?? null, data.targetCgpa ?? null,
     data.academicProfileConfirmed ?? false, data.pendingBacklogCount ?? null,

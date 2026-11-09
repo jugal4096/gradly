@@ -1,26 +1,34 @@
+/** Full academic-year gaps inferred from the distance below the predicted semester. */
+export function calculateAcademicGapYears(predictedSemester: number | null, selectedSemester: string): number {
+  if (predictedSemester === null || !selectedSemester || selectedSemester === "COMPLETED") return 0;
+  const selected = Number(selectedSemester);
+  if (!Number.isInteger(selected) || selected < 1 || selected >= predictedSemester) return 0;
+  return Math.floor((predictedSemester - selected) / 2);
+}
+
 export type StudentAcademicStatus = "ENROLLED" | "GRADUATED";
 export type SemesterPeriod = "ODD" | "EVEN";
 
-/** Returns only semesters that can plausibly be active in the current institute calendar period. */
+/** Returns choices through the predicted semester, including even- and odd-semester backlog options. */
 export function availableSemesterOptions(
   totalSemesters: number,
   entrySemester = 1,
   predictedSemester: number | null = null,
-  semesterPeriod?: SemesterPeriod,
+  _semesterPeriod?: SemesterPeriod,
   expectedDurationEnded = false,
 ): number[] {
   if (!Number.isInteger(totalSemesters) || totalSemesters < 1) return [];
   const first = Number.isInteger(entrySemester) && entrySemester >= 1 && entrySemester <= totalSemesters ? entrySemester : 1;
-  if (!semesterPeriod) return Array.from({ length: totalSemesters - first + 1 }, (_, index) => first + index);
-  const parity = semesterPeriod === "ODD" ? 1 : 0;
+  if (!_semesterPeriod) return Array.from({ length: totalSemesters - first + 1 }, (_, index) => first + index);
   const max = predictedSemester !== null && Number.isInteger(predictedSemester)
     ? Math.min(predictedSemester, totalSemesters)
     : expectedDurationEnded
-      ? (totalSemesters % 2 === parity ? totalSemesters : totalSemesters - 1)
+      ? totalSemesters
       : 0;
   if (max < first) return [];
-  return Array.from({ length: max - first + 1 }, (_, index) => first + index)
-    .filter(number => number % 2 === parity);
+  // Backlog students may be active in either semester parity. The prediction is an upper bound,
+  // not a filter that removes even semesters during an odd term (or vice versa).
+  return Array.from({ length: max - first + 1 }, (_, index) => first + index);
 }
 
 /** Keep a manual choice only while it remains valid for the selected programme and current term. */

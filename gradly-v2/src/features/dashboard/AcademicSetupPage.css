@@ -386,3 +386,20 @@
 .academic-setup-grievance-list article p{margin:8px 0;color:#858a9b;font-size:10px;line-height:1.5}
 .academic-setup-grievance-list article{border-top:1px solid #eff0f4}
 @media(max-width:600px){.academic-setup-request-row{align-items:flex-start}.academic-setup-history-fields{grid-template-columns:1fr}}
+
+/* Keep the academic journey visually inside the identified-details card. */
+.academic-setup-journey{margin:18px 0 0;padding:17px 0 0;border:0;border-top:1px solid rgba(132,116,196,.18);background:transparent;box-shadow:none;border-radius:0}
+.academic-setup-gap-period{margin-top:14px;padding:14px;border:1px solid #e3e5ed;border-radius:11px;background:rgba(255,255,255,.72)}
+.academic-setup-gap-period-heading{display:grid;gap:4px;margin-bottom:11px}
+.academic-setup-gap-period-heading strong{color:#6755c4;font-size:12px}
+.academic-setup-gap-period-heading span{color:#858a9b;font-size:10px}
+.academic-setup-gap-period-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.academic-setup-gap-period-fields label{display:grid;gap:6px;color:#353a50;font-size:10px;font-weight:750}
+.academic-setup-gap-period-fields select{width:100%;height:42px;padding:0 10px;border:1px solid #e3e5ed;border-radius:9px;background:#fff;color:#252a40;font:600 11px Manrope,sans-serif}
+.theme-dark .academic-setup-gap-period{border-color:#49415f;background:#28243a}
+.theme-dark .academic-setup-gap-period-heading strong{color:#b7a7ff}
+.theme-dark .academic-setup-gap-period-heading span,.theme-dark .academic-setup-gap-period-fields label{color:#c1bdd1}
+.theme-dark .academic-setup-gap-period-fields select{border-color:#514a66;background:#fff;color:#252a40}
+@media(max-width:460px){.academic-setup-gap-period-fields{grid-template-columns:1fr}}
+
+.academic-setup-confirmation.academic-setup-journey{margin:18px 0 0;padding:17px 0 0;border:0;border-top:1px solid rgba(132,116,196,.18);background:transparent;box-shadow:none;border-radius:0}
