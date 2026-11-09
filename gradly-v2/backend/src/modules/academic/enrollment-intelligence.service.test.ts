@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { branchIdentityMatches, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
+import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "../../../../src/features/dashboard/academic-setup-state";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
 const predict = (admissionYear: number, entrySemester: number, date: string, totalSemesters = 8) =>
@@ -110,4 +111,32 @@ test("matches common branch labels and abbreviations", () => {
   assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "E&TC"), true);
   assert.equal(branchIdentityMatches("Mechanical Engineering", "Mechanical", "ME"), true);
   assert.equal(branchIdentityMatches("Information Technology", "Electrical Engineering", "EE"), false);
+});
+
+
+test("successful prediction initializes the controlled current-semester value", () => {
+  assert.equal(resolveCurrentSemesterSelection(7, 8, false, ""), "7");
+  assert.deepEqual(availableSemesterOptions(8), [1, 2, 3, 4, 5, 6, 7, 8]);
+});
+
+test("manual semester changes survive prediction rerenders", () => {
+  assert.equal(resolveCurrentSemesterSelection(7, 8, true, "5"), "5");
+  assert.equal(resolveCurrentSemesterSelection(7, 8, true, "5"), "5");
+});
+
+test("a new enrollment resets the previous manual selection", () => {
+  assert.equal(resolveCurrentSemesterSelection(null, 8, false, "5"), "");
+  assert.equal(resolveCurrentSemesterSelection(7, 8, false, ""), "7");
+});
+
+test("curriculum changes revalidate a manual semester against the new option range", () => {
+  assert.equal(resolveCurrentSemesterSelection(3, 4, true, "5"), "3");
+  assert.deepEqual(availableSemesterOptions(4), [1, 2, 3, 4]);
+});
+
+test("completed programme is available only as an explicit student selection", () => {
+  assert.equal(resolveCurrentSemesterSelection(null, 8, false, ""), "");
+  assert.equal(resolveCurrentSemesterSelection(8, 8, true, "COMPLETED"), "COMPLETED");
+  assert.equal(academicStatusForSemester("COMPLETED"), "GRADUATED");
+  assert.equal(academicStatusForSemester("7"), "ENROLLED");
 });
