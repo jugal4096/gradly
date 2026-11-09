@@ -1,7 +1,7 @@
 export type StudentAcademicStatus = "ENROLLED" | "GRADUATED";
 export type SemesterPeriod = "ODD" | "EVEN";
 
-/** Returns only semesters that can plausibly be active in the current institute calendar period. */
+/** Returns choices through the predicted semester, including even- and odd-semester backlog options. */
 export function availableSemesterOptions(
   totalSemesters: number,
   entrySemester = 1,
