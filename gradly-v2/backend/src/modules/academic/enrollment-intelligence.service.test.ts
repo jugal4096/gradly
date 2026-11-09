@@ -343,4 +343,7 @@ test("GECA M.Tech specialization codes resolve department-level curricula when s
   assert.equal(enrollmentBranchMatches("MT", "Water Resources Engineering", {
     name: "APPLIED MECHANICS", code: "APPLIED_MECHANICS",
   }), false);
+  assert.equal(enrollmentBranchMatches("MT", "Computer Science and Engineering", {
+    name: "Computer Science and Engineering", code: "CSE",
+  }), true);
 });
