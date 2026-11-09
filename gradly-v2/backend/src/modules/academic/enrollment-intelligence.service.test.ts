@@ -1,11 +1,21 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, resolveEnrollmentBranchCode } from "./enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
 import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "../../../../src/features/dashboard/academic-setup-state";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
 const predict = (admissionYear: number, entrySemester: number, date: string, totalSemesters = 8) =>
   predictSemester({ admissionYear, entrySemester, totalSemesters, ...calendar, date: new Date(date) });
+
+
+test("programme resolution follows enrollment degree prefix rather than stale rule-table patterns", () => {
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Engineering"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Bachelor of Technology"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Technology"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("MC", "Master of Computer Applications"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("MT", "Master of Technology"), true);
+});
 
 test("parses a strict regular BE enrollment number", () => {
   const p = parseEnrollmentNumber("BE23F06F007");
