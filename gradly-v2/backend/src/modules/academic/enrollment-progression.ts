@@ -119,7 +119,7 @@ export function predictSemester(input: {
 export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: string | null | undefined): boolean {
   const name = String(schemeName ?? "").trim();
   if (!name) return false;
-  const isNewCbcs = /^new\\s*cbcs$/i.test(name);
+  const isNewCbcs = name.toLowerCase().replaceAll(" ", "") === "newcbcs";
   if (prefix === "BE") return isNewCbcs;
   if (prefix === "BT") return !isNewCbcs;
   return prefix === "MC" || prefix === "MT";
