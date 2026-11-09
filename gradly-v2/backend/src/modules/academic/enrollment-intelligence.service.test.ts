@@ -15,9 +15,22 @@ test("programme resolution follows enrollment degree prefix rather than stale ru
   assert.equal(programmeMatchesEnrollmentPrefix("BT", "Bachelor of Engineering"), true);
   assert.equal(programmeMatchesEnrollmentPrefix("MC", "Master of Computer Applications"), true);
   assert.equal(programmeMatchesEnrollmentPrefix("MT", "Master of Technology"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("ME", "Master of Engineering"), true);
 });
 
-test("BE and BT prefixes both resolve B.E. and B.Tech institutional programme labels", () => {\n  for (const prefix of ["BE", "BT"]) {\n    for (const name of ["B.E.", "B.E. Computer Engineering", "Bachelor of Engineering", "B.Tech.", "B.Tech Computer Engineering", "Bachelor of Technology"]) {\n      assert.equal(programmeMatchesEnrollmentPrefix(prefix, name), true, `${prefix}: ${name}`);\n    }\n  }\n  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Master of Technology"), false);\n  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Master of Computer Applications"), false);\n});\n\ntest("matches degree abbreviations with punctuation and common programme-name variants", () => {
+test("BE and BT prefixes both resolve B.E. and B.Tech institutional programme labels", () => {
+  for (const prefix of ["BE", "BT"]) {
+    for (const name of ["B.E.", "B.E. Computer Engineering", "Bachelor of Engineering", "B.Tech.", "B.Tech Computer Engineering", "Bachelor of Technology"]) {
+      assert.equal(programmeMatchesEnrollmentPrefix(prefix, name), true, `${prefix}: ${name}`);
+    }
+  }
+  assert.equal(programmeMatchesEnrollmentPrefix("BE", "Master of Technology"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("BT", "Master of Computer Applications"), false);
+  assert.equal(programmeMatchesEnrollmentPrefix("ME", "Master of Engineering"), true);
+  assert.equal(programmeMatchesEnrollmentPrefix("ME", "Master of Technology"), false);
+});
+
+test("matches degree abbreviations with punctuation and common programme-name variants", () => {
   for (const name of ["B.E.", "B E", "Bachelor in Engineering", "Engineering - B.E."]) {
     assert.equal(programmeMatchesEnrollmentPrefix("BE", name), true, name);
   }
@@ -58,7 +71,7 @@ test("parses the supplied BE23S06F007 enrollment structure", () => {
 });
 
 test("accepts configured programme prefixes with 11 characters, F at position 8 and a numeric three-digit serial", () => {
-  for (const value of ["BE23S06F007", "BT24S02F999", "MC23F01F123", "MT23F01F123"]) {
+  for (const value of ["BE23S06F007", "BT24S02F999", "MC23F01F123", "MT23F01F123", "ME23F09F001"]) {
     assert.equal(parseEnrollmentNumber(value).enrollmentNumber, value);
   }
 });
@@ -210,9 +223,12 @@ test("BE is restricted to NEW CBCS and BT is restricted to NEP", () => {
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", null), false);
 });
 
-test("MC and MT require a configured non-empty curriculum scheme", () => {
+test("MC retains its configured scheme while ME is New CBCS and MT is NEP", () => {
   assert.equal(isAllowedSchemeForEnrollmentPrefix("MC", "MCA 2023"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("ME", "New CBCS"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("ME", "NEP"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("MT", "NEP 2023"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("MT", "New CBCS"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("MC", ""), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("MT", null), false);
 });
@@ -245,6 +261,27 @@ test("GECA branch codes are decoded deterministically without enrollment_branch_
   }
   assert.equal(resolveEnrollmentBranchCode(institution, "BT", "07"), null);
   assert.equal(resolveEnrollmentBranchCode("Other University", "BT", "06"), null);
+});
+
+test("ME is regular-only New CBCS through 2023; MT is regular-only NEP from 2023", () => {
+  assert.equal(parseEnrollmentNumber("ME23F09F001", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2023);
+  assert.throws(() => parseEnrollmentNumber("ME23S09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /POSTGRADUATE_REGULAR_ADMISSION_ONLY/);
+  assert.throws(() => parseEnrollmentNumber("ME24F09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /ME_CBCS_DISCONTINUED/);
+  assert.throws(() => parseEnrollmentNumber("MT22F09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /MT_NEP_NOT_STARTED/);
+  assert.equal(parseEnrollmentNumber("MT23F09F001", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2023);
+  assert.throws(() => parseEnrollmentNumber("MT23S09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /POSTGRADUATE_REGULAR_ADMISSION_ONLY/);
+});
+
+test("GECA MT specialization codes use only the supplied mappings", () => {
+  const institution = "Government College of Engineering, Aurangabad";
+  const expected: Record<string, string> = {
+    "09": "Structural Engineering", "08": "Water Resources Engineering", "16": "Geotechnical Engineering",
+    "15": "Electrical Machines and Drives", "12": "Electrical Power Systems",
+    "13": "Electronics Engineering", "05": "Computer Engineering",
+  };
+  for (const [code, branch] of Object.entries(expected)) assert.equal(resolveEnrollmentBranchCode(institution, "MT", code), branch);
+  assert.equal(resolveEnrollmentBranchCode(institution, "MT", "99"), null);
+  assert.equal(resolveEnrollmentBranchCode(institution, "ME", "09"), null);
 });
 
 test("BE23S remains valid while BE23F and BE24 are rejected after CBCS discontinuation", () => {
