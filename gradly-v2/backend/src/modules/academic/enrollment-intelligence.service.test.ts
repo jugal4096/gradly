@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { branchIdentityMatches, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
+import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
 import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "../../../../src/features/dashboard/academic-setup-state";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
@@ -139,4 +139,20 @@ test("completed programme is available only as an explicit student selection", (
   assert.equal(resolveCurrentSemesterSelection(8, 8, true, "COMPLETED"), "COMPLETED");
   assert.equal(academicStatusForSemester("COMPLETED"), "GRADUATED");
   assert.equal(academicStatusForSemester("7"), "ENROLLED");
+});
+
+
+test("BE is restricted to NEW CBCS and BT cannot inherit NEW CBCS", () => {
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "Legacy CBCS"), false);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "New CBCS"), false);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "Legacy CBCS"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", null), false);
+});
+
+test("MC and MT require a configured non-empty curriculum scheme", () => {
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("MC", "MCA 2023"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("MT", "NEP 2023"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("MC", ""), false);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("MT", null), false);
 });
