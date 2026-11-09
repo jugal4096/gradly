@@ -114,7 +114,7 @@ export default function AcademicSetupPage() {
       setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]);
       setSelectedCurrentSemester(""); setExpectedSemester(null); setAcademicStatus("ENROLLED");
       hasManuallySelectedSemester.current = false; setPredictionConfirmed(null);
-    } else {
+    } else if (requestedCurriculumId) {
       setCurriculumId(requestedCurriculumId);
     }
     const normalizedEnrollment = enrollment.trim().toUpperCase();
