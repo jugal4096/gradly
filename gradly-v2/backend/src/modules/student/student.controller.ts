@@ -39,7 +39,7 @@ function readProfilePayload(body: Record<string, unknown>) {
     (parsedPredictedSemester !== null && (!Number.isInteger(parsedPredictedSemester) || parsedPredictedSemester < 1 || parsedPredictedSemester > 20)) ||
     (parsedGapYears !== null && (!Number.isInteger(parsedGapYears) || parsedGapYears < 0 || parsedGapYears > 10)) ||
     (currentSemesterNumber !== null && currentSemesterNumber !== undefined &&
-      (!Number.isInteger(Number(currentSemesterNumber)) || Number(currentSemesterNumber) < 1 || Number(currentSemesterNumber) > 12)) ||
+      (!Number.isInteger(Number(currentSemesterNumber)) || Number(currentSemesterNumber) < 1 || Number(currentSemesterNumber) > 20)) ||
     ((academicStatus === "ENROLLED" || academicStatus === "APPROVED_EXTENSION" || academicStatus === "PENDING_BACKLOGS") &&
       (currentSemesterNumber === null || currentSemesterNumber === undefined))
   ) return null;
@@ -87,8 +87,8 @@ export async function createStudentProfileController(req: AuthenticatedRequest, 
     if (!user) return;
     const payload = readProfilePayload(req.body ?? {});
     if (!payload) return res.status(400).json({ message: "Invalid or missing student profile fields." });
-    await validateStudentProfileConfiguration(payload);
-    const profile = await createProfile({ ...payload, userId: user.id });
+    const predictedSemesterNumber = await validateStudentProfileConfiguration(payload);
+    const profile = await createProfile({ ...payload, predictedSemesterNumber, userId: user.id });
     return res.status(201).json({ message: "Student profile created successfully.", profile });
   } catch (error) {
     if (error instanceof StudentProfileValidationError) return res.status(400).json({ success:false, code:error.code, message:error.message });
@@ -107,8 +107,8 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
     if (!user) return;
     const payload = readProfilePayload(req.body ?? {});
     if (!payload) return res.status(400).json({ message: "Invalid or missing student profile fields." });
-    await validateStudentProfileConfiguration(payload);
-    const profile = await updateProfile({ ...payload, userId: user.id });
+    const predictedSemesterNumber = await validateStudentProfileConfiguration(payload);
+    const profile = await updateProfile({ ...payload, predictedSemesterNumber, userId: user.id });
     return res.status(200).json({ message: "Student profile updated successfully.", profile });
   } catch (error) {
     if (error instanceof StudentProfileValidationError) return res.status(400).json({ success:false, code:error.code, message:error.message });

@@ -154,11 +154,13 @@ test("completed programme is available only as an explicit student selection", (
 
 test("BE is restricted to NEW CBCS and BT is restricted to NEP", () => {
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS NEP"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "Legacy CBCS"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "New CBCS"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "Legacy CBCS"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "NEP"), true);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "NEP 2020"), true);
+  assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "NEP Legacy CBCS"), false);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", "New Education Policy"), true);
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BT", null), false);
 });

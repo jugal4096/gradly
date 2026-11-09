@@ -38,7 +38,8 @@ BEGIN
 END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS student_profiles_enrollment_identifier_unique_idx
-  ON public.student_profiles (LOWER(BTRIM(student_identifier)));
+  ON public.student_profiles (LOWER(BTRIM(student_identifier)))
+  WHERE NULLIF(BTRIM(student_identifier), '') IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS student_profiles_user_id_unique_idx
   ON public.student_profiles (user_id);
 
@@ -68,6 +69,6 @@ CREATE INDEX IF NOT EXISTS student_enrollment_grievances_student_created_idx
 -- Programme aliases must not cross-map BE and BT degree identities.
 UPDATE public.enrollment_program_rules
 SET programme_alias_patterns = '{}'::text[]
-WHERE institution_id IS NULL AND prefix IN ('BE','BT');
+WHERE prefix IN ('BE','BT');
 
 COMMIT;

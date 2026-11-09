@@ -12,7 +12,7 @@ type ProfileInput = {
   academicProfileOverrides?: Record<string, unknown>;
 };
 
-export async function validateStudentProfileConfiguration(input: ProfileInput): Promise<void> {
+export async function validateStudentProfileConfiguration(input: ProfileInput): Promise<number | null> {
   let parsed;
   try { parsed = parseEnrollmentNumber(input.studentIdentifier); }
   catch (error) {
@@ -59,13 +59,26 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
 
   if (input.academicProfileOverrides?.branch !== true) {
     const branchRules = await pool.query(
-      `SELECT branch_name FROM public.enrollment_branch_codes
+      `SELECT branch_name, (institution_id = $2) AS institution_specific,
+              (programme_prefix = $3) AS prefix_specific,
+              (program_name_pattern IS NOT NULL) AS program_specific
+       FROM public.enrollment_branch_codes
        WHERE branch_code = $1 AND (institution_id = $2 OR institution_id IS NULL)
          AND (programme_prefix = $3 OR programme_prefix IS NULL)
-       ORDER BY (institution_id = $2) DESC NULLS LAST, (programme_prefix = $3) DESC NULLS LAST`,
-      [parsed.branchCode, input.institutionId, parsed.prefix],
+         AND (program_name_pattern IS NULL OR $4::text ILIKE program_name_pattern)
+       ORDER BY (institution_id = $2) DESC NULLS LAST,
+                (programme_prefix = $3) DESC NULLS LAST,
+                (program_name_pattern IS NOT NULL) DESC NULLS LAST LIMIT 20`,
+      [parsed.branchCode, input.institutionId, parsed.prefix, programName],
     );
-    if (!branchRules.rows.some((row: { branch_name: string }) => branchIdentityMatches(row.branch_name, String(curriculum.branch_name || "")))) {
+    const preferredBranchRule = branchRules.rows[0];
+    const effectiveBranchRules = preferredBranchRule
+      ? branchRules.rows.filter((row: { institution_specific:boolean; prefix_specific:boolean; program_specific:boolean }) =>
+          row.institution_specific === preferredBranchRule.institution_specific &&
+          row.prefix_specific === preferredBranchRule.prefix_specific &&
+          row.program_specific === preferredBranchRule.program_specific)
+      : [];
+    if (!effectiveBranchRules.some((row: { branch_name: string }) => branchIdentityMatches(row.branch_name, String(curriculum.branch_name || "")))) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the branch encoded in your enrollment number. If the mapping is incorrect, submit an enrollment grievance or explicitly correct the branch.");
     }
   }
@@ -94,7 +107,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   }
   if (input.academicStatus === "GRADUATED") {
     if (input.currentSemesterNumber !== null) throw new StudentProfileValidationError("GRADUATION_SEMESTER_INVALID", "A completed programme cannot have an active current semester.");
-    return;
+    return null;
   }
 
   const calendarResult = await pool.query(
@@ -106,7 +119,10 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   const calendars = calendarResult.rows as Array<{ academic_year_start_month:number; odd_semester_start_month:number; odd_semester_end_month:number; timezone:string|null; active_from:string|Date|null; active_to:string|Date|null }>;
   const calendar = calendars.find(row => {
     const localDate = new Intl.DateTimeFormat("en-CA", { timeZone: row.timezone || "Asia/Kolkata", year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date());
-    return (!row.active_from || String(row.active_from).slice(0,10) <= localDate) && (!row.active_to || String(row.active_to).slice(0,10) >= localDate);
+    const dateOnly = (value: string | Date | null) => value ? (value instanceof Date ? value.toISOString().slice(0,10) : String(value).slice(0,10)) : null;
+    const activeFrom = dateOnly(row.active_from);
+    const activeTo = dateOnly(row.active_to);
+    return (!activeFrom || activeFrom <= localDate) && (!activeTo || activeTo >= localDate);
   });
   if (!calendar) throw new StudentProfileValidationError("ACADEMIC_CALENDAR_MISSING", "The institute academic calendar is not configured for the current date.");
 
@@ -133,4 +149,5 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (selected > highestAllowed) {
     throw new StudentProfileValidationError("CURRENT_SEMESTER_AHEAD_OF_PREDICTION", "Selected semester is ahead of the semester Gradly can reasonably predict for the current academic session.");
   }
+  return prediction.expectedSemester;
 }

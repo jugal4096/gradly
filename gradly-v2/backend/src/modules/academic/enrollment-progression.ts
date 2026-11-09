@@ -120,8 +120,8 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
   const name = String(schemeName ?? "").trim();
   if (!name) return false;
   const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  if (prefix === "BE") return /^new cbcs(?:\s|$)/.test(normalized);
-  if (prefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized);
+  if (prefix === "BE") return /^new cbcs(?:\s|$)/.test(normalized) && !/\b(nep|new education policy|national education policy)\b/.test(normalized);
+  if (prefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized) && !/\b(cbcs|legacy)\b/.test(normalized);
   return (prefix === "MC" || prefix === "MT") && normalized.length > 0;
 }
 

@@ -88,8 +88,8 @@ export default function AcademicSetupPage() {
   const enrollmentPrefix = enrollment.trim().toUpperCase().slice(0, 2);
   const eligibleCurricula = curricula.filter(item => {
     const normalized = item.scheme_name.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-    if (enrollmentPrefix === "BE") return /^new cbcs(?:\s|$)/.test(normalized);
-    if (enrollmentPrefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized);
+    if (enrollmentPrefix === "BE") return /^new cbcs(?:\s|$)/.test(normalized) && !/\b(nep|new education policy|national education policy)\b/.test(normalized);
+    if (enrollmentPrefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized) && !/\b(cbcs|legacy)\b/.test(normalized);
     return enrollmentPrefix === "MC" || enrollmentPrefix === "MT";
   });
   const adjustedExpectedSemester = expectedSemester !== null && expectedSemester >= predictedEntrySemester && expectedSemester <= semesterCount ? expectedSemester : null;
@@ -372,9 +372,11 @@ export default function AcademicSetupPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
       setGrievanceDescription("");
-      const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
-      const listData = await listResponse.json();
-      if (listResponse.ok) setGrievances(Array.isArray(listData.grievances) ? listData.grievances : []);
+      try {
+        const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
+        const listData = await listResponse.json();
+        if (listResponse.ok) setGrievances(Array.isArray(listData.grievances) ? listData.grievances : []);
+      } catch { /* The grievance was submitted; history can refresh on the next visit. */ }
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to submit grievance."); }
     finally { setGrievanceBusy(false); }
   }
@@ -393,9 +395,11 @@ export default function AcademicSetupPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Your request could not be submitted.");
       setRequestSent(true);
-      const trackingResponse = await fetch(API + "/api/student/institution-requests", { headers: { Authorization: "Bearer " + token } });
-      const trackingData = await trackingResponse.json();
-      if (trackingResponse.ok) setInstitutionRequests(Array.isArray(trackingData.requests) ? trackingData.requests : []);
+      try {
+        const trackingResponse = await fetch(API + "/api/student/institution-requests", { headers: { Authorization: "Bearer " + token } });
+        const trackingData = await trackingResponse.json();
+        if (trackingResponse.ok) setInstitutionRequests(Array.isArray(trackingData.requests) ? trackingData.requests : []);
+      } catch { /* The request was submitted; tracking can refresh on the next visit. */ }
     } catch (e) { setError(e instanceof Error ? e.message : "Your request could not be submitted."); }
     finally { setRequestBusy(false); }
   }
@@ -491,7 +495,7 @@ export default function AcademicSetupPage() {
                   <div className="academic-setup-edit-wide"><label htmlFor="edit-scheme">Academic scheme</label><select id="edit-scheme" value={curriculumId} onChange={e => { setCurriculumId(e.target.value); setPredictionConfirmed(null); }}><option value="">Select scheme</option>{eligibleCurricula.map(item => <option key={item.id} value={item.id}>{item.scheme_name}{item.version ? " · "+item.version : ""}</option>)}</select></div>
                   <div><label htmlFor="edit-admission-year">Admission year</label><input id="edit-admission-year" type="number" min="1990" max={new Date().getFullYear()} value={confirmedAdmissionYear} onChange={e => changeAdmissionYear(e.target.value)} /></div>
                   <div className="academic-setup-edit-wide"><label htmlFor="edit-admission-mode">Admission mode</label><select id="edit-admission-mode" value={selectedAdmissionMode?.id || ""} onChange={e => changeAdmissionMode(e.target.value)}><option value="">Select admission mode</option>{admissionModes.map(item => <option key={item.id} value={item.id}>{item.mode_name}</option>)}</select></div>
-                  <div className="academic-setup-edit-actions"><button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(false); setPredictionConfirmed(null); }}>Cancel</button><button type="button" className="academic-setup-choice primary-choice" disabled={!programId || !branchId || !curriculumId || !confirmedAdmissionYear || !confirmedAdmissionMode.trim()} onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>Confirm updated details</button></div>
+                  <div className="academic-setup-edit-actions"><button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(false); setPredictionConfirmed(null); }}>Cancel</button><button type="button" className="academic-setup-choice primary-choice" disabled={!programId || !branchId || !curriculumId || !/^\d{4}$/.test(confirmedAdmissionYear) || Number(confirmedAdmissionYear) < 1990 || Number(confirmedAdmissionYear) > new Date().getFullYear() || !confirmedAdmissionMode.trim()} onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>Confirm updated details</button></div>
                 </div>}
               </>}
             <section className="academic-setup-confirmation academic-setup-journey">

@@ -156,8 +156,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     } else {
       return {
         ...unresolved("SCHEME", candidates.length > 1
-          ? "Multiple eligible legacy curricula exist for this programme and branch. Confirm the curriculum used by your institution."
-          : "No eligible legacy curriculum exists for this programme and branch. Ask your institution administrator to configure the correct curriculum.", parsed),
+          ? "Multiple NEP curricula exist for this programme and branch. Confirm the curriculum used by your institution."
+          : "No NEP curriculum exists for this programme and branch. Ask your institution administrator to configure the correct curriculum.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, admissionModeId: mode.admission_mode_id ?? null,
         entrySemester: Number(mode.entry_semester), curriculumOptions: allowedOptions,
