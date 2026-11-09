@@ -44,7 +44,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
      ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
     [parsed.prefix, input.institutionId],
   );
-  if (!programmeRule.rows[0]) throw new StudentProfileValidationError("PROGRAMME_PREFIX_NOT_CONFIGURED", "This enrollment prefix is not configured for the selected institution.");
+  if (!programmeRule.rows[0] && parsed.prefix !== "ME" && parsed.prefix !== "MT") throw new StudentProfileValidationError("PROGRAMME_PREFIX_NOT_CONFIGURED", "This enrollment prefix is not configured for the selected institution.");
 
   const curriculumResult = await pool.query(
     `SELECT c.id, c.institution_id,
