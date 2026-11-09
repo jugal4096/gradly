@@ -18,7 +18,7 @@ test("programme resolution follows enrollment degree prefix rather than stale ru
 });
 
 test("parses a strict regular BE enrollment number", () => {
-  const p = parseEnrollmentNumber("BE23F06F007");
+  const p = parseEnrollmentNumber("BE22F06F007");
   assert.deepEqual([p.prefix, p.admissionYear, p.admissionModeCode, p.branchCode, p.suffix], ["BE", 2023, "F", "06", "F007"]);
 });
 
@@ -66,8 +66,8 @@ test("rejects invalid programme, year, mode, branch structure and length", () =>
 });
 
 test("uses configurable century boundary", () => {
-  assert.equal(parseEnrollmentNumber("BE69F05F001", 70).admissionYear, 2069);
-  assert.equal(parseEnrollmentNumber("BE70F05F001", 70).admissionYear, 1970);
+  assert.equal(parseEnrollmentNumber("BE69F05F001", 70, new Date("2070-11-09T12:00:00+05:30")).admissionYear, 2069);
+  assert.equal(parseEnrollmentNumber("BE70F05F001", 70, new Date("2070-11-09T12:00:00+05:30")).admissionYear, 1970);
 });
 
 test("BE23S06F007 in November 2026 has completed expected DSY programme duration", () => {
