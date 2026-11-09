@@ -37,7 +37,7 @@ export async function previewEnrollmentController(req: AuthenticatedRequest, res
         INVALID_BRANCH_CODE: "Unrecognized branch code. Please verify your enrollment number.",
         INVALID_EIGHTH_CHARACTER: "Invalid enrollment number. The 8th character must be F.",
         INVALID_STUDENT_SERIAL: "Invalid enrollment number. The last three characters must contain only digits.",
-        DSE_ADMISSION_CYCLE_NOT_STARTED: "Direct Second Year admission for this enrollment year has not started yet. The corresponding first-year batch must complete its first year; for the 2026-27 batch, DSE intake can begin only after July 2027.",
+        DSE_ADMISSION_CYCLE_NOT_STARTED: "Direct Second Year admission for this enrollment year has not started yet. DSE intake becomes eligible only when the corresponding first-year cohort enters its second academic year, at the start of that session (normally July).",
         FUTURE_ADMISSION_YEAR: "Invalid enrollment number. This academic admission year has not started yet; future-dated enrollment numbers are not accepted.",
         BE_CBCS_DISCONTINUED: "Invalid enrollment number. The BE New CBCS scheme was discontinued after 2023; BE24 and later are not valid.",
         BE23_FIRST_YEAR_NOT_ALLOWED: "Invalid enrollment number. BE23F is not valid because first-year admissions moved to NEP. BE23S Direct Second Year remains valid.",
