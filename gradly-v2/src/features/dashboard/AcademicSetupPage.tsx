@@ -12,7 +12,7 @@ type AdmissionMode = { id: string; mode_code: string; mode_name: string; entry_s
 type AcademicStatus = "ENROLLED" | "GRADUATED";
 type EnrollmentPreview = {
   recognized: boolean; requiresConfirmation: boolean; unknown?: string; message?: string;
-  programme?: string; programId?: string; branch?: string; branchId?: string;
+  programme?: string; programId?: string; branch?: string; branchId?: string; specialization?: string | null; specializationId?: string | null;
   curriculumId?: string; curriculumName?: string; scheme?: string;
   admissionYear?: number; admissionMode?: string; admissionModeId?: string | null; entrySemester?: number;
   curriculumOptions?: Curriculum[]; totalSemesters?: number; schemeId?: string; schemeCode?: string | null;
@@ -167,7 +167,7 @@ export default function AcademicSetupPage() {
     }
     const normalizedEnrollment = enrollment.trim().toUpperCase();
     const enrollmentError = validateEnrollmentNumber(normalizedEnrollment);
-    if (enrollmentError) { window.alert("Invalid code"); return; }
+    if (enrollmentError) { setError(enrollmentError); return; }
     if (!selected || !normalizedEnrollment || !user) { setError("Select your institution and enter your enrollment number first."); return; }
     setPreviewBusy(true);
     try {
@@ -180,7 +180,7 @@ export default function AcademicSetupPage() {
       const payload = await response.json();
       if (sequence !== previewSequence.current) return;
       if (!response.ok) {
-        if (response.status === 400) { window.alert("Invalid code"); setPreview(null); setExpectedSemester(null); return; }
+        if (response.status === 400) { setError(payload.message || "Enrollment number could not be validated."); setPreview(null); setExpectedSemester(null); return; }
         throw new Error(payload.message || "Unable to identify academic details.");
       }
       const result = payload.data as EnrollmentPreview;
@@ -483,6 +483,7 @@ export default function AcademicSetupPage() {
               <dl className="academic-setup-predicted-grid">
                 <div><dt>Programme</dt><dd>{programs.find(item => item.id === programId)?.name || preview.programme || "—"}</dd></div>
                 <div><dt>Branch</dt><dd>{branches.find(item => item.id === branchId)?.name || preview.branch || "—"}</dd></div>
+                {enrollmentPrefix === "MT" && preview.specialization && <div><dt>Course / Stream</dt><dd>{preview.specialization}</dd></div>}
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
