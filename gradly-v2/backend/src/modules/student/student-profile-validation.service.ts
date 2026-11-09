@@ -49,10 +49,12 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   const curriculumResult = await pool.query(
     `SELECT c.id, c.institution_id,
             COALESCE(c.total_semesters, (SELECT COUNT(*)::int FROM public.semesters sem WHERE sem.curriculum_id = c.id)) AS total_semesters,
-            p.name AS program_name, b.name AS branch_name, b.code AS branch_code, sc.name AS scheme_name
+            p.name AS program_name, b.name AS branch_name, b.code AS branch_code,
+            sp.name AS specialization_name, sp.code AS specialization_code, sc.name AS scheme_name
      FROM public.curricula c
      JOIN public.programs p ON p.id = c.program_id
      JOIN public.branches b ON b.id = c.branch_id
+     LEFT JOIN public.specializations sp ON sp.id = c.specialization_id
      JOIN public.schemes sc ON sc.id = c.scheme_id
      WHERE c.id = $1 AND c.institution_id = $2 LIMIT 1`,
     [input.curriculumId, input.institutionId],
@@ -74,7 +76,13 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
     const branchMatches = parsed.prefix === "ME"
       ? String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
-      : Boolean(decodedBranchName && branchIdentityMatches(decodedBranchName, String(curriculum.branch_name || "")));
+      : parsed.prefix === "MT"
+        ? Boolean(decodedBranchName && branchIdentityMatches(
+            decodedBranchName,
+            String(curriculum.specialization_name || curriculum.branch_name || ""),
+            curriculum.specialization_code ?? null,
+          ))
+        : Boolean(decodedBranchName && branchIdentityMatches(decodedBranchName, String(curriculum.branch_name || "")));
     if (!branchMatches) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
     }
