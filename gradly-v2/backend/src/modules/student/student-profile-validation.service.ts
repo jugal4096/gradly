@@ -111,15 +111,31 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     );
     mode = fallback.rows[0];
   }
-  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT")) {
-    const regularMode = await pool.query(`SELECT name AS mode_name, 1 AS entry_semester FROM public.admission_modes WHERE LOWER(name) = 'regular' LIMIT 1`);
-    mode = regularMode.rows[0];
+  if (!mode && input.academicProfileOverrides?.admissionMode !== true &&
+      (parsed.prefix === "ME" || parsed.prefix === "MT") && parsed.admissionModeCode === "F") {
+    // ME/MT are institutionally constrained to Regular admission in Semester 1.
+    // Resolve legacy labels where present; otherwise use that deterministic rule
+    // rather than requiring a separate admission_modes seed for every institution.
+    const regularMode = await pool.query(
+      `SELECT name AS mode_name, 1 AS entry_semester
+       FROM public.admission_modes
+       WHERE LOWER(BTRIM(name)) = ANY(ARRAY['regular','regular admission','first year','first year admission','fy']::text[])
+       ORDER BY CASE WHEN LOWER(BTRIM(name)) = 'regular admission' THEN 0
+                     WHEN LOWER(BTRIM(name)) = 'regular' THEN 1 ELSE 2 END
+       LIMIT 1`,
+    );
+    mode = regularMode.rows[0] ?? { mode_name: "Regular Admission", entry_semester: 1 };
   }
   if (!mode) throw new StudentProfileValidationError("ADMISSION_MODE_NOT_CONFIGURED", "This admission mode is not configured for the selected institute and programme.");
   if ((parsed.prefix === "ME" || parsed.prefix === "MT") && (parsed.admissionModeCode !== "F" || !/regular/i.test(String(mode.mode_name)) || Number(mode.entry_semester) !== 1)) {
     throw new StudentProfileValidationError("POSTGRADUATE_REGULAR_ADMISSION_ONLY", "M.E. and M.Tech. admissions must be Regular first-year entry in Semester 1.");
   }
-  if (String(input.admissionModeName ?? "").trim().toLowerCase() !== String(mode.mode_name).trim().toLowerCase()) {
+  const selectedModeName = String(input.admissionModeName ?? "").trim().toLowerCase();
+  const configuredModeName = String(mode.mode_name).trim().toLowerCase();
+  const isPostgraduateRegularAlias = (parsed.prefix === "ME" || parsed.prefix === "MT") &&
+    ["regular", "regular admission", "first year", "first year admission", "fy"].includes(selectedModeName) &&
+    ["regular", "regular admission", "first year", "first year admission", "fy"].includes(configuredModeName);
+  if (selectedModeName !== configuredModeName && !isPostgraduateRegularAlias) {
     throw new StudentProfileValidationError("ADMISSION_MODE_MISMATCH", "Selected admission mode is not configured for this programme and institution.");
   }
 
