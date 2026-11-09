@@ -235,11 +235,12 @@ export default function AcademicSetupPage() {
     const prediction = candidate >= mode.entry_semester && candidate <= semesterCount ? candidate : null;
     setExpectedSemester(prediction);
     setExpectedDurationEnded(durationEnded);
-    const nextSelection = resolveCurrentSemesterSelection(prediction, semesterCount, hasManuallySelectedSemester.current, selectedCurrentSemesterRef.current);
+    const previousSelection = selectedCurrentSemesterRef.current;
+    const nextSelection = resolveCurrentSemesterSelection(prediction, semesterCount, hasManuallySelectedSemester.current, previousSelection);
     selectedCurrentSemesterRef.current = nextSelection;
     setSelectedCurrentSemester(nextSelection);
     setAcademicStatus(academicStatusForSemester(nextSelection));
-    if (hasManuallySelectedSemester.current && nextSelection !== selectedCurrentSemesterRef.current) {
+    if (hasManuallySelectedSemester.current && nextSelection !== previousSelection) {
       hasManuallySelectedSemester.current = false;
     }
   }
