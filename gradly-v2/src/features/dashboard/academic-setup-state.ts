@@ -43,3 +43,25 @@ export function resolveCurrentSemesterSelection(
 export function academicStatusForSemester(selection: string): StudentAcademicStatus {
   return selection === "COMPLETED" ? "GRADUATED" : "ENROLLED";
 }
+
+
+export type AcademicDelayReason = "PENDING_BACKLOGS" | "ACADEMIC_GAP" | "OTHER";
+
+/** Only ask for an explanation when an enrolled student's declared semester differs from prediction. */
+export function shouldAskAcademicDelayReason(predictedSemester: number | null, actualSemester: string, completed = false): boolean {
+  if (completed || actualSemester === "COMPLETED" || !actualSemester || predictedSemester === null) return false;
+  return Number(actualSemester) !== predictedSemester;
+}
+
+/** Backlog and gap declarations are relevant only to a mismatch and their matching reason. */
+export function academicDelayDeclarations(
+  reason: AcademicDelayReason | "",
+  gapYears: string,
+  backlogCount: string,
+  shouldAsk: boolean,
+) {
+  return {
+    academicGapYears: shouldAsk && reason === "ACADEMIC_GAP" && gapYears !== "" ? Number(gapYears) : null,
+    pendingBacklogCount: shouldAsk && reason === "PENDING_BACKLOGS" && backlogCount !== "" ? Number(backlogCount) : null,
+  };
+}
