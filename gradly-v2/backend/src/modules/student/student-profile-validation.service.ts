@@ -91,7 +91,11 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
               (em.programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
     [parsed.admissionModeCode, input.institutionId, parsed.prefix, input.admissionModeName ?? "", input.academicProfileOverrides?.admissionMode === true],
   );
-  const mode = modeResult.rows[0];
+  let mode = modeResult.rows[0];
+  if (!mode && (parsed.prefix === "ME" || parsed.prefix === "MT")) {
+    const regularMode = await pool.query(`SELECT name AS mode_name, 1 AS entry_semester FROM public.admission_modes WHERE LOWER(name) = 'regular' LIMIT 1`);
+    mode = regularMode.rows[0];
+  }
   if (!mode) throw new StudentProfileValidationError("ADMISSION_MODE_NOT_CONFIGURED", "This admission mode is not configured for the selected institute and programme.");
   if ((parsed.prefix === "ME" || parsed.prefix === "MT") && (parsed.admissionModeCode !== "F" || !/regular/i.test(String(mode.mode_name)) || Number(mode.entry_semester) !== 1)) {
     throw new StudentProfileValidationError("POSTGRADUATE_REGULAR_ADMISSION_ONLY", "M.E. and M.Tech. admissions must be Regular first-year entry in Semester 1.");
