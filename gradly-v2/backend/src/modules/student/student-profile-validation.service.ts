@@ -104,9 +104,11 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
                   (programme_prefix = $3) DESC NULLS LAST LIMIT 1`,
         [parsed.branchCode, input.institutionId, parsed.prefix],
       );
-      const mappedName = String(mapped.rows[0]?.branch_name ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
-      const selectedName = String(curriculum.branch_name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-      branchMatches = Boolean(mappedName && mappedName === selectedName);
+      const mappedName = String(mapped.rows[0]?.branch_name ?? "").trim();
+      branchMatches = Boolean(mappedName && enrollmentBranchMatches(parsed.prefix, mappedName, {
+        name: String(curriculum.branch_name ?? ""),
+        code: curriculum.branch_code ?? null,
+      }));
     }
     if (!branchMatches) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
