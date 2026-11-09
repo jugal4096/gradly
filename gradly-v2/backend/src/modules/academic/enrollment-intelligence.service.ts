@@ -104,7 +104,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     version: string | number | null; total_semesters: number | null; resolved_total_semesters: number;
   }>;
   const configuredScheme = String(rule.scheme_label ?? "").trim();
-  const configuredNewCbcs = /^new\s*cbcs$/i.test(configuredScheme);
+  const configuredNewCbcs = isAllowedSchemeForEnrollmentPrefix("BE", configuredScheme);
   if (parsed.prefix === "BE" && !configuredNewCbcs) {
     return {
       ...unresolved("SCHEME", "BE enrollment numbers must map to the institution's NEW CBCS scheme. Configure the exact scheme mapping before continuing.", parsed),
@@ -137,7 +137,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         curriculumOptions,
       };
     }
-    if (parsed.prefix === "BE" && !/^new\s*cbcs$/i.test(curriculum.scheme_name)) {
+    if (!isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
       return {
         ...unresolved("SCHEME", "BE enrollment numbers require the NEW CBCS curriculum. Choose the institution's configured NEW CBCS option.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
@@ -145,12 +145,12 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         curriculumOptions,
       };
     }
-    if (parsed.prefix === "BT" && /^new\s*cbcs$/i.test(curriculum.scheme_name)) {
+    if (parsed.prefix === "BT" && !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, curriculum.scheme_name)) {
       return {
         ...unresolved("SCHEME", "NEW CBCS cannot be selected for a BT enrollment number. Choose the correct legacy curriculum.", parsed),
         programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
         admissionYear: parsed.admissionYear, admissionMode: mode.mode_name, entrySemester: Number(mode.entry_semester),
-        curriculumOptions: curriculumOptions.filter(option => !/^new\s*cbcs$/i.test(option.scheme_name)),
+        curriculumOptions: curriculumOptions.filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)),
       };
     }
   } else {
