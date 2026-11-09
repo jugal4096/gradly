@@ -104,10 +104,8 @@ export default function AcademicSetupPage() {
   useEffect(() => {
     if (academicGapYears === 0) { setGapAcademicYearFrom(""); setGapAcademicYearTo(""); return; }
     const defaultFrom = String(Math.max(academicYearBase, currentAcademicYearStart - academicGapYears));
-    if (!gapAcademicYearFrom || !gapAcademicYearTo || Number(gapAcademicYearTo) - Number(gapAcademicYearFrom) !== academicGapYears) {
-      setGapAcademicYearFrom(defaultFrom);
-      setGapAcademicYearTo(String(Number(defaultFrom) + academicGapYears));
-    }
+    setGapAcademicYearFrom(defaultFrom);
+    setGapAcademicYearTo(String(Number(defaultFrom) + academicGapYears));
   }, [academicGapYears, academicYearBase, currentAcademicYearStart]);
 
   useEffect(() => {
