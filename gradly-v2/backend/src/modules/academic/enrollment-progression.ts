@@ -122,6 +122,34 @@ export function branchIdentityMatches(configuredName: string, actualName: string
   }
   return false;
 }
+
+export type EnrollmentBranchCandidate = {
+  name: string;
+  code?: string | null;
+  specializationName?: string | null;
+  specializationCode?: string | null;
+};
+
+/**
+ * M.Tech enrollment codes identify a specialization (for example Structural
+ * Engineering), while the curriculum's branch_id points to its department
+ * (for example Applied Mechanics). Match the specialization first; use the
+ * department only when that curriculum has no specialization record.
+ */
+export function enrollmentBranchMatches(
+  prefix: string,
+  decodedBranchName: string,
+  candidate: EnrollmentBranchCandidate,
+): boolean {
+  if (prefix === "MT" && String(candidate.specializationName ?? "").trim()) {
+    return branchIdentityMatches(
+      decodedBranchName,
+      String(candidate.specializationName),
+      candidate.specializationCode ?? null,
+    );
+  }
+  return branchIdentityMatches(decodedBranchName, candidate.name, candidate.code ?? null);
+}
 export type SemesterPrediction = {
   expectedSemester: number | null;
   academicYear: string;
