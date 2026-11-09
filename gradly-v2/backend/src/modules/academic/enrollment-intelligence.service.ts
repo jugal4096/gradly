@@ -38,7 +38,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   const institutionResult = await pool.query(`SELECT name FROM institutions WHERE id = $1 LIMIT 1`, [institutionId]);
   const institutionName = String(institutionResult.rows[0]?.name ?? "");
   const decodedBranchName = resolveEnrollmentBranchCode(institutionName, parsed.prefix, parsed.branchCode);
-  if (!decodedBranchName) {
+  // ME codes are institution-specific: resolve only an exact code already stored in the
+  // institution branch directory. MT uses the explicitly supplied GECA specialization map.
+  if (!decodedBranchName && parsed.prefix !== "ME") {
     return unresolved("BRANCH_CODE", "This branch code is not supported by the built-in enrollment decoder for this institution. Select the branch manually or request an enrollment mapping review.", parsed);
   }
 
@@ -49,7 +51,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     [program.id],
   );
   const matchedBranches = branchDirectory.rows.filter((candidate: { id: string; name: string; code?: string | null }) =>
-    branchIdentityMatches(decodedBranchName, candidate.name, candidate.code ?? null),
+    parsed.prefix === "ME"
+      ? String(candidate.code ?? "").trim().toUpperCase() === parsed.branchCode
+      : branchIdentityMatches(String(decodedBranchName), candidate.name, candidate.code ?? null),
   );
   const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string }) => [candidate.id, candidate])).values());
   if (uniqueBranches.length !== 1) {
@@ -74,6 +78,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   );
   const mode = modeResult.rows[0];
   if (!mode) return unresolved("ADMISSION_MODE", "This admission-mode code is not configured for the detected programme.", parsed);
+  if ((parsed.prefix === "ME" || parsed.prefix === "MT") && (parsed.admissionModeCode !== "F" || Number(mode.entry_semester) !== 1 || !/regular/i.test(String(mode.mode_name)))) {
+    return unresolved("ADMISSION_MODE", "M.E. and M.Tech. admissions must be Regular first-year entry in Semester 1.", parsed);
+  }
 
   const curriculumOptionsResult = await pool.query(
     `SELECT c.id, c.scheme_id, sc.name AS scheme_name, sc.code AS scheme_code,
@@ -112,7 +119,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
       };
     }
     curriculumResolutionReason = "STUDENT_CONFIRMED_CURRICULUM";
-  } else if (parsed.prefix === "BE") {
+  } else if (parsed.prefix === "BE" || parsed.prefix === "ME") {
     const candidates = allowedOptions;
     if (candidates.length !== 1) {
       return {
@@ -126,9 +133,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     }
     curriculum = candidates[0];
     curriculumResolutionReason = "UNIQUE_NEW_CBCS_CURRICULUM";
-  } else if (parsed.prefix === "BT") {
+  } else if (parsed.prefix === "BT" || parsed.prefix === "MT") {
     // BT is strictly NEP. Use an institution-specific scheme label only when it resolves to an eligible NEP curriculum.
-    const configuredMatches = configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix("BT", option.scheme_name)) : [];
+    const configuredMatches = configuredScheme ? schemeMatches(configuredScheme).filter(option => isAllowedSchemeForEnrollmentPrefix(parsed.prefix, option.scheme_name)) : [];
     const candidates = configuredMatches.length ? configuredMatches : allowedOptions;
     if (candidates.length === 1) {
       curriculum = candidates[0];
