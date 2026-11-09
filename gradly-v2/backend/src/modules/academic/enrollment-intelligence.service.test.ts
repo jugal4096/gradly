@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
+import { branchIdentityMatches, enrollmentBranchMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
 import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "../../../../src/features/dashboard/academic-setup-state";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
@@ -277,6 +277,24 @@ test("ME is regular-only New CBCS through 2022; MT is regular-only NEP from 2023
   assert.throws(() => parseEnrollmentNumber("MT22F09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /MT_NEP_NOT_STARTED/);
   assert.equal(parseEnrollmentNumber("MT23F09F001", 70, new Date("2026-11-09T12:00:00+05:30")).admissionYear, 2023);
   assert.throws(() => parseEnrollmentNumber("MT23S09F001", 70, new Date("2026-11-09T12:00:00+05:30")), /POSTGRADUATE_REGULAR_ADMISSION_ONLY/);
+});
+
+test("GECA M.Tech specialization codes resolve through their stored department branches", () => {
+  assert.equal(enrollmentBranchMatches("MT", "Structural Engineering", {
+    name: "APPLIED MECHANICS", code: "APPLIED_MECHANICS",
+    specializationName: "Structural Engineering", specializationCode: "STRUCTURAL",
+  }), true);
+  assert.equal(enrollmentBranchMatches("MT", "Water Resources Engineering", {
+    name: "CIVIL", code: "CIVIL",
+    specializationName: "Water Resources Engineering", specializationCode: "WRE",
+  }), true);
+  assert.equal(enrollmentBranchMatches("MT", "Electrical Machines and Drives", {
+    name: "ELECTRICAL", code: "ELECTRICAL",
+    specializationName: "Electrical Power Systems", specializationCode: "EPS",
+  }), false);
+  assert.equal(enrollmentBranchMatches("MT", "Computer Engineering", {
+    name: "Computer Science and Engineering", code: "CSE",
+  }), true);
 });
 
 test("GECA MT specialization codes use only the supplied mappings", () => {
