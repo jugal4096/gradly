@@ -66,8 +66,8 @@ test("rejects invalid programme, year, mode, branch structure and length", () =>
 });
 
 test("uses configurable century boundary", () => {
-  assert.equal(parseEnrollmentNumber("BE69F05F001", 70, new Date("2070-11-09T12:00:00+05:30")).admissionYear, 2069);
-  assert.equal(parseEnrollmentNumber("BE70F05F001", 70, new Date("2070-11-09T12:00:00+05:30")).admissionYear, 1970);
+  assert.equal(parseEnrollmentNumber("MC69F05F001", 70, new Date("2070-11-09T12:00:00+05:30")).admissionYear, 2069);
+  assert.equal(parseEnrollmentNumber("MC70F05F001", 70, new Date("2070-11-09T12:00:00+05:30")).admissionYear, 1970);
 });
 
 test("BE23S06F007 in November 2026 has completed expected DSY programme duration", () => {
