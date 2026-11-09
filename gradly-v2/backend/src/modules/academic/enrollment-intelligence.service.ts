@@ -51,14 +51,16 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   // M.Tech codes identify specializations; the existing curriculum is stored against
   // the parent department branch. Keep both identities so the correct curriculum is selected.
   const branchDirectory = await pool.query(
-    `SELECT b.id, b.name, b.code,
+    `SELECT DISTINCT b.id, b.name, b.code,
             sp.id AS specialization_id, sp.name AS specialization_name, sp.code AS specialization_code
      FROM branches b
+     JOIN curricula c
+       ON c.branch_id = b.id AND c.program_id = b.program_id AND c.institution_id = $3
      LEFT JOIN specializations sp
-       ON $2::boolean = TRUE AND sp.branch_id = b.id AND sp.program_id = b.program_id
+       ON $2::boolean = TRUE AND sp.id = c.specialization_id
      WHERE b.program_id = $1
      ORDER BY b.name, sp.name`,
-    [program.id, parsed.prefix === "MT"],
+    [program.id, parsed.prefix === "MT", institutionId],
   );
 
   // Institution-configured enrollment codes are the source of truth for
