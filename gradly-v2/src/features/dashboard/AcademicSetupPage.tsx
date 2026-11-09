@@ -157,7 +157,7 @@ export default function AcademicSetupPage() {
     }
     const normalizedEnrollment = enrollment.trim().toUpperCase();
     const enrollmentError = validateEnrollmentNumber(normalizedEnrollment);
-    if (enrollmentError) { setError(enrollmentError); return; }
+    if (enrollmentError) { window.alert("Invalid code"); return; }
     if (!selected || !normalizedEnrollment || !user) { setError("Select your institution and enter your enrollment number first."); return; }
     setPreviewBusy(true);
     try {
@@ -169,7 +169,10 @@ export default function AcademicSetupPage() {
       });
       const payload = await response.json();
       if (sequence !== previewSequence.current) return;
-      if (!response.ok) throw new Error(payload.message || "Unable to identify academic details.");
+      if (!response.ok) {
+        if (response.status === 400) { window.alert("Invalid code"); setPreview(null); setExpectedSemester(null); return; }
+        throw new Error(payload.message || "Unable to identify academic details.");
+      }
       const result = payload.data as EnrollmentPreview;
       setPreview(result);
       if (result.programId) setProgramId(result.programId);
