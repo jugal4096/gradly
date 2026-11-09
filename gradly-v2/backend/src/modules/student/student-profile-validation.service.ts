@@ -99,7 +99,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
        WHERE LOWER(BTRIM(name)) = ANY($2::text[])
        ORDER BY CASE WHEN LOWER(BTRIM(name)) = $3 THEN 0 ELSE 1 END LIMIT 1`,
       [parsed.admissionModeCode === "F" ? 1 : 3,
-       parsed.admissionModeCode === "F" ? ["regular", "first year", "fy"] : ["direct second year", "dsy", "dse", "lateral entry"],
+       parsed.admissionModeCode === "F" ? ["regular", "regular admission", "first year", "first year admission", "fy"] : ["direct second year", "direct second year admission", "dsy", "dse", "lateral entry"],
        parsed.admissionModeCode === "F" ? "regular" : "direct second year"],
     );
     mode = fallback.rows[0];
