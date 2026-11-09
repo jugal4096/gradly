@@ -83,7 +83,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   const modeResult = await pool.query(
     `SELECT em.mode_name, em.entry_semester
      FROM public.enrollment_admission_modes em
-     WHERE ((em.mode_code = $1 AND $5::boolean = FALSE)
+     WHERE (((UPPER(BTRIM(em.mode_code)) = $1 OR ($1 = 'F' AND LOWER(BTRIM(em.mode_name)) IN ('regular','first year','fy')) OR ($1 = 'S' AND LOWER(BTRIM(em.mode_name)) IN ('direct second year','dsy','dse','lateral entry'))) AND $5::boolean = FALSE)
          OR ($5::boolean = TRUE AND LOWER(em.mode_name) = LOWER($4)))
        AND (em.institution_id = $2 OR em.institution_id IS NULL)
        AND (em.programme_prefix = $3 OR em.programme_prefix IS NULL)
