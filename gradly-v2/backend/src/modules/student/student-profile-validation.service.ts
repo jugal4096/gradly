@@ -123,9 +123,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (!Number.isInteger(selected) || selected < entrySemester || selected > totalSemesters) {
     throw new StudentProfileValidationError("CURRENT_SEMESTER_OUT_OF_RANGE", "Current semester must be within the selected programme's semester range and admission entry point.");
   }
-  const highestAllowed = prediction.expectedSemester ?? (prediction.expectedDurationEnded
-    ? (totalSemesters % 2 === parity ? totalSemesters : totalSemesters - 1)
-    : 0);
+  const highestAllowed = prediction.expectedSemester ?? (prediction.expectedDurationEnded ? totalSemesters : 0);
   if (selected > highestAllowed) {
     throw new StudentProfileValidationError("CURRENT_SEMESTER_AHEAD_OF_PREDICTION", "Selected semester is ahead of the semester Gradly can reasonably predict for the current academic session.");
   }
