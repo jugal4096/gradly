@@ -60,7 +60,7 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
      ORDER BY b.name, sp.name`,
     [program.id, parsed.prefix === "MT"],
   );
-  const matchedBranches = branchDirectory.rows.filter((candidate: {
+  let matchedBranches = branchDirectory.rows.filter((candidate: {
     id: string; name: string; code?: string | null;
     specialization_id?: string | null; specialization_name?: string | null; specialization_code?: string | null;
   }) => parsed.prefix === "ME"
@@ -72,6 +72,23 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
         specializationCode: candidate.specialization_code ?? null,
       })),
   );
+
+  // If no exact specialization row matched, retry against the department only.
+  // This supports existing curriculum headers whose specialization_id is NULL,
+  // while the shared matcher still restricts the fallback to documented links.
+  if (parsed.prefix === "MT" && decodedBranchName && matchedBranches.length === 0) {
+    const departmentMatches = branchDirectory.rows.filter((candidate: {
+      id: string; name: string; code?: string | null;
+    }) => enrollmentBranchMatches("MT", decodedBranchName, {
+      name: candidate.name,
+      code: candidate.code ?? null,
+      specializationName: null,
+      specializationCode: null,
+    }));
+    matchedBranches = Array.from(new Map(departmentMatches.map((candidate: { id: string }) =>
+      [candidate.id, { ...candidate, specialization_id: null, specialization_name: null, specialization_code: null }],
+    )).values());
+  }
   const uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string; specialization_id?: string | null }) =>
     [`${candidate.id}:${candidate.specialization_id ?? ""}`, candidate],
   )).values());
