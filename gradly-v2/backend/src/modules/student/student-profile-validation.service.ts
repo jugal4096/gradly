@@ -1,5 +1,5 @@
 import { pool } from "../../config/database";
-import { branchIdentityMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "../academic/enrollment-progression";
+import { enrollmentBranchMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "../academic/enrollment-progression";
 
 export class StudentProfileValidationError extends Error {
   constructor(public code: string, message: string) { super(message); this.name = "StudentProfileValidationError"; }
@@ -76,13 +76,12 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     const decodedBranchName = resolveEnrollmentBranchCode(String(institutionResult.rows[0]?.name ?? ""), parsed.prefix, parsed.branchCode);
     const branchMatches = parsed.prefix === "ME"
       ? String(curriculum.branch_code ?? "").trim().toUpperCase() === parsed.branchCode
-      : parsed.prefix === "MT"
-        ? Boolean(decodedBranchName && branchIdentityMatches(
-            decodedBranchName,
-            String(curriculum.specialization_name || curriculum.branch_name || ""),
-            curriculum.specialization_code ?? null,
-          ))
-        : Boolean(decodedBranchName && branchIdentityMatches(decodedBranchName, String(curriculum.branch_name || "")));
+      : Boolean(decodedBranchName && enrollmentBranchMatches(parsed.prefix, decodedBranchName, {
+          name: String(curriculum.branch_name ?? ""),
+          code: curriculum.branch_code ?? null,
+          specializationName: curriculum.specialization_name ?? null,
+          specializationCode: curriculum.specialization_code ?? null,
+        }));
     if (!branchMatches) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the built-in enrollment decoder. If your institution uses a different code structure, explicitly correct the branch or submit an enrollment grievance.");
     }
