@@ -483,7 +483,7 @@ export default function AcademicSetupPage() {
               <dl className="academic-setup-predicted-grid">
                 <div><dt>Programme</dt><dd>{programs.find(item => item.id === programId)?.name || preview.programme || "—"}</dd></div>
                 <div><dt>Branch</dt><dd>{branches.find(item => item.id === branchId)?.name || preview.branch || "—"}</dd></div>
-                {enrollmentPrefix === "MT" && preview.specialization && <div><dt>Course / Stream</dt><dd>{preview.specialization}</dd></div>}
+                {enrollmentPrefix === "MT" && <div><dt>Course / Stream</dt><dd>{preview.specialization || preview.branch || "—"}</dd></div>}
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
