@@ -19,7 +19,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   catch (error) {
     const code = error instanceof Error ? error.message : "INVALID_ENROLLMENT_NUMBER";
     const messageByCode: Record<string, string> = {
-      DSE_ADMISSION_CYCLE_NOT_STARTED: "Direct Second Year admission for this enrollment year has not started yet. The corresponding first-year batch must complete its first year; for the 2026-27 batch, DSE intake can begin only after July 2027.",
+      DSE_ADMISSION_CYCLE_NOT_STARTED: "Direct Second Year admission for this enrollment year has not started yet. DSE intake becomes eligible only when the corresponding first-year cohort enters its second academic year, at the start of that session (normally July).",
       FUTURE_ADMISSION_YEAR: "This enrollment year has not started yet. Future-dated enrollment numbers are not accepted.",
       BE_CBCS_DISCONTINUED: "The BE New CBCS scheme was discontinued after 2023. BE24 and later BE enrollment years are invalid.",
       BE23_FIRST_YEAR_NOT_ALLOWED: "BE23F is invalid because first-year admissions had moved to NEP. BE23S Direct Second Year remains valid.",
