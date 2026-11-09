@@ -48,13 +48,14 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     return unresolved("BRANCH_CODE", "This branch code is not supported by the built-in enrollment decoder for this institution. Select the branch manually or request an enrollment mapping review.", parsed);
   }
 
-  // M.Tech codes identify specializations; the existing curriculum is stored against
-  // the parent department branch. Keep both identities so the correct curriculum is selected.
+  // Resolve against the institution's branch directory even when a curriculum is
+  // missing. A missing NEP curriculum must be reported as a curriculum configuration
+  // issue, not misclassified as an unrecognized enrollment branch code.
   const branchDirectory = await pool.query(
     `SELECT DISTINCT b.id, b.name, b.code,
             sp.id AS specialization_id, sp.name AS specialization_name, sp.code AS specialization_code
      FROM branches b
-     JOIN curricula c
+     LEFT JOIN curricula c
        ON c.branch_id = b.id AND c.program_id = b.program_id AND c.institution_id = $3
      LEFT JOIN specializations sp
        ON $2::boolean = TRUE AND sp.id = c.specialization_id
