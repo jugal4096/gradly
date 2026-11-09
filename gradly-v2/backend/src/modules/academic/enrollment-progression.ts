@@ -173,7 +173,7 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
 /** Degree identity comes from the enrollment prefix, not configurable programme-name patterns. */
 export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: string): boolean {
   const name = String(programmeName ?? "").normalize("NFKC").toLowerCase()
-    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\\s+/g, " ").trim();
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
   if (!name) return false;
 
   // BE and BT are two enrollment-prefix generations used for the same broad
