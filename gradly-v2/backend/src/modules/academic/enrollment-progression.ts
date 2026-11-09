@@ -36,7 +36,7 @@ export function validateEnrollmentYear(
   }
   // ME is legacy New CBCS; MT is post-2023 NEP. Both are regular first-year only.
   if ((prefix === "ME" || prefix === "MT") && admissionModeCode !== "F") throw new Error("POSTGRADUATE_REGULAR_ADMISSION_ONLY");
-  if (prefix === "ME" && admissionYear > 2023) throw new Error("ME_CBCS_DISCONTINUED");
+  if (prefix === "ME" && admissionYear >= 2023) throw new Error("ME_CBCS_DISCONTINUED");
   if (prefix === "MT" && admissionYear < 2023) throw new Error("MT_NEP_NOT_STARTED");
 }
 
