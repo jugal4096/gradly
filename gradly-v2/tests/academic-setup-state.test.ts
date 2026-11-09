@@ -22,20 +22,20 @@ test("invalid entry semester safely falls back to semester one", () => {
 });
 
 
-test("regular first-year choices are restricted to odd semester progression in July-December", () => {
-  assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 3]);
+test("regular first-year choices include even-semester backlogs through the predicted semester", () => {
+  assert.deepEqual(availableSemesterOptions(8, 1, 3, "ODD"), [1, 2, 3]);
 });
 
-test("direct second-year choices start at semester three and stay within predicted odd semester", () => {
-  assert.deepEqual(availableSemesterOptions(8, 3, 7, "ODD"), [3, 5, 7]);
+test("direct second-year choices start at semester three and include even-semester backlog options", () => {
+  assert.deepEqual(availableSemesterOptions(8, 3, 7, "ODD"), [3, 4, 5, 6, 7]);
 });
 
-test("even semester window excludes odd semesters", () => {
-  assert.deepEqual(availableSemesterOptions(8, 1, 4, "EVEN"), [2, 4]);
+test("even semester window also permits earlier odd-semester backlog choices", () => {
+  assert.deepEqual(availableSemesterOptions(8, 1, 4, "EVEN"), [1, 2, 3, 4]);
 });
 
-test("when normal programme duration has ended, delayed students can select only the current term parity", () => {
-  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 5, 7]);
+test("when normal programme duration has ended, delayed students can select any semester through programme completion", () => {
+  assert.deepEqual(availableSemesterOptions(8, 3, null, "ODD", true), [3, 4, 5, 6, 7]);
 });
 
 
