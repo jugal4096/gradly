@@ -34,6 +34,10 @@ export function validateEnrollmentYear(
   if (prefix === "BT" && admissionYear < 2023) {
     throw new Error("BT_NEP_NOT_STARTED");
   }
+  // ME is legacy New CBCS; MT is post-2023 NEP. Both are regular first-year only.
+  if ((prefix === "ME" || prefix === "MT") && admissionModeCode !== "F") throw new Error("POSTGRADUATE_REGULAR_ADMISSION_ONLY");
+  if (prefix === "ME" && admissionYear > 2023) throw new Error("ME_CBCS_DISCONTINUED");
+  if (prefix === "MT" && admissionYear < 2023) throw new Error("MT_NEP_NOT_STARTED");
 }
 
 export type EnrollmentComponents = {
@@ -45,16 +49,17 @@ export function parseEnrollmentNumber(input: string, pivotStart = 70, now: Date 
   // Normalize case and outer whitespace only. Never repair or remove internal characters.
   const enrollmentNumber = String(input ?? "").trim().toUpperCase();
   if (!enrollmentNumber) throw new Error("EMPTY_ENROLLMENT_NUMBER");
-  if (!/^(BE|BT|MC|MT)/.test(enrollmentNumber)) throw new Error("INVALID_PROGRAMME_PREFIX");
+  if (!/^(BE|BT|MC|ME|MT)/.test(enrollmentNumber)) throw new Error("INVALID_PROGRAMME_PREFIX");
   if (enrollmentNumber.length !== 11) throw new Error("INVALID_ENROLLMENT_LENGTH");
   if (enrollmentNumber[7] !== "F") throw new Error("INVALID_EIGHTH_CHARACTER");
   if (!/^\d{2}$/.test(enrollmentNumber.slice(2, 4))) throw new Error("INVALID_ADMISSION_YEAR");
-  if (!/^[FS]$/.test(enrollmentNumber.slice(4, 5))) throw new Error("INVALID_ADMISSION_MODE");
+  const prefix = enrollmentNumber.slice(0, 2);
+  const admissionModeCode = enrollmentNumber.slice(4, 5);
+  if (!/^[FS]$/.test(admissionModeCode)) throw new Error("INVALID_ADMISSION_MODE");
+  if ((prefix === "ME" || prefix === "MT") && admissionModeCode !== "F") throw new Error("POSTGRADUATE_REGULAR_ADMISSION_ONLY");
   if (!/^\d{2}$/.test(enrollmentNumber.slice(5, 7))) throw new Error("INVALID_BRANCH_CODE");
   if (!/^\d{3}$/.test(enrollmentNumber.slice(-3))) throw new Error("INVALID_STUDENT_SERIAL");
   const yy = Number(enrollmentNumber.slice(2, 4));
-  const prefix = enrollmentNumber.slice(0, 2);
-  const admissionModeCode = enrollmentNumber.slice(4, 5);
   const admissionYear = yy >= pivotStart ? 1900 + yy : 2000 + yy;
   validateEnrollmentYear(prefix, admissionYear, admissionModeCode, now);
   return {
@@ -86,6 +91,8 @@ const branchAliasGroups: string[][] = [
   ["electrical", "electrical engineering", "electr", "elect", "ee"],
   ["mechanical", "mechanical engineering", "mech", "me"],
   ["civil", "civil engineering", "ce"],
+  ["computer engineering", "computer engg", "coe"],
+  ["electronics engineering", "entc", "electronics and telecommunication"],
   ["artificial intelligence and data science", "artificial intelligence data science", "ai and ds", "aids"],
   ["artificial intelligence and machine learning", "artificial intelligence machine learning", "ai and ml", "aiml"],
 ];
@@ -162,9 +169,9 @@ export function isAllowedSchemeForEnrollmentPrefix(prefix: string, schemeName: s
   const name = String(schemeName ?? "").trim();
   if (!name) return false;
   const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  if (prefix === "BE") return /^new cbcs(?:\s|$)/.test(normalized) && !/\b(nep|new education policy|national education policy)\b/.test(normalized);
-  if (prefix === "BT") return /\b(nep|new education policy|national education policy)\b/.test(normalized) && !/\b(cbcs|legacy)\b/.test(normalized);
-  return (prefix === "MC" || prefix === "MT") && normalized.length > 0;
+  if (prefix === "BE" || prefix === "ME") return /^new cbcs(?:\s|$)/.test(normalized) && !/\b(nep|new education policy|national education policy)\b/.test(normalized);
+  if (prefix === "BT" || prefix === "MT") return /\b(nep|new education policy|national education policy)\b/.test(normalized) && !/\b(cbcs|legacy)\b/.test(normalized);
+  return prefix === "MC" && normalized.length > 0;
 }
 
 
@@ -186,6 +193,7 @@ export function programmeMatchesEnrollmentPrefix(prefix: string, programmeName: 
   ];
   const postgraduatePatterns: Record<string, RegExp> = {
     MC: /(?:^| )(?:master of computer applications|master in computer applications|masters of computer applications|master computer applications|m c a|mca|mc)(?: |$)/,
+    ME: /(?:^| )(?:master of engineering|master in engineering|masters of engineering|master engineering|master of engg|m engg|m e|me)(?: |$)/,
     MT: /(?:^| )(?:master of technology|master in technology|masters of technology|master technology|master of tech|m tech|m t e c h|mtech|mt)(?: |$)/,
   };
 
@@ -198,7 +206,18 @@ export function resolveEnrollmentBranchCode(institutionName: string, prefix: str
   const institution = String(institutionName ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const isGeCa = institution.includes("government college of engineering") &&
     (institution.includes("aurangabad") || institution.includes("chhatrapati sambhajinagar") || institution.includes("sambhajinagar"));
-  if (!isGeCa || !["BE", "BT"].includes(prefix)) return null;
+  if (!isGeCa) return null;
+  if (prefix === "ME") return null; // ME codes remain institution-directory-specific.
+  if (prefix === "MT") {
+    const postgraduateBranches: Record<string, string> = {
+      "09": "Structural Engineering", "08": "Water Resources Engineering", "16": "Geotechnical Engineering",
+      "15": "Electrical Machines and Drives", "12": "Electrical Power Systems", "13": "Electronics Engineering",
+      "05": "Computer Engineering",
+      // Production Engineering code has not been supplied; deliberately do not guess.
+    };
+    return postgraduateBranches[branchCode] ?? null;
+  }
+  if (!["BE", "BT"].includes(prefix)) return null;
   const branches: Record<string, string> = {
     "01": "Civil Engineering",
     "02": "Mechanical Engineering",
