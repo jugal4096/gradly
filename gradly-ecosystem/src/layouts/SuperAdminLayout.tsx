@@ -57,6 +57,11 @@ const controlNavigation = [
     icon: ClipboardList,
   },
   {
+    label: "Grievance Centre",
+    path: "/super-admin/grievances",
+    icon: ShieldCheck,
+  },
+  {
     label: "Password Requests",
     path: "/super-admin/password-requests",
     icon: KeyRound,
