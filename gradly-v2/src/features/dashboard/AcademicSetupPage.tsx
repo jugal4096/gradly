@@ -464,16 +464,24 @@ export default function AcademicSetupPage() {
     setGrievanceBusy(true); setError("");
     try {
       const token = await user.getIdToken();
+      const evidence = await Promise.all(selectedGrievanceFiles.map(file => new Promise<{fileName:string;mimeType:string;dataUrl:string}>((resolve,reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve({ fileName:file.name, mimeType:file.type, dataUrl:reader.result }) : reject(new Error("Unable to read " + file.name + "."));
+        reader.onerror = () => reject(new Error("Unable to read " + file.name + "."));
+        reader.readAsDataURL(file);
+      })));
       const response = await fetch(API + "/api/student/enrollment-grievances", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: completeReason, proposedCorrection: proposedCorrection.trim() }),
+        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: completeReason, proposedCorrection: proposedCorrection.trim(), evidence }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
       setGrievanceReason("");
       setGrievanceDescription("");
       setProposedCorrection("");
+      setSelectedGrievanceFiles([]);
+      setGrievanceOpen(false);
       try {
         const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
         const listData = await listResponse.json();
@@ -734,7 +742,21 @@ export default function AcademicSetupPage() {
             <label>Additional details (optional)
               <textarea maxLength={2800} rows={3} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Add any context that may help the reviewer." />
             </label>
-            <p className="academic-setup-helper">You can attach proof after submitting: a photograph (JPG/PNG) or a PDF document. Submitting a grievance does not change your academic profile.</p>
+            <div className="academic-setup-pre-submit-evidence">
+              <label htmlFor="grievance-evidence-before-submit">Supporting documents <span>Optional · PDF, JPG or PNG · up to 5 files</span></label>
+              <input id="grievance-evidence-before-submit" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={e => {
+                const incoming = Array.from(e.target.files || []);
+                const valid = incoming.filter(file => ["application/pdf","image/jpeg","image/png"].includes(file.type) && file.size <= 3 * 1024 * 1024);
+                const total = [...selectedGrievanceFiles, ...valid].reduce((sum,file) => sum + file.size, 0);
+                if (incoming.length !== valid.length) setError("Only PDF, JPG and PNG files up to 3 MB each are accepted.");
+                else if (selectedGrievanceFiles.length + valid.length > 5) setError("Attach up to five documents.");
+                else if (total > 10 * 1024 * 1024) setError("Combined attachment size must be 10 MB or smaller.");
+                else { setSelectedGrievanceFiles(current => [...current, ...valid]); setError(""); }
+                e.currentTarget.value = "";
+              }} />
+              {selectedGrievanceFiles.length > 0 && <ul>{selectedGrievanceFiles.map((file,index)=><li key={file.name+index}><span>{file.name} · {(file.size/1024).toFixed(0)} KB</span><button type="button" onClick={() => setSelectedGrievanceFiles(current => current.filter((_,i)=>i!==index))}>Remove</button></li>)}</ul>}
+              <small>Documents are submitted securely with your request. You can add further evidence later.</small>
+            </div>
             <p className="academic-setup-helper">Submitting a grievance does not change your academic profile. An authorised reviewer must verify and decide the request.</p>
             <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting…" : "Submit grievance"}</button>
           </form>
