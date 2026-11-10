@@ -555,15 +555,15 @@ export default function AcademicSetupPage() {
               <dl className="academic-setup-predicted-grid">
                 <div><dt>Programme</dt><dd>{programs.find(item => item.id === programId)?.name || preview.programme || "—"}</dd></div>
                 <div><dt>Branch</dt><dd>{branches.find(item => item.id === branchId)?.name || preview.branch || "—"}</dd></div>
-                {enrollmentPrefix === "MT" && <div><dt>Course / Stream</dt><dd>{preview.specialization || preview.branch || "—"}</dd></div>}
+                {enrollmentPrefix === "MT" && <div><dt>Specialization</dt><dd>{preview.specialization || "Not resolved"}</dd></div>}
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
-              {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
+              {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report issue</button></div> : <>
                 <div className="academic-setup-data-question">Is this data correct?</div>
                 {!editingPrediction ? <div className="academic-setup-choice-row">
                   <button type="button" className="academic-setup-choice primary-choice" onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>✓ Yes, everything is correct</button>
-                  <button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(true); setPredictionConfirmed(null); setError(""); }}>No, I want to edit it</button>
+                  <button type="button" className="academic-setup-choice" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report incorrect details</button>
                 </div> : <div className="academic-setup-edit-fields">
                   <div><label htmlFor="edit-programme">Programme · locked from enrollment</label><input id="edit-programme" value={programs.find(item => item.id === programId)?.name || preview.programme || ""} readOnly disabled /></div>
                   <div><label htmlFor="edit-branch">Branch</label><select id="edit-branch" value={branchId} onChange={async e => {
