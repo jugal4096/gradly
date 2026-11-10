@@ -61,9 +61,9 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
     if (evidence) {
       await client.query(
         `INSERT INTO public.student_enrollment_grievance_evidence
-         (grievance_id, original_filename, mime_type, file_size, file_data)
-         VALUES ($1,$2,$3,$4,$5)`,
-        [result.rows[0].id, evidence.name, evidence.mime, evidence.buffer.length, evidence.buffer],
+         (grievance_id, student_user_id, original_filename, mime_type, file_size, file_data)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [result.rows[0].id, user.id, evidence.name, evidence.mime, evidence.buffer.length, evidence.buffer],
       );
     }
     await client.query("COMMIT");
