@@ -147,8 +147,9 @@ export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRe
     const result = await pool.query(
       `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description,
               g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
-              g.updated_at AS "updatedAt"
+              g.updated_at AS "updatedAt", a.file_name AS "attachmentName", a.content_type AS "attachmentType"
        FROM public.student_enrollment_grievances g
+       LEFT JOIN public.student_enrollment_grievance_attachments a ON a.grievance_id = g.id
        WHERE g.institution_id = $1
        ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,
                 g.created_at DESC
@@ -173,9 +174,11 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
       `SELECT g.id, g.student_user_id AS "studentUserId", g.enrollment_number AS "enrollmentNumber",
               g.category, g.description, g.status, g.admin_note AS "adminNote",
               g.created_at AS "createdAt", g.updated_at AS "updatedAt",
+              a.file_name AS "attachmentName", a.content_type AS "attachmentType",
               i.name AS institution, to_jsonb(u)->>'email' AS "studentEmail",
               to_jsonb(u)->>'display_name' AS "studentName"
        FROM public.student_enrollment_grievances g
+       LEFT JOIN public.student_enrollment_grievance_attachments a ON a.grievance_id = g.id
        JOIN public.institutions i ON i.id = g.institution_id
        JOIN public.users u ON u.id = g.student_user_id
        ${where.length ? "WHERE " + where.join(" AND ") : ""}
