@@ -17,29 +17,62 @@ async function studentUser(req: AuthenticatedRequest, res: Response) {
   return user;
 }
 
+function decodeEvidence(body: Record<string, unknown>) {
+  const raw = typeof body.attachmentBase64 === "string" ? body.attachmentBase64 : "";
+  if (!raw) return null;
+  const name = typeof body.attachmentName === "string" ? body.attachmentName.trim().replace(/[\\/\\r\\n\\0]/g, "_").slice(0, 255) : "";
+  const mime = typeof body.attachmentType === "string" ? body.attachmentType.toLowerCase() : "";
+  if (!name || !["application/pdf", "image/jpeg", "image/png"].includes(mime)) {
+    throw new Error("Attach a PDF, JPG or PNG document.");
+  }
+  const base64 = raw.replace(/^data:[^;]+;base64,/, "");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64) || base64.length % 4 !== 0) throw new Error("The selected document could not be read.");
+  const buffer = Buffer.from(base64, "base64");
+  if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw new Error("The attachment must be 5 MB or smaller.");
+  const isPdf = mime === "application/pdf" && buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+  const isJpeg = mime === "image/jpeg" && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isPng = mime === "image/png" && buffer.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+  if (!isPdf && !isJpeg && !isPng) throw new Error("The document content does not match its file type.");
+  return { name, mime, buffer };
+}
+
 export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: Response) {
   const user = await studentUser(req, res); if (!user) return;
   const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
   const enrollment = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
-  const category = typeof req.body?.category === "string" ? req.body.category : "";
   const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
-  if (!institutionId || !categories.has(category) || description.length < 10 || description.length > 3000) {
-    return res.status(400).json({ success:false, message:"Select an issue category and provide a description of 10–3,000 characters." });
+  let evidence: ReturnType<typeof decodeEvidence>;
+  try { evidence = decodeEvidence(req.body || {}); }
+  catch (error) { return res.status(400).json({ success:false, message:error instanceof Error ? error.message : "Invalid attachment." }); }
+  if (!institutionId || description.length < 10 || description.length > 3000) {
+    return res.status(400).json({ success:false, message:"Provide a description of 10–3,000 characters." });
   }
   if (enrollment && enrollment.length > 32) return res.status(400).json({ success:false, message:"Enrollment number is too long." });
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query("BEGIN");
+    const result = await client.query(
       `INSERT INTO public.student_enrollment_grievances
        (student_user_id, institution_id, enrollment_number, category, description)
-       VALUES ($1,$2,NULLIF($3,''),$4,$5)
+       VALUES ($1,$2,NULLIF($3,''),'OTHER',$4)
        RETURNING id, category, description, status, created_at AS "createdAt"`,
-      [user.id, institutionId, enrollment, category, description],
+      [user.id, institutionId, enrollment, description],
     );
-    return res.status(201).json({ success:true, message:"Your enrollment grievance has been submitted.", grievance:result.rows[0] });
+    if (evidence) {
+      await client.query(
+        `INSERT INTO public.student_enrollment_grievance_attachments
+         (grievance_id, file_name, content_type, file_size_bytes, file_data)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [result.rows[0].id, evidence.name, evidence.mime, evidence.buffer.length, evidence.buffer],
+      );
+    }
+    await client.query("COMMIT");
+    return res.status(201).json({ success:true, message:"Your data mismatch request has been sent to our team.", grievance:{ ...result.rows[0], attachmentName:evidence?.name || null } });
   } catch (error) {
-    console.error("Enrollment grievance submission failed:", error);
-    return res.status(500).json({ success:false, message:"Unable to submit your grievance. Please try again." });
-  }
+    await client.query("ROLLBACK").catch(() => undefined);
+    console.error("Enrollment data mismatch submission failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to submit your request. Please try again." });
+  } finally { client.release(); }
 }
 
 export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res: Response) {
