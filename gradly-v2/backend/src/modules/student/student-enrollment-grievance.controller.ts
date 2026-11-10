@@ -150,7 +150,7 @@ export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRe
   if (!institutionId) return res.status(403).json({ success:false, message:"This Admin account is not assigned to an institution." });
   try {
     const result = await pool.query(
-      `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description,
+      `SELECT g.id, g.student_user_id AS "studentUserId", g.enrollment_number AS "enrollmentNumber", g.category, g.description,
               g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
               g.updated_at AS "updatedAt", a.original_filename AS "attachmentName", a.mime_type AS "attachmentType",
               to_jsonb(u)->>'email' AS "studentEmail", COALESCE(to_jsonb(u)->>'display_name', to_jsonb(u)->>'full_name', 'Student') AS "studentName"
