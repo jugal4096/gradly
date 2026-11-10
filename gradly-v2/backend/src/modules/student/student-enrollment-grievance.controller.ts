@@ -199,6 +199,23 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
   }
 }
 
+export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: SuperAdminAuthenticatedRequest, res: Response) {
+ const actor=req.superAdmin?.superAdminId; const active=req.body?.active; const note=typeof req.body?.note==='string'?req.body.note.trim():'';
+ if(!actor)return res.status(401).json({success:false,message:'Super Admin authentication required.'});
+ if(typeof active!=='boolean'||note.length<3||note.length>1000)return res.status(400).json({success:false,message:'Choose an account action and provide a reason (3–1,000 characters).'});
+ const client=await pool.connect();
+ try { await client.query('BEGIN');
+ const g=await client.query('SELECT id,student_user_id,status FROM public.student_enrollment_grievances WHERE id=$1 FOR UPDATE',[req.params.grievanceId]);
+ if(!g.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student request not found.'});}
+ const uid=g.rows[0].student_user_id;
+ const u=await client.query("UPDATE public.users SET active=$2,updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",[uid,active]);
+ if(!u.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student account was not found or is deleted.'});}
+ await client.query("INSERT INTO public.audit_logs (actor_type,actor_id,actor_role,action,entity_table,entity_id,ip_address,metadata) VALUES ('SUPER_ADMIN',$1,'SUPER_ADMIN',$2,'users',$3,$4,$5::jsonb)",[actor,active?'SUPER_ADMIN_REACTIVATED_STUDENT':'SUPER_ADMIN_DISABLED_STUDENT',uid,req.ip||req.socket.remoteAddress||null,JSON.stringify({grievanceId:req.params.grievanceId,note})]);
+ await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,from_status,to_status,note) VALUES ($1,'SUPER_ADMIN',$2,'STATUS_CHANGED',$3,$3,$4)",[req.params.grievanceId,actor,g.rows[0].status,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
+ await client.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ACCOUNT_STATUS','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
+ await client.query('COMMIT'); return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',student:u.rows[0]});
+ } catch(error) { await client.query('ROLLBACK').catch(()=>undefined); console.error('Super Admin grievance account action failed:',error); return res.status(500).json({success:false,message:'Unable to update student access.'}); } finally { client.release(); }
+}
 export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
   if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
   const grievanceId = typeof req.query.grievanceId === "string" ? req.query.grievanceId : "";
