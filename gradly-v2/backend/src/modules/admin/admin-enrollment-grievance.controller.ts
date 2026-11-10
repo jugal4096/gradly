@@ -52,14 +52,14 @@ async function resolveAdminScope(req: AdminAuthenticatedRequest, res: Response):
 
 function addAcademicScope(scope: AdminScope, values: unknown[], alias = "c") {
   values.push(scope.institutionId);
-  let where = `${alias}.institution_id = $${values.length}`;
+  let where = `g.institution_id = ${values.length}`;
   if (scope.programId) {
     values.push(scope.programId);
-    where += ` AND ${alias}.program_id = $${values.length}`;
+    where += ` AND COALESCE(${alias}.program_id, mapped.program_id) = ${values.length}`;
   }
   if (scope.branchId) {
     values.push(scope.branchId);
-    where += ` AND ${alias}.branch_id = $${values.length}`;
+    where += ` AND COALESCE(${alias}.branch_id, mapped.branch_id) = ${values.length}`;
   }
   return where;
 }
@@ -104,8 +104,23 @@ export async function listDepartmentEnrollmentGrievances(req: AdminAuthenticated
        JOIN public.users u ON u.id = g.student_user_id
        LEFT JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
        LEFT JOIN public.curricula c ON c.id = sp.curriculum_id
-       LEFT JOIN public.programs p ON p.id = c.program_id
-       LEFT JOIN public.branches b ON b.id = c.branch_id
+       LEFT JOIN LATERAL (
+         SELECT p_map.id AS program_id, p_map.name AS programme,
+                b_map.id AS branch_id, b_map.name AS branch_name
+         FROM public.enrollment_branch_codes ebc
+         JOIN public.programs p_map
+           ON p_map.institution_id = g.institution_id
+          AND p_map.name ILIKE ebc.program_name_pattern
+         JOIN public.branches b_map
+           ON b_map.program_id = p_map.id
+          AND LOWER(b_map.name) = LOWER(ebc.branch_name)
+         WHERE ebc.institution_id = g.institution_id
+           AND ebc.programme_prefix = SUBSTRING(g.enrollment_number FROM 1 FOR 2)
+           AND ebc.branch_code = SUBSTRING(g.enrollment_number FROM 6 FOR 2)
+         LIMIT 1
+       ) mapped ON TRUE
+       LEFT JOIN public.programs p ON p.id = COALESCE(c.program_id, mapped.program_id)
+       LEFT JOIN public.branches b ON b.id = COALESCE(c.branch_id, mapped.branch_id)
        LEFT JOIN public.schemes sc ON sc.id = c.scheme_id
        WHERE ${where.join(" AND ")}
        ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,
@@ -170,7 +185,22 @@ export async function reviewDepartmentEnrollmentGrievance(req: AdminAuthenticate
       `SELECT g.id, g.student_user_id AS "studentUserId", g.status
        FROM public.student_enrollment_grievances g
        JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
-       JOIN public.curricula c ON c.id = sp.curriculum_id
+       LEFT JOIN public.curricula c ON c.id = sp.curriculum_id
+       LEFT JOIN LATERAL (
+         SELECT p_map.id AS program_id, p_map.name AS programme,
+                b_map.id AS branch_id, b_map.name AS branch_name
+         FROM public.enrollment_branch_codes ebc
+         JOIN public.programs p_map
+           ON p_map.institution_id = g.institution_id
+          AND p_map.name ILIKE ebc.program_name_pattern
+         JOIN public.branches b_map
+           ON b_map.program_id = p_map.id
+          AND LOWER(b_map.name) = LOWER(ebc.branch_name)
+         WHERE ebc.institution_id = g.institution_id
+           AND ebc.programme_prefix = SUBSTRING(g.enrollment_number FROM 1 FOR 2)
+           AND ebc.branch_code = SUBSTRING(g.enrollment_number FROM 6 FOR 2)
+         LIMIT 1
+       ) mapped ON TRUE
        WHERE g.id = $1 AND ${academicScope}
          AND g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO')
        FOR UPDATE OF g`,
