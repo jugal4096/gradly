@@ -40,7 +40,6 @@ export default function AcademicSetupPage() {
   const searchSequence = useRef(0);
   const previewSequence = useRef(0);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const requestDetailsRef = useRef<HTMLDetailsElement>(null);
   const [selected, setSelected] = useState<Institution | null>(null);
   const [programId, setProgramId] = useState("");
   const [branchId, setBranchId] = useState("");
@@ -66,7 +65,6 @@ export default function AcademicSetupPage() {
   const [selectedGrievanceFiles, setSelectedGrievanceFiles] = useState<File[]>([]);
   const [institutionRequestOpen, setInstitutionRequestOpen] = useState(false);
   const [grievanceOpen, setGrievanceOpen] = useState(false);
-  const grievanceDetailsRef = useRef<HTMLDetailsElement>(null);
   type GrievanceEvidence = { id:string; fileName:string; mimeType:string; fileSize:number; uploadedAt:string };
   type GrievanceEvent = { id:number; eventType:string; fromStatus?:string|null; toStatus?:string|null; note?:string|null; createdAt:string };
   type StudentGrievance = { id:string; category:string; description:string; proposedCorrection?:string|null; status:string; adminNote?:string|null; createdAt:string; evidence:GrievanceEvidence[]; timeline:GrievanceEvent[] };
@@ -544,10 +542,7 @@ export default function AcademicSetupPage() {
     setProposedCorrection("");
     setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details.");
     setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review.");
-    if (grievanceDetailsRef.current) {
-      grievanceDetailsRef.current.open = true;
-      grievanceDetailsRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    setGrievanceOpen(true);
   }
 
   async function submitInstitutionRequest(event: FormEvent) {
