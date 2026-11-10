@@ -21,6 +21,7 @@ import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.con
 import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
 import { acknowledgePlatformRequest, deleteRequestRecord, listPlatformRequests, reviewPlatformRequest } from "../admin/platform-request.controller";
 import { listEnrollmentGrievancesForSuperAdmin, reviewEnrollmentGrievance } from "../student/student-enrollment-grievance.controller";
+import { listSuperAdminEnrollmentGrievanceCenter, downloadSuperAdminGrievanceEvidence, reviewSuperAdminEnrollmentGrievance } from "./superAdmin-enrollment-grievance.controller";
 
 const router = Router();
 
@@ -70,6 +71,9 @@ router.post(
 router.get("/platform-requests", authenticateSuperAdminToken, listPlatformRequests);
 router.get("/enrollment-grievances", authenticateSuperAdminToken, listEnrollmentGrievancesForSuperAdmin);
 router.patch("/enrollment-grievances/:grievanceId/review", authenticateSuperAdminToken, reviewEnrollmentGrievance);
+router.get("/enrollment-grievance-center", authenticateSuperAdminToken, listSuperAdminEnrollmentGrievanceCenter);
+router.get("/enrollment-grievance-center/:grievanceId/evidence/:evidenceId", authenticateSuperAdminToken, downloadSuperAdminGrievanceEvidence);
+router.patch("/enrollment-grievance-center/:grievanceId/review", authenticateSuperAdminToken, reviewSuperAdminEnrollmentGrievance);
 router.patch("/platform-requests/:requestId/acknowledge", authenticateSuperAdminToken, acknowledgePlatformRequest);
 router.patch("/platform-requests/:requestId/review", authenticateSuperAdminToken, reviewPlatformRequest);
 router.delete("/platform-requests/:source/:requestId", authenticateSuperAdminToken, deleteRequestRecord);
