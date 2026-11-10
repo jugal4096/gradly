@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableSemesterOptions, calculateAcademicGapYears, resolveCurrentSemesterSelection } from "../src/features/dashboard/academic-setup-state.ts";
+import { availableSemesterOptions, calculateAcademicGapYears, requiresBacklogDeclaration, resolveCurrentSemesterSelection } from "../src/features/dashboard/academic-setup-state.ts";
 
 test("regular admission exposes every semester from the first", () => {
   assert.deepEqual(availableSemesterOptions(8, 1), [1, 2, 3, 4, 5, 6, 7, 8]);
@@ -51,4 +51,12 @@ test("academic gap years default to zero and are calculated from semesters below
   assert.equal(calculateAcademicGapYears(3, "2"), 0);
   assert.equal(calculateAcademicGapYears(3, "COMPLETED"), 0);
   assert.equal(calculateAcademicGapYears(null, "1"), 0);
+});
+
+test("backlog declaration is required only when the selected active semester is below prediction", () => {
+  assert.equal(requiresBacklogDeclaration(5, "3"), true);
+  assert.equal(requiresBacklogDeclaration(5, "5"), false);
+  assert.equal(requiresBacklogDeclaration(5, "COMPLETED"), false);
+  assert.equal(requiresBacklogDeclaration(null, "3"), false);
+  assert.equal(requiresBacklogDeclaration(5, ""), false);
 });
