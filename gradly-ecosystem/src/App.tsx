@@ -51,6 +51,7 @@ import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRe
 import SuperAdminSecurityAlerts from "./pages/super-admin/SuperAdminSecurityAlerts";
 import SuperAdminAdminMessages from "./pages/super-admin/SuperAdminAdminMessages";
 import SuperAdminRequestCenter from "./pages/super-admin/SuperAdminRequestCenter";
+import SuperAdminGrievanceCenter from "./pages/super-admin/SuperAdminGrievanceCenter";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -213,6 +214,8 @@ function App() {
             path="requests"
             element={<SuperAdminRequestCenter />}
           />
+
+          <Route path="grievances" element={<SuperAdminGrievanceCenter />} />
 
           <Route
             path="password-requests"
