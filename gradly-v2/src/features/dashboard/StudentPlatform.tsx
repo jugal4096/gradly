@@ -83,7 +83,7 @@ export default function StudentPlatform() {
   const [section,setSection] = useState<Section>("home");
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
-  const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"system";});
+  const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
   const [systemDark] = useState(()=>window.matchMedia?.("(prefers-color-scheme: dark)").matches??false);
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
   const [fontFamily,setFontFamily] = useState(()=>localStorage.getItem("gradly_font_family")||"DM Sans");
