@@ -113,7 +113,7 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
       existing.curriculum_id === payload.curriculumId &&
       String(existing.student_identifier ?? "").trim().toUpperCase() === payload.studentIdentifier &&
       Number(existing.admission_year) === payload.admissionYear &&
-      String(existing.admission_mode_name ?? "").trim().toLowerCase() === String(payload.admissionModeName ?? "").trim().toLowerCase();
+      (!existing.admission_mode_name || String(existing.admission_mode_name).trim().toLowerCase() === String(payload.admissionModeName ?? "").trim().toLowerCase());
     if (!sameIdentity) return res.status(403).json({ success:false, code:"ACADEMIC_IDENTITY_LOCKED", message:"Your institution, programme, branch, specialization, curriculum, enrollment number, admission year and admission mode are locked after verification. Submit an enrollment grievance to request a correction." });
     const predictedSemesterNumber = await validateStudentProfileConfiguration(payload);
     const profile = await updateProfile({ ...payload, predictedSemesterNumber, userId: user.id });
