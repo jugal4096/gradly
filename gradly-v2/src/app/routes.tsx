@@ -20,6 +20,13 @@ function NotFoundPage() {
   return <main className="not-found"><h1>404</h1><p>We couldn't find that Gradly page.</p><a href="/">Return home</a></main>;
 }
 
+function SignedInStudentRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="route-loading" role="status">Preparing your Gradly workspace…</div>;
+  if (!user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export default function AppRoutes() {
   const navigate = useNavigate();
   useEffect(() => {
@@ -32,8 +39,8 @@ export default function AppRoutes() {
     <Route path="/login" element={<Navigate to="/" replace />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
-    <Route path="/notifications" element={<ProtectedRoute><StudentNotificationsPage /></ProtectedRoute>} />
-    <Route path="/syllabus-feedback" element={<ProtectedRoute><StudentSyllabusFeedbackPage /></ProtectedRoute>} />
+    <Route path="/notifications" element={<SignedInStudentRoute><StudentNotificationsPage /></SignedInStudentRoute>} />
+    <Route path="/syllabus-feedback" element={<SignedInStudentRoute><StudentSyllabusFeedbackPage /></SignedInStudentRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
 }
