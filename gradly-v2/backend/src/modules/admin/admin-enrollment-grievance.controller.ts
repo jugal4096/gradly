@@ -145,8 +145,23 @@ export async function downloadDepartmentGrievanceEvidence(req: AdminAuthenticate
       `SELECT e.original_filename, e.mime_type, e.file_data
        FROM public.student_enrollment_grievance_evidence e
        JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id
-       JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
-       JOIN public.curricula c ON c.id = sp.curriculum_id
+       LEFT JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
+       LEFT JOIN public.curricula c ON c.id = sp.curriculum_id
+       LEFT JOIN LATERAL (
+         SELECT p_map.id AS program_id, p_map.name AS programme,
+                b_map.id AS branch_id, b_map.name AS branch_name
+         FROM public.enrollment_branch_codes ebc
+         JOIN public.programs p_map
+           ON p_map.institution_id = g.institution_id
+          AND p_map.name ILIKE ebc.program_name_pattern
+         JOIN public.branches b_map
+           ON b_map.program_id = p_map.id
+          AND LOWER(b_map.name) = LOWER(ebc.branch_name)
+         WHERE ebc.institution_id = g.institution_id
+           AND ebc.programme_prefix = SUBSTRING(g.enrollment_number FROM 1 FOR 2)
+           AND ebc.branch_code = SUBSTRING(g.enrollment_number FROM 6 FOR 2)
+         LIMIT 1
+       ) mapped ON TRUE
        WHERE g.id = $1 AND e.id = $2 AND ${academicScope}`,
       values,
     );
@@ -184,7 +199,7 @@ export async function reviewDepartmentEnrollmentGrievance(req: AdminAuthenticate
     const existing = await client.query(
       `SELECT g.id, g.student_user_id AS "studentUserId", g.status
        FROM public.student_enrollment_grievances g
-       JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
+       LEFT JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
        LEFT JOIN public.curricula c ON c.id = sp.curriculum_id
        LEFT JOIN LATERAL (
          SELECT p_map.id AS program_id, p_map.name AS programme,
