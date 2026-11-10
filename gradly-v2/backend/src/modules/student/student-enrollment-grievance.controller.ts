@@ -506,7 +506,13 @@ export async function listEnrollmentGrievanceAccountActions(req: SuperAdminAuthe
               e.note,e.created_at AS "createdAt"
        FROM public.student_enrollment_grievance_events e
        WHERE e.grievance_id=$1
-       ORDER BY e.created_at DESC,e.id DESC LIMIT 100`,
+       UNION ALL
+       SELECT a.id::text AS id,a.actor_type AS "actorRole",a.actor_id::text AS "actorId",
+              a.action,NULL::text AS "previousStatus",NULL::text AS "newStatus",
+              COALESCE(a.metadata->>'note',a.action) AS note,a.created_at AS "createdAt"
+       FROM public.audit_logs a
+       WHERE a.entity_table='users' AND a.metadata->>'grievanceId'=$1
+       ORDER BY "createdAt" DESC LIMIT 150`,
       [grievanceId],
     );
     return res.json({success:true,events:result.rows});
