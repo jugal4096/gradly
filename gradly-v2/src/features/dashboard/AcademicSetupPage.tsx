@@ -592,7 +592,7 @@ export default function AcademicSetupPage() {
               <span><small>IDENTIFIED PROGRAMME</small><strong>{preview?.programme || "—"}</strong></span>
               <span><small>IDENTIFIED BRANCH</small><strong>{preview?.branch || "—"}</strong></span>
             </div>
-            <label>What looks incorrect?<textarea required minLength={10} maxLength={3000} rows={5} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Describe the mismatch in your fetched academic details…" /></label>
+            <label>What looks incorrect?<textarea required minLength={10} maxLength={2000} rows={5} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Describe the mismatch in your fetched academic details…" /></label>
             <label className="academic-setup-upload-label">Supporting document <span>Optional · PDF, JPG or PNG · Up to 5 MB</span>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={e => {
                 const file = e.target.files?.[0] || null;
