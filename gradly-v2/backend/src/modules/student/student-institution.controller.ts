@@ -66,7 +66,7 @@ export async function listStudentInstitutionRequests(req: AuthenticatedRequest, 
       `SELECT id, college_name AS "collegeName", locality, status, source,
               created_at AS "createdAt", reviewed_at AS "reviewedAt"
        FROM public.guest_institution_requests
-       WHERE requested_by_user_id = $1
+       WHERE requested_by_user_id = $1 AND source = 'STUDENT_SETUP'
        ORDER BY created_at DESC LIMIT 100`,
       [user.id],
     );
