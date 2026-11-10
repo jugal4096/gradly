@@ -47,11 +47,11 @@ BEGIN
   IF NEW.status IS DISTINCT FROM OLD.status THEN
     INSERT INTO public.student_enrollment_grievance_events
       (grievance_id, actor_type, event_type, from_status, to_status, note)
-    VALUES (NEW.id, 'SYSTEM', 'STATUS_CHANGED', OLD.status, NEW.status, NEW.admin_note);
-  ELSIF NEW.admin_note IS DISTINCT FROM OLD.admin_note AND NEW.admin_note IS NOT NULL THEN
+    VALUES (NEW.id, 'SYSTEM', 'STATUS_CHANGED', OLD.status, NEW.status, NEW.admin_response);
+  ELSIF NEW.admin_response IS DISTINCT FROM OLD.admin_response AND NEW.admin_response IS NOT NULL THEN
     INSERT INTO public.student_enrollment_grievance_events
       (grievance_id, actor_type, event_type, note)
-    VALUES (NEW.id, 'SYSTEM', 'NOTE_ADDED', NEW.admin_note);
+    VALUES (NEW.id, 'SYSTEM', 'NOTE_ADDED', NEW.admin_response);
   END IF;
   RETURN NEW;
 END;
@@ -66,5 +66,5 @@ FOR EACH ROW EXECUTE FUNCTION public.record_student_enrollment_grievance_event()
 DROP TRIGGER IF EXISTS student_enrollment_grievance_event_update
   ON public.student_enrollment_grievances;
 CREATE TRIGGER student_enrollment_grievance_event_update
-AFTER UPDATE OF status, admin_note ON public.student_enrollment_grievances
+AFTER UPDATE OF status, admin_response ON public.student_enrollment_grievances
 FOR EACH ROW EXECUTE FUNCTION public.record_student_enrollment_grievance_event();
