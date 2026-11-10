@@ -586,3 +586,25 @@
 .theme-dark .academic-setup-backlog-field{border-color:#444;background:#151515}
 .theme-dark .academic-setup-backlog-field label{color:#f5f5f5}
 .theme-dark .academic-setup-backlog-field label span,.theme-dark .academic-setup-backlog-field small{color:#aaa}
+
+/* TO-06: private grievance evidence and status timeline */
+.academic-setup-evidence{display:grid;gap:8px;margin-top:13px;padding:12px;border:1px solid #d8d8d8;border-radius:10px;background:#f7f7f7}
+.academic-setup-evidence>strong{font-size:10px;color:#111}
+.academic-setup-evidence>small{font-size:9px;color:#777}
+.academic-setup-evidence>button{justify-self:start;max-width:100%;padding:7px 9px;border:1px solid #ccc;border-radius:7px;background:#fff;color:#111;font:600 9px Manrope,sans-serif;overflow-wrap:anywhere;cursor:pointer}
+.academic-setup-evidence-upload{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.academic-setup-evidence-upload input{min-width:0;max-width:100%;font:500 9px Manrope,sans-serif}
+.academic-setup-evidence-upload button{padding:8px 10px;border:1px solid #111;border-radius:7px;background:#111;color:#fff;font:700 9px Manrope,sans-serif;cursor:pointer}
+.academic-setup-evidence-upload button:disabled{opacity:.45;cursor:not-allowed}
+.academic-setup-grievance-timeline{display:grid;gap:8px;margin:13px 0 0;padding:0 0 0 15px;border-left:1px solid #bbb;list-style:none}
+.academic-setup-grievance-timeline li{display:grid;gap:3px;position:relative}
+.academic-setup-grievance-timeline li:before{content:"";position:absolute;left:-19px;top:4px;width:7px;height:7px;border-radius:50%;background:#111}
+.academic-setup-grievance-timeline li span{font-size:9px;font-weight:800;color:#111}
+.academic-setup-grievance-timeline li small{font-size:8px;color:#777;line-height:1.5}
+.theme-dark .academic-setup-evidence{border-color:#444;background:#151515}
+.theme-dark .academic-setup-evidence>strong,.theme-dark .academic-setup-evidence>button,.theme-dark .academic-setup-grievance-timeline li span{color:#f5f5f5}
+.theme-dark .academic-setup-evidence>button{border-color:#555;background:#090909}
+.theme-dark .academic-setup-evidence-upload button{border-color:#f5f5f5;background:#f5f5f5;color:#080808}
+.theme-dark .academic-setup-grievance-timeline{border-color:#555}
+.theme-dark .academic-setup-grievance-timeline li:before{background:#f5f5f5}
+.theme-dark .academic-setup-evidence>small,.theme-dark .academic-setup-grievance-timeline li small{color:#aaa}
