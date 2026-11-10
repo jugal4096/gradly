@@ -4,6 +4,7 @@ import { pool } from "../../config/database";
 
 type AdminScope = {
   adminId: string;
+  actorUserId: string | null;
   institutionId: string;
   programId: string | null;
   branchId: string | null;
@@ -20,7 +21,7 @@ async function resolveAdminScope(req: AdminAuthenticatedRequest, res: Response):
   }
 
   const result = await pool.query(
-    `SELECT a.id AS "adminId", a.institution_id AS "institutionId",
+    `SELECT a.id AS "adminId", a.user_id AS "actorUserId", a.institution_id AS "institutionId",
             COALESCE(a.program_id, b.program_id) AS "programId",
             a.branch_id AS "branchId", a.role
      FROM public.admins a
@@ -197,7 +198,7 @@ export async function reviewDepartmentEnrollmentGrievance(req: AdminAuthenticate
       `INSERT INTO public.student_enrollment_grievance_events
        (grievance_id, actor_type, actor_user_id, event_type, note)
        VALUES ($1, 'ADMIN', $2, 'NOTE_ADDED', $3)`,
-      [req.params.grievanceId, scope.adminId, note],
+      [req.params.grievanceId, scope.actorUserId, note],
     );
     await client.query(
       `INSERT INTO public.student_notifications
