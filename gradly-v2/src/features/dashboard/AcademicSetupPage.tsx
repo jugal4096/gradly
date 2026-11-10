@@ -439,21 +439,7 @@ export default function AcademicSetupPage() {
       </header>
       <div className="academic-setup-progress" aria-label="Step 2 of 3"><span /></div>
 
-      <section className="academic-setup-content">
-        <aside className="academic-setup-quote-panel" aria-label="Gradly academic journey">
-          <span className="academic-setup-quote-kicker">A NOTE FOR YOUR JOURNEY</span>
-          <div>
-            <div className="academic-setup-quote-mark" aria-hidden="true">“</div>
-            <div className="academic-setup-quote-copy" aria-live="polite" aria-atomic="true">
-              <p key={quoteIndex}>“{onboardingQuotes[quoteIndex]}”</p>
-            </div>
-            <p className="academic-setup-quote-caption">Your academic story, organised with clarity. Start with your institution and let Gradly take it from there.</p>
-          </div>
-          <div className="academic-setup-quote-footer">
-            <span>IDENTIFY · VERIFY · GROW</span>
-            <span className="academic-setup-quote-dots" aria-hidden="true">{onboardingQuotes.map((_, index) => <i key={index} className={index === quoteIndex ? "active" : ""} />)}</span>
-          </div>
-        </aside>
+      <section className={"academic-setup-content" + (previewBusy ? " is-identifying" : "") + (preview?.recognized ? " has-identification" : "")}>
         <div className="academic-setup-flow">
         <div className="academic-setup-heading">
           <p className="academic-setup-eyebrow">ACADEMIC PROFILE</p>
@@ -466,19 +452,21 @@ export default function AcademicSetupPage() {
         <form className="academic-setup-form" onSubmit={saveProfile}>
           <section className="academic-setup-field-section">
             <label htmlFor="institution-search">Your institution</label>
-            <div className="academic-setup-input-wrap">
-              <input id="institution-search" value={query} onChange={e => {
+            <div className={"academic-setup-input-wrap" + (selected ? " has-institution" : "")}>
+              <input id="institution-search" value={query} readOnly={!!selected} onChange={e => {
                 const value = e.target.value;
                 previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
                 window.clearTimeout(searchTimer.current);
                 searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
               }} placeholder="Search your college or university" autoComplete="organization" />
+              {selected && <button type="button" className="academic-setup-institution-edit" aria-label="Change institution" title="Change institution" onClick={() => {
+                previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
+              }}>✎</button>}
               {searching && <span className="academic-setup-search-spinner" />}
             </div>
             {searching && <small className="academic-setup-helper">Searching institutions…</small>}
             {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution below.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
-            {selected && <div className="academic-setup-selected"><span className="academic-setup-selected-check">✓</span><span>{selected.name}</span><button type="button" className="academic-setup-edit-institution" aria-label="Change selected institution" title="Change institution" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); }}>✎</button></div>}
           </section>
 
           {selected && <section className="academic-setup-field-section enrollment-section">
