@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import LoginPage from "../features/auth/LoginPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
@@ -20,7 +20,7 @@ function NotFoundPage() {
   return <main className="not-found"><h1>404</h1><p>We couldn't find that Gradly page.</p><a href="/">Return home</a></main>;
 }
 
-function SignedInStudentRoute({ children }: { children: React.ReactNode }) {
+function SignedInStudentRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="route-loading" role="status">Preparing your Gradly workspace…</div>;
   if (!user) return <Navigate to="/" replace />;
