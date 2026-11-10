@@ -51,3 +51,10 @@ export function resolveCurrentSemesterSelection(
 export function academicStatusForSemester(selection: string): StudentAcademicStatus {
   return selection === "COMPLETED" ? "GRADUATED" : "ENROLLED";
 }
+
+/** A student behind the predicted semester must explicitly declare pending backlogs (zero is valid). */
+export function requiresBacklogDeclaration(predictedSemester: number | null, selectedSemester: string): boolean {
+  if (predictedSemester === null || !selectedSemester || selectedSemester === "COMPLETED") return false;
+  const selected = Number(selectedSemester);
+  return Number.isInteger(selected) && selected >= 1 && selected < predictedSemester;
+}
