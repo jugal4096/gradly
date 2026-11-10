@@ -40,12 +40,13 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
   const user = await studentUser(req, res); if (!user) return;
   const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
   const enrollment = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
+  const category = typeof req.body?.category === "string" ? req.body.category : "";
   const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
   let evidence: ReturnType<typeof decodeEvidence>;
   try { evidence = decodeEvidence(req.body || {}); }
   catch (error) { return res.status(400).json({ success:false, message:error instanceof Error ? error.message : "Invalid attachment." }); }
-  if (!institutionId || description.length < 10 || description.length > 3000) {
-    return res.status(400).json({ success:false, message:"Provide a description of 10–3,000 characters." });
+  if (!institutionId || !categories.has(category) || description.length < 10 || description.length > 3000) {
+    return res.status(400).json({ success:false, message:"Choose a valid data mismatch reason. Additional comments are optional." });
   }
   if (enrollment && enrollment.length > 32) return res.status(400).json({ success:false, message:"Enrollment number is too long." });
   const client = await pool.connect();
@@ -54,9 +55,9 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
     const result = await client.query(
       `INSERT INTO public.student_enrollment_grievances
        (student_user_id, institution_id, enrollment_number, category, description)
-       VALUES ($1,$2,NULLIF($3,''),'OTHER',$4)
+       VALUES ($1,$2,NULLIF($3,''),$4,$5)
        RETURNING id, category, description, status, created_at AS "createdAt"`,
-      [user.id, institutionId, enrollment, description],
+      [user.id, institutionId, enrollment, category, description],
     );
     if (evidence) {
       await client.query(
