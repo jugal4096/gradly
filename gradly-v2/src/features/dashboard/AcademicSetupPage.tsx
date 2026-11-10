@@ -72,6 +72,7 @@ export default function AcademicSetupPage() {
   const [requestCity, setRequestCity] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   if (preview?.programId && preview.programme && !programs.some(p => p.id === preview.programId)) programs.push({ id: preview.programId, name: preview.programme });
@@ -135,6 +136,71 @@ export default function AcademicSetupPage() {
     return () => { cancelled = true; };
   }, [user, navigate]);
 
+
+  useEffect(() => {
+    if (!user) return;
+    const key = `gradly_academic_setup_draft:${user.uid}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const draft = JSON.parse(raw) as {
+          selected?: Institution | null; query?: string; programId?: string; branchId?: string;
+          curricula?: Curriculum[]; curriculumId?: string; admissionModes?: AdmissionMode[];
+          enrollment?: string; preview?: EnrollmentPreview | null; predictionConfirmed?: boolean | null;
+          confirmedAdmissionMode?: string; selectedCurrentSemester?: string; expectedSemester?: number | null;
+          expectedDurationEnded?: boolean; gapAcademicYearFrom?: string; gapAcademicYearTo?: string;
+          grievanceCategory?: string; grievanceDescription?: string;
+        };
+        if (draft.selected) setSelected(draft.selected);
+        if (draft.query) setQuery(draft.query);
+        if (draft.programId) setProgramId(draft.programId);
+        if (draft.branchId) setBranchId(draft.branchId);
+        if (Array.isArray(draft.curricula)) setCurricula(draft.curricula);
+        if (draft.curriculumId) setCurriculumId(draft.curriculumId);
+        if (Array.isArray(draft.admissionModes)) setAdmissionModes(draft.admissionModes);
+        if (draft.enrollment) setEnrollment(draft.enrollment);
+        if (draft.preview) setPreview(draft.preview);
+        if (draft.predictionConfirmed !== undefined) setPredictionConfirmed(draft.predictionConfirmed);
+        if (draft.confirmedAdmissionMode) setConfirmedAdmissionMode(draft.confirmedAdmissionMode);
+        if (draft.selectedCurrentSemester) {
+          setSelectedCurrentSemester(draft.selectedCurrentSemester);
+          selectedCurrentSemesterRef.current = draft.selectedCurrentSemester;
+          hasManuallySelectedSemester.current = true;
+        }
+        if (draft.expectedSemester !== undefined) setExpectedSemester(draft.expectedSemester ?? null);
+        if (draft.expectedDurationEnded !== undefined) setExpectedDurationEnded(Boolean(draft.expectedDurationEnded));
+        if (draft.gapAcademicYearFrom) setGapAcademicYearFrom(draft.gapAcademicYearFrom);
+        if (draft.gapAcademicYearTo) setGapAcademicYearTo(draft.gapAcademicYearTo);
+        if (draft.grievanceCategory) setGrievanceCategory(draft.grievanceCategory);
+        if (draft.grievanceDescription) setGrievanceDescription(draft.grievanceDescription);
+      }
+    } catch {
+      localStorage.removeItem(key);
+    } finally {
+      setDraftRestored(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !draftRestored) return;
+    const key = `gradly_academic_setup_draft:${user.uid}`;
+    const draft = {
+      selected, query, programId, branchId, curricula, curriculumId, admissionModes,
+      enrollment, preview, predictionConfirmed, confirmedAdmissionMode,
+      selectedCurrentSemester, expectedSemester, expectedDurationEnded,
+      gapAcademicYearFrom, gapAcademicYearTo, grievanceCategory, grievanceDescription,
+    };
+    if (!selected && !query && !enrollment && !preview) {
+      localStorage.removeItem(key);
+      return;
+    }
+    localStorage.setItem(key, JSON.stringify(draft));
+  }, [
+    user, draftRestored, selected, query, programId, branchId, curricula, curriculumId,
+    admissionModes, enrollment, preview, predictionConfirmed, confirmedAdmissionMode,
+    selectedCurrentSemester, expectedSemester, expectedDurationEnded, gapAcademicYearFrom,
+    gapAcademicYearTo, grievanceCategory, grievanceDescription,
+  ]);
 
   useEffect(() => {
     if (!user) return;
@@ -360,6 +426,7 @@ export default function AcademicSetupPage() {
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
+      localStorage.removeItem(`gradly_academic_setup_draft:${user.uid}`);
       navigate("/dashboard", { replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
     finally { setSaving(false); }
