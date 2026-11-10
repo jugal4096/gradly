@@ -92,7 +92,9 @@ export default function StudentPlatform() {
     try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem("gradly_student_profile") || "{}") }; }
     catch { return emptyProfile; }
   });
-  const [onboarding,setOnboarding] = useState(() => !isGuest && !profile.institutionId);
+  const [onboarding,setOnboarding] = useState(() => !isGuest);
+  const [profileCheck,setProfileCheck] = useState<"loading"|"complete"|"missing"|"error">(isGuest?"complete":"loading");
+  const [profileCheckAttempt,setProfileCheckAttempt] = useState(0);
   const [guestSemester] = useState("1");
   
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
@@ -133,16 +135,21 @@ export default function StudentPlatform() {
   useEffect(() => {
     if (isGuest || !user) return;
     let cancelled=false;
+    setProfileCheck("loading");
     void (async()=>{
       try {
         const token=await user.getIdToken();
         const headers={Authorization:"Bearer "+token};
         const profileResponse=await fetch(API+"/api/student/profile",{headers});
-        const profileData=await profileResponse.json();
-        if(profileResponse.ok && profileData.profile && !cancelled) {
+        const profileData=await profileResponse.json().catch(()=>({}));
+        if(!profileResponse.ok) throw new Error(profileData.message||"Unable to verify your student profile.");
+        if(profileData.profile && !cancelled) {
           const p=profileData.profile;
           const next:Profile={institutionId:p.institution_id||"",institutionName:p.institution_name||"",programId:p.program_id||"",programName:p.program_name||"",branchId:p.branch_id||"",branchName:p.branch_name||"",curriculumId:p.curriculum_id||"",semester:String(p.current_semester_number||""),enrollment:p.student_identifier||"",admissionYear:String(p.admission_year||new Date().getFullYear()),admissionMode:p.admission_mode_name||"Regular",admissionNumber:"",scheme:p.scheme_name||""};
-          setProfile(next); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false);
+          setProfile(next); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false); setProfileCheck("complete");
+        } else if(!cancelled) {
+          setOnboarding(true);
+          setProfileCheck("missing");
         }
         const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
         const recordsData=await recordsResponse.json();
@@ -150,10 +157,10 @@ export default function StudentPlatform() {
           const saved:SemesterResult[]=(recordsData.records as AcademicRecordApi[]).map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
           setResults(saved); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
         }
-      } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
+      } catch(error) { if(!cancelled) { setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); setProfileCheck("error"); } }
     })();
     return ()=>{cancelled=true;};
-  }, [isGuest, user]);
+  }, [isGuest, user, profileCheckAttempt]);
 
   useEffect(() => {
     if (isGuest || !user || !profile.curriculumId || !profile.semester) return;
@@ -248,7 +255,9 @@ export default function StudentPlatform() {
   const sgpaScenarios=buildSgpaScenarios(Number(targetSgpa),subjects);
 
   if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
-  if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
+  if (!isGuest && profileCheck === "loading") return <main className="sp-route-loading" role="status">Verifying your Gradly student profile…</main>;
+  if (!isGuest && profileCheck === "error") return <main className="sp-route-loading"><h2>We could not verify your student profile.</h2><p>{notice || "Check your connection and try again."}</p><button className="sp-primary" onClick={() => setProfileCheckAttempt(value => value + 1)}>Retry profile check</button></main>;
+  if (!isGuest && (profileCheck === "missing" || onboarding)) return <Navigate to="/academic-setup" replace />;
 
   return <div className={"sp-shell "+(isGuest?"sp-guest-mode":"sp-user-mode")+(theme==="dark"?" sp-dark-theme":"")} style={{fontFamily:`"${fontFamily}", sans-serif`,fontSize:`${textSize}px`}}>
     <aside id="student-workspace-menu" className={"sp-sidebar "+(mobileOpen?"open":"")}>
