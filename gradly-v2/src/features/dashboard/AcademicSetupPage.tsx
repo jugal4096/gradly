@@ -57,8 +57,8 @@ export default function AcademicSetupPage() {
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [gapAcademicYearFrom, setGapAcademicYearFrom] = useState("");
   const [gapAcademicYearTo, setGapAcademicYearTo] = useState("");
-  const [grievanceCategory, setGrievanceCategory] = useState("INVALID_ENROLLMENT");
   const [grievanceDescription, setGrievanceDescription] = useState("");
+  const [grievanceAttachment, setGrievanceAttachment] = useState<File | null>(null);
   const [grievanceBusy, setGrievanceBusy] = useState(false);
   const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;status:string;adminNote?:string|null;createdAt:string}>>([]);
   const [institutionRequests, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
@@ -376,19 +376,36 @@ export default function AcademicSetupPage() {
 
   async function submitEnrollmentGrievance(event: FormEvent) {
     event.preventDefault();
-    if (!user || !selected) { setError("Select your institution before submitting an enrollment grievance."); return; }
+    if (!user || !selected) { setError("Select your institution before contacting our team."); return; }
     if (grievanceDescription.trim().length < 10) { setError("Please describe the issue in at least 10 characters."); return; }
     setGrievanceBusy(true); setError("");
     try {
       const token = await user.getIdToken();
+      let attachmentBase64 = "";
+      if (grievanceAttachment) {
+        attachmentBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result.split(",")[1] || "") : reject(new Error("Unable to read the selected document."));
+          reader.onerror = () => reject(new Error("Unable to read the selected document."));
+          reader.readAsDataURL(grievanceAttachment);
+        });
+      }
       const response = await fetch(API + "/api/student/enrollment-grievances", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: grievanceDescription.trim() }),
+        body: JSON.stringify({
+          institutionId: selected.id,
+          enrollmentNumber: enrollment.trim().toUpperCase(),
+          description: grievanceDescription.trim(),
+          attachmentName: grievanceAttachment?.name || "",
+          attachmentType: grievanceAttachment?.type || "",
+          attachmentBase64,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
       setGrievanceDescription("");
+      setGrievanceAttachment(null);
       setAppealSent(true);
       try {
         const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
@@ -504,7 +521,7 @@ export default function AcademicSetupPage() {
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
                 <button type="button" className="academic-setup-support-link academic-setup-appeal-link" onClick={() => { setAppealSent(false); setSupportModal("appeal"); }}>
                 <span className="academic-setup-support-icon">↗</span>
-                <span>Apply to appeal against fetched data</span>
+                <span>Data mismatch? Contact our team</span>
                 <span className="academic-setup-support-arrow">→</span>
               </button>
               <div className="academic-setup-data-question">Is this data correct?</div>
@@ -561,9 +578,9 @@ export default function AcademicSetupPage() {
       {supportModal && <div className="academic-setup-dialog-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setSupportModal(null); }}>
         <section className="academic-setup-dialog" role="dialog" aria-modal="true" aria-labelledby="academic-support-title">
           <button type="button" className="academic-setup-dialog-close" aria-label="Close dialog" onClick={() => setSupportModal(null)}>×</button>
-          <p className="academic-setup-dialog-eyebrow">{supportModal === "institution" ? "INSTITUTION DIRECTORY" : "ACADEMIC DATA REVIEW"}</p>
-          <h2 id="academic-support-title">{supportModal === "institution" ? "Can't find your institution?" : "Appeal against identified data"}</h2>
-          <p className="academic-setup-dialog-description">{supportModal === "institution" ? "Tell us which college or university is missing. Our team can review your request." : "Tell us what Gradly identified incorrectly. Your enrollment and detected details will be included for review."}</p>
+          <p className="academic-setup-dialog-eyebrow">{supportModal === "institution" ? "INSTITUTION DIRECTORY" : "STUDENT SUPPORT"}</p>
+          <h2 id="academic-support-title">{supportModal === "institution" ? "Can't find your institution?" : "Data mismatch? Contact our team"}</h2>
+          <p className="academic-setup-dialog-description">{supportModal === "institution" ? "Tell us which college or university is missing. Our team can review your request." : "Share what looks incorrect and attach a supporting document if you have one. Your enrollment number and detected academic details are included automatically."}</p>
           {supportModal === "institution" ? (requestSent ? <div className="academic-setup-request-success">✓ Institution request submitted successfully.</div> : <form onSubmit={submitInstitutionRequest}>
             <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
             <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
