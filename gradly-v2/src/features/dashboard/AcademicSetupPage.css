@@ -608,3 +608,55 @@
 .theme-dark .academic-setup-grievance-timeline{border-color:#555}
 .theme-dark .academic-setup-grievance-timeline li:before{background:#f5f5f5}
 .theme-dark .academic-setup-evidence>small,.theme-dark .academic-setup-grievance-timeline li small{color:#aaa}
+
+
+/* GRADLY UI REFINEMENT — spacious full-width academic setup and clear evidence picker. */
+.academic-setup-page{padding:0 clamp(14px,3vw,48px) 42px;background:#fff;color:#080808}
+.academic-setup-wrap{max-width:1440px}
+.academic-setup-header{height:82px}
+.academic-setup-content{width:100%;max-width:1120px;margin:clamp(32px,5vh,64px) auto 0}
+.academic-setup-form{width:100%;padding:clamp(22px,3vw,40px);border-radius:18px}
+.academic-setup-heading h1{letter-spacing:-2px}
+.academic-setup-form,.academic-setup-institution-request,.academic-setup-request-tracking,.academic-setup-grievance-list article{transition:border-color .22s,box-shadow .22s,transform .22s}
+.academic-setup-heading h1{animation:monoTitleIn .72s cubic-bezier(.2,.8,.2,1) both}
+.academic-setup-heading>p:last-child{max-width:760px;line-height:1.8}
+.academic-setup-choice,.academic-setup-choice.primary-choice,.academic-setup-continue,.academic-setup-form button[type="submit"],.academic-setup-institution-request button,.academic-setup-grievance-form button{
+  border:1px solid #080808!important;border-radius:9px!important;background:#080808!important;color:#fff!important;
+  transition:transform .2s,background .2s,color .2s,box-shadow .2s!important
+}
+.academic-setup-choice:not(.primary-choice){background:#fff!important;color:#080808!important}
+.academic-setup-choice:hover,.academic-setup-continue:hover:not(:disabled),.academic-setup-form button[type="submit"]:hover:not(:disabled),.academic-setup-institution-request button:hover{transform:translateY(-2px);box-shadow:0 8px 20px #0002}
+.academic-setup-choice:not(.primary-choice):hover{background:#eee!important}
+.academic-setup-evidence-upload{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;margin-top:10px}
+.academic-setup-file-picker{position:relative;display:flex;align-items:center;gap:12px;min-width:0;min-height:68px;padding:12px 14px;border:1px dashed #999;border-radius:11px;background:#fff;color:#111;cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
+.academic-setup-file-picker:hover{border-color:#111;background:#f5f5f5;transform:translateY(-1px)}
+.academic-setup-file-picker-icon{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:9px;background:#111;color:#fff;font-size:22px}
+.academic-setup-file-picker>span:nth-child(2){display:grid;gap:4px;min-width:0}
+.academic-setup-file-picker strong{overflow:hidden;color:#111;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.academic-setup-file-picker small{color:#777;font-size:9px}
+.academic-setup-file-picker input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+.academic-setup-evidence-upload>button{min-height:42px;padding:0 16px;border:1px solid #080808;border-radius:9px;background:#080808;color:#fff;font:750 10px Manrope,sans-serif;cursor:pointer;transition:transform .2s,background .2s}
+.academic-setup-evidence-upload>button:hover:not(:disabled){background:#333;transform:translateY(-1px)}
+.academic-setup-evidence-upload>button:disabled{opacity:.4;cursor:not-allowed}
+.academic-setup-evidence{padding:16px;border-radius:12px;background:#fafafa}
+.academic-setup-grievance-list article{padding:18px;border:1px solid #ddd!important;border-radius:12px;background:#fff!important}
+.academic-setup-grievance-list article+article{margin-top:12px}
+.academic-setup-grievance-list article>div{align-items:center;gap:12px}
+.academic-setup-grievance-list article>div>strong{font-size:12px}
+.academic-setup-grievance-list article>div>span{padding:5px 9px;border:1px solid #ddd;border-radius:20px;background:#f3f3f3;color:#111;font-size:9px;font-weight:800}
+.academic-setup-institution-request{border-color:#ddd!important;background:#fafafa!important}
+.academic-setup-footer{max-width:1120px;margin:36px auto 0}
+.theme-dark.academic-setup-page{background:#090909;color:#f5f5f5}
+.theme-dark .academic-setup-content{color:#f5f5f5}
+.theme-dark .academic-setup-file-picker{border-color:#555;background:#111;color:#fff}
+.theme-dark .academic-setup-file-picker:hover{border-color:#eee;background:#1b1b1b}
+.theme-dark .academic-setup-file-picker-icon{background:#fff;color:#080808}
+.theme-dark .academic-setup-file-picker strong{color:#fff}
+.theme-dark .academic-setup-file-picker small{color:#aaa}
+.theme-dark .academic-setup-evidence{background:#111}
+.theme-dark .academic-setup-grievance-list article{background:#111!important;border-color:#444!important}
+.theme-dark .academic-setup-grievance-list article>div>span{background:#222;color:#fff;border-color:#444}
+.theme-dark .academic-setup-evidence-upload>button{background:#fff;color:#080808;border-color:#fff}
+.theme-dark .academic-setup-evidence-upload>button:hover:not(:disabled){background:#ddd}
+@media(max-width:650px){.academic-setup-evidence-upload{grid-template-columns:1fr}.academic-setup-evidence-upload>button{width:100%}.academic-setup-content{margin-top:32px}.academic-setup-form{padding:20px 16px}}
+@media(prefers-reduced-motion:reduce){.academic-setup-heading h1{animation:none!important}.academic-setup-form,.academic-setup-institution-request,.academic-setup-request-tracking,.academic-setup-grievance-list article,.academic-setup-file-picker,.academic-setup-evidence-upload>button{transition:none!important}}
