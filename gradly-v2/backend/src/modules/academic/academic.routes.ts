@@ -3,13 +3,10 @@ import { pool } from "../../config/database";
 
 const router = Router();
 
-/** Search Gradly's configured institutions and optional external Places results. */
+/** Search only institutions configured and active in Gradly. */
 router.get("/institutions/search", async (req: Request, res: Response): Promise<void> => {
   const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
-  if (query.length < 2) {
-    res.status(200).json({ success: true, data: [], externalData: [], externalSearchAvailable: Boolean(process.env.GOOGLE_PLACES_API_KEY) });
-    return;
-  }
+  if (query.length < 2) { res.status(200).json({ success: true, data: [] }); return; }
   try {
     const result = await pool.query(
       `SELECT i.id AS institution_id, i.name AS institution_name,
@@ -22,73 +19,20 @@ router.get("/institutions/search", async (req: Request, res: Response): Promise<
        LEFT JOIN branches b ON b.program_id = p.id AND b.active = TRUE
        WHERE i.active = TRUE
          AND (i.name ILIKE $1 OR COALESCE(i.city, '') ILIKE $1 OR COALESCE(i.state, '') ILIKE $1)
-       ORDER BY i.name, p.name, b.name
-       LIMIT 160`,
+       ORDER BY i.name, p.name, b.name LIMIT 160`,
       [`%${query}%`],
     );
     const map = new Map<string, { id: string; name: string; city: string | null; state: string | null; country: string; branches: Array<{ id: string; name: string; code: string | null; program_id: string; program_name: string; program_level: string | null }> }>();
     for (const row of result.rows) {
-      if (!map.has(row.institution_id)) map.set(row.institution_id, {
-        id: row.institution_id, name: row.institution_name,
-        city: row.institution_city, state: row.institution_state,
-        country: row.institution_country, branches: [],
-      });
-      if (row.branch_id) map.get(row.institution_id)!.branches.push({
-        id: row.branch_id, name: row.branch_name, code: row.branch_code,
-        program_id: row.program_id, program_name: row.program_name, program_level: row.program_level,
-      });
+      if (!map.has(row.institution_id)) map.set(row.institution_id, { id: row.institution_id, name: row.institution_name, city: row.institution_city, state: row.institution_state, country: row.institution_country, branches: [] });
+      if (row.branch_id) map.get(row.institution_id)!.branches.push({ id: row.branch_id, name: row.branch_name, code: row.branch_code, program_id: row.program_id, program_name: row.program_name, program_level: row.program_level });
     }
-    const configured = Array.from(map.values());
-    let externalData: Array<{ id: string; name: string; address: string; city: string | null; state: string | null; mapsUrl: string | null }> = [];
-    const placesKey = process.env.GOOGLE_PLACES_API_KEY;
-    if (placesKey) {
-      try {
-        const placesResponse = await fetch("https://places.googleapis.com/v1/places:searchText", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": placesKey,
-            "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.googleMapsUri",
-          },
-          body: JSON.stringify({ textQuery: query, maxResultCount: 8 }),
-          signal: AbortSignal.timeout(5000),
-        });
-        if (placesResponse.ok) {
-          const placesPayload = await placesResponse.json() as { places?: Array<{ id?: string; displayName?: { text?: string }; formattedAddress?: string; googleMapsUri?: string }> };
-          const configuredNames = new Set(configured.map(item => item.name.trim().toLowerCase()));
-          externalData = (placesPayload.places || [])
-            .filter(place => place.id && place.displayName?.text && !configuredNames.has(place.displayName.text.trim().toLowerCase()))
-            .map(place => {
-              const address = place.formattedAddress || "";
-              const parts = address.split(",").map(part => part.trim()).filter(Boolean);
-              return {
-                id: place.id!,
-                name: place.displayName!.text!,
-                address,
-                city: parts.length >= 2 ? parts[parts.length - 3] || parts[0] : parts[0] || null,
-                state: parts.length >= 2 ? parts[parts.length - 2] : null,
-                mapsUrl: place.googleMapsUri || null,
-              };
-            });
-        } else {
-          console.error("Google Places institution search returned:", placesResponse.status);
-        }
-      } catch (error) {
-        console.error("Google Places institution search unavailable:", error);
-      }
-    }
-    res.status(200).json({
-      success: true,
-      data: configured,
-      externalData,
-      externalSearchAvailable: Boolean(placesKey),
-    });
+    res.status(200).json({ success: true, data: Array.from(map.values()) });
   } catch (error) {
     console.error("Institution search failed:", error);
     res.status(500).json({ success: false, message: "Unable to search institutions." });
   }
 });
-
 router.get(
   "/institutions",
   async (_req: Request, res: Response): Promise<void> => {
