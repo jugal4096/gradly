@@ -160,16 +160,9 @@ export function enrollmentBranchMatches(
       return branchIdentityMatches(decodedBranchName, specializationName, candidate.specializationCode ?? null);
     }
 
-    // A department-level curriculum may have no specialization_id. First
-    // allow a direct department identity (for example code 05 -> CSE), then
-    // resolve documented specialization-to-parent-department relationships.
-    if (branchIdentityMatches(decodedBranchName, candidate.name, candidate.code ?? null)) {
-      return true;
-    }
-    const departmentNames = mtechDepartmentFallbacks[decodedBranchName.trim().toLowerCase()] ?? [];
-    return departmentNames.some(departmentName =>
-      branchIdentityMatches(departmentName, candidate.name, candidate.code ?? null),
-    );
+    // A department match alone is insufficient for M.Tech: the enrollment
+    // code must resolve to a configured specialization within that department.
+    return false;
   }
   return branchIdentityMatches(decodedBranchName, candidate.name, candidate.code ?? null);
 }
