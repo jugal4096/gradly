@@ -212,7 +212,7 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
  if(!u.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student account was not found or is deleted.'});}
  await client.query("INSERT INTO public.audit_logs (actor_type,actor_id,actor_role,action,entity_table,entity_id,ip_address,metadata) VALUES ('SUPER_ADMIN',$1,'SUPER_ADMIN',$2,'users',$3,$4,$5::jsonb)",[actor,active?'SUPER_ADMIN_REACTIVATED_STUDENT':'SUPER_ADMIN_DISABLED_STUDENT',uid,req.ip||req.socket.remoteAddress||null,JSON.stringify({grievanceId:req.params.grievanceId,note})]);
  await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,from_status,to_status,note) VALUES ($1,'SUPER_ADMIN',$2,'STATUS_CHANGED',$3,$3,$4)",[req.params.grievanceId,actor,g.rows[0].status,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
- await client.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ACCOUNT_STATUS','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
+ await client.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
  await client.query('COMMIT'); return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',student:u.rows[0]});
  } catch(error) { await client.query('ROLLBACK').catch(()=>undefined); console.error('Super Admin grievance account action failed:',error); return res.status(500).json({success:false,message:'Unable to update student access.'}); } finally { client.release(); }
 }
@@ -499,7 +499,7 @@ export async function setEnrollmentGrievanceStudentAccess(req: AdminAuthenticate
       [req.params.grievanceId,adminId,"ACCOUNT_"+(active?"ENABLED":"DISABLED")+": "+note],
     );
     await client.query(
-      "INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ACCOUNT_STATUS','Student account access updated',$2,'/student/notifications')",
+      "INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",
       [userId,active?"Your Gradly student account has been reactivated.":"Your Gradly student account has been disabled. Contact your institution administrator."],
     );
     await client.query("COMMIT");
