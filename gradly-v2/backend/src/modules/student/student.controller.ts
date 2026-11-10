@@ -65,7 +65,7 @@ function readProfilePayload(body: Record<string, unknown>) {
     pendingBacklogCount,
     predictedSemesterNumber: parsedPredictedSemester,
     academicGapYears: parsedGapYears,
-    academicProfileOverrides: body.academicProfileOverrides && typeof body.academicProfileOverrides === "object" && !Array.isArray(body.academicProfileOverrides) ? body.academicProfileOverrides : {},
+    academicProfileOverrides: {}, // Student-submitted identity overrides are never trusted; corrections require review.
   };
 }
 
