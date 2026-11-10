@@ -1,16 +1,6 @@
 -- Upgrade the legacy student grievance table to the academic identity review contract.
 -- Existing legacy rows are preserved; this migration stops rather than assigning an institution
 -- or category to historical records without a reliable source.
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM public.student_enrollment_grievances
-    WHERE institution_id IS NULL
-  ) THEN
-    RAISE EXCEPTION 'Legacy enrollment grievances exist without an institution_id. Reconcile those records before applying this migration.';
-  END IF;
-END $$;
-
 ALTER TABLE public.student_enrollment_grievances
   ADD COLUMN IF NOT EXISTS institution_id UUID,
   ADD COLUMN IF NOT EXISTS enrollment_number VARCHAR(32),
@@ -19,6 +9,16 @@ ALTER TABLE public.student_enrollment_grievances
   ADD COLUMN IF NOT EXISTS reviewed_by UUID,
   ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS proposed_correction TEXT;
+
+DO $
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.student_enrollment_grievances
+    WHERE institution_id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Legacy enrollment grievances exist without an institution_id. Reconcile those records before applying this migration.';
+  END IF;
+END $;
 
 -- This project currently has no legacy grievance rows. Keep compatibility for future reruns
 -- while enforcing required institution/category values for all newly submitted grievances.
