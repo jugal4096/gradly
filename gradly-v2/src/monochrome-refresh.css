@@ -279,3 +279,20 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @keyframes academicDialogEnter{from{opacity:0;transform:translateY(22px) scale(.97);filter:blur(8px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @media(max-width:600px){.academic-setup-dialog-backdrop{padding:12px!important;align-items:flex-end!important}.academic-setup-dialog{width:100%!important;max-height:90vh!important;border-radius:20px 20px 12px 12px!important;padding:27px 20px 24px!important}.academic-setup-support-link{width:100%!important;justify-content:flex-start!important}.academic-setup-appeal-link{margin-bottom:16px!important}}
 @media(prefers-reduced-motion:reduce){.academic-setup-dialog-backdrop,.academic-setup-dialog{animation:none!important}.academic-setup-support-link,.academic-setup-dialog-close{transition:none!important}}
+
+
+/* Data mismatch support request: clear evidence context and document attachment. */
+.academic-setup-support-context{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;margin:0 0 18px!important}
+.academic-setup-support-context>span{display:grid!important;gap:5px!important;min-width:0!important;padding:11px 12px!important;border:1px solid #e5e5e5!important;border-radius:10px!important;background:#f7f7f7!important}
+.academic-setup-support-context small{color:#777!important;font:800 8px/1.4 Manrope,sans-serif!important;letter-spacing:1px!important}
+.academic-setup-support-context strong{overflow-wrap:anywhere!important;color:#111!important;font:800 11px/1.4 Manrope,sans-serif!important}
+.academic-setup-dialog .academic-setup-upload-label{display:grid!important;gap:8px!important}
+.academic-setup-dialog .academic-setup-upload-label>span{color:#777!important;font:600 9px Manrope,sans-serif!important}
+.academic-setup-dialog .academic-setup-upload-label input[type=file]{padding:12px!important;border:1px dashed #aaa!important;border-radius:11px!important;background:#fafafa!important;color:#444!important;font:600 10px Manrope,sans-serif!important;cursor:pointer!important}
+.academic-setup-dialog .academic-setup-upload-label input[type=file]::file-selector-button{margin-right:12px!important;padding:8px 12px!important;border:1px solid #bbb!important;border-radius:8px!important;background:#fff!important;color:#111!important;font:800 10px Manrope,sans-serif!important;cursor:pointer!important}
+.academic-setup-file-selected{display:flex!important;align-items:center!important;gap:9px!important;min-width:0!important;padding:10px 12px!important;border:1px solid #ddd!important;border-radius:10px!important;background:#f6f6f6!important}
+.academic-setup-file-selected>span{color:#111!important;font-size:18px!important}
+.academic-setup-file-selected strong{flex:1!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#222!important;font:700 10px Manrope,sans-serif!important}
+.academic-setup-file-selected small{color:#777!important;font:600 9px Manrope,sans-serif!important}
+.academic-setup-file-selected button{padding:5px 8px!important;border:1px solid #ccc!important;border-radius:7px!important;background:#fff!important;color:#444!important;font:700 9px Manrope,sans-serif!important;cursor:pointer!important}
+@media(max-width:520px){.academic-setup-support-context{grid-template-columns:1fr!important}}
