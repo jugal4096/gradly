@@ -100,22 +100,8 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     }));
   });
 
-  // If no exact specialization row matched, retry against the department only.
-  // This supports existing curriculum headers whose specialization_id is NULL,
-  // while the shared matcher still restricts the fallback to documented links.
-  if (parsed.prefix === "MT" && resolvedBranchName && matchedBranches.length === 0) {
-    const departmentMatches = branchDirectory.rows.filter((candidate: {
-      id: string; name: string; code?: string | null;
-    }) => enrollmentBranchMatches("MT", resolvedBranchName, {
-      name: candidate.name,
-      code: candidate.code ?? null,
-      specializationName: null,
-      specializationCode: null,
-    }));
-    matchedBranches = Array.from(new Map(departmentMatches.map((candidate: { id: string }) =>
-      [candidate.id, { ...candidate, specialization_id: null, specialization_name: null, specialization_code: null }],
-    )).values());
-  }
+  // M.Tech enrollment codes identify a specialization, not merely its parent department.
+  // Never silently downgrade a missing specialization mapping to a branch-only match.
   let uniqueBranches = Array.from(new Map(matchedBranches.map((candidate: { id: string; specialization_id?: string | null }) =>
     [`${candidate.id}:${candidate.specialization_id ?? ""}`, candidate],
   )).values());
@@ -137,6 +123,9 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     );
   }
   const branch = uniqueBranches[0];
+  if (parsed.prefix === "MT" && (!branch.specialization_id || !String(branch.specialization_name ?? "").trim())) {
+    return unresolved("SPECIALIZATION", "The M.Tech specialization encoded in this enrollment number is not configured for the detected department. Ask your institution administrator to configure the specialization mapping.", parsed);
+  }
 
   const modeResult = await pool.query(
     `SELECT em.mode_code, em.mode_name, em.entry_semester, am.id AS admission_mode_id
