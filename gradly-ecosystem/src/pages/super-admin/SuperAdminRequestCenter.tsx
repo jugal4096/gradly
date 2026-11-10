@@ -39,12 +39,13 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
    const student=(Array.isArray(sf?.feedback)?sf.feedback:[]).map((r:Record<string,unknown>)=>({id:"student-"+String(r.id),source:"STUDENT_SYLLABUS",requestType:String(r.requestType||"SYLLABUS_FEEDBACK"),title:"Student syllabus · "+String(r.subjectName||"Feedback"),description:String(r.message||""),priority:"NORMAL",status:String(r.status||"FORWARDED"),createdAt:String(r.createdAt||""),institution:String(r.institutionName||""),program:String(r.programName||""),branch:String(r.branchName||""),adminName:String(r.studentName||r.userName||r.name||"Student / user"),adminEmail:String(r.email||""),reviewNote:r.adminReviewNote?String(r.adminReviewNote):null}));
    const eg=get("enrollmentGrievances");
    const enrollmentGrievances=(Array.isArray(eg?.grievances)?eg.grievances:[]).map((r:Record<string,unknown>)=>({
-    id:"enrollment-"+String(r.id),source:"ENROLLMENT_GRIEVANCE",requestType:String(r.category||"ENROLLMENT_ISSUE"),
-    title:"Enrollment grievance · "+label(String(r.category||"Issue")),
+    id:"enrollment-"+String(r.id),source:"ENROLLMENT_GRIEVANCE",requestType:"DATA_MISMATCH",
+    title:"Student data mismatch request",
     description:String(r.description||""),priority:"HIGH",status:String(r.status||"PENDING"),
     createdAt:String(r.createdAt||""),adminName:String(r.studentName||"Student"),
     adminEmail:String(r.studentEmail||""),institution:String(r.institution||""),
     enrollmentNumber:r.enrollmentNumber?String(r.enrollmentNumber):null,
+    attachmentName:r.attachmentName?String(r.attachmentName):null,
     reviewNote:r.adminNote?String(r.adminNote):null
    }));
    const fb=get("feedback");
