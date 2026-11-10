@@ -152,9 +152,11 @@ export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRe
     const result = await pool.query(
       `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description,
               g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
-              g.updated_at AS "updatedAt", a.original_filename AS "attachmentName", a.mime_type AS "attachmentType"
+              g.updated_at AS "updatedAt", a.original_filename AS "attachmentName", a.mime_type AS "attachmentType",
+              to_jsonb(u)->>'email' AS "studentEmail", COALESCE(to_jsonb(u)->>'display_name', to_jsonb(u)->>'full_name', 'Student') AS "studentName"
        FROM public.student_enrollment_grievances g
        LEFT JOIN public.student_enrollment_grievance_evidence a ON a.grievance_id = g.id
+       JOIN public.users u ON u.id = g.student_user_id
        WHERE g.institution_id = $1
        ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,
                 g.created_at DESC
@@ -181,13 +183,13 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
               g.created_at AS "createdAt", g.updated_at AS "updatedAt",
               a.original_filename AS "attachmentName", a.mime_type AS "attachmentType",
               i.name AS institution, to_jsonb(u)->>'email' AS "studentEmail",
-              to_jsonb(u)->>'display_name' AS "studentName"
+              COALESCE(to_jsonb(u)->>'display_name', to_jsonb(u)->>'full_name', 'Student') AS "studentName"
        FROM public.student_enrollment_grievances g
        LEFT JOIN public.student_enrollment_grievance_evidence a ON a.grievance_id = g.id
        JOIN public.institutions i ON i.id = g.institution_id
        JOIN public.users u ON u.id = g.student_user_id
        ${where.length ? "WHERE " + where.join(" AND ") : ""}
-       ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END, g.uploaded_at DESC LIMIT 500`,
+       ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END, g.created_at DESC LIMIT 500`,
       values,
     );
     return res.json({ success:true, grievances:result.rows });
