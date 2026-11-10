@@ -403,3 +403,26 @@
 @media(max-width:460px){.academic-setup-gap-period-fields{grid-template-columns:1fr}}
 
 .academic-setup-confirmation.academic-setup-journey{margin:18px 0 0;padding:17px 0 0;border:0;border-top:1px solid rgba(132,116,196,.18);background:transparent;box-shadow:none;border-radius:0}
+
+
+/* Institution discovery: keep configured Gradly records distinct from external Places matches. */
+.academic-setup-external-results{margin-top:12px;border-color:#ded8f2;background:#fbfaff}
+.academic-setup-external-heading{padding:10px 12px;color:#6755c4;font-size:10px;font-weight:850;letter-spacing:.04em;text-transform:uppercase}
+.academic-setup-external-heading small{display:block;margin-top:4px;color:#858a9b;font-size:9px;font-weight:600;letter-spacing:0;text-transform:none}
+.academic-setup-external-results article{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-top:1px solid #e9e5f4}
+.academic-setup-external-results article>div{min-width:0}
+.academic-setup-external-results article strong,.academic-setup-external-results article small{display:block}
+.academic-setup-external-results article strong{color:#353a50;font-size:11px}
+.academic-setup-external-results article small{margin-top:4px;color:#858a9b;font-size:9px;line-height:1.45}
+.academic-setup-external-results article button{flex:0 0 auto;padding:8px 10px;border:1px solid #d9d1f1;border-radius:8px;background:#f3efff;color:#5d4cb4;font:750 9px Manrope,sans-serif;cursor:pointer}
+.academic-setup-external-results article button:hover{border-color:#a99be8;background:#ebe5ff}
+.academic-setup-external-selected{margin-top:10px;padding:11px 12px;border:1px solid #e4dcf6;border-radius:9px;background:#f8f5ff;color:#6c6485;font-size:10px;line-height:1.5}
+.academic-setup-external-selected strong{color:#51449b}
+.theme-dark .academic-setup-external-results{border-color:#49415f;background:#242137}
+.theme-dark .academic-setup-external-heading{color:#b7a7ff}
+.theme-dark .academic-setup-external-results article{border-color:#49415f}
+.theme-dark .academic-setup-external-results article strong{color:#f0ecff}
+.theme-dark .academic-setup-external-results article button{border-color:#51466f;background:#302a47;color:#d6ccff}
+.theme-dark .academic-setup-external-selected{border-color:#49415f;background:#28243a;color:#c1bdd1}
+.theme-dark .academic-setup-external-selected strong{color:#c7baff}
+@media(max-width:460px){.academic-setup-external-results article{align-items:flex-start;flex-direction:column}.academic-setup-external-results article button{width:100%}}
