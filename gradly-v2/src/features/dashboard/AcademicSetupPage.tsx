@@ -72,6 +72,7 @@ export default function AcademicSetupPage() {
   const [requestCity, setRequestCity] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [supportModal, setSupportModal] = useState<"institution" | "appeal" | null>(null);
 
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   if (preview?.programId && preview.programme && !programs.some(p => p.id === preview.programId)) programs.push({ id: preview.programId, name: preview.programme });
@@ -491,7 +492,12 @@ export default function AcademicSetupPage() {
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
-                <div className="academic-setup-data-question">Is this data correct?</div>
+                <button type="button" className="academic-setup-support-link academic-setup-appeal-link" onClick={() => setSupportModal("appeal")}>
+                <span className="academic-setup-support-icon">↗</span>
+                <span>Appeal against identified academic data</span>
+                <span className="academic-setup-support-arrow">→</span>
+              </button>
+              <div className="academic-setup-data-question">Is this data correct?</div>
                 {!editingPrediction ? <div className="academic-setup-choice-row">
                   <button type="button" className="academic-setup-choice primary-choice" onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>✓ Yes, everything is correct</button>
                   <button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(true); setPredictionConfirmed(null); setError(""); }}>No, I want to edit it</button>
@@ -538,57 +544,45 @@ export default function AcademicSetupPage() {
         </form>
 
         {!selected && <p className="academic-setup-first-step-note">Start by selecting your college or university. Your enrollment number comes next.</p>}
+        {!selected && <div className="academic-setup-support-actions">
+          <button type="button" className="academic-setup-support-link" onClick={() => { setRequestSent(false); setSupportModal("institution"); }}>
+            <span className="academic-setup-support-icon">＋</span>
+            <span>Can't find your institution?</span>
+            <span className="academic-setup-support-arrow">↗</span>
+          </button>
+        </div>}
 
-        <details className="academic-setup-institution-request">
-          <summary>Can't find your institution?</summary>
-          {requestSent ? <p className="academic-setup-request-success">✓ Request submitted. Our team can review your institution.</p> : <form onSubmit={submitInstitutionRequest}>
-            <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
-            <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
-            <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send request"}</button>
-          </form>}
-        </details>
-        {institutionRequests.length > 0 && <section className="academic-setup-request-tracking">
-          <h3>Your institution requests</h3>
-          {institutionRequests.map(request=><div key={request.id} className="academic-setup-request-row">
-            <div><strong>{request.collegeName}</strong><small>{request.locality} · {new Date(request.createdAt).toLocaleDateString()}</small></div>
-            <span>{request.status.replace(/_/g," ")}</span>
-          </div>)}
-        </section>}
-        <details className="academic-setup-institution-request academic-setup-grievance">
-          <summary>Having trouble with your enrollment number or academic details?</summary>
-          <form onSubmit={submitEnrollmentGrievance}>
-            <label>Issue category
-              <select value={grievanceCategory} onChange={e=>setGrievanceCategory(e.target.value)}>
-                <option value="INVALID_ENROLLMENT">Enrollment number marked invalid</option>
-                <option value="ALREADY_REGISTERED">Enrollment number already registered</option>
-                <option value="WRONG_PROGRAMME">Incorrect programme / degree</option>
-                <option value="WRONG_SCHEME">Incorrect academic scheme</option>
-                <option value="WRONG_BRANCH">Incorrect branch</option>
-                <option value="WRONG_ADMISSION_MODE">Incorrect admission mode</option>
-                <option value="WRONG_SEMESTER">Incorrect semester prediction</option>
-                <option value="OTHER">Other enrollment issue</option>
-              </select>
-            </label>
-            <label>Enrollment number (if available)
-              <input value={enrollment} onChange={e=>setEnrollment(e.target.value.toUpperCase())} maxLength={32} placeholder="e.g. BE23S06F007" />
-            </label>
-            <label>Describe your issue
-              <textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Explain what happened so the Super Admin team can verify your record." />
-            </label>
-            <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting…" : "Submit grievance"}</button>
-          </form>
-          {grievances.length > 0 && <div className="academic-setup-grievance-list">
-            <h3>Your grievance history</h3>
-            {grievances.map(item=><article key={item.id}>
-              <div><strong>{item.category.replace(/_/g," ")}</strong><span>{item.status.replace(/_/g," ")}</span></div>
-              <p>{item.description}</p>
-              {item.adminNote && <small>Admin response: {item.adminNote}</small>}
-              <small>Submitted {new Date(item.createdAt).toLocaleDateString()}</small>
-            </article>)}
-          </div>}
-        </details>
         </div>
       </section>
+      {supportModal && <div className="academic-setup-dialog-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setSupportModal(null); }}>
+        <section className="academic-setup-dialog" role="dialog" aria-modal="true" aria-labelledby="academic-support-title">
+          <button type="button" className="academic-setup-dialog-close" aria-label="Close dialog" onClick={() => setSupportModal(null)}>×</button>
+          <p className="academic-setup-dialog-eyebrow">{supportModal === "institution" ? "INSTITUTION DIRECTORY" : "ACADEMIC DATA REVIEW"}</p>
+          <h2 id="academic-support-title">{supportModal === "institution" ? "Can't find your institution?" : "Appeal against identified data"}</h2>
+          <p className="academic-setup-dialog-description">{supportModal === "institution" ? "Tell us which college or university is missing. Our team can review your request." : "Tell us what Gradly identified incorrectly. Your enrollment and detected details will be included for review."}</p>
+          {supportModal === "institution" ? (requestSent ? <div className="academic-setup-request-success">✓ Institution request submitted successfully.</div> : <form onSubmit={submitInstitutionRequest}>
+            <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
+            <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
+            <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send institution request"}</button>
+          </form> : <form onSubmit={submitEnrollmentGrievance}>
+            <label>Issue category<select value={grievanceCategory} onChange={e => setGrievanceCategory(e.target.value)}>
+              <option value="INVALID_ENROLLMENT">Enrollment number marked invalid</option>
+              <option value="ALREADY_REGISTERED">Enrollment number already registered</option>
+              <option value="WRONG_PROGRAMME">Incorrect programme / degree</option>
+              <option value="WRONG_SCHEME">Incorrect academic scheme</option>
+              <option value="WRONG_BRANCH">Incorrect branch</option>
+              <option value="WRONG_ADMISSION_MODE">Incorrect admission mode</option>
+              <option value="WRONG_SEMESTER">Incorrect semester prediction</option>
+              <option value="OTHER">Other academic identification issue</option>
+            </select></label>
+            <label>Enrollment number<input value={enrollment} readOnly /></label>
+            <label>Describe the issue<textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Explain which identified details are incorrect and what needs to be reviewed." /></label>
+            <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting appeal…" : "Submit appeal for review"}</button>
+            {grievances.length > 0 && <div className="academic-setup-dialog-history"><strong>Previous appeals</strong>{grievances.map(item => <article key={item.id}><span>{item.category.replace(/_/g," ")}</span><small>{item.status.replace(/_/g," ")} · {new Date(item.createdAt).toLocaleDateString()}</small></article>)}</div>}
+          </form>}
+          {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
+        </section>
+      </div>}
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
   </main>;
