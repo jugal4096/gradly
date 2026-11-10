@@ -25,10 +25,10 @@ function validateEnrollmentNumber(value: string): string | null {
   if (!/^(BE|BT|MC|ME|MT)/.test(value)) return "Invalid enrollment number."; 
   if (value[7] !== "F") return "Invalid enrollment number."; 
   if (value.length !== 11) return "Invalid enrollment number."; 
-  if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
+  if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number."; 
   if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number.";
-  if ((value.startsWith("ME") || value.startsWith("MT")) && value[4] !== "F") return "M.E. and M.Tech. admissions must be Regular (F) only."; 
-  if (!/^\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
+  if ((value.startsWith("ME") || value.startsWith("MT")) && value[4] !== "F") return "Invalid enrollment number."; 
+  if (!/^\d{2}$/.test(value.slice(5, 7))) return "Invalid enrollment number."; 
   if (!/^\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
   return null;
 }
