@@ -23,12 +23,28 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
   const category = typeof req.body?.category === "string" ? req.body.category : "";
   const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
   const proposedCorrection = typeof req.body?.proposedCorrection === "string" ? req.body.proposedCorrection.trim() : "";
+  const incomingEvidence = Array.isArray(req.body?.evidence) ? req.body.evidence : [];
   if (!institutionId || !categories.has(category) || proposedCorrection.length < 2 || proposedCorrection.length > 500 || description.length < 10 || description.length > 3000) {
     return res.status(400).json({ success:false, message:"Select an issue category, state the requested correction (2–500 characters), and explain the reason (10–3,000 characters)." });
   }
   if (enrollment && enrollment.length > 32) return res.status(400).json({ success:false, message:"Enrollment number is too long." });
+  if (incomingEvidence.length > 5) return res.status(400).json({ success:false, message:"A maximum of five evidence files is allowed per grievance." });
+  const evidence = [];
+  let totalEvidenceBytes = 0;
+  for (const item of incomingEvidence) {
+    const fileName = typeof item?.fileName === "string" ? item.fileName.trim().replace(/[\\\\/]/g, "_").slice(0, 180) : "";
+    const mimeType = item?.mimeType;
+    const buffer = decodeEvidence(item?.dataUrl, mimeType);
+    if (!fileName || !buffer) return res.status(400).json({ success:false, message:"Each attachment must be a valid PDF, JPG or PNG file up to 3 MB." });
+    totalEvidenceBytes += buffer.length;
+    if (totalEvidenceBytes > 10 * 1024 * 1024) return res.status(413).json({ success:false, message:"Combined evidence size must be 10 MB or smaller." });
+    evidence.push({ fileName, mimeType, buffer });
+  }
+  const client = await pool.connect();
   try {
-    const duplicate = await pool.query(
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["student-enrollment-grievance:" + user.id + ":" + institutionId + ":" + enrollment + ":" + category]);
+    const duplicate = await client.query(
       `SELECT id FROM public.student_enrollment_grievances
        WHERE student_user_id = $1 AND institution_id = $2
          AND COALESCE(enrollment_number, '') = $3 AND category = $4
@@ -36,21 +52,45 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
        ORDER BY created_at DESC LIMIT 1`,
       [user.id, institutionId, enrollment, category],
     );
-    if (duplicate.rowCount) return res.status(409).json({ success:false, code:"GRIEVANCE_ALREADY_OPEN", message:"You already have an open grievance for this issue. Check your grievance history for its status." });
-    const result = await pool.query(
+    if (duplicate.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ success:false, code:"GRIEVANCE_ALREADY_OPEN", message:"You already have an open grievance for this issue. Check your grievance history for its status." });
+    }
+    const result = await client.query(
       `INSERT INTO public.student_enrollment_grievances
        (student_user_id, institution_id, enrollment_number, category, description, proposed_correction)
        VALUES ($1,$2,NULLIF($3,''),$4,$5,$6)
        RETURNING id, category, description, proposed_correction AS "proposedCorrection", status, created_at AS "createdAt"`,
       [user.id, institutionId, enrollment, category, description, proposedCorrection],
     );
-    return res.status(201).json({ success:true, message:"Your enrollment grievance has been submitted.", grievance:result.rows[0] });
+    const grievance = result.rows[0];
+    const savedEvidence = [];
+    for (const file of evidence) {
+      const saved = await client.query(
+        `INSERT INTO public.student_enrollment_grievance_evidence
+         (grievance_id, student_user_id, original_filename, mime_type, file_size, file_data)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         RETURNING id, original_filename AS "fileName", mime_type AS "mimeType", file_size AS "fileSize", uploaded_at AS "uploadedAt"`,
+        [grievance.id, user.id, file.fileName, file.mimeType, file.buffer.length, file.buffer],
+      );
+      savedEvidence.push(saved.rows[0]);
+      await client.query(
+        `INSERT INTO public.student_enrollment_grievance_events
+         (grievance_id, actor_type, actor_user_id, event_type, note)
+         VALUES ($1,'STUDENT',$2,'EVIDENCE_UPLOADED',$3)`,
+        [grievance.id, user.id, "Evidence attached during submission: " + file.fileName],
+      );
+    }
+    await client.query("COMMIT");
+    return res.status(201).json({ success:true, message:"Your enrollment grievance and supporting evidence have been submitted.", grievance:{ ...grievance, evidence:savedEvidence } });
   } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
     console.error("Enrollment grievance submission failed:", error);
     return res.status(500).json({ success:false, message:"Unable to submit your grievance. Please try again." });
+  } finally {
+    client.release();
   }
 }
-
 export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res: Response) {
   const user = await studentUser(req, res); if (!user) return;
   try {
