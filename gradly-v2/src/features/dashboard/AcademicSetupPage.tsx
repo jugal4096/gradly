@@ -686,7 +686,7 @@ export default function AcademicSetupPage() {
 
         <section className="academic-setup-request-launch">
           <div><strong>Missing your institution?</strong><span>Request that your college or university be added to Gradly.</span></div>
-          <button type="button" onClick={() => setInstitutionRequestOpen(true)}>Request institution <span>＋</span></button>
+          <button type="button" onClick={() => { setRequestSent(false); setInstitutionRequestOpen(true); }}>Request institution <span>＋</span></button>
         </section>
         {institutionRequestOpen && <div className="academic-setup-modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setInstitutionRequestOpen(false); }}>
           <section className="academic-setup-modal" role="dialog" aria-modal="true" aria-labelledby="institution-request-title">
