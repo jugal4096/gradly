@@ -117,7 +117,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
   if(!window.confirm(active?"Reactivate this student's Gradly login?":"Disable this student's Gradly login?"))return;
   setBusy(true);setError("");
   try{
-   const r=await fetch(API_ROOT+"/super-admin/users/"+encodeURIComponent(selected.studentUserId)+"/status",{method:"PATCH",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({active})});
+   const r=await fetch(API_ROOT+"/super-admin/enrollment-grievances/"+encodeURIComponent(selected.id.replace(/^enrollment-/,""))+"/student-access",{method:"PATCH",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({active,note:reviewNote})});
    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Unable to update student access.");
    setError("");await loadAuditHistory(selected.id.replace(/^enrollment-/,""));await load();
   }catch(e){setError(e instanceof Error?e.message:"Unable to update student access.");}finally{setBusy(false);}
