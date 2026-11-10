@@ -32,8 +32,8 @@ Validate the academic onboarding and enrollment-integrity workflow across the St
 | Immutable audit history | Migration/source contract tests verify append-only trigger and transactional event write | Added; execution pending |
 | Secure appeal evidence | No evidence-upload/storage/retrieval route or evidence table was found in the inspected grievance implementation; the grievance record contains category, description, status and a single admin note, but no evidence metadata or object-storage integration | **Release blocker — not implemented/verified** |
 | Additional-document conversation | `NEEDS_INFO` currently stores a single admin note; no threaded student/reviewer conversation was found | **Release blocker — not implemented/verified** |
-| Student App and Ecosystem lint/build | Existing GitHub workflow runs lint and production builds for both frontends | CI run pending |
-| Backend regression suite | Existing GitHub workflow runs `npm test`; expanded script now includes TO-10 regression tests | CI run pending |
+| Student App and Ecosystem lint/build | Existing GitHub workflow is configured to run lint and production builds for both frontends | No GitHub Actions run is visible for this PR; Vercel checks report build-rate-limit failures |
+| Backend regression suite | Existing GitHub workflow is configured to run `npm test`; expanded script now includes TO-10 regression tests | No GitHub Actions run is visible for this PR; execution pending |
 | Real database integration | No isolated PostgreSQL test database was provisioned in this task | Not run |
 | Production deployment/migration | Explicitly excluded | Not performed |
 
@@ -42,6 +42,13 @@ Validate the academic onboarding and enrollment-integrity workflow across the St
 - `gradly-v2`: `npm ci`, `npm run lint`, `npm run build`
 - `gradly-ecosystem`: `npm ci`, `npm run lint`, `npm run build`
 - `gradly-v2/backend`: `npm ci`, `npm test`
+
+## Current PR/check state
+
+- Draft PR: [#95 — TO-10](https://github.com/jugal4096/gradly/pull/95)
+- Branch comparison: 18 commits ahead of `main`, 0 behind at the latest checked comparison.
+- GitHub Actions: no workflow run was returned for the latest commit, so test/lint/build results are unknown.
+- Vercel statuses: both `gradly-v2` and `gradly` report `build-rate-limit`; this is an infrastructure quota failure, not evidence of a source build pass or source build failure.
 
 ## Release decision
 
