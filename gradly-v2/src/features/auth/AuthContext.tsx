@@ -40,7 +40,7 @@ async function synchronizeFirebaseUser(firebaseUser: FirebaseUser): Promise<void
 
   const sync = (async () => {
     const idToken = await firebaseUser.getIdToken();
-    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
     const response = await fetch(`${apiBaseUrl}/api/auth/sync`, {
       method: "POST",
       headers: {
