@@ -100,10 +100,7 @@ function branchAliasKey(value: string): string | null {
   if (!normalized) return null;
   for (const group of branchAliasGroups) {
     const aliases = group.map(normalizeBranchLabel);
-    // Only explicit normalized aliases are equivalent. Prefix matching makes
-    // distinct postgraduate specializations (for example Electrical Machines
-    // and Drives vs Electrical Power Systems) collapse into one department.
-    if (aliases.includes(normalized)) {
+    if (aliases.some(alias => normalized === alias || (alias.length >= 8 && normalized.startsWith(alias)) || (normalized.length >= 8 && alias.startsWith(normalized)))) {
       return aliases[0];
     }
   }
@@ -155,11 +152,10 @@ export function enrollmentBranchMatches(
   if (prefix === "MT") {
     const specializationName = String(candidate.specializationName ?? "").trim();
     if (specializationName) {
-      // Postgraduate codes identify a specific specialization. Use the shared
-      // identity matcher so institutional labels such as "Electronics &
-      // Telecommunication Engineering (ENTC)" match the canonical GECA stream,
-      // without allowing the broader "Electronics Engineering" branch to match.
-      return branchIdentityMatches(decodedBranchName, specializationName, candidate.specializationCode ?? null);
+      // A specialization is more specific than its parent department.
+      // Require the decoded label to identify that specialization itself;
+      // broad department aliases must not equate distinct specializations.
+      return normalizeBranchLabel(decodedBranchName) === normalizeBranchLabel(specializationName);
     }
 
     // A department-level curriculum may have no specialization_id. First
