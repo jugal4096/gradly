@@ -50,7 +50,7 @@ router.get("/institutions/search", async (req: Request, res: Response): Promise<
             "X-Goog-Api-Key": placesKey,
             "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.googleMapsUri",
           },
-          body: JSON.stringify({ textQuery: query, pageSize: 8 }),
+          body: JSON.stringify({ textQuery: query, maxResultCount: 8 }),
           signal: AbortSignal.timeout(5000),
         });
         if (placesResponse.ok) {
