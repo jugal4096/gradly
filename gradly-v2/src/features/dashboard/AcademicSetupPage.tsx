@@ -7,7 +7,6 @@ import { availableSemesterOptions, calculateAcademicGapYears, resolveCurrentSeme
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; city?: string | null; state?: string | null; country?: string; branches: Branch[] };
-type ExternalInstitution = { id: string; name: string; address: string; city: string | null; state: string | null; mapsUrl: string | null };
 type Curriculum = { id: string; scheme_name: string; scheme_id?: string; scheme_code?: string | null; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
 type AdmissionMode = { id: string; mode_code: string; mode_name: string; entry_semester: number };
 type AcademicStatus = "ENROLLED" | "GRADUATED";
@@ -41,9 +40,6 @@ export default function AcademicSetupPage() {
   const searchSequence = useRef(0);
   const previewSequence = useRef(0);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [externalInstitutions, setExternalInstitutions] = useState<ExternalInstitution[]>([]);
-  const [externalSearchAvailable, setExternalSearchAvailable] = useState(false);
-  const [selectedExternalInstitution, setSelectedExternalInstitution] = useState<ExternalInstitution | null>(null);
   const requestDetailsRef = useRef<HTMLDetailsElement>(null);
   const [selected, setSelected] = useState<Institution | null>(null);
   const [programId, setProgramId] = useState("");
@@ -347,7 +343,7 @@ export default function AcademicSetupPage() {
 
   async function searchInstitutions(value: string) {
     const sequence = ++searchSequence.current;
-    if (value.trim().length < 2) { setInstitutions([]); setExternalInstitutions([]); setSearching(false); return; }
+    if (value.trim().length < 2) { setInstitutions([]); setSearching(false); return; }
     setSearching(true);
     try {
       const response = await fetch(API + "/api/academic/institutions/search?q=" + encodeURIComponent(value.trim()));
@@ -355,8 +351,6 @@ export default function AcademicSetupPage() {
       if (!response.ok) throw new Error(data.message || "Institution search failed.");
       if (sequence === searchSequence.current) {
         setInstitutions(Array.isArray(data.data) ? data.data : []);
-        setExternalInstitutions(Array.isArray(data.externalData) ? data.externalData : []);
-        setExternalSearchAvailable(Boolean(data.externalSearchAvailable));
       }
     } catch (e) {
       if (sequence === searchSequence.current) setError(e instanceof Error ? e.message : "Institution search failed.");
@@ -490,7 +484,7 @@ export default function AcademicSetupPage() {
   }
 
   function chooseInstitution(item: Institution) {
-    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]); setExternalInstitutions([]); setSelectedExternalInstitution(null);
+    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]); setExternalInstitutions([]);
     setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setGapAcademicYearFrom(""); setGapAcademicYearTo(""); hasManuallySelectedSemester.current = false; setPreview(null);
   }
 
@@ -527,22 +521,6 @@ export default function AcademicSetupPage() {
             {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No configured institution matched. Check the external matches below or submit an institution request.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
             {institutions.length > 0 && !selected && <small className="academic-setup-helper">Configured in Gradly · available for academic setup</small>}
-            {externalInstitutions.length > 0 && !selected && <div className="academic-setup-results academic-setup-external-results">
-              <div className="academic-setup-external-heading">Found outside Gradly <small>Not yet available for academic setup</small></div>
-              {externalInstitutions.map(item => <article key={item.id}>
-                <div><strong>{item.name}</strong><small>{item.address || [item.city,item.state].filter(Boolean).join(", ") || "Location unavailable"}</small></div>
-                <button type="button" onClick={() => {
-                  setSelectedExternalInstitution(item);
-                  setRequestName(item.name);
-                  setRequestCity([item.city,item.state].filter(Boolean).join(", ") || item.address);
-                  setRequestSent(false);
-                  requestDetailsRef.current?.setAttribute("open", "");
-                  requestDetailsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                }}>Request addition</button>
-              </article>)}
-            </div>}
-            {query.trim().length >= 2 && !externalSearchAvailable && <small className="academic-setup-helper">Live external college search is not configured on this backend. You can still submit a manual institution request below.</small>}
-            {selectedExternalInstitution && <div className="academic-setup-external-selected">Requesting: <strong>{selectedExternalInstitution.name}</strong> · This does not add it to Gradly or unlock enrollment setup.</div>}
             {selected && <div className="academic-setup-selected"><span className="academic-setup-selected-check">✓</span><span>{selected.name}</span><button type="button" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); }}>Change</button></div>}
           </section>
 
@@ -624,7 +602,7 @@ export default function AcademicSetupPage() {
             <button className="academic-setup-continue" type="submit" disabled={saving || previewBusy || predictionConfirmed !== true || !selectedCurrentSemester || !curriculumId}>
               {saving ? <><span className="academic-setup-button-spinner" /> Saving your profile…</> : <>Confirm &amp; Continue <span>→</span></>}
             </button>
-            <p className="academic-setup-footnote">Only institutions configured in Gradly can be selected. External matches must be reviewed by the Gradly team before academic setup is enabled.</p>
+            <p className="academic-setup-footnote">Only institutions configured in Gradly can be selected. If yours is missing, submit a manual request for review.</p>
           </>}
         </form>
 
