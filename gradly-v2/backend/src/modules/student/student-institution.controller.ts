@@ -23,7 +23,7 @@ export async function requestStudentInstitution(req: AuthenticatedRequest, res: 
                 created_at AS "createdAt", reviewed_at AS "reviewedAt"
          FROM public.guest_institution_requests
          WHERE requested_by_user_id = $1 AND source = 'STUDENT_SETUP'
-           AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO')
+           AND status IN ('PENDING','IN_REVIEW')
          ORDER BY created_at DESC LIMIT 1`,
         [user.id],
       );
