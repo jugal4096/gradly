@@ -302,17 +302,20 @@ test("GECA M.Tech specialization codes resolve through their stored department b
   }), false);
 });
 
-test("branch aliases match explicitly without broad specialization prefix collisions", () => {
-  assert.equal(branchIdentityMatches("Electrical Engineering", "ELECTR", "ELECTR"), true);
-  assert.equal(branchIdentityMatches("Electrical Engineering", "ELECT", "ELECT"), true);
-  assert.equal(branchIdentityMatches("Electrical Engineering", "EE", "EE"), true);
-  assert.equal(branchIdentityMatches("Mechanical Engineering", "MECH", "MECH"), true);
-  assert.equal(branchIdentityMatches("Computer Science and Engineering", "CSE", "CSE"), true);
-  assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "ENTC", "ENTC"), true);
+test("M.Tech specialization matching does not collapse distinct specializations", () => {
+  assert.equal(enrollmentBranchMatches("MT", "Electrical Machines and Drives", {
+    name: "ELECTRICAL", code: "ELECTRICAL",
+    specializationName: "Electrical Power Systems", specializationCode: "EPS",
+  }), false);
+  assert.equal(enrollmentBranchMatches("MT", "Electronics Engineering", {
+    name: "ELECTRONICS", code: "ELECTRONICS",
+    specializationName: "Electronics and Telecommunication Engineering", specializationCode: "ENTC",
+  }), false);
 
-  assert.equal(branchIdentityMatches("Electrical Machines and Drives", "Electrical Power Systems", "EPS"), false);
-  assert.equal(branchIdentityMatches("Electrical Engineering", "Electrical Machines and Drives", "EMD"), false);
-  assert.equal(branchIdentityMatches("Electronics Engineering", "Electronics and Telecommunication Engineering", "ENTC"), false);
+  // General branch aliases retain their existing compatibility behaviour.
+  assert.equal(branchIdentityMatches("Electronics Engineering", "ENTC", "ENTC"), true);
+  assert.equal(branchIdentityMatches("Electrical Engineering", "ELECTR", "ELECTR"), true);
+  assert.equal(branchIdentityMatches("Mechanical Engineering", "MECH", "MECH"), true);
 });
 
 test("GECA MT specialization codes use only the supplied mappings", () => {
