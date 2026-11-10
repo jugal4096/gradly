@@ -73,6 +73,7 @@ export default function AcademicSetupPage() {
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
   const [supportModal, setSupportModal] = useState<"institution" | "appeal" | null>(null);
+  const [appealSent, setAppealSent] = useState(false);
 
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   if (preview?.programId && preview.programme && !programs.some(p => p.id === preview.programId)) programs.push({ id: preview.programId, name: preview.programme });
@@ -101,6 +102,13 @@ export default function AcademicSetupPage() {
     .map(year => ({ value: String(year), label: year + "-" + String(year + 1).slice(-2) }));
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
+
+  useEffect(() => {
+    if (!supportModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setSupportModal(null); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [supportModal]);
 
   useEffect(() => {
     if (academicGapYears === 0) { setGapAcademicYearFrom(""); setGapAcademicYearTo(""); return; }
@@ -381,6 +389,7 @@ export default function AcademicSetupPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
       setGrievanceDescription("");
+      setAppealSent(true);
       try {
         const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
         const listData = await listResponse.json();
@@ -492,7 +501,7 @@ export default function AcademicSetupPage() {
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
-                <button type="button" className="academic-setup-support-link academic-setup-appeal-link" onClick={() => setSupportModal("appeal")}>
+                <button type="button" className="academic-setup-support-link academic-setup-appeal-link" onClick={() => { setAppealSent(false); setSupportModal("appeal"); }}>
                 <span className="academic-setup-support-icon">↗</span>
                 <span>Appeal against identified academic data</span>
                 <span className="academic-setup-support-arrow">→</span>
@@ -564,7 +573,7 @@ export default function AcademicSetupPage() {
             <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
             <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
             <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send institution request"}</button>
-          </form> : <form onSubmit={submitEnrollmentGrievance}>
+          </form> : (appealSent ? <div className="academic-setup-request-success">✓ Your appeal has been submitted for review.</div> : <form onSubmit={submitEnrollmentGrievance}>
             <label>Issue category<select value={grievanceCategory} onChange={e => setGrievanceCategory(e.target.value)}>
               <option value="INVALID_ENROLLMENT">Enrollment number marked invalid</option>
               <option value="ALREADY_REGISTERED">Enrollment number already registered</option>
@@ -579,7 +588,7 @@ export default function AcademicSetupPage() {
             <label>Describe the issue<textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Explain which identified details are incorrect and what needs to be reviewed." /></label>
             <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting appeal…" : "Submit appeal for review"}</button>
             {grievances.length > 0 && <div className="academic-setup-dialog-history"><strong>Previous appeals</strong>{grievances.map(item => <article key={item.id}><span>{item.category.replace(/_/g," ")}</span><small>{item.status.replace(/_/g," ")} · {new Date(item.createdAt).toLocaleDateString()}</small></article>)}</div>}
-          </form>}
+          </form>)}
           {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
         </section>
       </div>}
