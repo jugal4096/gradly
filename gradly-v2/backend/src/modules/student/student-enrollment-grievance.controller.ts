@@ -163,6 +163,7 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
   }
 
   const client = await pool.connect();
+  let mappingBefore: Record<string, unknown> | null = null;
   try {
     await client.query("BEGIN");
     const existing = await client.query(
@@ -187,6 +188,13 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       catch { throw new MappingCorrectionError("The enrollment number is not structurally valid. Resolve the student's source record before changing a mapping."); }
 
       if (correctionType === "BRANCH") {
+        const before = await client.query(
+          `SELECT branch_name AS "branchName", program_name_pattern AS "programNamePattern"
+           FROM public.enrollment_branch_codes
+           WHERE institution_id = $1 AND branch_code = $2 AND programme_prefix = $3 LIMIT 1`,
+          [grievance.institution_id, parsed.branchCode, parsed.prefix],
+        );
+        mappingBefore = before.rows[0] || null;
         const branch = await client.query(
           `SELECT b.name, p.name AS program_name
            FROM public.branches b JOIN public.programs p ON p.id = b.program_id
@@ -211,6 +219,13 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
           [grievance.institution_id, parsed.branchCode, parsed.prefix, branch.rows[0].name, "%" + branch.rows[0].program_name + "%"],
         );
       } else if (correctionType === "SCHEME") {
+        const before = await client.query(
+          `SELECT scheme_label AS "schemeLabel" FROM public.enrollment_program_rules
+           WHERE prefix = $1 AND (institution_id = $2 OR institution_id IS NULL)
+           ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
+          [parsed.prefix, grievance.institution_id],
+        );
+        mappingBefore = before.rows[0] || null;
         const scheme = await client.query("SELECT name FROM public.schemes WHERE LOWER(name) = LOWER($1) LIMIT 1", [correctionValue]);
         if (!scheme.rowCount || !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, scheme.rows[0].name)) {
           throw new MappingCorrectionError(parsed.prefix === "BE" ? "BE enrollment mappings must resolve to New CBCS." : parsed.prefix === "BT" ? "BT enrollment mappings must resolve to NEP." : "Choose a valid scheme configured for this programme.");
@@ -229,6 +244,13 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
         );
         if (!correctedSchemeRule.rowCount) throw new MappingCorrectionError("No programme rule exists to receive the scheme correction.");
       } else if (correctionType === "ADMISSION_MODE") {
+        const before = await client.query(
+          `SELECT mode_name AS "modeName", entry_semester AS "entrySemester"
+           FROM public.enrollment_admission_modes
+           WHERE institution_id = $1 AND mode_code = $2 AND programme_prefix = $3 LIMIT 1`,
+          [grievance.institution_id, parsed.admissionModeCode, parsed.prefix],
+        );
+        mappingBefore = before.rows[0] || null;
         const entrySemester = Number.isInteger(requestedEntrySemester) && requestedEntrySemester >= 1 && requestedEntrySemester <= 20
           ? requestedEntrySemester : parsed.admissionModeCode === "S" ? 3 : 1;
         await client.query(
@@ -240,6 +262,16 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
           [grievance.institution_id, parsed.admissionModeCode, parsed.prefix, correctionValue, entrySemester],
         );
       } else if (correctionType === "PROGRAMME") {
+        const before = await client.query(
+          `SELECT programme_name_pattern AS "programmeNamePattern",
+                  programme_alternate_pattern AS "programmeAlternatePattern",
+                  programme_alias_patterns AS "programmeAliasPatterns"
+           FROM public.enrollment_program_rules
+           WHERE prefix = $1 AND (institution_id = $2 OR institution_id IS NULL)
+           ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
+          [parsed.prefix, grievance.institution_id],
+        );
+        mappingBefore = before.rows[0] || null;
         const program = await client.query(
           "SELECT name FROM public.programs WHERE institution_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1",
           [grievance.institution_id, correctionValue],
@@ -292,7 +324,7 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
         previous.programme_scope || null, previous.branch_scope || null,
         status === "NEEDS_INFO" ? "INFORMATION_REQUESTED" : correctionType ? "MAPPING_CORRECTED" : "DECISION_RECORDED",
         previous.status, status,
-        JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
+        JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null, mapping: mappingBefore }),
         JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }),
         note, status === "NEEDS_INFO" ? note : null,
       ],
