@@ -48,7 +48,7 @@ Validate the academic onboarding and enrollment-integrity workflow across the St
 - Draft PR: [#95 — TO-10](https://github.com/jugal4096/gradly/pull/95)
 - Branch comparison: 18 commits ahead of `main`, 0 behind at the latest checked comparison.
 - GitHub Actions: no workflow run was returned for the latest commit, so test/lint/build results are unknown.
-- Vercel statuses: both `gradly-v2` and `gradly` report `build-rate-limit`; this is an infrastructure quota failure, not evidence of a source build pass or source build failure.
+- Latest commit status: no status checks are currently reported. The preceding checked commit had Vercel `gradly-v2` and `gradly` failures with `build-rate-limit`; this is an infrastructure quota failure, not evidence of a source build pass or source build failure.
 
 ## Release decision
 
