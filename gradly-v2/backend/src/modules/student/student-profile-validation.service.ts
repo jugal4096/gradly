@@ -47,7 +47,7 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (!programmeRule.rows[0] && parsed.prefix !== "ME" && parsed.prefix !== "MT" && parsed.prefix !== "MC") throw new StudentProfileValidationError("PROGRAMME_PREFIX_NOT_CONFIGURED", "This enrollment prefix is not configured for the selected institution.");
 
   const curriculumResult = await pool.query(
-    `SELECT c.id, c.institution_id,
+    `SELECT c.id, c.institution_id, c.branch_id, c.specialization_id,
             COALESCE(c.total_semesters, (SELECT COUNT(*)::int FROM public.semesters sem WHERE sem.curriculum_id = c.id)) AS total_semesters,
             p.name AS program_name, b.name AS branch_name, b.code AS branch_code,
             sp.name AS specialization_name, sp.code AS specialization_code, sc.name AS scheme_name
