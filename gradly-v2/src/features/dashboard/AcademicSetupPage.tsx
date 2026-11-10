@@ -396,7 +396,7 @@ export default function AcademicSetupPage() {
         body: JSON.stringify({
           institutionId: selected.id,
           enrollmentNumber: enrollment.trim().toUpperCase(),
-          description: grievanceDescription.trim(),
+          description: [grievanceDescription.trim(), "", "Detected academic details:", "Institution: " + (selected?.name || "Not available"), "Enrollment number: " + enrollment.trim().toUpperCase(), "Programme: " + (preview?.programme || "Not available"), "Branch: " + (preview?.branch || "Not available"), "Academic scheme: " + (preview?.curriculumName || preview?.scheme || "Not available"), "Admission mode: " + (confirmedAdmissionMode || "Not available")].join("\n"),
           attachmentName: grievanceAttachment?.name || "",
           attachmentType: grievanceAttachment?.type || "",
           attachmentBase64,
@@ -585,7 +585,7 @@ export default function AcademicSetupPage() {
             <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
             <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
             <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send institution request"}</button>
-          </form>) : (appealSent ? <div className="academic-setup-request-success">✓ Your message and supporting document have been sent to our team.</div> : <form onSubmit={submitEnrollmentGrievance}>
+          </form>) : (appealSent ? <div className="academic-setup-request-success">✓ Your request has been sent to our team.</div> : <form onSubmit={submitEnrollmentGrievance}>
             <div className="academic-setup-support-context">
               <span><small>INSTITUTION</small><strong>{selected?.name || "—"}</strong></span>
               <span><small>ENROLLMENT NUMBER</small><strong>{enrollment.trim().toUpperCase() || "—"}</strong></span>
