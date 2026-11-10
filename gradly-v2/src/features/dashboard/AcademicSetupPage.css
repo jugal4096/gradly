@@ -578,3 +578,11 @@
 .theme-dark .academic-setup-choice.primary-choice,
 .theme-dark .academic-setup-form button[type="submit"],
 .theme-dark .academic-setup-enrollment-control button{background:#f5f5f5!important;color:#080808!important}
+
+.academic-setup-backlog-field{display:grid;gap:7px;margin-top:13px;padding:14px;border:1px solid #d5d5d5;border-radius:11px;background:#f8f8f8}
+.academic-setup-backlog-field label{display:grid;gap:4px;color:#111;font-size:11px;font-weight:750}
+.academic-setup-backlog-field label span,.academic-setup-backlog-field small{color:#707070;font-size:10px;font-weight:500;line-height:1.5}
+.academic-setup-backlog-field input{width:100%;min-height:40px;padding:9px 11px;border:1px solid #c9c9c9;border-radius:8px;background:#fff;color:#080808}
+.theme-dark .academic-setup-backlog-field{border-color:#444;background:#151515}
+.theme-dark .academic-setup-backlog-field label{color:#f5f5f5}
+.theme-dark .academic-setup-backlog-field label span,.theme-dark .academic-setup-backlog-field small{color:#aaa}
