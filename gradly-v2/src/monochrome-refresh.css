@@ -1,0 +1,157 @@
+/* Gradly student platform — unified black & white visual system. */
+:root{--mono-ink:#111;--mono-paper:#fff;--mono-canvas:#f4f4f4;--mono-line:#dedede;--mono-muted:#6b6b6b}
+html,body{background:var(--mono-canvas);color:var(--mono-ink)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #111!important;outline-offset:3px!important}
+
+/* Sign-in and guest entry */
+.entry-page{--ink:#111;--muted:#666;--violet:#111;--cyan:#555;background:radial-gradient(ellipse at 50% 45%,#fff 0%,#f4f4f4 58%,#ededed 100%)!important;color:#111!important}
+.entry-grid{opacity:.16!important;background-image:linear-gradient(#0000000b 1px,transparent 1px),linear-gradient(90deg,#0000000b 1px,transparent 1px)!important}
+.entry-glow{opacity:.12!important;filter:grayscale(1)!important}
+.entry-orbit,.entry-orbit-b{border-color:#00000016!important;box-shadow:none!important}
+.entry-prism{border-color:#00000018!important;background:linear-gradient(145deg,#ffffffa8,#eeeeee70)!important;box-shadow:0 35px 90px #0000000d!important}
+.entry-prism:before,.entry-prism:after{border-color:#00000015!important}
+.entry-prism span{color:#0000000b!important;text-shadow:none!important}
+.brand-lockup{color:#111!important}.brand-mark{background:#111!important;color:#fff!important;border:1px solid #111!important;box-shadow:none!important;transform:none!important}
+.brand-mark span,.nav-spark{color:#777!important}
+.entry-nav-note,.entry-kicker,.entry-bottom-note,.entry-footer{color:#666!important}
+.entry-eyebrow{color:#444!important}.eyebrow-line{background:#999!important}
+.entry-title-wrap h1{color:#111!important}.entry-title-wrap h1 em{color:#555!important}
+.entry-description{color:#666!important}
+.entry-choice{background:#ffffffd9!important;border:1px solid #ddd!important;box-shadow:0 20px 55px #0000000a!important}
+.entry-choice-heading,.entry-choice-heading span{color:#555!important}
+.user-choice,.guest-choice{background:#fff!important;border:1px solid #d8d8d8!important;color:#111!important;box-shadow:none!important}
+.user-choice:hover,.guest-choice:hover{background:#f1f1f1!important;border-color:#111!important;transform:translateY(-2px)}
+.choice-copy b{color:#111!important}.choice-copy small,.entry-assurance{color:#666!important}
+.choice-icon,.guest-choice-icon{background:#f0f0f0!important;color:#111!important;border:1px solid #ddd!important}
+.choice-arrow{color:#111!important}.entry-assurance span,.bottom-dot{color:#111!important;background:#111!important}
+.floating-card{background:#fff!important;border:1px solid #ddd!important;color:#111!important;box-shadow:0 14px 35px #0000000b!important}
+.floating-card strong,.floating-plan strong{color:#111!important}.floating-card small,.float-label,.floating-plan small{color:#666!important}
+.float-plan-icon{background:#111!important;color:#fff!important}
+.float-meter{background:#e5e5e5!important}.float-meter i{background:#111!important}
+.floating-orb{background:#bbb!important;box-shadow:none!important}
+.entry-footer{border-color:#ddd!important}
+
+/* Academic setup: guided two-column enrollment flow */
+.academic-setup-page{filter:grayscale(1);background:#f5f5f5!important;color:#111!important}
+.academic-setup-page.theme-dark{background:#090909!important;color:#f5f5f5!important}
+.academic-setup-wrap{max-width:1500px!important}
+.academic-setup-content{display:grid!important;grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr)!important;gap:clamp(22px,4vw,58px)!important;align-items:start!important;max-width:1320px!important;margin:clamp(28px,4vh,54px) auto 0!important}
+.academic-setup-quote-panel{position:sticky;top:32px;min-height:520px;display:flex;flex-direction:column;justify-content:space-between;gap:35px;padding:clamp(26px,3.2vw,48px);border:1px solid #111;border-radius:22px;background:#111;color:#fff;overflow:hidden;isolation:isolate}
+.academic-setup-quote-panel:before{content:"";position:absolute;z-index:-1;width:320px;height:320px;right:-180px;bottom:-180px;border:1px solid #ffffff25;border-radius:50%;box-shadow:0 0 0 34px #ffffff08,0 0 0 70px #ffffff05}
+.academic-setup-quote-kicker{color:#aaa;font-size:9px;font-weight:800;letter-spacing:2px}
+.academic-setup-quote-mark{color:#777;font:800 86px/.7 Georgia,serif}
+.academic-setup-quote-copy{min-height:210px;display:flex;align-items:center}
+.academic-setup-quote-copy p{margin:0;color:#fff;font:800 clamp(29px,3.4vw,49px)/1.12 Manrope, sans-serif;letter-spacing:-1.8px;animation:monoQuoteIn .65s cubic-bezier(.2,.8,.2,1) both}
+.academic-setup-quote-caption{max-width:300px;margin:18px 0 0;color:#aaa;font:500 12px/1.7 Manrope,sans-serif}
+.academic-setup-quote-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#999;font-size:9px;letter-spacing:1.2px}
+.academic-setup-quote-dots{display:flex;gap:6px}
+.academic-setup-quote-dots i{width:5px;height:5px;border-radius:50%;background:#555;transition:width .25s,background .25s}
+.academic-setup-quote-dots i.active{width:20px;border-radius:8px;background:#fff}
+.academic-setup-flow{min-width:0;width:100%}
+.academic-setup-heading{margin:0 0 25px!important}
+.academic-setup-eyebrow{color:#555!important}
+.academic-setup-heading h1{color:#111!important;font-size:clamp(29px,3.2vw,42px)!important}
+.academic-setup-heading>p:last-child{color:#666!important}
+.academic-setup-form{background:#fff!important;border:1px solid #ddd!important;border-radius:18px!important;box-shadow:0 18px 55px #00000008!important}
+.academic-setup-field-section>label,.academic-setup-confirm-fields label,.academic-setup-advanced-fields label,.academic-setup-institution-request label{color:#222!important}
+.academic-setup-input-wrap input,.academic-setup-enrollment-control input,.academic-setup-confirm-fields select,.academic-setup-advanced-fields select,.academic-setup-institution-request input,.academic-setup-modal form input,.academic-setup-modal form select,.academic-setup-modal form textarea{border-color:#d4d4d4!important;background:#fff!important;color:#111!important}
+.academic-setup-input-wrap input:focus,.academic-setup-enrollment-control input:focus,.academic-setup-confirm-fields select:focus,.academic-setup-advanced-fields select:focus,.academic-setup-institution-request input:focus{border-color:#111!important;box-shadow:0 0 0 3px #11111112!important}
+.academic-setup-results{border-color:#ddd!important;background:#fff!important}
+.academic-setup-results button{background:#fff!important;color:#111!important;border-color:#eee!important}
+.academic-setup-results button:hover{background:#f3f3f3!important}
+.academic-setup-selected{border-color:#ccc!important;background:#f6f6f6!important;color:#111!important}
+.academic-setup-selected-check{background:#111!important;color:#fff!important}
+.academic-setup-edit-institution{border-color:#bbb!important;background:#fff!important;color:#111!important}
+.academic-setup-edit-institution:hover{background:#eee!important;border-color:#111!important}
+.academic-setup-enrollment-control button,.academic-setup-choice.primary-choice,.academic-setup-continue,.academic-setup-institution-request button,.academic-setup-request-launch>button,.academic-setup-grievance-launch>button,.academic-setup-modal form>button{background:#111!important;border-color:#111!important;color:#fff!important;box-shadow:none!important}
+.academic-setup-enrollment-control button:hover,.academic-setup-choice.primary-choice:hover,.academic-setup-continue:hover:not(:disabled),.academic-setup-request-launch>button:hover,.academic-setup-grievance-launch>button:hover{background:#333!important;transform:translateY(-1px)}
+.academic-setup-choice:not(.primary-choice){background:#fff!important;border-color:#bbb!important;color:#111!important}
+.academic-setup-choice:not(.primary-choice):hover{border-color:#111!important;background:#f2f2f2!important}
+.academic-setup-predicted,.academic-setup-progression,.academic-setup-request-launch,.academic-setup-grievance-launch{background:#f7f7f7!important;border-color:#ddd!important;box-shadow:none!important}
+.academic-setup-predicted-heading h2,.academic-setup-details h2,.academic-setup-progression h2,.academic-setup-confirmation h2,.academic-setup-request-launch strong,.academic-setup-grievance-launch strong{color:#111!important}
+.academic-setup-predicted-heading p,.academic-setup-request-launch span,.academic-setup-grievance-launch span,.academic-setup-helper,.academic-setup-footnote,.academic-setup-first-step-note{color:#666!important}
+.academic-setup-auto-tag,.academic-setup-details-heading>span{background:#eee!important;border-color:#ccc!important;color:#222!important}
+.academic-setup-predicted-grid dt,.academic-setup-details dt{color:#666!important}
+.academic-setup-predicted-grid dd,.academic-setup-details dd{color:#111!important}
+.academic-setup-identification-success,.academic-setup-confirmed-state{color:#222!important}
+.academic-setup-error{background:#f5f5f5!important;border-color:#bbb!important;color:#222!important}
+.academic-setup-modal{background:#fff!important;border-color:#ddd!important;color:#111!important}
+.academic-setup-modal>h2,.academic-setup-modal form label,.academic-setup-modal .academic-setup-request-tracking h3{color:#111!important}
+.academic-setup-modal-lead,.academic-setup-modal form input::placeholder{color:#666!important}
+.academic-setup-modal form input:focus,.academic-setup-modal form select:focus,.academic-setup-modal form textarea:focus{border-color:#111!important;box-shadow:0 0 0 3px #11111112!important}
+.academic-setup-modal-close{background:#f2f2f2!important;color:#111!important;border-color:#ddd!important}
+.academic-setup-footer{color:#777!important}
+.theme-dark.academic-setup-page .academic-setup-heading h1,.theme-dark.academic-setup-page .academic-setup-flow,.theme-dark.academic-setup-page .academic-setup-field-section>label{color:#f5f5f5!important}
+.theme-dark.academic-setup-page .academic-setup-form,.theme-dark.academic-setup-page .academic-setup-modal{background:#111!important;border-color:#444!important}
+.theme-dark.academic-setup-page .academic-setup-input-wrap input,.theme-dark.academic-setup-page .academic-setup-enrollment-control input,.theme-dark.academic-setup-page .academic-setup-modal form input,.theme-dark.academic-setup-page .academic-setup-modal form select,.theme-dark.academic-setup-page .academic-setup-modal form textarea{background:#090909!important;color:#fff!important;border-color:#555!important}
+.theme-dark.academic-setup-page .academic-setup-selected,.theme-dark.academic-setup-page .academic-setup-predicted,.theme-dark.academic-setup-page .academic-setup-request-launch,.theme-dark.academic-setup-page .academic-setup-grievance-launch{background:#181818!important;border-color:#444!important;color:#fff!important}
+.theme-dark.academic-setup-page .academic-setup-heading h1,.theme-dark.academic-setup-page .academic-setup-predicted-heading h2,.theme-dark.academic-setup-page .academic-setup-predicted-grid dd,.theme-dark.academic-setup-page .academic-setup-modal>h2{color:#fff!important}
+.theme-dark.academic-setup-page .academic-setup-heading>p:last-child,.theme-dark.academic-setup-page .academic-setup-helper,.theme-dark.academic-setup-page .academic-setup-modal-lead{color:#aaa!important}
+
+/* Main student workspace — neutral surfaces, black actions, white space. */
+.sp-shell{filter:grayscale(1);background:#f3f3f3!important;color:#111!important}
+.sp-sidebar{background:#fff!important;border-color:#ddd!important;box-shadow:8px 0 30px #00000006!important}
+.sp-brand{color:#111!important}.sp-brand-mark{background:#111!important;color:#fff!important;box-shadow:none!important}
+.sp-brand-mark small{color:#fff!important}
+.sp-nav-label{color:#777!important}
+.sp-nav-group button{color:#555!important}
+.sp-nav-group button i{color:#555!important}
+.sp-nav-group button:hover{background:#eee!important;color:#111!important}
+.sp-nav-group button.active{background:#111!important;color:#fff!important}
+.sp-nav-group button.active i,.sp-nav-group button.active b{color:#fff!important;background:#fff!important}
+.sp-sidebar-bottom{border-color:#ddd!important}
+.sp-sidebar-tip{background:#f5f5f5!important;border-color:#ddd!important}
+.sp-sidebar-tip span,.sp-sidebar-tip b{color:#111!important}.sp-sidebar-tip small{color:#666!important}
+.sp-main{background:#f4f4f4!important}
+.sp-topbar{background:#ffffffed!important;border-color:#ddd!important}
+.sp-top-left small,.sp-status,.sp-footer,.sp-muted{color:#666!important}
+.sp-top-left strong{color:#111!important}
+.sp-status{border-color:#ccc!important;background:#fff!important}
+.sp-avatar{background:#111!important;color:#fff!important}
+.sp-menu{color:#111!important}
+.sp-content{color:#111!important}
+.sp-hero{background:#111!important;border-color:#111!important;box-shadow:none!important;color:#fff!important}
+.sp-hero h1,.sp-hero h1 em,.sp-hero p,.sp-hero .sp-kicker{color:#fff!important}
+.sp-hero h1 em{opacity:.72}
+.sp-card,.sp-stat-card,.sp-panel,.sp-result,.sp-preference-card,.sp-chart-card,.sp-table-card{background:#fff!important;border:1px solid #ddd!important;box-shadow:0 8px 28px #00000006!important;color:#111!important}
+.sp-card h2,.sp-card h3,.sp-card h4,.sp-stat-card strong,.sp-panel h2,.sp-panel h3,.sp-result h3,.sp-heading h1{color:#111!important}
+.sp-card p,.sp-card small,.sp-card label,.sp-panel p,.sp-panel small,.sp-heading p{color:#666!important}
+.sp-heading>span,.sp-kicker{color:#555!important}
+.sp-primary,.sp-primary-btn,.sp-btn-primary,.sp-action-primary,.sp-submit,.sp-shell button[class*="primary"]{background:#111!important;border-color:#111!important;color:#fff!important;box-shadow:none!important}
+.sp-shell button[class*="secondary"],.sp-shell .sp-secondary,.sp-shell .sp-quiet-btn{background:#fff!important;border-color:#bbb!important;color:#111!important}
+.sp-shell input,.sp-shell select,.sp-shell textarea{background:#fff!important;border-color:#d0d0d0!important;color:#111!important}
+.sp-shell input::placeholder,.sp-shell textarea::placeholder{color:#888!important}
+.sp-shell table th{color:#555!important;border-color:#ddd!important}
+.sp-shell table td{color:#222!important;border-color:#e5e5e5!important}
+.sp-shell .sp-footer{border-color:#ddd!important}
+.sp-shell .sp-empty,.sp-shell .sp-empty-state{background:#fafafa!important;border-color:#ddd!important;color:#555!important}
+.sp-shell .sp-theme-choices button{background:#fff!important;border-color:#ddd!important;color:#111!important}
+.sp-shell .sp-theme-choices button.selected{border-color:#111!important;background:#f0f0f0!important}
+.sp-shell .sp-theme-choices button span,.sp-shell .sp-theme-choices button strong{color:#111!important}
+.sp-shell .sp-nav-group button b{background:#fff!important}
+
+/* Explicit dark appearance remains monochrome too. */
+.sp-shell.sp-dark-theme{background:#080808!important;color:#f5f5f5!important}
+.sp-dark-theme .sp-sidebar{background:#101010!important;border-color:#333!important}
+.sp-dark-theme .sp-brand,.sp-dark-theme .sp-top-left strong,.sp-dark-theme .sp-content{color:#f5f5f5!important}
+.sp-dark-theme .sp-nav-label,.sp-dark-theme .sp-top-left small,.sp-dark-theme .sp-muted{color:#aaa!important}
+.sp-dark-theme .sp-nav-group button{color:#bbb!important}
+.sp-dark-theme .sp-nav-group button:hover{background:#222!important;color:#fff!important}
+.sp-dark-theme .sp-nav-group button.active{background:#fff!important;color:#111!important}
+.sp-dark-theme .sp-nav-group button.active i,.sp-dark-theme .sp-nav-group button.active b{color:#111!important;background:#111!important}
+.sp-dark-theme .sp-sidebar-bottom,.sp-dark-theme .sp-topbar,.sp-dark-theme .sp-footer{border-color:#333!important}
+.sp-dark-theme .sp-sidebar-tip,.sp-dark-theme .sp-card,.sp-dark-theme .sp-stat-card,.sp-dark-theme .sp-panel,.sp-dark-theme .sp-result,.sp-dark-theme .sp-preference-card,.sp-dark-theme .sp-chart-card,.sp-dark-theme .sp-table-card{background:#151515!important;border-color:#333!important;color:#f5f5f5!important}
+.sp-dark-theme .sp-card h2,.sp-dark-theme .sp-card h3,.sp-dark-theme .sp-card h4,.sp-dark-theme .sp-stat-card strong,.sp-dark-theme .sp-panel h2,.sp-dark-theme .sp-panel h3,.sp-dark-theme .sp-result h3,.sp-dark-theme .sp-heading h1{color:#f5f5f5!important}
+.sp-dark-theme .sp-card p,.sp-dark-theme .sp-card small,.sp-dark-theme .sp-card label,.sp-dark-theme .sp-panel p,.sp-dark-theme .sp-panel small,.sp-dark-theme .sp-heading p{color:#aaa!important}
+.sp-dark-theme .sp-topbar{background:#111!important}
+.sp-dark-theme .sp-status,.sp-dark-theme input,.sp-dark-theme select,.sp-dark-theme textarea{background:#090909!important;border-color:#444!important;color:#fff!important}
+.sp-dark-theme button[class*="secondary"],.sp-dark-theme .sp-secondary,.sp-dark-theme .sp-quiet-btn{background:#151515!important;border-color:#555!important;color:#fff!important}
+.sp-dark-theme .sp-theme-choices button{background:#111!important;border-color:#444!important;color:#fff!important}
+.sp-dark-theme .sp-theme-choices button.selected{background:#252525!important;border-color:#fff!important}
+.sp-dark-theme .sp-footer{color:#999!important}
+
+/* Motion and responsive composition */
+@keyframes monoQuoteIn{from{opacity:0;transform:translate3d(0,18px,0);filter:blur(5px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
+@media(max-width:900px){.academic-setup-content{grid-template-columns:1fr!important;max-width:760px!important}.academic-setup-quote-panel{position:relative;top:auto;min-height:280px;gap:22px}.academic-setup-quote-copy{min-height:120px}.academic-setup-quote-copy p{font-size:clamp(27px,6vw,40px)}}
+@media(max-width:600px){.academic-setup-page{padding:0 14px 28px!important}.academic-setup-content{margin-top:20px!important;gap:20px!important}.academic-setup-quote-panel{min-height:245px;padding:22px;border-radius:17px}.academic-setup-quote-mark{font-size:60px}.academic-setup-flow .academic-setup-heading h1{font-size:29px!important}.academic-setup-form{padding:20px 16px!important}.sp-content{padding:24px 16px 38px!important}.sp-topbar{padding:0 16px!important}.sp-hero{padding:26px 20px!important}}
+@media(prefers-reduced-motion:reduce){.academic-setup-quote-copy p{animation:none!important}.academic-setup-quote-dots i{transition:none!important}}
