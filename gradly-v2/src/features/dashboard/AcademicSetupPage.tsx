@@ -20,14 +20,6 @@ type EnrollmentPreview = {
   expected?: { expectedSemester: number | null; academicYear: string; semesterType: "ODD" | "EVEN"; expectedDurationEnded: boolean; expectedGraduationSession: string; academicYearLabel: string | null };
 };
 
-const onboardingQuotes = [
-  "Your academic journey deserves a space of its own.",
-  "Every semester tells a story. Make yours count.",
-  "Your results. Your progress. Your next big step.",
-  "One identity. Your entire academic record.",
-  "Let Gradly turn your academic data into direction.",
-];
-
 function validateEnrollmentNumber(value: string): string | null {
   if (!value) return "Enter your enrollment number."; 
   if (!/^(BE|BT|MC|ME|MT)/.test(value)) return "Invalid enrollment number. Programme prefix is not recognized."; 
@@ -55,7 +47,6 @@ export default function AcademicSetupPage() {
   const [curriculumId, setCurriculumId] = useState("");
   const [admissionModes, setAdmissionModes] = useState<AdmissionMode[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">(() => typeof window !== "undefined" && window.localStorage.getItem("gradly-academic-theme") === "dark" ? "dark" : "light");
-  const [quoteIndex, setQuoteIndex] = useState(0);
   const [expectedSemester, setExpectedSemester] = useState<number | null>(null);
   const [expectedDurationEnded, setExpectedDurationEnded] = useState(false);
   const [selectedCurrentSemester, setSelectedCurrentSemester] = useState("");
@@ -109,11 +100,6 @@ export default function AcademicSetupPage() {
     .map(year => ({ value: String(year), label: year + "-" + String(year + 1).slice(-2) }));
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setQuoteIndex(index => (index + 1) % onboardingQuotes.length), 4600);
-    return () => window.clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     if (academicGapYears === 0) { setGapAcademicYearFrom(""); setGapAcademicYearTo(""); return; }
