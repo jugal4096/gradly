@@ -1,51 +1,45 @@
 # Gradly
 
-Gradly is a student-focused academic platform with a separate Gradly Ecosystem administration experience.
+Gradly is a student-focused academic platform with a separately built administration application. Both frontends use the shared backend API while retaining independent routing, authentication state, dependencies, builds and deployments.
 
 ## Repository layout
 
-- `gradly-ecosystem/` — active React + TypeScript + Vite frontend for the ecosystem portal.
-- `gradly-ecosystem-src-backup/` — preserved source snapshot; kept separate from the active app.
-- `gradly-v2/` — separate next-generation frontend scaffold.
-- `src/` — legacy service placeholders; not the active Vite frontend entry point.
+- `gradly-v2/` — Student App for students and guests.
+- `gradly-ecosystem/` — Gradly Ecosystem for department administrators and Super Admins.
+- `gradly-v2/backend/` — shared API, authentication verification, academic domain services and persistence.
+- `gradly-ecosystem-src-backup/` — preserved historical source snapshot; not an active application.
 
-## Run the ecosystem frontend
+See [APPLICATION-BOUNDARIES.md](./APPLICATION-BOUNDARIES.md) for the application ownership and security rules.
 
+## Run locally
+
+Run each application in a separate terminal.
+
+Student App:
+```bash
+cd gradly-v2
+npm ci
+npm run dev
+```
+
+Gradly Ecosystem:
 ```bash
 cd gradly-ecosystem
 npm ci
 npm run dev
 ```
 
-## Validate before shipping
-
+Shared API:
 ```bash
-npm run lint
-npm run build
+cd gradly-v2/backend
+npm ci
+npm run dev
 ```
 
-The production build runs TypeScript project checks followed by Vite. The Vercel project should use `gradly-ecosystem` as its root directory.
+Configure each frontend's `VITE_API_BASE_URL` with the API origin. Configure the backend's `CORS_ORIGINS` as a comma-separated allowlist of the exact Student App and Ecosystem origins. Firebase Admin and database secrets must remain backend-only.
 
-## Configuration
+## Validation
 
-- `VITE_API_BASE_URL` — API origin used by the admin and super-admin clients. If omitted, local development defaults to `http://localhost:5000`.
-- `VITE_MAIN_APP_URL` — optional URL for the main Gradly application link shown in the ecosystem entry page.
+Run `npm run lint` and `npm run build` independently in both frontend roots. Run `npm test` in the backend.
 
-Only public client configuration belongs in Vite environment variables. Never put private server secrets in `VITE_*` variables.
-
-## Application routes
-
-- `/` — Gradly Ecosystem entry page.
-- `/admin` — administrator portal.
-- `/admin/login` — administrator sign-in.
-- `/admin/apply` — administrator access application.
-- `/admin/register` — administrator registration.
-- `/admin/dashboard` — administrator workspace.
-- `/super-admin/login` — super-admin sign-in.
-- `/super-admin` — protected super-admin workspace, including dashboard, users, user details, and applications.
-
-## Design and implementation notes
-
-The ecosystem frontend uses a shared purple design-token foundation with responsive page-specific layouts. The router entry point is `src/App.tsx`, imported by `src/main.tsx`; `src/app/App.tsx` is a compatibility re-export to avoid divergent route definitions.
-
-UI work should preserve existing API contracts, session handling, and role boundaries. Backend behavior is maintained independently from the frontend.
+Do not deploy or change production domains as part of local application-boundary work.
