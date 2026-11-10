@@ -115,10 +115,10 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
   }
   if (uniqueBranches.length !== 1) {
     return unresolved(
-      "BRANCH",
+      parsed.prefix === "MT" && uniqueBranches.length === 0 ? "SPECIALIZATION" : "BRANCH",
       uniqueBranches.length
         ? "More than one branch matches this enrollment code under the detected programme. Institutional mapping needs review."
-        : "Unrecognized branch code. Please verify your enrollment number.",
+        : parsed.prefix === "MT" ? "The M.Tech specialization code is not configured for this institution and department." : "Unrecognized branch code. Please verify your enrollment number.",
       parsed,
     );
   }
