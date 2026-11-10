@@ -32,7 +32,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .entry-footer{border-color:#ddd!important}
 
 /* Academic setup: guided two-column enrollment flow */
-.academic-setup-page{filter:grayscale(1);background:#f5f5f5!important;color:#111!important}
+.academic-setup-page{background:#f5f5f5!important;color:#111!important}
 .academic-setup-page.theme-dark{background:#090909!important;color:#f5f5f5!important}
 .academic-setup-wrap{max-width:1500px!important}
 .academic-setup-content{display:grid!important;grid-template-columns:minmax(280px,.82fr) minmax(0,1.18fr)!important;gap:clamp(22px,4vw,58px)!important;align-items:start!important;max-width:1320px!important;margin:clamp(28px,4vh,54px) auto 0!important}
@@ -89,7 +89,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .theme-dark.academic-setup-page .academic-setup-heading>p:last-child,.theme-dark.academic-setup-page .academic-setup-helper,.theme-dark.academic-setup-page .academic-setup-modal-lead{color:#aaa!important}
 
 /* Main student workspace — neutral surfaces, black actions, white space. */
-.sp-shell{filter:grayscale(1);background:#f3f3f3!important;color:#111!important}
+.sp-shell{background:#f3f3f3!important;color:#111!important}
 .sp-sidebar{background:#fff!important;border-color:#ddd!important;box-shadow:8px 0 30px #00000006!important}
 .sp-brand{color:#111!important}.sp-brand-mark{background:#111!important;color:#fff!important;box-shadow:none!important}
 .sp-brand-mark small{color:#fff!important}
@@ -155,3 +155,26 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:900px){.academic-setup-content{grid-template-columns:1fr!important;max-width:760px!important}.academic-setup-quote-panel{position:relative;top:auto;min-height:280px;gap:22px}.academic-setup-quote-copy{min-height:120px}.academic-setup-quote-copy p{font-size:clamp(27px,6vw,40px)}}
 @media(max-width:600px){.academic-setup-page{padding:0 14px 28px!important}.academic-setup-content{margin-top:20px!important;gap:20px!important}.academic-setup-quote-panel{min-height:245px;padding:22px;border-radius:17px}.academic-setup-quote-mark{font-size:60px}.academic-setup-flow .academic-setup-heading h1{font-size:29px!important}.academic-setup-form{padding:20px 16px!important}.sp-content{padding:24px 16px 38px!important}.sp-topbar{padding:0 16px!important}.sp-hero{padding:26px 20px!important}}
 @media(prefers-reduced-motion:reduce){.academic-setup-quote-copy p{animation:none!important}.academic-setup-quote-dots i{transition:none!important}}
+
+
+/* Keep overlays viewport-bound; neutralise remaining accent surfaces without filtering layout roots. */
+.academic-setup-progress span{background:#111!important}
+.academic-setup-logo{background:#111!important;color:#fff!important;box-shadow:none!important}
+.academic-setup-theme-toggle{border-color:#bbb!important;background:#fff!important;color:#111!important}
+.academic-setup-search-spinner{border-color:#ddd!important;border-top-color:#111!important}
+.academic-setup-predicted-sparkle,.academic-setup-progression-icon{background:#111!important;color:#fff!important}
+.academic-setup-confirmed-state>span{background:#111!important;color:#fff!important}
+.academic-setup-request-success{color:#222!important}
+.academic-setup-modal-backdrop{background:#111a!important}
+.academic-setup-flow .academic-setup-details-heading>span i{background:#111!important}
+.academic-setup-flow .academic-setup-identification-success span{background:#111!important;color:#fff!important}
+.academic-setup-flow .academic-setup-progression-title p,.academic-setup-flow .academic-setup-progression-note small{color:#666!important}
+.academic-setup-flow .academic-setup-progression-note strong,.academic-setup-flow .academic-setup-completion strong{color:#111!important}
+.sp-sidebar{filter:grayscale(1)}
+.sp-shell .sp-stat-card,.sp-shell .sp-card,.sp-shell .sp-panel,.sp-shell .sp-result,.sp-shell .sp-chart-card,.sp-shell .sp-table-card{filter:grayscale(1)}
+.sp-shell .sp-hero,.sp-shell .sp-primary,.sp-shell .sp-primary-btn,.sp-shell .sp-btn-primary,.sp-shell .sp-action-primary,.sp-shell .sp-submit{filter:grayscale(1)}
+.sp-shell .sp-status i,.sp-shell .sp-ai-head>i{background:#111!important;box-shadow:none!important}
+.sp-shell .sp-nav-group button.active i{color:#fff!important}
+.sp-shell .sp-progress,.sp-shell .sp-progress-track,.sp-shell .sp-meter{background:#e5e5e5!important}
+.sp-shell .sp-progress-fill,.sp-shell .sp-meter>i{background:#111!important}
+.sp-dark-theme .sp-sidebar{filter:grayscale(1)}
