@@ -75,6 +75,52 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
   } finally { client.release(); }
 }
 
+
+export async function downloadEnrollmentGrievanceAttachmentForAdmin(req: AdminAuthenticatedRequest, res: Response) {
+  const institutionId = req.admin?.institutionId;
+  if (!req.admin?.adminId || !institutionId) return res.status(403).json({ success:false, message:"Institution Admin access required." });
+  try {
+    const result = await pool.query(
+      `SELECT a.file_name, a.content_type, a.file_data
+       FROM public.student_enrollment_grievance_attachments a
+       JOIN public.student_enrollment_grievances g ON g.id = a.grievance_id
+       WHERE g.id = $1 AND g.institution_id = $2 LIMIT 1`,
+      [req.params.grievanceId, institutionId],
+    );
+    if (!result.rowCount) return res.status(404).json({ success:false, message:"Evidence file not found for this institution." });
+    const file = result.rows[0];
+    res.setHeader("Content-Type", file.content_type);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.file_name)}`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.send(file.file_data);
+  } catch (error) {
+    console.error("Admin evidence download failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to download evidence." });
+  }
+}
+
+export async function downloadEnrollmentGrievanceAttachmentForSuperAdmin(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
+  try {
+    const result = await pool.query(
+      `SELECT a.file_name, a.content_type, a.file_data
+       FROM public.student_enrollment_grievance_attachments a
+       JOIN public.student_enrollment_grievances g ON g.id = a.grievance_id
+       WHERE g.id = $1 LIMIT 1`,
+      [req.params.grievanceId],
+    );
+    if (!result.rowCount) return res.status(404).json({ success:false, message:"Evidence file not found." });
+    const file = result.rows[0];
+    res.setHeader("Content-Type", file.content_type);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.file_name)}`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    return res.send(file.file_data);
+  } catch (error) {
+    console.error("Super Admin evidence download failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to download evidence." });
+  }
+}
+
 export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res: Response) {
   const user = await studentUser(req, res); if (!user) return;
   try {
