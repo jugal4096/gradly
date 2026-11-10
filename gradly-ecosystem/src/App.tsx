@@ -20,6 +20,7 @@ import AdminPortal from "./pages/admin/AdminPortal";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminApply from "./pages/admin/AdminApply";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminGrievanceCenter from "./pages/admin/AdminGrievanceCenter";
 import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
 import AdminRequestCenter from "./pages/admin/AdminRequestCenter";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -116,6 +117,7 @@ function App() {
 
         <Route path="/admin/curriculum" element={<AdminWorkspacePage />} />
         <Route path="/admin/requests" element={<AdminRequestCenter />} />
+        <Route path="/admin/grievances" element={<AdminGrievanceCenter />} />
         <Route path="/admin/notifications" element={<AdminWorkspacePage />} />
         <Route path="/admin/activity" element={<AdminWorkspacePage />} />
         <Route path="/admin/feedback" element={<AdminWorkspacePage />} />
