@@ -43,3 +43,25 @@ test("confirmed identity is checked by controller and atomically guarded by repo
   assert.match(repository, /student_profiles\.academic_profile_confirmed OR \$12/);
   assert.match(repository, /WHEN student_profiles\.academic_profile_confirmed IS TRUE THEN student_profiles\.academic_profile_overrides/);
 });
+
+test("student grievance and institution-request reads are scoped to the authenticated student", () => {
+  assert.match(controller, /WHERE student_user_id = \$1 ORDER BY created_at DESC LIMIT 100/);
+  const institutionController = read("./student-institution.controller.ts");
+  assert.match(institutionController, /WHERE requested_by_user_id = \$1/);
+  assert.match(institutionController, /requested_by_user_id\)/);
+});
+
+test("institution Admin grievance access is restricted to the assigned institution", () => {
+  assert.match(controller, /const institutionId = req\.admin\?\.institutionId/);
+  assert.match(controller, /WHERE g\.institution_id = \$1/);
+  const adminRoutes = read("../admin/admin.routes.ts");
+  assert.match(adminRoutes, /router\.get\("\/enrollment-grievances", authenticateAdminToken, listEnrollmentGrievancesForAdmin\)/);
+  assert.doesNotMatch(adminRoutes, /router\.patch\("\/enrollment-grievances/);
+});
+
+test("student routes require Firebase authentication before onboarding and grievance handlers", () => {
+  const studentRoutes = read("./student.routes.ts");
+  assert.match(studentRoutes, /router\.use\(authenticateFirebaseToken\)/);
+  assert.match(studentRoutes, /router\.post\("\/institution-requests", requestStudentInstitution\)/);
+  assert.match(studentRoutes, /router\.post\("\/enrollment-grievances", submitEnrollmentGrievance\)/);
+});
