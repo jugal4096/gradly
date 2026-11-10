@@ -473,7 +473,7 @@ export default function AcademicSetupPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Your request could not be submitted.");
       setRequestSent(true);
-      setSelectedExternalInstitution(null);
+      
       try {
         const trackingResponse = await fetch(API + "/api/student/institution-requests", { headers: { Authorization: "Bearer " + token } });
         const trackingData = await trackingResponse.json();
@@ -511,14 +511,14 @@ export default function AcademicSetupPage() {
             <div className="academic-setup-input-wrap">
               <input id="institution-search" value={query} onChange={e => {
                 const value = e.target.value;
-                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false); setSelectedExternalInstitution(null);
+                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
                 window.clearTimeout(searchTimer.current);
                 searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
               }} placeholder="Search your college or university" autoComplete="organization" />
               {searching && <span className="academic-setup-search-spinner" />}
             </div>
             {searching && <small className="academic-setup-helper">Searching institutions…</small>}
-            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No configured institution matched. Check the external matches below or submit an institution request.</small>}
+            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No configured institution matched. You can submit a manual institution request below.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
             {institutions.length > 0 && !selected && <small className="academic-setup-helper">Configured in Gradly · available for academic setup</small>}
             {selected && <div className="academic-setup-selected"><span className="academic-setup-selected-check">✓</span><span>{selected.name}</span><button type="button" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); }}>Change</button></div>}
