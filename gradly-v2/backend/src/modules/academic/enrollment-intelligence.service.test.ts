@@ -294,7 +294,7 @@ test("GECA M.Tech specialization codes resolve through their stored department b
   }), false);
   assert.equal(enrollmentBranchMatches("MT", "Computer Science and Engineering", {
     name: "Computer Science and Engineering", code: "CSE",
-  }), true);
+  }), false);
   // Electronics Engineering must not also match Electronics & Telecommunication.
   assert.equal(enrollmentBranchMatches("MT", "Electronics Engineering", {
     name: "ELECTRONICS", code: "ELECTRONICS",
@@ -332,19 +332,19 @@ test("BT enrollment years cannot precede NEP or enter before their July academic
   assert.equal(parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-07-01T12:00:00+05:30")).admissionYear, 2028);
 });
 
-test("GECA M.Tech specialization codes resolve department-level curricula when specialization_id is absent", () => {
+test("M.Tech enrollment identity never resolves from department-only records without specialization", () => {
   // The institution stores Structural Engineering under the Applied Mechanics
   // department, and Water Resources / Geotechnical under Civil. Some curriculum
   // records are department-level and therefore have no specialization row.
   assert.equal(enrollmentBranchMatches("MT", "Structural Engineering", {
     name: "APPLIED MECHANICS", code: "APPLIED_MECHANICS",
-  }), true);
+  }), false);
   assert.equal(enrollmentBranchMatches("MT", "Water Resources Engineering", {
     name: "CIVIL", code: "CIVIL",
-  }), true);
+  }), false);
   assert.equal(enrollmentBranchMatches("MT", "Geotechnical Engineering", {
     name: "CIVIL", code: "CIVIL",
-  }), true);
+  }), false);
   assert.equal(enrollmentBranchMatches("MT", "Structural Engineering", {
     name: "CIVIL", code: "CIVIL",
   }), false);
@@ -353,5 +353,5 @@ test("GECA M.Tech specialization codes resolve department-level curricula when s
   }), false);
   assert.equal(enrollmentBranchMatches("MT", "Computer Science and Engineering", {
     name: "Computer Science and Engineering", code: "CSE",
-  }), true);
+  }), false);
 });
