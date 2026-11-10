@@ -585,21 +585,30 @@ export default function AcademicSetupPage() {
             <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
             <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
             <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send institution request"}</button>
-          </form>) : (appealSent ? <div className="academic-setup-request-success">✓ Your appeal has been submitted for review.</div> : <form onSubmit={submitEnrollmentGrievance}>
-            <label>Issue category<select value={grievanceCategory} onChange={e => setGrievanceCategory(e.target.value)}>
-              <option value="INVALID_ENROLLMENT">Enrollment number marked invalid</option>
-              <option value="ALREADY_REGISTERED">Enrollment number already registered</option>
-              <option value="WRONG_PROGRAMME">Incorrect programme / degree</option>
-              <option value="WRONG_SCHEME">Incorrect academic scheme</option>
-              <option value="WRONG_BRANCH">Incorrect branch</option>
-              <option value="WRONG_ADMISSION_MODE">Incorrect admission mode</option>
-              <option value="WRONG_SEMESTER">Incorrect semester prediction</option>
-              <option value="OTHER">Other academic identification issue</option>
-            </select></label>
-            <label>Enrollment number<input value={enrollment} readOnly /></label>
-            <label>Describe the issue<textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Explain which identified details are incorrect and what needs to be reviewed." /></label>
-            <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting appeal…" : "Submit appeal for review"}</button>
-            {grievances.length > 0 && <div className="academic-setup-dialog-history"><strong>Previous appeals</strong>{grievances.map(item => <article key={item.id}><span>{item.category.replace(/_/g," ")}</span><small>{item.status.replace(/_/g," ")} · {new Date(item.createdAt).toLocaleDateString()}</small></article>)}</div>}
+          </form>) : (appealSent ? <div className="academic-setup-request-success">✓ Your message and supporting document have been sent to our team.</div> : <form onSubmit={submitEnrollmentGrievance}>
+            <div className="academic-setup-support-context">
+              <span><small>INSTITUTION</small><strong>{selected?.name || "—"}</strong></span>
+              <span><small>ENROLLMENT NUMBER</small><strong>{enrollment.trim().toUpperCase() || "—"}</strong></span>
+              <span><small>IDENTIFIED PROGRAMME</small><strong>{preview?.programme || "—"}</strong></span>
+              <span><small>IDENTIFIED BRANCH</small><strong>{preview?.branch || "—"}</strong></span>
+            </div>
+            <label>What looks incorrect?<textarea required minLength={10} maxLength={3000} rows={5} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Describe the mismatch in your fetched academic details…" /></label>
+            <label className="academic-setup-upload-label">Supporting document <span>Optional · PDF, JPG or PNG · Up to 5 MB</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={e => {
+                const file = e.target.files?.[0] || null;
+                if (file && (!["application/pdf","image/jpeg","image/png"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+                  setError("Choose a PDF, JPG or PNG document up to 5 MB.");
+                  e.currentTarget.value = "";
+                  setGrievanceAttachment(null);
+                  return;
+                }
+                setError("");
+                setGrievanceAttachment(file);
+              }} />
+            </label>
+            {grievanceAttachment && <div className="academic-setup-file-selected"><span>▤</span><strong>{grievanceAttachment.name}</strong><small>{(grievanceAttachment.size / 1024 / 1024).toFixed(2)} MB</small><button type="button" onClick={() => setGrievanceAttachment(null)}>Remove</button></div>}
+            <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Sending to our team…" : "Submit to our team"}</button>
+            {grievances.length > 0 && <div className="academic-setup-dialog-history"><strong>Previous support requests</strong>{grievances.map(item => <article key={item.id}><span>Data mismatch request</span><small>{item.status.replace(/_/g," ")} · {new Date(item.createdAt).toLocaleDateString()}</small></article>)}</div>}
           </form>)}
           {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
         </section>
