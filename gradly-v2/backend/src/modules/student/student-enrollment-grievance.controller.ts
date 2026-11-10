@@ -409,3 +409,109 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
     client.release();
   }
 }
+
+
+/** Institution Admin review: reject or update a grievance, scoped to the Admin's institution. */
+export async function reviewEnrollmentGrievanceForAdmin(req: AdminAuthenticatedRequest, res: Response) {
+  const adminId = req.admin?.adminId;
+  const institutionId = req.admin?.institutionId;
+  const status = req.body?.status;
+  const note = typeof req.body?.adminNote === "string" ? req.body.adminNote.trim() : "";
+  if (!adminId || !institutionId) return res.status(403).json({ success:false, message:"Institution Admin access required." });
+  if (status !== "REJECTED" || note.length < 3 || note.length > 2000) {
+    return res.status(400).json({ success:false, message:"Provide a review note and choose Reject request." });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query(
+      "SELECT id, student_user_id, status FROM public.student_enrollment_grievances WHERE id = $1 AND institution_id = $2 AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO') FOR UPDATE",
+      [req.params.grievanceId, institutionId],
+    );
+    if (!existing.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({success:false,message:"Open request not found for your institution."}); }
+    const previous = existing.rows[0];
+    const updated = await client.query(
+      "UPDATE public.student_enrollment_grievances SET status='REJECTED', admin_note=$2, reviewed_by=$3, reviewed_at=NOW(), updated_at=NOW() WHERE id=$1 RETURNING id,status,admin_note AS \"adminNote\"",
+      [previous.id, note, adminId],
+    );
+    await client.query(
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1,'ADMIN',$2,'STATUS_CHANGED',$3,'REJECTED',$4)",
+      [previous.id, adminId, previous.status, note],
+    );
+    await client.query(
+      "INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Enrollment request rejected',$2,'/student/notifications')",
+      [previous.student_user_id, "Your data mismatch request was rejected. " + note],
+    );
+    await client.query("COMMIT");
+    return res.json({success:true,message:"Request rejected. The student has been notified.",grievance:updated.rows[0]});
+  } catch(error) {
+    await client.query("ROLLBACK").catch(()=>undefined);
+    console.error("Admin grievance rejection failed:",error);
+    return res.status(500).json({success:false,message:"Unable to reject this request."});
+  } finally { client.release(); }
+}
+
+/** Disable/reactivate only a student belonging to the authenticated Admin's institution. */
+export async function setEnrollmentGrievanceStudentAccess(req: AdminAuthenticatedRequest, res: Response) {
+  const adminId = req.admin?.adminId;
+  const institutionId = req.admin?.institutionId;
+  const active = req.body?.active;
+  const note = typeof req.body?.note === "string" ? req.body.note.trim() : "";
+  if (!adminId || !institutionId) return res.status(403).json({success:false,message:"Institution Admin access required."});
+  if (typeof active !== "boolean" || note.length < 3 || note.length > 1000) return res.status(400).json({success:false,message:"Choose an account action and provide a reason (3–1,000 characters)."});
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const target = await client.query(
+      "SELECT g.student_user_id FROM public.student_enrollment_grievances g JOIN public.student_profiles sp ON sp.user_id=g.student_user_id WHERE g.id=$1 AND g.institution_id=$2 AND sp.institution_id=$2 FOR UPDATE OF g",
+      [req.params.grievanceId,institutionId],
+    );
+    if (!target.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({success:false,message:"Student not found in your institution."}); }
+    const userId = target.rows[0].student_user_id;
+    const changed = await client.query(
+      "UPDATE public.users SET active=$2, updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",
+      [userId,active],
+    );
+    if (!changed.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({success:false,message:"Student account was not found or is deleted."}); }
+    await client.query(
+      "INSERT INTO public.audit_logs (actor_type,actor_id,actor_role,action,entity_table,entity_id,ip_address,metadata) VALUES ('ADMIN',$1,'ADMIN',$2,'users',$3,$4,$5::jsonb)",
+      [adminId,active?"ADMIN_REACTIVATED_STUDENT":"ADMIN_DISABLED_STUDENT",userId,req.ip||req.socket.remoteAddress||null,JSON.stringify({institutionId,grievanceId:req.params.grievanceId,note})],
+    );
+    await client.query(
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,from_status,to_status,note) VALUES ($1,'ADMIN',$2,'STATUS_CHANGED',$3,$3,$4)",
+      [req.params.grievanceId,adminId,"ACCOUNT_"+(active?"ENABLED":"DISABLED")+": "+note],
+    );
+    await client.query(
+      "INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ACCOUNT_STATUS','Student account access updated',$2,'/student/notifications')",
+      [userId,active?"Your Gradly student account has been reactivated.":"Your Gradly student account has been disabled. Contact your institution administrator."],
+    );
+    await client.query("COMMIT");
+    return res.json({success:true,message:active?"Student login reactivated.":"Student login disabled.",student:changed.rows[0]});
+  } catch(error) {
+    await client.query("ROLLBACK").catch(()=>undefined);
+    console.error("Admin grievance account action failed:",error);
+    return res.status(500).json({success:false,message:"Unable to update student access."});
+  } finally { client.release(); }
+}
+
+/** Super Admin action log combines grievance review events and account audit records. */
+export async function listEnrollmentGrievanceAccountActions(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin?.superAdminId) return res.status(401).json({success:false,message:"Super Admin authentication required."});
+  const grievanceId = typeof req.query.grievanceId === "string" ? req.query.grievanceId : "";
+  if (!grievanceId) return res.status(400).json({success:false,message:"A grievance ID is required."});
+  try {
+    const result = await pool.query(
+      `SELECT e.id::text AS id,e.actor_type AS "actorRole",e.actor_user_id AS "actorId",
+              e.event_type AS action,e.from_status AS "previousStatus",e.to_status AS "newStatus",
+              e.note,e.created_at AS "createdAt"
+       FROM public.student_enrollment_grievance_events e
+       WHERE e.grievance_id=$1
+       ORDER BY e.created_at DESC,e.id DESC LIMIT 100`,
+      [grievanceId],
+    );
+    return res.json({success:true,events:result.rows});
+  } catch(error) {
+    console.error("Grievance account action history failed:",error);
+    return res.status(500).json({success:false,message:"Unable to load account action history."});
+  }
+}
