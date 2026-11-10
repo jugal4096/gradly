@@ -1,21 +1,22 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import GuestOnboarding from "./GuestOnboarding";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
-type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
-type Institution = { id: string; name: string; branches: Branch[] };
-type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; semester: string; enrollment: string; admissionMode: string; admissionNumber: string; scheme: string };
-type Subject = { id: number; name: string; credits: number; grade: string };
+type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
+type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; curriculumSubjectId?: string };
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
+type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null };
+type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; id?: string | number | null };
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
 const gradeNames = Object.keys(POINTS);
-const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", semester:"", enrollment:"", admissionMode:"Regular", admissionNumber:"", scheme:"" };
+const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
   { id:"home",label:"Overview",icon:"⌂",group:"WORKSPACE" },
   { id:"sgpa",label:"SGPA calculator",icon:"∑",group:"SGPA ANALYSIS" },
@@ -87,23 +88,16 @@ export default function StudentPlatform() {
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
   const [fontFamily,setFontFamily] = useState(()=>localStorage.getItem("gradly_font_family")||"DM Sans");
   const [textSize,setTextSize] = useState(()=>Number(localStorage.getItem("gradly_text_size")||"14"));
-  const [institutions,setInstitutions] = useState<Institution[]>([]);
-  const [institutionLoading,setInstitutionLoading] = useState(true);
-  const [institutionError,setInstitutionError] = useState("");
   const [profile,setProfile] = useState<Profile>(() => {
     try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem("gradly_student_profile") || "{}") }; }
     catch { return emptyProfile; }
   });
   const [onboarding,setOnboarding] = useState(() => !isGuest && !profile.institutionId);
-  const [guestInstitutionId] = useState(() => localStorage.getItem("gradly_guest_institute") || "");
   const [guestSemester] = useState("1");
   
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
   const [guestCgpaResult,setGuestCgpaResult] = useState<number|null>(null);
   const [loginGate,setLoginGate] = useState(false);
-  const [requestOpen,setRequestOpen] = useState(false);
-  const [requestName,setRequestName] = useState("");
-  const [requestReason,setRequestReason] = useState("");
   const [notice,setNotice] = useState("");
   const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isGuest) {
@@ -137,42 +131,56 @@ export default function StudentPlatform() {
   }, [isGuest, subjects]);
 
   useEffect(() => {
-    // Guest calculators already have their selected institution ID. They do not need
-    // the full academic directory, so skip this network request entirely in guest mode.
-    if (isGuest) { setInstitutionLoading(false); return; }
-    const controller = new AbortController();
-    fetch(API+"/api/academic/institutions",{signal:controller.signal})
-      .then(async response => { const data=await response.json(); if(!response.ok) throw new Error(data.message || "Unable to load institutions."); return data; })
-      .then(data => setInstitutions(Array.isArray(data.data)?data.data:[]))
-      .catch(error => { if(error.name!=="AbortError") setInstitutionError(error instanceof Error?error.message:"Unable to load institutions."); })
-      .finally(() => setInstitutionLoading(false));
-    return () => controller.abort();
-  }, [isGuest]);
+    if (isGuest || !user) return;
+    let cancelled=false;
+    void (async()=>{
+      try {
+        const token=await user.getIdToken();
+        const headers={Authorization:"Bearer "+token};
+        const profileResponse=await fetch(API+"/api/student/profile",{headers});
+        const profileData=await profileResponse.json();
+        if(profileResponse.ok && profileData.profile && !cancelled) {
+          const p=profileData.profile;
+          const next:Profile={institutionId:p.institution_id||"",institutionName:p.institution_name||"",programId:p.program_id||"",programName:p.program_name||"",branchId:p.branch_id||"",branchName:p.branch_name||"",curriculumId:p.curriculum_id||"",semester:String(p.current_semester_number||""),enrollment:p.student_identifier||"",admissionYear:String(p.admission_year||new Date().getFullYear()),admissionMode:p.admission_mode_name||"Regular",admissionNumber:"",scheme:p.scheme_name||""};
+          setProfile(next); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false);
+        }
+        const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
+        const recordsData=await recordsResponse.json();
+        if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
+          const saved:SemesterResult[]=(recordsData.records as AcademicRecordApi[]).map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
+          setResults(saved); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
+        }
+      } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
+    })();
+    return ()=>{cancelled=true;};
+  }, [isGuest, user]);
 
+  useEffect(() => {
+    if (isGuest || !user || !profile.curriculumId || !profile.semester) return;
+    let cancelled=false;
+    void (async()=>{
+      try {
+        const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${encodeURIComponent(profile.semester)}/subjects`);
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
+        if(!cancelled && Array.isArray(data.data) && data.data.length) {
+          setSubjects((data.data as CurriculumSubjectApi[]).map((item,index)=>({id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:"A",courseCode:item.code||"",curriculumSubjectId:String(item.id||"")})));
+          setSgpa(null);
+        }
+      } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
+    })();
+    return ()=>{cancelled=true;};
+  }, [isGuest, user, profile.curriculumId, profile.semester]);
 
-  const selectedInstitution = institutions.find(item=>item.id===(isGuest ? guestInstitutionId : profile.institutionId));
-  const institutionLabel = selectedInstitution?.name || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
-  const programs = useMemo(() => {
-    const map = new Map<string,{id:string;name:string;level?:string|null}>();
-    (selectedInstitution?.branches || []).forEach(branch=>map.set(branch.program_id,{id:branch.program_id,name:branch.program_name,level:branch.program_level}));
-    return Array.from(map.values());
-  },[selectedInstitution]);
-  const branches = (selectedInstitution?.branches || []).filter(item=>!profile.programId || item.program_id===profile.programId);
   const weighted = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+POINTS[s.grade]*s.credits,0);
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const computedSgpa = countedCredits ? weighted/countedCredits : 0;
   const cgpaCredits = results.reduce((sum,r)=>sum+r.credits,0);
   const cgpaValue = cgpaCredits ? results.reduce((sum,r)=>sum+r.sgpa*r.credits,0)/cgpaCredits : 0;
+  const institutionLabel = profile.institutionName || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
   const name = user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
 
-  function saveProfile(next:Profile) {
-    setProfile(next);
-    localStorage.setItem("gradly_student_profile",JSON.stringify(next));
-    setOnboarding(false);
-    setNotice("Academic profile saved on this device. Server-side profile sync will be connected to the student-profile API.");
-  }
-  function updateProfile(patch:Partial<Profile>) { setProfile(current=>({...current,...patch})); }
   function addSubject() {
     if (isGuest && countedCredits >= 20) { setNotice("Guest mode allows a maximum of 20 credits per semester."); return; }
     setSubjects(current=>[...current,{id:Math.max(0,...current.map(s=>s.id))+1,name:isGuest?`Subject ${current.length+1}`:"",credits:isGuest?Math.min(1,Math.max(0,20-countedCredits)):3,grade:"A"}]); setSgpa(null);
@@ -181,12 +189,25 @@ export default function StudentPlatform() {
     if(!countedCredits) { setNotice("Add at least one subject with a name and positive credits."); return; }
     setSgpa(computedSgpa);
   }
-  function saveSemester() {
+  async function saveSemester() {
     if(sgpa===null) { setNotice("Calculate your SGPA before saving it."); return; }
-    const row:SemesterResult={id:crypto.randomUUID(),semester:isGuest?Number(guestSemester):(Number(profile.semester)||results.length+1),sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
+    const semesterNumber=isGuest?Number(guestSemester):(Number(profile.semester)||results.length+1);
+    const row:SemesterResult={id:crypto.randomUUID(),semester:semesterNumber,sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
+    if(!isGuest) {
+      if(!user || !profile.curriculumId) { setNotice("Save your academic profile and select a curriculum scheme before recording results."); return; }
+      try {
+        const token=await user.getIdToken();
+        const response=await fetch(API+"/api/student/academic/semesters",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({
+          semesterNumber,attemptNumber:1,courses:subjects.filter(subject=>subject.name.trim()&&subject.credits>0).map(subject=>({courseCode:subject.courseCode||"",courseName:subject.name,credits:subject.credits,gradeSymbol:subject.grade,gradePoint:POINTS[subject.grade]}))
+        })});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.message||"Unable to save semester result.");
+        row.id=data.semester.id;
+      } catch(error) { setNotice(error instanceof Error?error.message:"Unable to save semester result."); return; }
+    }
     const next=[...results.filter(item=>item.semester!==row.semester),row].sort((a,b)=>a.semester-b.semester);
     setResults(next); localStorage.setItem(isGuest?"gradly_guest_semester_results":"gradly_semester_results",JSON.stringify(next));
-    setNotice("Semester result added to your academic tracker.");
+    setNotice(isGuest?"Semester result saved on this device.":"Semester subject grades saved to your Gradly academic record.");
   }
   function navigate(next:Section) {
     if (isGuest && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
@@ -215,11 +236,6 @@ export default function StudentPlatform() {
     event.preventDefault(); if(!aiInput.trim()) return;
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
-  function submitInstitutionRequest(event:FormEvent) {
-    event.preventDefault();
-    setNotice("Your institution request form is ready. Submission will be enabled when the student institution-request endpoint is added to the backend.");
-    setRequestOpen(false);
-  }
   const remainingCredits=Math.max(0,Number(totalCredits||0)-Number(earnedCredits||0));
   const desired=Number(targetSgpa);
   const programmeName=profile.programName.toLowerCase();
@@ -232,6 +248,7 @@ export default function StudentPlatform() {
   const sgpaScenarios=buildSgpaScenarios(Number(targetSgpa),subjects);
 
   if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
+  if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
 
   return <div className={"sp-shell "+(isGuest?"sp-guest-mode":"sp-user-mode")+(theme==="dark"?" sp-dark-theme":"")} style={{fontFamily:`"${fontFamily}", sans-serif`,fontSize:`${textSize}px`}}>
     <aside id="student-workspace-menu" className={"sp-sidebar "+(mobileOpen?"open":"")}>
@@ -311,7 +328,7 @@ export default function StudentPlatform() {
 {section==="assistant"&&<><SectionTitle kicker="YOUR ACADEMIC COMPANION" title="AI chatbot" copy="Ask questions about study planning, concepts and your academic journey."/><Card className="sp-ai-card"><div className="sp-ai-head"><span>✳</span><div><b>Gradly AI</b><small>Academic assistant · preview</small></div><i/></div><div className="sp-ai-thread">{aiMessages.map((m,i)=><div className={"sp-ai-bubble "+m.role} key={i}>{m.text}</div>)}</div><form className="sp-chat-compose" onSubmit={submitAi}><input value={aiInput} onChange={e=>setAiInput(e.target.value)} placeholder="Ask an academic question…"/><button className="sp-primary">Send →</button></form><p className="sp-muted">This interface is a frontend preview. Institution-specific answers require approved college documents, a retrieval system and a connected AI service. Do not rely on this preview for official rules.</p></Card></>}
         {section==="aiStudyPlanner"&&<><SectionTitle kicker="AI ASSISTANT" title="AI study planner" copy="Create a study routine around your subjects, deadlines and available time."/><Card><div className="sp-card-head"><div><span>STUDY PLAN SETUP</span><h2>Build your weekly study plan</h2></div></div><div className="sp-inline-form"><label>Daily study time<input type="number" min="1" max="16" defaultValue="3"/></label><label>Priority subject<input placeholder="e.g. Engineering Mathematics"/></label><label>Target date<input type="date"/></label></div><div className="sp-empty compact"><span>✳</span><p>Connect the AI planner service to generate and adapt a personalised schedule. This screen is the setup interface; it will not pretend a plan was generated.</p></div></Card></>}
 
-{section==="academicManagement"&&<><SectionTitle kicker="ACADEMICS" title="Academic management" copy="Manage the academic records connected to your student profile."/><Card><div className="sp-card-head"><div><span>ACADEMIC RECORD</span><h2>Institution and programme</h2></div></div><div className="sp-profile-grid"><div><span>Institution</span><b>{profile.institutionName||selectedInstitution?.name||"Not selected"}</b></div><div><span>Programme</span><b>{profile.programName||"Not configured"}</b></div><div><span>Branch</span><b>{profile.branchName||"Not configured"}</b></div><div><span>Current semester</span><b>{profile.semester||"Not configured"}</b></div><div><span>Admission mode</span><b>{profile.admissionMode||"Not configured"}</b></div><div><span>Scheme</span><b>{profile.scheme||"Not configured"}</b></div></div><button className="sp-primary" onClick={()=>setOnboarding(true)}>Manage academic profile →</button></Card></>}
+{section==="academicManagement"&&<><SectionTitle kicker="ACADEMICS" title="Academic management" copy="Manage the academic records connected to your student profile."/><Card><div className="sp-card-head"><div><span>ACADEMIC RECORD</span><h2>Institution and programme</h2></div></div><div className="sp-profile-grid"><div><span>Institution</span><b>{profile.institutionName||"Not selected"}</b></div><div><span>Programme</span><b>{profile.programName||"Not configured"}</b></div><div><span>Branch</span><b>{profile.branchName||"Not configured"}</b></div><div><span>Current semester</span><b>{profile.semester||"Not configured"}</b></div><div><span>Admission mode</span><b>{profile.admissionMode||"Not configured"}</b></div><div><span>Scheme</span><b>{profile.scheme||"Not configured"}</b></div></div><button className="sp-primary" onClick={()=>setOnboarding(true)}>Manage academic profile →</button></Card></>}
 
 {section==="settings"&&<><SectionTitle kicker="YOUR WORKSPACE" title="Personalise Gradly" copy="Make your academic workspace comfortable, clear and easy to use."/><Card className="sp-preference-card"><div className="sp-card-head"><div><span>DISPLAY EXPERIENCE</span><h2>Choose your appearance</h2></div></div><div className="sp-theme-choices">{[{id:"light",icon:"☀",label:"Light",copy:"Bright and focused"},{id:"dark",icon:"☾",label:"Dark",copy:"Easy on the eyes"},{id:"system",icon:"◐",label:"Device",copy:"Follow your device"}].map(option=><button type="button" key={option.id} className={themeMode===option.id?"selected":""} onClick={()=>{setThemeMode(option.id as "light"|"dark"|"system");updateSetting("gradly_theme",option.id);}}><span>{option.icon}</span><strong>{option.label}</strong><small>{option.copy}</small>{themeMode===option.id&&<b>✓ Selected</b>}</button>)}</div></Card><Card className="sp-preference-card"><div className="sp-card-head"><div><span>READABILITY</span><h2>Typography</h2></div></div><div className="sp-inline-form"><label>Font family<select value={fontFamily} onChange={e=>{setFontFamily(e.target.value);updateSetting("gradly_font_family",e.target.value);}}><option>DM Sans</option><option>Manrope</option><option>Inter</option><option>Arial</option><option>Georgia</option><option>Verdana</option></select></label><label>Text size · {textSize}px<input type="range" min="12" max="20" value={textSize} onChange={e=>{setTextSize(Number(e.target.value));updateSetting("gradly_text_size",e.target.value);}}/></label></div><div className="sp-type-preview" style={{fontFamily,fontSize:textSize+"px"}}>The quick brown fox jumps over the lazy dog. <strong>Academic progress, made clearer.</strong></div><p className="sp-muted">Your appearance and typography preferences are saved in this browser.</p></Card></>}
 
@@ -320,22 +337,7 @@ export default function StudentPlatform() {
       <footer className="sp-footer"><span>© {new Date().getFullYear()} Gradly</span><span>CALCULATE · UNDERSTAND · PLAN</span><span>Built for your next chapter ✦</span></footer>
     </main>
 
-    {onboarding&&!isGuest&&<div className="sp-modal-backdrop"><section className="sp-modal"><div className="sp-modal-head"><div><span className="sp-kicker">WELCOME TO GRADLY</span><h2>Set up your academic profile</h2><p>Choose your institution and academic details to personalise your workspace.</p></div><button onClick={()=>{if(profile.institutionId)setOnboarding(false);}}>×</button></div>
-      <form onSubmit={e=>{e.preventDefault();if(!profile.institutionId||!profile.programId||!profile.branchId){setNotice("Please select your institution, programme and branch.");return;}saveProfile(profile);}}>
-        <label className="sp-field-full">Institution<select required value={profile.institutionId} onChange={e=>{const item=institutions.find(x=>x.id===e.target.value);updateProfile({...emptyProfile,institutionId:e.target.value,institutionName:item?.name||""});}}><option value="">Select institution</option>{institutions.map(i=><option key={i.id} value={i.id}>{i.name}</option>)}</select></label>
-        {institutionLoading&&<p className="sp-muted">Loading institutions from Gradly database…</p>}
-        {institutionError&&<p className="sp-error">{institutionError} Check that the Gradly API is available.</p>}
-        <label>Programme<select required disabled={!profile.institutionId} value={profile.programId} onChange={e=>{const p=programs.find(x=>x.id===e.target.value);updateProfile({programId:e.target.value,programName:p?.name||"",branchId:"",branchName:""});}}><option value="">Select programme</option>{programs.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-        <label>Branch<select required disabled={!profile.programId} value={profile.branchId} onChange={e=>{const b=branches.find(x=>x.id===e.target.value);updateProfile({branchId:e.target.value,branchName:b?.name||""});}}><option value="">Select branch</option>{branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
-        <label>Current semester<select required value={profile.semester} onChange={e=>updateProfile({semester:e.target.value})}><option value="">Select semester</option>{Array.from({length:profile.programName.toLowerCase().includes("b.tech")||profile.programName.toLowerCase().includes("btech")?8:4},(_,i)=><option key={i+1} value={String(i+1)}>Semester {i+1}</option>)}</select></label>
-        <label>Enrollment number<input required value={profile.enrollment} onChange={e=>updateProfile({enrollment:e.target.value})} placeholder="Your university enrollment"/></label>
-        <label>Admission mode<select value={profile.admissionMode} onChange={e=>updateProfile({admissionMode:e.target.value})}><option>Regular</option><option>Direct Second Year</option><option>Transfer</option><option>Other</option></select></label>
-        <label>Admission number<input value={profile.admissionNumber} onChange={e=>updateProfile({admissionNumber:e.target.value})} placeholder="Optional"/></label>
-        <label>Scheme / pattern<input value={profile.scheme} onChange={e=>updateProfile({scheme:e.target.value})} placeholder="e.g. CBCS 2022"/></label>
-        <div className="sp-modal-actions"><button type="button" className="sp-secondary" onClick={()=>setRequestOpen(true)}>College not listed?</button><button className="sp-primary" disabled={institutionLoading}>Save profile →</button></div>
-      </form>
-    </section></div>}
     {loginGate&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">GRADLY ACCOUNT</span><h2>Unlock your student workspace</h2><p>This feature is available to signed-in students. Your guest calculations remain on this device.</p></div><button onClick={()=>setLoginGate(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" onClick={()=>void loginWithGoogle()}>Continue with Google →</button><button className="sp-secondary" onClick={()=>setLoginGate(false)}>Maybe later</button></div></section></div>}
-    {requestOpen&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">INSTITUTION REQUEST</span><h2>Request an institution</h2><p>Send the institution name and context for Super Admin review.</p></div><button onClick={()=>setRequestOpen(false)}>×</button></div><form onSubmit={submitInstitutionRequest}><label>Institution name<input required value={requestName} onChange={e=>setRequestName(e.target.value)} placeholder="College or university name"/></label><label>Additional details<textarea value={requestReason} onChange={e=>setRequestReason(e.target.value)} placeholder="City, university affiliation, website…" rows={3}/></label><div className="sp-modal-actions"><button type="button" className="sp-secondary" onClick={()=>setRequestOpen(false)}>Cancel</button><button className="sp-primary">Submit request →</button></div></form></section></div>}
+
   </div>;
 }
