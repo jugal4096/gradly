@@ -5,6 +5,9 @@ import ProtectedRoute from "../features/auth/ProtectedRoute";
 import StudentPlatform from "../features/dashboard/StudentPlatform";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
+import StudentNotificationsPage from "../features/student/StudentNotificationsPage";
+import StudentSyllabusFeedbackPage from "../features/student/StudentSyllabusFeedbackPage";
+import "../features/student/student-services.css";
 
 function HomePage() {
   const { user, isGuest, loading } = useAuth();
@@ -29,6 +32,8 @@ export default function AppRoutes() {
     <Route path="/login" element={<Navigate to="/" replace />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
+    <Route path="/notifications" element={<ProtectedRoute><StudentNotificationsPage /></ProtectedRoute>} />
+    <Route path="/syllabus-feedback" element={<ProtectedRoute><StudentSyllabusFeedbackPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
 }
