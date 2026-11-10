@@ -144,8 +144,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .sp-dark-theme .sp-card h2,.sp-dark-theme .sp-card h3,.sp-dark-theme .sp-card h4,.sp-dark-theme .sp-stat-card strong,.sp-dark-theme .sp-panel h2,.sp-dark-theme .sp-panel h3,.sp-dark-theme .sp-result h3,.sp-dark-theme .sp-heading h1{color:#f5f5f5!important}
 .sp-dark-theme .sp-card p,.sp-dark-theme .sp-card small,.sp-dark-theme .sp-card label,.sp-dark-theme .sp-panel p,.sp-dark-theme .sp-panel small,.sp-dark-theme .sp-heading p{color:#aaa!important}
 .sp-dark-theme .sp-topbar{background:#111!important}
-.sp-dark-theme .sp-status,.sp-dark-theme .sp-shell input,.sp-dark-theme .sp-shell select,.sp-dark-theme .sp-shell textarea{background:#090909!important;border-color:#444!important;color:#fff!important}
-.sp-dark-theme .sp-shell button[class*="secondary"],.sp-dark-theme .sp-shell .sp-secondary,.sp-dark-theme .sp-shell .sp-quiet-btn{background:#151515!important;border-color:#555!important;color:#fff!important}
+.sp-dark-theme .sp-status,.sp-dark-theme input,.sp-dark-theme select,.sp-dark-theme textarea{background:#090909!important;border-color:#444!important;color:#fff!important}
+.sp-dark-theme button[class*="secondary"],.sp-dark-theme .sp-secondary,.sp-dark-theme .sp-quiet-btn{background:#151515!important;border-color:#555!important;color:#fff!important}
 .sp-dark-theme .sp-theme-choices button{background:#111!important;border-color:#444!important;color:#fff!important}
 .sp-dark-theme .sp-theme-choices button.selected{background:#252525!important;border-color:#fff!important}
 .sp-dark-theme .sp-footer{color:#999!important}
