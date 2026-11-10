@@ -46,6 +46,7 @@ function readProfilePayload(body: Record<string, unknown>) {
 
   if (body.pendingBacklogCount !== undefined && body.pendingBacklogCount !== null &&
       (!Number.isInteger(pendingBacklogCount) || Number(pendingBacklogCount) < 0 || Number(pendingBacklogCount) > 100)) return null;
+  if (academicStatus !== "GRADUATED" && parsedPredictedSemester !== null && currentSemesterNumber !== null && currentSemesterNumber !== undefined && Number(currentSemesterNumber) < parsedPredictedSemester && pendingBacklogCount === null) return null;
 
   const parsedTarget = targetCgpa === undefined || targetCgpa === null || targetCgpa === ""
     ? null : Number(targetCgpa);
