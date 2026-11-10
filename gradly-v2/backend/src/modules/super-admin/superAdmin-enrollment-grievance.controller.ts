@@ -211,7 +211,7 @@ export async function reviewSuperAdminEnrollmentGrievance(req: SuperAdminAuthent
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     const message = error instanceof Error ? error.message : "Unable to review this grievance.";
-    if (message.startsWith("This student") || message.startsWith("Choose") || message.startsWith("Student identifier") || message.startsWith("Enter") || message.startsWith("Another")) {
+    if (message.startsWith("This student") || message.startsWith("The student's academic profile") || message.startsWith("Choose") || message.startsWith("Student identifier") || message.startsWith("Enter") || message.startsWith("Another")) {
       return res.status(400).json({ success: false, message });
     }
     console.error("Super Admin grievance review failed:", error);
