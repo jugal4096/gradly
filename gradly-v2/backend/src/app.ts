@@ -40,6 +40,8 @@ app.use(
    BODY PARSER
    ========================================================= */
 
+// Evidence is sent as a small base64 JSON payload; raise the parser limit only for this route.
+app.use("/api/student/enrollment-grievances", express.json({ limit: "4.5mb" }));
 app.use(express.json());
 
 /* =========================================================
