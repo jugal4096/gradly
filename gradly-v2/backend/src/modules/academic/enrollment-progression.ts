@@ -15,11 +15,10 @@ export function validateEnrollmentYear(
   now: Date = new Date(),
 ): void {
   const latestStartedAdmissionYear = academicSessionStartYear(now);
-  // A direct-second-year (DSE/DSY) intake for session Y cannot begin until
-  // the FY cohort for Y-1 has completed its first year and the Y session starts.
-  // With a July session boundary, 2026-27 FY entrants become eligible for the
-  // corresponding DSE intake only from July 2027 (enrollment year 2027).
-  if (prefix === "BT" && admissionModeCode === "S" && admissionYear > latestStartedAdmissionYear) {
+  // The initial NEP DSE transition is a specific cohort boundary:
+  // the 2026-27 FY cohort can enter DSE only when the July 2027 session begins.
+  // Later not-yet-started admission years use the general future-year error.
+  if (prefix === "BT" && admissionModeCode === "S" && admissionYear === 2027 && latestStartedAdmissionYear < 2027) {
     throw new Error("DSE_ADMISSION_CYCLE_NOT_STARTED");
   }
   if (admissionYear > latestStartedAdmissionYear) {
@@ -101,7 +100,10 @@ function branchAliasKey(value: string): string | null {
   if (!normalized) return null;
   for (const group of branchAliasGroups) {
     const aliases = group.map(normalizeBranchLabel);
-    if (aliases.some(alias => normalized === alias || (alias.length >= 8 && normalized.startsWith(alias)) || (normalized.length >= 8 && alias.startsWith(normalized)))) {
+    // Only explicit normalized aliases are equivalent. Prefix matching makes
+    // distinct postgraduate specializations (for example Electrical Machines
+    // and Drives vs Electrical Power Systems) collapse into one department.
+    if (aliases.includes(normalized)) {
       return aliases[0];
     }
   }
