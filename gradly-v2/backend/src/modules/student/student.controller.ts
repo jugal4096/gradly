@@ -107,6 +107,14 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
     if (!user) return;
     const payload = readProfilePayload(req.body ?? {});
     if (!payload) return res.status(400).json({ message: "Invalid or missing student profile fields." });
+    const existing = await getStudentProfile(user.id);
+    if (!existing) return res.status(404).json({ message: "Student profile not found." });
+    const sameIdentity = existing.institution_id === payload.institutionId &&
+      existing.curriculum_id === payload.curriculumId &&
+      String(existing.student_identifier ?? "").trim().toUpperCase() === payload.studentIdentifier &&
+      Number(existing.admission_year) === payload.admissionYear &&
+      String(existing.admission_mode_name ?? "").trim().toLowerCase() === String(payload.admissionModeName ?? "").trim().toLowerCase();
+    if (!sameIdentity) return res.status(403).json({ success:false, code:"ACADEMIC_IDENTITY_LOCKED", message:"Your institution, programme, branch, specialization, curriculum, enrollment number, admission year and admission mode are locked after verification. Submit an enrollment grievance to request a correction." });
     const predictedSemesterNumber = await validateStudentProfileConfiguration(payload);
     const profile = await updateProfile({ ...payload, predictedSemesterNumber, userId: user.id });
     return res.status(200).json({ message: "Student profile updated successfully.", profile });
