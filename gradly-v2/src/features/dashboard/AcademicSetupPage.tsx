@@ -229,7 +229,7 @@ export default function AcademicSetupPage() {
     setError("");
     if (!curriculumRecheck) {
       setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]);
-      setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setExpectedDurationEnded(false); setGapAcademicYearFrom(""); setGapAcademicYearTo("");
+      setSelectedCurrentSemester(""); setPendingBacklogCount(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setExpectedDurationEnded(false); setGapAcademicYearFrom(""); setGapAcademicYearTo("");
       hasManuallySelectedSemester.current = false; setPredictionConfirmed(null);
     } else if (requestedCurriculumId) {
       setCurriculumId(requestedCurriculumId);
@@ -431,7 +431,7 @@ export default function AcademicSetupPage() {
         estimatedAcademicDelaySemesters: completed || expectedReferenceSemester === null ? null : Math.max(0, expectedReferenceSemester - Number(selectedCurrentSemester)),
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         pendingBacklogCount: needsBacklogDeclaration ? Number(pendingBacklogCount) : 0,
-        academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
+        academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
       localStorage.removeItem(`gradly_academic_setup_draft:${user.uid}`);
       navigate("/dashboard", { replace: true });
@@ -577,7 +577,6 @@ export default function AcademicSetupPage() {
                 <div className="academic-setup-prediction-reference"><span>Predicted current semester</span><strong>{adjustedExpectedSemester ? "Semester " + adjustedExpectedSemester : expectedDurationEnded ? "Expected duration completed" : "Not available"}</strong><small>Based on your enrollment details and selected admission mode</small></div>
               </div>
               {needsBacklogDeclaration && <div className="academic-setup-backlog-field"><label htmlFor="pending-backlog-count">Pending backlogs <span>(required when your selected semester is behind the prediction)</span></label><input id="pending-backlog-count" type="number" min="0" max="100" step="1" inputMode="numeric" required value={pendingBacklogCount} onChange={e => setPendingBacklogCount(e.target.value)} placeholder="Enter count · use 0 if none" /><small>This records your current backlog count; it does not change your verified programme, branch or curriculum.</small></div>}
-              </div>
               {selectedCurrentSemester && selectedCurrentSemester !== "COMPLETED" && <div className="academic-setup-delay">
                 <div className="academic-setup-delay-metrics"><div><span>Estimated academic delay</span><strong>{adjustedExpectedSemester === null ? "Not available" : academicGapYears + (academicGapYears === 1 ? " year" : " years")}</strong></div></div>
                 <p>{adjustedExpectedSemester === null ? "No expected semester is available for comparison in this session." : "Expected semester " + adjustedExpectedSemester + " is compared with your selected semester " + selectedCurrentSemester + ". Gap years are calculated automatically."}</p>
