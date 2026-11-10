@@ -109,6 +109,39 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
   }
 }
 
+export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
+  const grievanceId = typeof req.query.grievanceId === "string" ? req.query.grievanceId : "";
+  const reviewerId = typeof req.query.reviewerId === "string" ? req.query.reviewerId : "";
+  const values: unknown[] = [];
+  const where: string[] = [];
+  if (grievanceId) { values.push(grievanceId); where.push(`e.grievance_id = ${values.length}`); }
+  if (reviewerId) { values.push(reviewerId); where.push(`e.reviewer_id::text = ${values.length}`); }
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  values.push(limit);
+  try {
+    const result = await pool.query(
+      `SELECT e.id, e.grievance_id AS "grievanceId", e.reviewer_id AS "reviewerId",
+              e.reviewer_role AS "reviewerRole", e.institution_id AS "institutionId",
+              e.programme_scope AS "programmeScope", e.branch_scope AS "branchScope",
+              e.event_type AS "eventType", e.previous_status AS "previousStatus",
+              e.new_status AS "newStatus", e.old_values AS "oldValues",
+              e.new_values AS "newValues", e.decision_reason AS "decisionReason",
+              e.information_request AS "informationRequest", e.created_at AS "createdAt",
+              i.name AS institution
+       FROM public.student_enrollment_grievance_events e
+       JOIN public.institutions i ON i.id = e.institution_id
+       ${where.length ? "WHERE " + where.join(" AND ") : ""}
+       ORDER BY e.created_at DESC, e.id DESC LIMIT ${values.length}`,
+      values,
+    );
+    return res.json({ success:true, events:result.rows });
+  } catch (error) {
+    console.error("Enrollment grievance audit history failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to load reviewer decision history. Confirm the TO-09 migration has been applied." });
+  }
+}
+
 class MappingCorrectionError extends Error {}
 
 export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequest, res: Response) {
@@ -133,8 +166,12 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
   try {
     await client.query("BEGIN");
     const existing = await client.query(
-      `SELECT id, institution_id, enrollment_number FROM public.student_enrollment_grievances
-       WHERE id = $1 AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO') FOR UPDATE`,
+      `SELECT g.id, g.institution_id, g.enrollment_number, g.status, g.admin_note,
+              COALESCE(to_jsonb(sp)->>'programme_name', to_jsonb(sp)->>'program_name', to_jsonb(sp)->>'programme') AS programme_scope,
+              COALESCE(to_jsonb(sp)->>'branch_name', to_jsonb(sp)->>'branch') AS branch_scope
+       FROM public.student_enrollment_grievances g
+       LEFT JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
+       WHERE g.id = $1 AND g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') FOR UPDATE OF g`,
       [req.params.grievanceId],
     );
     if (!existing.rowCount) {
@@ -240,6 +277,25 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
        WHERE id = $1
        RETURNING id, status, admin_note AS "adminNote", updated_at AS "updatedAt"`,
       [req.params.grievanceId, status, note, superAdminId],
+    );
+    const previous = existing.rows[0];
+    const mappingSnapshot = correctionType
+      ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
+      : null;
+    await client.query(
+      `INSERT INTO public.student_enrollment_grievance_events
+       (grievance_id, reviewer_id, reviewer_role, institution_id, programme_scope, branch_scope,
+        event_type, previous_status, new_status, old_values, new_values, decision_reason, information_request)
+       VALUES ($1,$2,'SUPER_ADMIN',$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)`,
+      [
+        req.params.grievanceId, superAdminId, previous.institution_id,
+        previous.programme_scope || null, previous.branch_scope || null,
+        status === "NEEDS_INFO" ? "INFORMATION_REQUESTED" : correctionType ? "MAPPING_CORRECTED" : "DECISION_RECORDED",
+        previous.status, status,
+        JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
+        JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }),
+        note, status === "NEEDS_INFO" ? note : null,
+      ],
     );
     await client.query(
       `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
