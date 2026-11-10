@@ -57,6 +57,7 @@ export default function AcademicSetupPage() {
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [gapAcademicYearFrom, setGapAcademicYearFrom] = useState("");
   const [gapAcademicYearTo, setGapAcademicYearTo] = useState("");
+  const [grievanceReason, setGrievanceReason] = useState("");
   const [grievanceDescription, setGrievanceDescription] = useState("");
   const [grievanceAttachment, setGrievanceAttachment] = useState<File | null>(null);
   const [grievanceBusy, setGrievanceBusy] = useState(false);
@@ -377,7 +378,8 @@ export default function AcademicSetupPage() {
   async function submitEnrollmentGrievance(event: FormEvent) {
     event.preventDefault();
     if (!user || !selected) { setError("Select your institution before contacting our team."); return; }
-    if (grievanceDescription.trim().length < 10) { setError("Please describe the issue in at least 10 characters."); return; }
+    if (!grievanceReason) { setError("Select the reason that best describes the data mismatch."); return; }
+    if (grievanceDescription.trim().length > 2000) { setError("Additional comments must be 2,000 characters or fewer."); return; }
     setGrievanceBusy(true); setError("");
     try {
       const token = await user.getIdToken();
@@ -396,7 +398,8 @@ export default function AcademicSetupPage() {
         body: JSON.stringify({
           institutionId: selected.id,
           enrollmentNumber: enrollment.trim().toUpperCase(),
-          description: [grievanceDescription.trim(), "", "Detected academic details:", "Institution: " + (selected?.name || "Not available"), "Enrollment number: " + enrollment.trim().toUpperCase(), "Programme: " + (preview?.programme || "Not available"), "Branch: " + (preview?.branch || "Not available"), "Academic scheme: " + (preview?.curriculumName || preview?.scheme || "Not available"), "Admission mode: " + (confirmedAdmissionMode || "Not available")].join("\n"),
+          category: grievanceReason,
+          description: ["Reason: " + ({ INVALID_ENROLLMENT: "Enrollment number or details are incorrect", WRONG_PROGRAMME: "Programme is incorrect", WRONG_BRANCH: "Branch or specialization is incorrect", WRONG_SCHEME: "Academic scheme is incorrect", WRONG_ADMISSION_MODE: "Admission mode is incorrect", WRONG_SEMESTER: "Predicted semester is incorrect", ALREADY_REGISTERED: "I already have an existing Gradly profile", OTHER: "Other data mismatch" } as Record<string, string>)[grievanceReason], grievanceDescription.trim() ? "Additional comment: " + grievanceDescription.trim() : ""].filter(Boolean).join("\n\n") + "\n\n" + ["Detected academic details:", "Institution: " + (selected?.name || "Not available"), "Enrollment number: " + enrollment.trim().toUpperCase(), "Programme: " + (preview?.programme || "Not available"), "Branch: " + (preview?.branch || "Not available"), "Academic scheme: " + (preview?.curriculumName || preview?.scheme || "Not available"), "Admission mode: " + (confirmedAdmissionMode || "Not available")].join("\n"),
           attachmentName: grievanceAttachment?.name || "",
           attachmentType: grievanceAttachment?.type || "",
           attachmentBase64,
@@ -404,6 +407,7 @@ export default function AcademicSetupPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
+      setGrievanceReason("");
       setGrievanceDescription("");
       setGrievanceAttachment(null);
       setAppealSent(true);
@@ -592,7 +596,8 @@ export default function AcademicSetupPage() {
               <span><small>IDENTIFIED PROGRAMME</small><strong>{preview?.programme || "—"}</strong></span>
               <span><small>IDENTIFIED BRANCH</small><strong>{preview?.branch || "—"}</strong></span>
             </div>
-            <label>What looks incorrect?<textarea required minLength={10} maxLength={2000} rows={5} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Describe the mismatch in your fetched academic details…" /></label>
+            <label htmlFor="academic-mismatch-reason">Select a reason<select id="academic-mismatch-reason" required value={grievanceReason} onChange={e => setGrievanceReason(e.target.value)}><option value="">Choose the issue that best matches</option><option value="INVALID_ENROLLMENT">Enrollment number or details are incorrect</option><option value="WRONG_PROGRAMME">Programme is incorrect</option><option value="WRONG_BRANCH">Branch or specialization is incorrect</option><option value="WRONG_SCHEME">Academic scheme is incorrect</option><option value="WRONG_ADMISSION_MODE">Admission mode is incorrect</option><option value="WRONG_SEMESTER">Predicted semester is incorrect</option><option value="ALREADY_REGISTERED">I already have an existing Gradly profile</option><option value="OTHER">Other data mismatch</option></select></label>
+            <label htmlFor="academic-mismatch-comment">Additional comment <span>Optional</span><textarea id="academic-mismatch-comment" maxLength={2000} rows={4} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Add any details that may help our team understand the issue…" /></label>
             <label className="academic-setup-upload-label">Supporting document <span>Optional · PDF, JPG or PNG · Up to 5 MB</span>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={e => {
                 const file = e.target.files?.[0] || null;
