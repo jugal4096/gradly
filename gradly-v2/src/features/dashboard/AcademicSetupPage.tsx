@@ -63,7 +63,12 @@ export default function AcademicSetupPage() {
   const [proposedCorrection, setProposedCorrection] = useState("");
   const [grievanceBusy, setGrievanceBusy] = useState(false);
   const grievanceDetailsRef = useRef<HTMLDetailsElement>(null);
-  const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;proposedCorrection?:string|null;status:string;adminNote?:string|null;createdAt:string}>>([]);
+  type GrievanceEvidence = { id:string; fileName:string; mimeType:string; fileSize:number; uploadedAt:string };
+  type GrievanceEvent = { id:number; eventType:string; fromStatus?:string|null; toStatus?:string|null; note?:string|null; createdAt:string };
+  type StudentGrievance = { id:string; category:string; description:string; proposedCorrection?:string|null; status:string; adminNote?:string|null; createdAt:string; evidence:GrievanceEvidence[]; timeline:GrievanceEvent[] };
+  const [grievances, setGrievances] = useState<StudentGrievance[]>([]);
+  const [evidenceFiles, setEvidenceFiles] = useState<Record<string,File|null>>({});
+  const [evidenceBusy, setEvidenceBusy] = useState<Record<string,boolean>>({});
   const [institutionRequests, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
@@ -467,6 +472,54 @@ export default function AcademicSetupPage() {
     finally { setGrievanceBusy(false); }
   }
 
+  async function refreshGrievances(token?: string) {
+    if (!user) return;
+    const authToken = token || await user.getIdToken();
+    const response = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + authToken } });
+    const data = await response.json();
+    if (response.ok) setGrievances(Array.isArray(data.grievances) ? data.grievances : []);
+  }
+
+  async function uploadGrievanceEvidence(grievanceId: string) {
+    const file = evidenceFiles[grievanceId];
+    if (!user || !file) return;
+    if (file.size > 3 * 1024 * 1024) { setError("Evidence files must be 3 MB or smaller."); return; }
+    const allowed = ["application/pdf", "image/jpeg", "image/png"];
+    if (!allowed.includes(file.type)) { setError("Only PDF, JPG and PNG evidence files are accepted."); return; }
+    setEvidenceBusy(current => ({ ...current, [grievanceId]: true })); setError("");
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Unable to read the selected file."));
+        reader.onerror = () => reject(new Error("Unable to read the selected file."));
+        reader.readAsDataURL(file);
+      });
+      const token = await user.getIdToken();
+      const response = await fetch(API + "/api/student/enrollment-grievances/" + encodeURIComponent(grievanceId) + "/evidence", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ fileName: file.name, mimeType: file.type, dataUrl }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to upload evidence.");
+      setEvidenceFiles(current => ({ ...current, [grievanceId]: null }));
+      await refreshGrievances(token);
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to upload evidence."); }
+    finally { setEvidenceBusy(current => ({ ...current, [grievanceId]: false })); }
+  }
+
+  async function downloadGrievanceEvidence(grievanceId: string, evidence: GrievanceEvidence) {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(API + "/api/student/enrollment-grievances/" + encodeURIComponent(grievanceId) + "/evidence/" + encodeURIComponent(evidence.id), { headers: { Authorization: "Bearer " + token } });
+      if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || "Unable to download evidence."); }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a"); link.href = url; link.download = evidence.fileName; link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to download evidence."); }
+  }
+
   function prepareIdentityGrievance() {
     setGrievanceCategory("WRONG_BRANCH");
     setProposedCorrection("");
@@ -661,13 +714,25 @@ export default function AcademicSetupPage() {
             <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting…" : "Submit grievance"}</button>
           </form>
           {grievances.length > 0 && <div className="academic-setup-grievance-list">
-            <h3>Your grievance history</h3>
+            <h3>Your grievance history &amp; tracking</h3>
             {grievances.map(item=><article key={item.id}>
               <div><strong>{item.category.replace(/_/g," ")}</strong><span>{item.status.replace(/_/g," ")}</span></div>
               {item.proposedCorrection && <p><strong>Requested correction:</strong> {item.proposedCorrection}</p>}
               <p><strong>Reason:</strong> {item.description}</p>
-              {item.adminNote && <small>Admin response: {item.adminNote}</small>}
+              {item.adminNote && <p><strong>Reviewer response:</strong> {item.adminNote}</p>}
               <small>Submitted {new Date(item.createdAt).toLocaleDateString()}</small>
+              <section className="academic-setup-evidence">
+                <strong>Supporting evidence</strong>
+                {item.evidence?.length > 0 ? item.evidence.map(file=><button type="button" key={file.id} onClick={()=>void downloadGrievanceEvidence(item.id,file)}>{file.fileName} · {(file.fileSize/1024).toFixed(0)} KB · Download</button>) : <small>No evidence attached yet.</small>}
+                {(item.evidence?.length || 0) < 5 && <div className="academic-setup-evidence-upload">
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" aria-label="Choose evidence file" onChange={e=>setEvidenceFiles(current=>({...current,[item.id]:e.target.files?.[0] || null}))} />
+                  <button type="button" disabled={!evidenceFiles[item.id] || evidenceBusy[item.id]} onClick={()=>void uploadGrievanceEvidence(item.id)}>{evidenceBusy[item.id] ? "Uploading…" : "Upload evidence"}</button>
+                </div>}
+                <small>PDF, JPG or PNG · Maximum 3 MB each · Up to 5 files</small>
+              </section>
+              {item.timeline?.length > 0 && <ol className="academic-setup-grievance-timeline">
+                {item.timeline.map(event=><li key={event.id}><span>{event.eventType.replace(/_/g," ")}</span><small>{event.toStatus ? event.toStatus.replace(/_/g," ") : event.note || "Recorded"} · {new Date(event.createdAt).toLocaleString()}</small></li>)}
+              </ol>}
             </article>)}
           </div>}
         </details>
