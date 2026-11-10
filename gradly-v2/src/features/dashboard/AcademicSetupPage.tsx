@@ -708,8 +708,16 @@ export default function AcademicSetupPage() {
           </section>
         </div>}
 
-        <details ref={grievanceDetailsRef} className="academic-setup-institution-request academic-setup-grievance">
-          <summary>Having trouble with your enrollment number or academic details?</summary>
+        <section className="academic-setup-grievance-launch">
+          <div><strong>Having trouble with your enrollment number or academic details?</strong><span>Get help with incorrect enrollment, programme, branch, scheme or semester information.</span></div>
+          <button type="button" onClick={() => setGrievanceOpen(true)}>Create support request <span>↗</span></button>
+        </section>
+        {grievanceOpen && <div className="academic-setup-modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setGrievanceOpen(false); }}>
+          <section className="academic-setup-modal academic-setup-grievance-modal" role="dialog" aria-modal="true" aria-labelledby="academic-grievance-title">
+            <button type="button" className="academic-setup-modal-close" aria-label="Close" onClick={() => setGrievanceOpen(false)}>×</button>
+            <p className="academic-setup-eyebrow">STUDENT SUPPORT</p>
+            <h2 id="academic-grievance-title">Having trouble with your enrollment number or academic details?</h2>
+            <p className="academic-setup-modal-lead">Describe the issue and attach supporting documents before submitting.</p>
           <form onSubmit={submitEnrollmentGrievance}>
             <label>Issue category
               <select value={grievanceCategory} onChange={e=>setGrievanceCategory(e.target.value)}>
@@ -790,7 +798,8 @@ export default function AcademicSetupPage() {
               </ol>}
             </article>)}
           </div>}
-        </details>
+          </section>
+        </div>
       </section>
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
