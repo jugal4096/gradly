@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Download, FileText, RefreshCw, Search, ShieldCheck, CheckCircle2, Clock3, AlertCircle, X } from "lucide-react";
 import "./SuperAdminGrievanceCenter.css";
 
@@ -166,6 +167,7 @@ export default function SuperAdminGrievanceCenter() {
             <div className="sagc-correction">
               <strong>Individual student profile correction <em>Optional</em></strong>
               <p>Only apply this after verifying official documents. This changes this student's profile only; it does not modify global enrollment parsing rules or other students.</p>
+              <small className="sagc-mapping-link">For institution-wide enrollment code or parsing-rule corrections, use the <Link to="/super-admin/requests">Request Log mapping review</Link>. Those changes are separate from an individual student correction.</small>
               <label>Academic field to correct<select value={correctionField} onChange={e => { setCorrectionField(e.target.value as CorrectionField); setCorrectionValue(""); if (e.target.value) setDecision("RESOLVED"); }}><option value="">No profile change — decision only</option><option value="CURRICULUM" disabled={!selected.studentProfileId}>Programme / branch / specialization / scheme (curriculum)</option><option value="ADMISSION_MODE" disabled={!selected.studentProfileId}>Admission mode</option><option value="STUDENT_IDENTIFIER" disabled={!selected.studentProfileId}>Student identifier</option><option value="ADMISSION_YEAR" disabled={!selected.studentProfileId}>Admission year</option></select></label>
               {correctionField === "CURRICULUM" && <label>Verified institution curriculum<select value={correctionValue} onChange={e => setCorrectionValue(e.target.value)}><option value="">Select verified curriculum</option>{(selected.curriculumOptions || []).map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
               {correctionField === "ADMISSION_MODE" && <label>Verified admission mode<select value={correctionValue} onChange={e => setCorrectionValue(e.target.value)}><option value="">Select admission mode</option>{(selected.admissionModeOptions || []).map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
