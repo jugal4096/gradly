@@ -60,7 +60,9 @@ export default function AcademicSetupPage() {
   const [gapAcademicYearTo, setGapAcademicYearTo] = useState("");
   const [grievanceCategory, setGrievanceCategory] = useState("INVALID_ENROLLMENT");
   const [grievanceDescription, setGrievanceDescription] = useState("");
+  const [proposedCorrection, setProposedCorrection] = useState("");
   const [grievanceBusy, setGrievanceBusy] = useState(false);
+  const grievanceDetailsRef = useRef<HTMLDetailsElement>(null);
   const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;status:string;adminNote?:string|null;createdAt:string}>>([]);
   const [institutionRequests, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
@@ -449,11 +451,12 @@ export default function AcademicSetupPage() {
       const response = await fetch(API + "/api/student/enrollment-grievances", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: grievanceDescription.trim() }),
+        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: grievanceDescription.trim(), proposedCorrection: proposedCorrection.trim() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
       setGrievanceDescription("");
+      setProposedCorrection("");
       try {
         const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
         const listData = await listResponse.json();
@@ -461,6 +464,17 @@ export default function AcademicSetupPage() {
       } catch { /* The grievance was submitted; history can refresh on the next visit. */ }
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to submit grievance."); }
     finally { setGrievanceBusy(false); }
+  }
+
+  function prepareIdentityGrievance() {
+    setGrievanceCategory("WRONG_BRANCH");
+    setProposedCorrection("");
+    setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details.");
+    setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review.");
+    if (grievanceDetailsRef.current) {
+      grievanceDetailsRef.current.open = true;
+      grievanceDetailsRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
 
   async function submitInstitutionRequest(event: FormEvent) {
@@ -563,11 +577,11 @@ export default function AcademicSetupPage() {
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
-              {predictionConfirmed === true ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report issue</button></div> : <>
+              {predictionConfirmed === true ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={prepareIdentityGrievance}>Report issue</button></div> : <>
                 <div className="academic-setup-data-question">Is this data correct?</div>
                 <div className="academic-setup-choice-row">
                   <button type="button" className="academic-setup-choice primary-choice" onClick={() => { setPredictionConfirmed(true); setError(""); }}>✓ Yes, everything is correct</button>
-                  <button type="button" className="academic-setup-choice" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report incorrect details</button>
+                  <button type="button" className="academic-setup-choice" onClick={prepareIdentityGrievance}>Report incorrect details</button>
                 </div>
               </>}
             <section className="academic-setup-confirmation academic-setup-journey">
@@ -617,7 +631,7 @@ export default function AcademicSetupPage() {
             <span>{request.status.replace(/_/g," ")}</span>
           </div>)}
         </section>}
-        <details className="academic-setup-institution-request academic-setup-grievance">
+        <details ref={grievanceDetailsRef} className="academic-setup-institution-request academic-setup-grievance">
           <summary>Having trouble with your enrollment number or academic details?</summary>
           <form onSubmit={submitEnrollmentGrievance}>
             <label>Issue category
@@ -627,6 +641,7 @@ export default function AcademicSetupPage() {
                 <option value="WRONG_PROGRAMME">Incorrect programme / degree</option>
                 <option value="WRONG_SCHEME">Incorrect academic scheme</option>
                 <option value="WRONG_BRANCH">Incorrect branch</option>
+                <option value="WRONG_SPECIALIZATION">Incorrect M.Tech specialization</option>
                 <option value="WRONG_ADMISSION_MODE">Incorrect admission mode</option>
                 <option value="WRONG_SEMESTER">Incorrect semester prediction</option>
                 <option value="OTHER">Other enrollment issue</option>
@@ -635,9 +650,13 @@ export default function AcademicSetupPage() {
             <label>Enrollment number (if available)
               <input value={enrollment} onChange={e=>setEnrollment(e.target.value.toUpperCase())} maxLength={32} placeholder="e.g. BE23S06F007" />
             </label>
-            <label>Describe your issue
-              <textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Explain what happened so the Super Admin team can verify your record." />
+            <label>What should the correct detail be?
+              <textarea required minLength={2} maxLength={500} rows={2} value={proposedCorrection} onChange={e=>setProposedCorrection(e.target.value)} placeholder="Example: B.Tech Computer Science and Engineering; M.Tech specialization in AI" />
             </label>
+            <label>Reason for requesting this correction
+              <textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Explain why the detected detail is incorrect and how it can be verified." />
+            </label>
+            <p className="academic-setup-helper">Submitting a grievance does not change your academic profile. An authorised reviewer must verify and decide the request.</p>
             <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting…" : "Submit grievance"}</button>
           </form>
           {grievances.length > 0 && <div className="academic-setup-grievance-list">
