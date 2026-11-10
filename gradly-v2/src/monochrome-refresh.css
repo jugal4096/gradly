@@ -242,3 +242,40 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(prefers-reduced-motion:reduce){
  .academic-setup-content,.academic-setup-heading,.academic-setup-form,.academic-setup-predicted,.academic-setup-predicted-grid div,.academic-setup-predicted-grid dd{animation:none!important;transition:none!important}
 }
+
+
+/* Prominent support actions and centered modal workflows. */
+.academic-setup-support-actions{display:flex;justify-content:flex-start;margin:20px 0 0}
+.academic-setup-support-link{display:inline-flex!important;align-items:center!important;gap:11px!important;min-height:48px!important;padding:10px 15px!important;border:1px solid #c9c9c9!important;border-radius:12px!important;background:#fff!important;color:#111!important;font:800 13px/1.3 Manrope,sans-serif!important;letter-spacing:-.15px!important;text-align:left!important;cursor:pointer!important;box-shadow:0 5px 18px #00000008!important;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease!important}
+.academic-setup-support-link:hover{transform:translateY(-2px)!important;border-color:#111!important;background:#f5f5f5!important;box-shadow:0 12px 25px #00000012!important}
+.academic-setup-support-icon{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;background:#111;color:#fff;font-size:17px;font-weight:700}
+.academic-setup-support-arrow{margin-left:7px;color:#555;font-size:17px;transition:transform .2s ease}
+.academic-setup-support-link:hover .academic-setup-support-arrow{transform:translate(3px,-2px)}
+.academic-setup-appeal-link{margin:0 0 20px!important;border-color:#bdbdbd!important;background:#f8f8f8!important}
+.academic-setup-dialog-backdrop{position:fixed!important;inset:0!important;z-index:10000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:22px!important;background:rgba(0,0,0,.58)!important;backdrop-filter:blur(9px)!important;animation:academicDialogBackdrop .22s ease both!important}
+.academic-setup-dialog{position:relative!important;width:min(100%,560px)!important;max-height:min(88vh,820px)!important;overflow-y:auto!important;padding:clamp(25px,4vw,42px)!important;border:1px solid #dedede!important;border-radius:22px!important;background:#fff!important;color:#111!important;box-shadow:0 35px 100px #00000035!important;animation:academicDialogEnter .38s cubic-bezier(.16,1,.3,1) both!important}
+.academic-setup-dialog-close{position:absolute!important;top:17px!important;right:17px!important;width:36px!important;height:36px!important;display:grid!important;place-items:center!important;border:1px solid #ddd!important;border-radius:10px!important;background:#f5f5f5!important;color:#111!important;font:400 25px/1 Manrope,sans-serif!important;cursor:pointer!important;transition:background .2s,transform .2s!important}
+.academic-setup-dialog-close:hover{background:#e8e8e8!important;transform:rotate(90deg)!important}
+.academic-setup-dialog-eyebrow{margin:0 45px 12px 0!important;color:#666!important;font:800 9px/1.4 Manrope,sans-serif!important;letter-spacing:1.8px!important}
+.academic-setup-dialog h2{margin:0 40px 10px 0!important;color:#111!important;font:800 clamp(24px,4vw,32px)/1.12 Manrope,sans-serif!important;letter-spacing:-1.1px!important}
+.academic-setup-dialog-description{margin:0 0 24px!important;color:#666!important;font:500 12px/1.7 Manrope,sans-serif!important}
+.academic-setup-dialog form{display:grid!important;gap:16px!important}
+.academic-setup-dialog form label{display:grid!important;gap:7px!important;color:#222!important;font:800 11px/1.4 Manrope,sans-serif!important}
+.academic-setup-dialog form input,.academic-setup-dialog form select,.academic-setup-dialog form textarea{width:100%!important;min-width:0!important;border:1px solid #d4d4d4!important;border-radius:10px!important;background:#fff!important;color:#111!important;padding:12px 13px!important;font:500 12px/1.5 Manrope,sans-serif!important;outline:none!important}
+.academic-setup-dialog form input,.academic-setup-dialog form select{min-height:45px!important}
+.academic-setup-dialog form textarea{resize:vertical!important}
+.academic-setup-dialog form input:focus,.academic-setup-dialog form select:focus,.academic-setup-dialog form textarea:focus{border-color:#111!important;box-shadow:0 0 0 3px #11111112!important}
+.academic-setup-dialog form button{min-height:47px!important;margin-top:4px!important;padding:0 18px!important;border:1px solid #111!important;border-radius:10px!important;background:#111!important;color:#fff!important;font:800 12px Manrope,sans-serif!important;cursor:pointer!important;transition:background .2s,transform .2s!important}
+.academic-setup-dialog form button:hover:not(:disabled){background:#333!important;transform:translateY(-1px)!important}
+.academic-setup-dialog form button:disabled{opacity:.5!important;cursor:not-allowed!important}
+.academic-setup-dialog .academic-setup-request-success{padding:16px!important;border:1px solid #ddd!important;border-radius:12px!important;background:#f5f5f5!important;color:#111!important;font:800 13px/1.5 Manrope,sans-serif!important}
+.academic-setup-dialog-error{margin:16px 0 0!important;padding:11px 13px!important;border:1px solid #bbb!important;border-radius:10px!important;background:#f5f5f5!important;color:#222!important;font:600 11px/1.5 Manrope,sans-serif!important}
+.academic-setup-dialog-history{display:grid!important;gap:9px!important;margin-top:9px!important;padding-top:15px!important;border-top:1px solid #e5e5e5!important}
+.academic-setup-dialog-history>strong{color:#111!important;font:800 11px Manrope,sans-serif!important}
+.academic-setup-dialog-history article{display:flex!important;justify-content:space-between!important;gap:12px!important;padding:10px!important;border:1px solid #e5e5e5!important;border-radius:9px!important;background:#fafafa!important}
+.academic-setup-dialog-history article span{color:#222!important;font:700 10px Manrope,sans-serif!important}
+.academic-setup-dialog-history article small{color:#777!important;font:600 9px Manrope,sans-serif!important}
+@keyframes academicDialogBackdrop{from{opacity:0}to{opacity:1}}
+@keyframes academicDialogEnter{from{opacity:0;transform:translateY(22px) scale(.97);filter:blur(8px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@media(max-width:600px){.academic-setup-dialog-backdrop{padding:12px!important;align-items:flex-end!important}.academic-setup-dialog{width:100%!important;max-height:90vh!important;border-radius:20px 20px 12px 12px!important;padding:27px 20px 24px!important}.academic-setup-support-link{width:100%!important;justify-content:flex-start!important}.academic-setup-appeal-link{margin-bottom:16px!important}}
+@media(prefers-reduced-motion:reduce){.academic-setup-dialog-backdrop,.academic-setup-dialog{animation:none!important}.academic-setup-support-link,.academic-setup-dialog-close{transition:none!important}}
