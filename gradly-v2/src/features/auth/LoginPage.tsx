@@ -15,7 +15,7 @@ function GoogleMark() {
 }
 
 export default function LoginPage() {
-  const { loginWithGoogle, continueAsGuest } = useAuth();
+  const { loginWithGoogle, continueAsGuest, authError } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
@@ -79,7 +79,7 @@ export default function LoginPage() {
               <span className="choice-arrow">→</span>
             </button>
           </div>
-          {error && <p className="entry-error" role="alert">{error}</p>}
+          {(error || authError) && <p className="entry-error" role="alert">{error || authError}</p>}
           <p className="entry-assurance"><span>✧</span> No pressure. Start as a guest and sign in whenever you're ready.</p>
         </div>
 
