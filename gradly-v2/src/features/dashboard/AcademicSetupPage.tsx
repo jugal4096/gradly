@@ -124,6 +124,9 @@ export default function AcademicSetupPage() {
     void (async () => {
       try {
         const token = await user.getIdToken();
+        const grievanceResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
+        const grievanceData = await grievanceResponse.json();
+        if (grievanceResponse.ok && !cancelled) setGrievances(Array.isArray(grievanceData.grievances) ? grievanceData.grievances : []);
         const response = await fetch(API + "/api/student/profile", { headers: { Authorization: "Bearer " + token } });
         const data = await response.json();
         if (response.ok && data.profile && !cancelled) {
