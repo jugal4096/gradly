@@ -106,30 +106,46 @@ export async function uploadEnrollmentGrievanceEvidence(req: AuthenticatedReques
   const buffer = decodeEvidence(req.body?.dataUrl, mimeType);
   if (!fileName || !buffer) return res.status(400).json({ success:false, message:"Upload a valid PDF, JPG or PNG file up to 3 MB." });
   try {
-    const owned = await pool.query(
-      `SELECT id FROM public.student_enrollment_grievances
-       WHERE id = $1 AND student_user_id = $2`, [grievanceId, user.id],
-    );
-    if (!owned.rowCount) return res.status(404).json({ success:false, message:"Grievance not found." });
-    const count = await pool.query(
-      `SELECT COUNT(*)::int AS count FROM public.student_enrollment_grievance_evidence
-       WHERE grievance_id = $1 AND student_user_id = $2`, [grievanceId, user.id],
-    );
-    if (count.rows[0].count >= 5) return res.status(409).json({ success:false, message:"A maximum of five evidence files is allowed per grievance." });
-    const result = await pool.query(
-      `INSERT INTO public.student_enrollment_grievance_evidence
-       (grievance_id, student_user_id, original_filename, mime_type, file_size, file_data)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       RETURNING id, original_filename AS "fileName", mime_type AS "mimeType", file_size AS "fileSize", uploaded_at AS "uploadedAt"`,
-      [grievanceId, user.id, fileName, mimeType, buffer.length, buffer],
-    );
-    await pool.query(
-      `INSERT INTO public.student_enrollment_grievance_events
-       (grievance_id, actor_type, actor_user_id, event_type, note)
-       VALUES ($1,'STUDENT',$2,'EVIDENCE_UPLOADED',$3)`,
-      [grievanceId, user.id, `Evidence uploaded: ${fileName}`],
-    );
-    return res.status(201).json({ success:true, evidence:result.rows[0] });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const owned = await client.query(
+        `SELECT id FROM public.student_enrollment_grievances
+         WHERE id = $1 AND student_user_id = $2 FOR UPDATE`, [grievanceId, user.id],
+      );
+      if (!owned.rowCount) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ success:false, message:"Grievance not found." });
+      }
+      const count = await client.query(
+        `SELECT COUNT(*)::int AS count FROM public.student_enrollment_grievance_evidence
+         WHERE grievance_id = $1 AND student_user_id = $2`, [grievanceId, user.id],
+      );
+      if (count.rows[0].count >= 5) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({ success:false, message:"A maximum of five evidence files is allowed per grievance." });
+      }
+      const result = await client.query(
+        `INSERT INTO public.student_enrollment_grievance_evidence
+         (grievance_id, student_user_id, original_filename, mime_type, file_size, file_data)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         RETURNING id, original_filename AS "fileName", mime_type AS "mimeType", file_size AS "fileSize", uploaded_at AS "uploadedAt"`,
+        [grievanceId, user.id, fileName, mimeType, buffer.length, buffer],
+      );
+      await client.query(
+        `INSERT INTO public.student_enrollment_grievance_events
+         (grievance_id, actor_type, actor_user_id, event_type, note)
+         VALUES ($1,'STUDENT',$2,'EVIDENCE_UPLOADED',$3)`,
+        [grievanceId, user.id, `Evidence uploaded: ${fileName}`],
+      );
+      await client.query("COMMIT");
+      return res.status(201).json({ success:true, evidence:result.rows[0] });
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error("Enrollment grievance evidence upload failed:", error);
     return res.status(500).json({ success:false, message:"Unable to upload evidence. Please try again." });
