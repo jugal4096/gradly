@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { createProfile, getStudentProfile, updateProfile } from "./student.service";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 import { StudentProfileValidationError, validateStudentProfileConfiguration } from "./student-profile-validation.service";
+import { hasConfirmedAcademicIdentityChanged } from "./student-profile-identity";
 
 async function resolveStudentUser(req: AuthenticatedRequest, res: Response) {
   if (!req.firebaseUser) {
@@ -107,8 +108,32 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
     if (!user) return;
     const payload = readProfilePayload(req.body ?? {});
     if (!payload) return res.status(400).json({ message: "Invalid or missing student profile fields." });
+    const existingProfile = await getStudentProfile(user.id);
+    if (!existingProfile) return res.status(404).json({ message: "Student profile not found." });
+    if (existingProfile.academic_profile_confirmed === true) {
+      if (hasConfirmedAcademicIdentityChanged(existingProfile, payload)) {
+        return res.status(409).json({
+          success:false,
+          code:"ACADEMIC_IDENTITY_LOCKED",
+          message:"Your confirmed institution, programme, branch, scheme, enrollment number, admission year and admission mode are locked. Submit an enrollment grievance for an official correction.",
+        });
+      }
+      payload.academicProfileConfirmed = true;
+      payload.academicProfileOverrides = existingProfile.academic_profile_overrides &&
+        typeof existingProfile.academic_profile_overrides === "object" &&
+        !Array.isArray(existingProfile.academic_profile_overrides)
+        ? existingProfile.academic_profile_overrides
+        : {};
+    }
     const predictedSemesterNumber = await validateStudentProfileConfiguration(payload);
     const profile = await updateProfile({ ...payload, predictedSemesterNumber, userId: user.id });
+    if (!profile) {
+      return res.status(409).json({
+        success:false,
+        code:"ACADEMIC_IDENTITY_LOCKED",
+        message:"Your confirmed academic identity changed during this update. Reload your profile and submit an enrollment grievance for any official correction.",
+      });
+    }
     return res.status(200).json({ message: "Student profile updated successfully.", profile });
   } catch (error) {
     if (error instanceof StudentProfileValidationError) return res.status(400).json({ success:false, code:error.code, message:error.message });
