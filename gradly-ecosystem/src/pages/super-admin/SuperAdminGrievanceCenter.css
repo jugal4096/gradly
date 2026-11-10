@@ -15,3 +15,5 @@
 @media(max-width:760px){.sagc-page{padding:16px 12px}.sagc-workspace{grid-template-columns:1fr}.sagc-list{max-height:330px}.sagc-footer{flex-direction:column}.sagc-header{flex-direction:column}.sagc-header>button{align-self:flex-start}}
 @media(max-width:420px){.sagc-profile{grid-template-columns:1fr 1fr}.sagc-detail-heading{flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.sagc-header h1{animation:none}.sagc-page *{transition:none!important}}
+
+.sagc-mapping-link{display:block;color:#716987;font-size:9px;line-height:1.6}.sagc-mapping-link a{color:var(--sa-purple-deep,#5738be);font-weight:850;text-decoration:underline;text-underline-offset:2px}
