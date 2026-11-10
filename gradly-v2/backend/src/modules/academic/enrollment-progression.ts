@@ -101,7 +101,7 @@ function branchAliasKey(value: string): string | null {
   if (!normalized) return null;
   for (const group of branchAliasGroups) {
     const aliases = group.map(normalizeBranchLabel);
-    if (aliases.some(alias => normalized === alias || false)) {
+    if (aliases.some(alias => normalized === alias)) {
       return aliases[0];
     }
   }
