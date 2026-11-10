@@ -29,10 +29,10 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
   }
   if (enrollment && enrollment.length > 32) return res.status(400).json({ success:false, message:"Enrollment number is too long." });
   if (incomingEvidence.length > 5) return res.status(400).json({ success:false, message:"A maximum of five evidence files is allowed per grievance." });
-  const evidence = [];
+  const evidence: Array<{ fileName: string; mimeType: string; buffer: Buffer }> = [];
   let totalEvidenceBytes = 0;
   for (const item of incomingEvidence) {
-    const fileName = typeof item?.fileName === "string" ? item.fileName.trim().replace(/[\\\\/]/g, "_").slice(0, 180) : "";
+    const fileName = typeof item?.fileName === "string" ? item.fileName.trim().replaceAll("/", "_").replaceAll(String.fromCharCode(92), "_").slice(0, 180) : "";
     const mimeType = item?.mimeType;
     const buffer = decodeEvidence(item?.dataUrl, mimeType);
     if (!fileName || !buffer) return res.status(400).json({ success:false, message:"Each attachment must be a valid PDF, JPG or PNG file up to 3 MB." });
@@ -64,7 +64,7 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
       [user.id, institutionId, enrollment, category, description, proposedCorrection],
     );
     const grievance = result.rows[0];
-    const savedEvidence = [];
+    const savedEvidence: Array<{ id: string; fileName: string; mimeType: string; fileSize: number; uploadedAt: string }> = [];
     for (const file of evidence) {
       const saved = await client.query(
         `INSERT INTO public.student_enrollment_grievance_evidence
