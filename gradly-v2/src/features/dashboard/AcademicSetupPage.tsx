@@ -568,7 +568,7 @@ export default function AcademicSetupPage() {
             <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
             <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
             <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send institution request"}</button>
-          </form> : (appealSent ? <div className="academic-setup-request-success">✓ Your appeal has been submitted for review.</div> : <form onSubmit={submitEnrollmentGrievance}>
+          </form>) : (appealSent ? <div className="academic-setup-request-success">✓ Your appeal has been submitted for review.</div> : <form onSubmit={submitEnrollmentGrievance}>
             <label>Issue category<select value={grievanceCategory} onChange={e => setGrievanceCategory(e.target.value)}>
               <option value="INVALID_ENROLLMENT">Enrollment number marked invalid</option>
               <option value="ALREADY_REGISTERED">Enrollment number already registered</option>
