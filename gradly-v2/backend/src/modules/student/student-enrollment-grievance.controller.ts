@@ -55,10 +55,21 @@ export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res:
   const user = await studentUser(req, res); if (!user) return;
   try {
     const result = await pool.query(
-      `SELECT id, category, description, proposed_correction AS "proposedCorrection", status, admin_note AS "adminNote",
-              created_at AS "createdAt", updated_at AS "updatedAt", reviewed_at AS "reviewedAt"
-       FROM public.student_enrollment_grievances
-       WHERE student_user_id = $1 ORDER BY created_at DESC LIMIT 100`,
+      `SELECT g.id, g.category, g.description, g.proposed_correction AS "proposedCorrection",
+              g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
+              g.updated_at AS "updatedAt", g.reviewed_at AS "reviewedAt",
+              COALESCE((SELECT jsonb_agg(jsonb_build_object(
+                'id', e.id, 'fileName', e.original_filename, 'mimeType', e.mime_type,
+                'fileSize', e.file_size, 'uploadedAt', e.uploaded_at
+              ) ORDER BY e.uploaded_at) FROM public.student_enrollment_grievance_evidence e
+                WHERE e.grievance_id = g.id AND e.student_user_id = $1), '[]'::jsonb) AS evidence,
+              COALESCE((SELECT jsonb_agg(jsonb_build_object(
+                'id', ev.id, 'eventType', ev.event_type, 'fromStatus', ev.from_status,
+                'toStatus', ev.to_status, 'note', ev.note, 'createdAt', ev.created_at
+              ) ORDER BY ev.created_at) FROM public.student_enrollment_grievance_events ev
+                WHERE ev.grievance_id = g.id), '[]'::jsonb) AS timeline
+       FROM public.student_enrollment_grievances g
+       WHERE g.student_user_id = $1 ORDER BY g.created_at DESC LIMIT 100`,
       [user.id],
     );
     return res.json({ success:true, grievances:result.rows });
@@ -68,6 +79,87 @@ export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res:
   }
 }
 
+
+
+const MAX_EVIDENCE_BYTES = 3 * 1024 * 1024;
+const allowedEvidenceTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
+
+function decodeEvidence(dataUrl: unknown, mimeType: unknown) {
+  if (typeof dataUrl !== "string" || typeof mimeType !== "string" || !allowedEvidenceTypes.has(mimeType)) return null;
+  const match = /^data:(application\/pdf|image\/jpeg|image\/png);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
+  if (!match || match[1] !== mimeType) return null;
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > MAX_EVIDENCE_BYTES || buffer.toString("base64") !== match[2]) return null;
+  const valid = mimeType === "application/pdf"
+    ? buffer.subarray(0, 5).toString("ascii") === "%PDF-"
+    : mimeType === "image/png"
+      ? buffer.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))
+      : buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  return valid ? buffer : null;
+}
+
+export async function uploadEnrollmentGrievanceEvidence(req: AuthenticatedRequest, res: Response) {
+  const user = await studentUser(req, res); if (!user) return;
+  const grievanceId = req.params.grievanceId;
+  const fileName = typeof req.body?.fileName === "string" ? req.body.fileName.trim().replace(/[\\/\\\\]/g, "_").slice(0, 180) : "";
+  const mimeType = req.body?.mimeType;
+  const buffer = decodeEvidence(req.body?.dataUrl, mimeType);
+  if (!fileName || !buffer) return res.status(400).json({ success:false, message:"Upload a valid PDF, JPG or PNG file up to 3 MB." });
+  try {
+    const owned = await pool.query(
+      `SELECT id FROM public.student_enrollment_grievances
+       WHERE id = $1 AND student_user_id = $2`, [grievanceId, user.id],
+    );
+    if (!owned.rowCount) return res.status(404).json({ success:false, message:"Grievance not found." });
+    const count = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM public.student_enrollment_grievance_evidence
+       WHERE grievance_id = $1 AND student_user_id = $2`, [grievanceId, user.id],
+    );
+    if (count.rows[0].count >= 5) return res.status(409).json({ success:false, message:"A maximum of five evidence files is allowed per grievance." });
+    const result = await pool.query(
+      `INSERT INTO public.student_enrollment_grievance_evidence
+       (grievance_id, student_user_id, original_filename, mime_type, file_size, file_data)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       RETURNING id, original_filename AS "fileName", mime_type AS "mimeType", file_size AS "fileSize", uploaded_at AS "uploadedAt"`,
+      [grievanceId, user.id, fileName, mimeType, buffer.length, buffer],
+    );
+    await pool.query(
+      `INSERT INTO public.student_enrollment_grievance_events
+       (grievance_id, actor_type, actor_user_id, event_type, note)
+       VALUES ($1,'STUDENT',$2,'EVIDENCE_UPLOADED',$3)`,
+      [grievanceId, user.id, `Evidence uploaded: ${fileName}`],
+    );
+    return res.status(201).json({ success:true, evidence:result.rows[0] });
+  } catch (error) {
+    console.error("Enrollment grievance evidence upload failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to upload evidence. Please try again." });
+  }
+}
+
+export async function downloadEnrollmentGrievanceEvidence(req: AuthenticatedRequest, res: Response) {
+  const user = await studentUser(req, res); if (!user) return;
+  try {
+    const result = await pool.query(
+      `SELECT e.original_filename, e.mime_type, e.file_data
+       FROM public.student_enrollment_grievance_evidence e
+       JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id
+       WHERE e.id = $1 AND e.grievance_id = $2 AND e.student_user_id = $3
+         AND g.student_user_id = $3`,
+      [req.params.evidenceId, req.params.grievanceId, user.id],
+    );
+    if (!result.rowCount) return res.status(404).json({ success:false, message:"Evidence file not found." });
+    const file = result.rows[0];
+    const safeName = String(file.original_filename).replace(/[\\r\\n"\\\\]/g, "_");
+    res.setHeader("Content-Type", file.mime_type);
+    res.setHeader("Content-Length", file.file_data.length);
+    res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
+    res.setHeader("Cache-Control", "private, no-store");
+    return res.send(file.file_data);
+  } catch (error) {
+    console.error("Enrollment grievance evidence download failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to download evidence." });
+  }
+}
 
 export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRequest, res: Response) {
   const institutionId = req.admin?.institutionId;
