@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, FileText, RefreshCw, Search, ShieldCheck, CheckCircle2, Clock3, AlertCircle, X } from "lucide-react";
 import "./SuperAdminGrievanceCenter.css";
 
-const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\\/+$/, "").replace(/\\/api$/i, "")) + "/api";
+const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "").replace(/\/api$/i, "")) + "/api";
 type Option = { id: string; label: string };
 type Evidence = { id: string; fileName: string; mimeType: string; fileSize: number; uploadedAt: string };
 type Timeline = { id: number; actorType: string; eventType: string; fromStatus?: string | null; toStatus?: string | null; note?: string | null; createdAt: string };
@@ -19,7 +19,7 @@ type Grievance = {
   evidence: Evidence[]; timeline: Timeline[]; curriculumOptions: Option[]; admissionModeOptions: Option[];
 };
 type CorrectionField = "" | "CURRICULUM" | "ADMISSION_MODE" | "STUDENT_IDENTIFIER" | "ADMISSION_YEAR";
-const label = (value: string) => String(value || "").replace(/_/g, " ").toLowerCase().replace(/\\b\\w/g, s => s.toUpperCase());
+const label = (value: string) => String(value || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
 const date = (value?: string | null) => value ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 const size = (bytes: number) => bytes < 1024 * 1024 ? Math.max(1, Math.round(bytes / 1024)) + " KB" : (bytes / (1024 * 1024)).toFixed(1) + " MB";
 const openStatuses = ["PENDING", "IN_REVIEW", "NEEDS_INFO"];
