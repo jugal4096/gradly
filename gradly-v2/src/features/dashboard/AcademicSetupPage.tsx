@@ -794,7 +794,7 @@ export default function AcademicSetupPage() {
             </article>)}
           </div>}
           </section>
-        </div>
+        </div>}
       </section>
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
