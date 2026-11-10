@@ -60,8 +60,8 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
     );
     if (evidence) {
       await client.query(
-        `INSERT INTO public.student_enrollment_grievance_attachments
-         (grievance_id, file_name, content_type, file_size_bytes, file_data)
+        `INSERT INTO public.student_enrollment_grievance_evidence
+         (grievance_id, original_filename, mime_type, file_size, file_data)
          VALUES ($1,$2,$3,$4,$5)`,
         [result.rows[0].id, evidence.name, evidence.mime, evidence.buffer.length, evidence.buffer],
       );
@@ -81,16 +81,16 @@ export async function downloadEnrollmentGrievanceAttachmentForAdmin(req: AdminAu
   if (!req.admin?.adminId || !institutionId) return res.status(403).json({ success:false, message:"Institution Admin access required." });
   try {
     const result = await pool.query(
-      `SELECT a.file_name, a.content_type, a.file_data
-       FROM public.student_enrollment_grievance_attachments a
+      `SELECT a.original_filename, a.mime_type, a.file_data
+       FROM public.student_enrollment_grievance_evidence a
        JOIN public.student_enrollment_grievances g ON g.id = a.grievance_id
        WHERE g.id = $1 AND g.institution_id = $2 LIMIT 1`,
       [req.params.grievanceId, institutionId],
     );
     if (!result.rowCount) return res.status(404).json({ success:false, message:"Evidence file not found for this institution." });
     const file = result.rows[0];
-    res.setHeader("Content-Type", file.content_type);
-    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.file_name)}`);
+    res.setHeader("Content-Type", file.mime_type);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.original_filename)}`);
     res.setHeader("X-Content-Type-Options", "nosniff");
     return res.send(file.file_data);
   } catch (error) {
@@ -103,16 +103,16 @@ export async function downloadEnrollmentGrievanceAttachmentForSuperAdmin(req: Su
   if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
   try {
     const result = await pool.query(
-      `SELECT a.file_name, a.content_type, a.file_data
-       FROM public.student_enrollment_grievance_attachments a
+      `SELECT a.original_filename, a.mime_type, a.file_data
+       FROM public.student_enrollment_grievance_evidence a
        JOIN public.student_enrollment_grievances g ON g.id = a.grievance_id
        WHERE g.id = $1 LIMIT 1`,
       [req.params.grievanceId],
     );
     if (!result.rowCount) return res.status(404).json({ success:false, message:"Evidence file not found." });
     const file = result.rows[0];
-    res.setHeader("Content-Type", file.content_type);
-    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.file_name)}`);
+    res.setHeader("Content-Type", file.mime_type);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.original_filename)}`);
     res.setHeader("X-Content-Type-Options", "nosniff");
     return res.send(file.file_data);
   } catch (error) {
@@ -128,7 +128,7 @@ export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res:
       `SELECT id, category, description, status, admin_note AS "adminNote",
               created_at AS "createdAt", updated_at AS "updatedAt", reviewed_at AS "reviewedAt"
        FROM public.student_enrollment_grievances
-       WHERE student_user_id = $1 ORDER BY created_at DESC LIMIT 100`,
+       WHERE student_user_id = $1 ORDER BY uploaded_at DESC LIMIT 100`,
       [user.id],
     );
     return res.json({ success:true, grievances:result.rows });
@@ -147,12 +147,12 @@ export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRe
     const result = await pool.query(
       `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description,
               g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
-              g.updated_at AS "updatedAt", a.file_name AS "attachmentName", a.content_type AS "attachmentType"
+              g.updated_at AS "updatedAt", a.original_filename AS "attachmentName", a.mime_type AS "attachmentType"
        FROM public.student_enrollment_grievances g
-       LEFT JOIN public.student_enrollment_grievance_attachments a ON a.grievance_id = g.id
+       LEFT JOIN public.student_enrollment_grievance_evidence a ON a.grievance_id = g.id
        WHERE g.institution_id = $1
        ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,
-                g.created_at DESC
+                g.uploaded_at DESC
        LIMIT 300`,
       [institutionId],
     );
@@ -174,15 +174,15 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
       `SELECT g.id, g.student_user_id AS "studentUserId", g.enrollment_number AS "enrollmentNumber",
               g.category, g.description, g.status, g.admin_note AS "adminNote",
               g.created_at AS "createdAt", g.updated_at AS "updatedAt",
-              a.file_name AS "attachmentName", a.content_type AS "attachmentType",
+              a.original_filename AS "attachmentName", a.mime_type AS "attachmentType",
               i.name AS institution, to_jsonb(u)->>'email' AS "studentEmail",
               to_jsonb(u)->>'display_name' AS "studentName"
        FROM public.student_enrollment_grievances g
-       LEFT JOIN public.student_enrollment_grievance_attachments a ON a.grievance_id = g.id
+       LEFT JOIN public.student_enrollment_grievance_evidence a ON a.grievance_id = g.id
        JOIN public.institutions i ON i.id = g.institution_id
        JOIN public.users u ON u.id = g.student_user_id
        ${where.length ? "WHERE " + where.join(" AND ") : ""}
-       ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END, g.created_at DESC LIMIT 500`,
+       ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END, g.uploaded_at DESC LIMIT 500`,
       values,
     );
     return res.json({ success:true, grievances:result.rows });
@@ -212,7 +212,7 @@ export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthent
        FROM public.student_enrollment_grievance_events e
        JOIN public.institutions i ON i.id = e.institution_id
        ${query.whereSql}
-       ORDER BY e.created_at DESC, e.id DESC LIMIT ${query.limitParameter}`,
+       ORDER BY e.uploaded_at DESC, e.id DESC LIMIT ${query.limitParameter}`,
       query.values,
     );
     return res.json({ success:true, events:result.rows });
