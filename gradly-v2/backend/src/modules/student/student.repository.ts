@@ -88,13 +88,29 @@ export async function updateStudentProfile(data: CreateStudentProfileData) {
         academic_status = $9,
         graduation_year = $10,
         target_cgpa = $11,
-        academic_profile_confirmed = $12,
+        academic_profile_confirmed = student_profiles.academic_profile_confirmed OR $12,
         pending_backlog_count = $13,
         predicted_semester_number = $14,
         academic_gap_years = $15,
-        academic_profile_overrides = $16::jsonb,
+        academic_profile_overrides = CASE
+          WHEN student_profiles.academic_profile_confirmed IS TRUE THEN student_profiles.academic_profile_overrides
+          ELSE $16::jsonb
+        END,
         updated_at = NOW()
     WHERE user_id = $1
+      AND (
+        student_profiles.academic_profile_confirmed IS NOT TRUE
+        OR (
+          institution_id = $2
+          AND curriculum_id = $3
+          AND student_identifier = $6
+          AND admission_year = $7
+          AND admission_mode_id IS NOT DISTINCT FROM COALESCE(
+            $4,
+            (SELECT id FROM admission_modes WHERE LOWER(name)=LOWER($5) LIMIT 1)
+          )
+        )
+      )
     RETURNING ${returningColumns};
   `, profileValues(data));
   return result.rows[0] ?? null;
