@@ -426,3 +426,120 @@
 .theme-dark .academic-setup-external-selected{border-color:#49415f;background:#28243a;color:#c1bdd1}
 .theme-dark .academic-setup-external-selected strong{color:#c7baff}
 @media(max-width:460px){.academic-setup-external-results article{align-items:flex-start;flex-direction:column}.academic-setup-external-results article button{width:100%}}
+
+
+/* GRADLY MONOCHROME REFRESH — black/white surfaces, restrained motion, crisp fields. */
+.academic-setup-page{
+  --mono-ink:#080808;--mono-paper:#fff;--mono-muted:#707070;--mono-line:#dedede;
+  background:var(--mono-paper);color:var(--mono-ink);
+  background-image:radial-gradient(ellipse at 50% -18%,#ededed 0,transparent 54%);
+}
+.academic-setup-wrap{max-width:700px}
+.academic-setup-brand{color:#080808;letter-spacing:-1.1px}
+.academic-setup-logo{background:#080808;color:#fff;border-radius:8px;box-shadow:0 5px 0 #d9d9d9}
+.academic-setup-step{color:#777}
+.academic-setup-progress{background:#e7e7e7;height:2px}
+.academic-setup-progress span{background:#080808}
+.academic-setup-content{max-width:560px;margin-top:56px}
+.academic-setup-eyebrow{color:#777;letter-spacing:2px}
+.academic-setup-heading h1{color:#080808;font-weight:800;letter-spacing:-1.8px;text-wrap:balance}
+.academic-setup-heading h1{animation:monoTitleIn .7s cubic-bezier(.2,.8,.2,1) both}
+.academic-setup-heading h1:after{content:"";display:block;width:54px;height:3px;margin-top:13px;background:#080808;transform-origin:left;animation:monoUnderline .8s .25s ease both}
+.academic-setup-heading>p:last-child{color:#686868}
+.academic-setup-form{border:1px solid #dcdcdc;border-radius:17px;background:#fff;box-shadow:0 18px 55px #0000000a;padding:30px;transition:box-shadow .25s,border-color .25s}
+.academic-setup-form:focus-within{border-color:#888;box-shadow:0 20px 65px #00000010}
+.academic-setup-field-section>label,.academic-setup-confirm-fields label,.academic-setup-advanced-fields label,.academic-setup-institution-request label{color:#111;font-size:11px;letter-spacing:.1px}
+.academic-setup-input-wrap input,.academic-setup-enrollment-control input,
+.academic-setup-confirm-fields select,.academic-setup-advanced-fields select,
+.academic-setup-institution-request input,.academic-setup-gap-period-fields select,
+.academic-setup-grievance-form select,.academic-setup-grievance-form input,.academic-setup-grievance-form textarea{
+  border:1px solid #cfcfcf!important;border-radius:9px!important;background:#fff!important;color:#080808!important;
+  box-shadow:none!important;font:600 12px Manrope,sans-serif;transition:border-color .18s,box-shadow .18s,transform .18s;
+}
+.academic-setup-input-wrap input:focus,.academic-setup-enrollment-control input:focus,
+.academic-setup-confirm-fields select:focus,.academic-setup-advanced-fields select:focus,
+.academic-setup-institution-request input:focus,.academic-setup-gap-period-fields select:focus,
+.academic-setup-grievance-form select:focus,.academic-setup-grievance-form input:focus,.academic-setup-grievance-form textarea:focus{
+  outline:none;border-color:#080808!important;box-shadow:0 0 0 3px #00000012!important;
+}
+.academic-setup-input-wrap input::placeholder,.academic-setup-enrollment-control input::placeholder{color:#999}
+.academic-setup-results{border-color:#d7d7d7;box-shadow:0 18px 40px #00000012}
+.academic-setup-results button{background:#fff;color:#111;border-color:#eee}
+.academic-setup-results button:hover{background:#f4f4f4}
+.academic-setup-results small,.academic-setup-helper{color:#777}
+.academic-setup-selected{border-color:#cfcfcf;background:#f7f7f7;color:#111}
+.academic-setup-selected-check{background:#080808;color:#fff}
+.academic-setup-selected button,.academic-setup-advanced summary,.academic-setup-institution-request summary{color:#111}
+.enrollment-section,.academic-setup-details,.academic-setup-advanced{border-color:#e5e5e5}
+.academic-setup-enrollment-control button,.academic-setup-primary,.academic-setup-form button[type="submit"]{
+  background:#080808;color:#fff;border:1px solid #080808;border-radius:8px;
+  transition:transform .18s,background .18s,box-shadow .18s;
+}
+.academic-setup-enrollment-control button:hover,.academic-setup-form button[type="submit"]:hover{background:#303030;box-shadow:0 7px 18px #00000020;transform:translateY(-1px)}
+.academic-setup-details h2,.academic-setup-progression h2,.academic-setup-confirmation h2{color:#080808}
+.academic-setup-details dt,.academic-setup-progression-note span,.academic-setup-confirmation-heading p{color:#777}
+.academic-setup-details dd,.academic-setup-progression-note strong,.academic-setup-completion strong{color:#111}
+.academic-setup-progression,.academic-setup-gap-period{background:#f6f6f6;border-color:#dedede}
+.academic-setup-progression-icon{background:#111;color:#fff}
+.academic-setup-progression-title p,.academic-setup-progression-note small,.academic-setup-completion p{color:#707070}
+.academic-setup-progression-note{border-color:#ddd}
+.academic-setup-confirmation{border-color:#ddd}
+.academic-setup-identification-success{color:#222}
+.academic-setup-identification-success span{background:#111;color:#fff}
+.academic-setup-auto-tag{background:#111!important;color:#fff!important}
+.academic-setup-predicted{border-color:#d8d8d8;background:#fafafa}
+.academic-setup-predicted-heading h2,.academic-setup-predicted-grid dd{color:#111}
+.academic-setup-predicted-heading p,.academic-setup-predicted-grid dt{color:#777}
+.academic-setup-predicted-grid>div{border-color:#e5e5e5}
+.academic-setup-gap-period-heading strong{color:#111}
+.academic-setup-gap-period-heading span,.academic-setup-gap-period-fields label{color:#666}
+.academic-setup-footer{color:#888;border-color:#e5e5e5}
+.academic-setup-theme-toggle{width:34px;height:34px;border:1px solid #d2d2d2;border-radius:50%;background:#fff;color:#111;transition:transform .2s,background .2s}
+.academic-setup-theme-toggle:hover{transform:rotate(-12deg);background:#eee}
+.academic-setup-error{background:#f6f6f6!important;border-color:#aaa!important;color:#111!important}
+.academic-setup-error>span{background:#111!important;color:#fff!important}
+.academic-setup-institution-request,.academic-setup-grievance-form,.academic-setup-grievance-list article{border-color:#ddd!important;background:#fafafa!important}
+.academic-setup-institution-request button,.academic-setup-grievance-form button{background:#080808!important;color:#fff!important}
+.academic-setup-history-fields,.academic-setup-grievance-list article{color:#111}
+.academic-setup-theme-toggle:focus-visible,.academic-setup-form button:focus-visible,.academic-setup-results button:focus-visible{outline:2px solid #111;outline-offset:3px}
+@keyframes monoTitleIn{from{opacity:0;transform:translateY(12px);filter:blur(4px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes monoUnderline{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.theme-dark.academic-setup-page{
+  --mono-ink:#f5f5f5;--mono-paper:#090909;--mono-muted:#aaa;--mono-line:#333;
+  background:#090909;color:#f5f5f5;background-image:radial-gradient(ellipse at 50% -18%,#242424 0,transparent 56%);
+}
+.theme-dark .academic-setup-brand,.theme-dark .academic-setup-heading h1,
+.theme-dark .academic-setup-details h2,.theme-dark .academic-setup-progression h2,
+.theme-dark .academic-setup-confirmation h2,.theme-dark .academic-setup-details dd,
+.theme-dark .academic-setup-predicted-heading h2,.theme-dark .academic-setup-predicted-grid dd{color:#f5f5f5}
+.theme-dark .academic-setup-logo,.theme-dark .academic-setup-progress span,
+.theme-dark .academic-setup-identification-success span,.theme-dark .academic-setup-progression-icon{background:#f5f5f5;color:#080808}
+.theme-dark .academic-setup-progress{background:#333}
+.theme-dark .academic-setup-form,.theme-dark .academic-setup-results,
+.theme-dark .academic-setup-results button,.theme-dark .academic-setup-theme-toggle{background:#111;color:#f5f5f5;border-color:#383838}
+.theme-dark .academic-setup-form{box-shadow:0 18px 55px #0008}
+.theme-dark .academic-setup-field-section>label,.theme-dark .academic-setup-confirm-fields label,
+.theme-dark .academic-setup-advanced-fields label,.theme-dark .academic-setup-institution-request label{color:#eee}
+.theme-dark .academic-setup-input-wrap input,.theme-dark .academic-setup-enrollment-control input,
+.theme-dark .academic-setup-confirm-fields select,.theme-dark .academic-setup-advanced-fields select,
+.theme-dark .academic-setup-institution-request input,.theme-dark .academic-setup-gap-period-fields select,
+.theme-dark .academic-setup-grievance-form select,.theme-dark .academic-setup-grievance-form input,
+.theme-dark .academic-setup-grievance-form textarea{background:#080808!important;color:#f5f5f5!important;border-color:#444!important}
+.theme-dark .academic-setup-results button:hover{background:#222}
+.theme-dark .academic-setup-selected,.theme-dark .academic-setup-progression,
+.theme-dark .academic-setup-gap-period,.theme-dark .academic-setup-predicted,
+.theme-dark .academic-setup-institution-request,.theme-dark .academic-setup-grievance-form,
+.theme-dark .academic-setup-grievance-list article{background:#151515!important;border-color:#393939!important;color:#eee}
+.theme-dark .academic-setup-selected-check,.theme-dark .academic-setup-auto-tag{background:#f5f5f5!important;color:#080808!important}
+.theme-dark .academic-setup-heading>p:last-child,.theme-dark .academic-setup-helper,
+.theme-dark .academic-setup-details dt,.theme-dark .academic-setup-progression-note span,
+.theme-dark .academic-setup-confirmation-heading p,.theme-dark .academic-setup-predicted-heading p,
+.theme-dark .academic-setup-predicted-grid dt,.theme-dark .academic-setup-gap-period-heading span,
+.theme-dark .academic-setup-gap-period-fields label{color:#aaa}
+.theme-dark .academic-setup-details dl>div,.theme-dark .academic-setup-predicted-grid>div,
+.theme-dark .academic-setup-progression-note,.theme-dark .academic-setup-footer{border-color:#333}
+.theme-dark .academic-setup-enrollment-control button,.theme-dark .academic-setup-form button[type="submit"],
+.theme-dark .academic-setup-institution-request button,.theme-dark .academic-setup-grievance-form button{background:#f5f5f5!important;color:#080808!important;border-color:#f5f5f5!important}
+.theme-dark .academic-setup-error{background:#1b1b1b!important;border-color:#666!important;color:#fff!important}
+@media(max-width:600px){.academic-setup-content{margin-top:38px}.academic-setup-form{padding:21px 17px}.academic-setup-heading h1{letter-spacing:-1.2px}}
+@media(prefers-reduced-motion:reduce){.academic-setup-heading h1,.academic-setup-heading h1:after{animation:none!important}.academic-setup-form,.academic-setup-theme-toggle,.academic-setup-enrollment-control button{transition:none!important}}
