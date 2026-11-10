@@ -8,7 +8,7 @@ import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
   const { user, isGuest, loading } = useAuth();
-  if (loading) return <LoginPage />;
+  if (loading) return <main className="route-loading" role="status">Restoring your Gradly session…</main>;
   if (user || isGuest) return <Navigate to="/dashboard" replace />;
   return <LoginPage />;
 }
