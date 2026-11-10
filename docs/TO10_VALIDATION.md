@@ -30,7 +30,7 @@ Validate the academic onboarding and enrollment-integrity workflow across the St
 | Super Admin permissions | Source-level tests verify authenticated reviewer-history route | Added; execution pending |
 | Concurrent reviewer decisions | Source inspection confirms transaction + `SELECT ... FOR UPDATE` on open grievances; competing requests should not both resolve the same open record | Source contract only; real PostgreSQL concurrency test pending |
 | Immutable audit history | Migration/source contract tests verify append-only trigger and transactional event write | Added; execution pending |
-| Secure appeal evidence | No evidence-upload/storage/retrieval route or evidence table was found in the inspected grievance implementation; the current grievance stores category and description only | **Release blocker — not implemented/verified** |
+| Secure appeal evidence | No evidence-upload/storage/retrieval route or evidence table was found in the inspected grievance implementation; the grievance record contains category, description, status and a single admin note, but no evidence metadata or object-storage integration | **Release blocker — not implemented/verified** |
 | Additional-document conversation | `NEEDS_INFO` currently stores a single admin note; no threaded student/reviewer conversation was found | **Release blocker — not implemented/verified** |
 | Student App and Ecosystem lint/build | Existing GitHub workflow runs lint and production builds for both frontends | CI run pending |
 | Backend regression suite | Existing GitHub workflow runs `npm test`; expanded script now includes TO-10 regression tests | CI run pending |
