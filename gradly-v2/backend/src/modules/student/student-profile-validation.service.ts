@@ -112,6 +112,24 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
     if (!branchMatches) {
       throw new StudentProfileValidationError("BRANCH_CODE_MISMATCH", "Selected branch does not match the configured enrollment mapping. If your institution uses a different code structure, request an enrollment mapping review.");
     }
+    if (parsed.prefix === "MT") {
+      if (!curriculum.specialization_name || !curriculum.specialization_code) {
+        throw new StudentProfileValidationError("MTECH_SPECIALIZATION_REQUIRED", "The selected M.Tech curriculum must be linked to a configured specialization. Ask your institution administrator to configure it.");
+      }
+      const specializationMatches = await pool.query(
+        "SELECT sp.id, sp.name, sp.code, sp.branch_id FROM public.specializations sp WHERE sp.program_id = (SELECT b.program_id FROM public.branches b WHERE b.id = $1) AND COALESCE(sp.active, TRUE) = TRUE",
+        [curriculum.branch_id],
+      );
+      const matchingSpecializations = specializationMatches.rows.filter((item: { id:string; name:string; code:string; branch_id:string|null }) =>
+        item.branch_id === curriculum.branch_id && enrollmentBranchMatches("MT", resolvedBranchName || "", {
+          name: curriculum.branch_name, code: curriculum.branch_code ?? null,
+          specializationName: item.name, specializationCode: item.code,
+        }),
+      );
+      if (matchingSpecializations.length !== 1 || matchingSpecializations[0].id !== curriculum.specialization_id) {
+        throw new StudentProfileValidationError("MTECH_SPECIALIZATION_MISMATCH", "The M.Tech specialization encoded in your enrollment number does not match the selected curriculum. The institutional specialization mapping must be reviewed.");
+      }
+    }
   }
   const modeResult = await pool.query(
     `SELECT em.mode_name, em.entry_semester
