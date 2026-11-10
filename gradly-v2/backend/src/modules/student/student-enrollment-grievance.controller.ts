@@ -20,7 +20,7 @@ async function studentUser(req: AuthenticatedRequest, res: Response) {
 function decodeEvidence(body: Record<string, unknown>) {
   const raw = typeof body.attachmentBase64 === "string" ? body.attachmentBase64 : "";
   if (!raw) return null;
-  const name = typeof body.attachmentName === "string" ? body.attachmentName.trim().replace(/[\\/\\r\\n\\0]/g, "_").slice(0, 255) : "";
+  const name = typeof body.attachmentName === "string" ? body.attachmentName.trim().replaceAll("/", "_").replaceAll("\\", "_").replace(/[\r\n\0]/g, "_").slice(0, 255) : "";
   const mime = typeof body.attachmentType === "string" ? body.attachmentType.toLowerCase() : "";
   if (!name || !["application/pdf", "image/jpeg", "image/png"].includes(mime)) {
     throw new Error("Attach a PDF, JPG or PNG document.");
