@@ -53,6 +53,7 @@ export default function AdminDashboard() {
     {to:"/admin/dashboard",label:"Overview",icon:LayoutDashboard,active:true},
     {to:"/admin/curriculum",label:"My curriculum",icon:BookOpen},
     {to:"/admin/requests",label:"Change requests",icon:ClipboardList,badge:pending},
+    {to:"/admin/grievances",label:"Grievance centre",icon:ShieldCheck},
     {to:"/admin/notifications",label:"Notifications",icon:Bell,badge:unread},
     {to:"/admin/activity",label:"User activity",icon:Users},
     {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
@@ -83,6 +84,7 @@ export default function AdminDashboard() {
         <section className="ad-section"><div className="ad-section-heading"><div><span className="ad-section-kicker">QUICK ACCESS</span><h2>What would you like to do?</h2><p>Common tasks for department administrators.</p></div></div><div className="ad-quick-grid">
           <Link to="/admin/curriculum" className="ad-quick-card"><span><BookOpen size={20}/></span><strong>Review curriculum</strong><p>Find subjects, semester allocation, credits and schemes in your assigned department.</p><b>Open curriculum <ArrowRight size={14}/></b></Link>
           <Link to="/admin/requests" className="ad-quick-card"><span><ClipboardList size={20}/></span><strong>Request a subject change</strong><p>Submit add, remove or modify proposals for Super Admin review.</p><b>Manage requests <ArrowRight size={14}/></b></Link>
+          <Link to="/admin/grievances" className="ad-quick-card"><span><ShieldCheck size={20}/></span><strong>Student grievance centre</strong><p>Review academic identity appeals, inspect proof documents and send decisions to students.</p><b>Open grievance centre <ArrowRight size={14}/></b></Link>
           <Link to="/admin/notifications" className="ad-quick-card"><span><Bell size={20}/></span><strong>Super Admin inbox</strong><p>Read official announcements and action notes sent to your account.</p><b>View messages <ArrowRight size={14}/></b></Link>
           <Link to="/admin/activity" className="ad-quick-card"><span><Users size={20}/></span><strong>Anonymous user activity</strong><p>View aggregate logged-in and guest counts for your assigned department, without personal data.</p><b>View counts <ArrowRight size={14}/></b></Link>
           <Link to="/admin/feedback" className="ad-quick-card"><span><MessageSquareText size={20}/></span><strong>Student syllabus feedback</strong><p>Review student requests and forward proposed changes to Super Admin.</p><b>Review feedback <ArrowRight size={14}/></b></Link>
