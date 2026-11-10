@@ -63,7 +63,7 @@ export default function AcademicSetupPage() {
   const [proposedCorrection, setProposedCorrection] = useState("");
   const [grievanceBusy, setGrievanceBusy] = useState(false);
   const grievanceDetailsRef = useRef<HTMLDetailsElement>(null);
-  const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;status:string;adminNote?:string|null;createdAt:string}>>([]);
+  const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;proposedCorrection?:string|null;status:string;adminNote?:string|null;createdAt:string}>>([]);
   const [institutionRequests, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
@@ -153,7 +153,7 @@ export default function AcademicSetupPage() {
           enrollment?: string; preview?: EnrollmentPreview | null; predictionConfirmed?: boolean | null;
           confirmedAdmissionMode?: string; selectedCurrentSemester?: string; expectedSemester?: number | null;
           expectedDurationEnded?: boolean; gapAcademicYearFrom?: string; gapAcademicYearTo?: string; pendingBacklogCount?: string;
-          grievanceCategory?: string; grievanceDescription?: string;
+          grievanceCategory?: string; grievanceDescription?: string; proposedCorrection?: string;
         };
         if (draft.selected) setSelected(draft.selected);
         if (draft.query) setQuery(draft.query);
@@ -178,6 +178,7 @@ export default function AcademicSetupPage() {
         if (draft.pendingBacklogCount !== undefined) setPendingBacklogCount(draft.pendingBacklogCount);
         if (draft.grievanceCategory) setGrievanceCategory(draft.grievanceCategory);
         if (draft.grievanceDescription) setGrievanceDescription(draft.grievanceDescription);
+        if (draft.proposedCorrection) setProposedCorrection(draft.proposedCorrection);
       }
     } catch {
       localStorage.removeItem(key);
@@ -193,7 +194,7 @@ export default function AcademicSetupPage() {
       selected, query, programId, branchId, curricula, curriculumId, admissionModes,
       enrollment, preview, predictionConfirmed, confirmedAdmissionMode,
       selectedCurrentSemester, expectedSemester, expectedDurationEnded,
-      gapAcademicYearFrom, gapAcademicYearTo, pendingBacklogCount, grievanceCategory, grievanceDescription,
+      gapAcademicYearFrom, gapAcademicYearTo, pendingBacklogCount, grievanceCategory, grievanceDescription, proposedCorrection,
     };
     if (!selected && !query && !enrollment && !preview) {
       localStorage.removeItem(key);
@@ -204,7 +205,7 @@ export default function AcademicSetupPage() {
     user, draftRestored, selected, query, programId, branchId, curricula, curriculumId,
     admissionModes, enrollment, preview, predictionConfirmed, confirmedAdmissionMode,
     selectedCurrentSemester, expectedSemester, expectedDurationEnded, gapAcademicYearFrom,
-    gapAcademicYearTo, pendingBacklogCount, grievanceCategory, grievanceDescription,
+    gapAcademicYearTo, pendingBacklogCount, grievanceCategory, grievanceDescription, proposedCorrection,
   ]);
 
   useEffect(() => {
@@ -663,7 +664,8 @@ export default function AcademicSetupPage() {
             <h3>Your grievance history</h3>
             {grievances.map(item=><article key={item.id}>
               <div><strong>{item.category.replace(/_/g," ")}</strong><span>{item.status.replace(/_/g," ")}</span></div>
-              <p>{item.description}</p>
+              {item.proposedCorrection && <p><strong>Requested correction:</strong> {item.proposedCorrection}</p>}
+              <p><strong>Reason:</strong> {item.description}</p>
               {item.adminNote && <small>Admin response: {item.adminNote}</small>}
               <small>Submitted {new Date(item.createdAt).toLocaleDateString()}</small>
             </article>)}
