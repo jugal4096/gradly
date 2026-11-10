@@ -5,6 +5,7 @@ import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admi
 import { pool } from "../../config/database";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 import { isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber } from "../academic/enrollment-progression";
+import { buildEnrollmentGrievanceAuditQuery } from "../academic/enrollment-grievance-audit-query";
 
 const categories = new Set(["INVALID_ENROLLMENT", "ALREADY_REGISTERED", "WRONG_PROGRAMME", "WRONG_SCHEME", "WRONG_BRANCH", "WRONG_ADMISSION_MODE", "WRONG_SEMESTER", "OTHER"]);
 const reviewStatuses = new Set(["IN_REVIEW", "NEEDS_INFO", "RESOLVED", "REJECTED"]);
@@ -111,14 +112,11 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
 
 export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
   if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
-  const grievanceId = typeof req.query.grievanceId === "string" ? req.query.grievanceId : "";
-  const reviewerId = typeof req.query.reviewerId === "string" ? req.query.reviewerId : "";
-  const values: unknown[] = [];
-  const where: string[] = [];
-  if (grievanceId) { values.push(grievanceId); where.push(`e.grievance_id = ${values.length}`); }
-  if (reviewerId) { values.push(reviewerId); where.push(`e.reviewer_id::text = ${values.length}`); }
-  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
-  values.push(limit);
+  const query = buildEnrollmentGrievanceAuditQuery({
+    grievanceId: typeof req.query.grievanceId === "string" ? req.query.grievanceId : "",
+    reviewerId: typeof req.query.reviewerId === "string" ? req.query.reviewerId : "",
+    limit: Number(req.query.limit),
+  });
   try {
     const result = await pool.query(
       `SELECT e.id, e.grievance_id AS "grievanceId", e.reviewer_id AS "reviewerId",
@@ -131,9 +129,9 @@ export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthent
               i.name AS institution
        FROM public.student_enrollment_grievance_events e
        JOIN public.institutions i ON i.id = e.institution_id
-       ${where.length ? "WHERE " + where.join(" AND ") : ""}
-       ORDER BY e.created_at DESC, e.id DESC LIMIT ${values.length}`,
-      values,
+       ${query.whereSql}
+       ORDER BY e.created_at DESC, e.id DESC LIMIT ${query.limitParameter}`,
+      query.values,
     );
     return res.json({ success:true, events:result.rows });
   } catch (error) {
