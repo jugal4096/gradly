@@ -461,8 +461,9 @@ export default function AcademicSetupPage() {
               {searching && <span className="academic-setup-search-spinner" />}
             </div>
             {searching && <small className="academic-setup-helper">Searching institutions…</small>}
-            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution below.</small>}
+            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution here.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
+            {!selected && <div className="academic-setup-support-actions"><button type="button" className="academic-setup-support-link" onClick={() => { setRequestSent(false); setSupportModal("institution"); }}><span className="academic-setup-support-icon">＋</span><span>Can't find your institution?</span><span className="academic-setup-support-arrow">↗</span></button></div>}
           </section>
 
           {selected && <section className="academic-setup-field-section enrollment-section">
@@ -503,7 +504,7 @@ export default function AcademicSetupPage() {
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
                 <button type="button" className="academic-setup-support-link academic-setup-appeal-link" onClick={() => { setAppealSent(false); setSupportModal("appeal"); }}>
                 <span className="academic-setup-support-icon">↗</span>
-                <span>Appeal against identified academic data</span>
+                <span>Apply to appeal against fetched data</span>
                 <span className="academic-setup-support-arrow">→</span>
               </button>
               <div className="academic-setup-data-question">Is this data correct?</div>
@@ -553,13 +554,7 @@ export default function AcademicSetupPage() {
         </form>
 
         {!selected && <p className="academic-setup-first-step-note">Start by selecting your college or university. Your enrollment number comes next.</p>}
-        {!selected && <div className="academic-setup-support-actions">
-          <button type="button" className="academic-setup-support-link" onClick={() => { setRequestSent(false); setSupportModal("institution"); }}>
-            <span className="academic-setup-support-icon">＋</span>
-            <span>Can't find your institution?</span>
-            <span className="academic-setup-support-arrow">↗</span>
-          </button>
-        </div>}
+
 
         </div>
       </section>
