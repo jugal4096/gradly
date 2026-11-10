@@ -52,14 +52,14 @@ async function resolveAdminScope(req: AdminAuthenticatedRequest, res: Response):
 
 function addAcademicScope(scope: AdminScope, values: unknown[], alias = "c") {
   values.push(scope.institutionId);
-  let where = `g.institution_id = ${values.length}`;
+  let where = `g.institution_id = $${values.length}`;
   if (scope.programId) {
     values.push(scope.programId);
-    where += ` AND COALESCE(${alias}.program_id, mapped.program_id) = ${values.length}`;
+    where += ` AND COALESCE(${alias}.program_id, mapped.program_id) = $${values.length}`;
   }
   if (scope.branchId) {
     values.push(scope.branchId);
-    where += ` AND COALESCE(${alias}.branch_id, mapped.branch_id) = ${values.length}`;
+    where += ` AND COALESCE(${alias}.branch_id, mapped.branch_id) = $${values.length}`;
   }
   return where;
 }
