@@ -41,7 +41,7 @@ app.use(
    ========================================================= */
 
 // Evidence is sent as a small base64 JSON payload; raise the parser limit only for this route.
-app.use("/api/student/enrollment-grievances", express.json({ limit: "4.5mb" }));
+app.use("/api/student/enrollment-grievances", express.json({ limit: "15mb" }));
 app.use(express.json());
 
 /* =========================================================
