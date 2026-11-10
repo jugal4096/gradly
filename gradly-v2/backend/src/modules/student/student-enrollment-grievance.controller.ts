@@ -6,7 +6,7 @@ import { pool } from "../../config/database";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 import { isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber } from "../academic/enrollment-progression";
 
-const categories = new Set(["INVALID_ENROLLMENT", "ALREADY_REGISTERED", "WRONG_PROGRAMME", "WRONG_SCHEME", "WRONG_BRANCH", "WRONG_ADMISSION_MODE", "WRONG_SEMESTER", "OTHER"]);
+const categories = new Set(["INVALID_ENROLLMENT", "ALREADY_REGISTERED", "WRONG_PROGRAMME", "WRONG_SCHEME", "WRONG_BRANCH", "WRONG_SPECIALIZATION", "WRONG_ADMISSION_MODE", "WRONG_SEMESTER", "OTHER"]);
 const reviewStatuses = new Set(["IN_REVIEW", "NEEDS_INFO", "RESOLVED", "REJECTED"]);
 
 async function studentUser(req: AuthenticatedRequest, res: Response) {
@@ -22,17 +22,27 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
   const enrollment = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
   const category = typeof req.body?.category === "string" ? req.body.category : "";
   const description = typeof req.body?.description === "string" ? req.body.description.trim() : "";
-  if (!institutionId || !categories.has(category) || description.length < 10 || description.length > 3000) {
-    return res.status(400).json({ success:false, message:"Select an issue category and provide a description of 10–3,000 characters." });
+  const proposedCorrection = typeof req.body?.proposedCorrection === "string" ? req.body.proposedCorrection.trim() : "";
+  if (!institutionId || !categories.has(category) || proposedCorrection.length < 2 || proposedCorrection.length > 500 || description.length < 10 || description.length > 3000) {
+    return res.status(400).json({ success:false, message:"Select an issue category, state the requested correction (2–500 characters), and explain the reason (10–3,000 characters)." });
   }
   if (enrollment && enrollment.length > 32) return res.status(400).json({ success:false, message:"Enrollment number is too long." });
   try {
+    const duplicate = await pool.query(
+      `SELECT id FROM public.student_enrollment_grievances
+       WHERE student_user_id = $1 AND institution_id = $2
+         AND COALESCE(enrollment_number, '') = $3 AND category = $4
+         AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO')
+       ORDER BY created_at DESC LIMIT 1`,
+      [user.id, institutionId, enrollment, category],
+    );
+    if (duplicate.rowCount) return res.status(409).json({ success:false, code:"GRIEVANCE_ALREADY_OPEN", message:"You already have an open grievance for this issue. Check your grievance history for its status." });
     const result = await pool.query(
       `INSERT INTO public.student_enrollment_grievances
-       (student_user_id, institution_id, enrollment_number, category, description)
-       VALUES ($1,$2,NULLIF($3,''),$4,$5)
-       RETURNING id, category, description, status, created_at AS "createdAt"`,
-      [user.id, institutionId, enrollment, category, description],
+       (student_user_id, institution_id, enrollment_number, category, description, proposed_correction)
+       VALUES ($1,$2,NULLIF($3,''),$4,$5,$6)
+       RETURNING id, category, description, proposed_correction AS "proposedCorrection", status, created_at AS "createdAt"`,
+      [user.id, institutionId, enrollment, category, description, proposedCorrection],
     );
     return res.status(201).json({ success:true, message:"Your enrollment grievance has been submitted.", grievance:result.rows[0] });
   } catch (error) {
@@ -45,7 +55,7 @@ export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res:
   const user = await studentUser(req, res); if (!user) return;
   try {
     const result = await pool.query(
-      `SELECT id, category, description, status, admin_note AS "adminNote",
+      `SELECT id, category, description, proposed_correction AS "proposedCorrection", status, admin_note AS "adminNote",
               created_at AS "createdAt", updated_at AS "updatedAt", reviewed_at AS "reviewedAt"
        FROM public.student_enrollment_grievances
        WHERE student_user_id = $1 ORDER BY created_at DESC LIMIT 100`,
@@ -65,7 +75,7 @@ export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRe
   if (!institutionId) return res.status(403).json({ success:false, message:"This Admin account is not assigned to an institution." });
   try {
     const result = await pool.query(
-      `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description,
+      `SELECT g.id, g.enrollment_number AS "enrollmentNumber", g.category, g.description, g.proposed_correction AS "proposedCorrection",
               g.status, g.admin_note AS "adminNote", g.created_at AS "createdAt",
               g.updated_at AS "updatedAt"
        FROM public.student_enrollment_grievances g
@@ -91,7 +101,7 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
   try {
     const result = await pool.query(
       `SELECT g.id, g.student_user_id AS "studentUserId", g.enrollment_number AS "enrollmentNumber",
-              g.category, g.description, g.status, g.admin_note AS "adminNote",
+              g.category, g.description, g.proposed_correction AS "proposedCorrection", g.status, g.admin_note AS "adminNote",
               g.created_at AS "createdAt", g.updated_at AS "updatedAt",
               i.name AS institution, to_jsonb(u)->>'email' AS "studentEmail",
               to_jsonb(u)->>'display_name' AS "studentName"
