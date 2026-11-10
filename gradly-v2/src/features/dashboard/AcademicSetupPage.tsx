@@ -519,7 +519,7 @@ export default function AcademicSetupPage() {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a"); link.href = url; link.download = evidence.fileName; link.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to download evidence."); }
   }
 
@@ -726,14 +726,14 @@ export default function AcademicSetupPage() {
               <small>Submitted {new Date(item.createdAt).toLocaleDateString()}</small>
               <section className="academic-setup-evidence">
                 <strong>Supporting evidence</strong>
-                {item.evidence?.length > 0 ? item.evidence.map(file=><button type="button" key={file.id} onClick={()=>void downloadGrievanceEvidence(item.id,file)}>{file.fileName} · {(file.fileSize/1024).toFixed(0)} KB · Download</button>) : <small>No evidence attached yet.</small>}
+                {item.evidence && item.evidence.length > 0 ? item.evidence.map(file=><button type="button" key={file.id} onClick={()=>void downloadGrievanceEvidence(item.id,file)}>{file.fileName} · {(file.fileSize/1024).toFixed(0)} KB · Download</button>) : <small>No evidence attached yet.</small>}
                 {(item.evidence?.length || 0) < 5 && <div className="academic-setup-evidence-upload">
                   <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" aria-label="Choose evidence file" onChange={e=>setEvidenceFiles(current=>({...current,[item.id]:e.target.files?.[0] || null}))} />
                   <button type="button" disabled={!evidenceFiles[item.id] || evidenceBusy[item.id]} onClick={()=>void uploadGrievanceEvidence(item.id)}>{evidenceBusy[item.id] ? "Uploading…" : "Upload evidence"}</button>
                 </div>}
                 <small>PDF, JPG or PNG · Maximum 3 MB each · Up to 5 files</small>
               </section>
-              {item.timeline?.length > 0 && <ol className="academic-setup-grievance-timeline">
+              {item.timeline && item.timeline.length > 0 && <ol className="academic-setup-grievance-timeline">
                 {item.timeline.map(event=><li key={event.id}><span>{event.eventType.replace(/_/g," ")}</span><small>{event.toStatus ? event.toStatus.replace(/_/g," ") : event.note || "Recorded"} · {new Date(event.createdAt).toLocaleString()}</small></li>)}
               </ol>}
             </article>)}
