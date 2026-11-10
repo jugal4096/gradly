@@ -468,7 +468,7 @@ export default function AcademicSetupPage() {
       const response = await fetch(API + "/api/student/institution-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ collegeName: requestName.trim(), locality: requestCity.trim(), externalInstitutionId: selectedExternalInstitution?.id || "" }),
+        body: JSON.stringify({ collegeName: requestName.trim(), locality: requestCity.trim() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Your request could not be submitted.");
@@ -484,7 +484,7 @@ export default function AcademicSetupPage() {
   }
 
   function chooseInstitution(item: Institution) {
-    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]); setExternalInstitutions([]);
+    previewSequence.current += 1; setPreviewBusy(false); setSelected(item); setQuery(item.name); setInstitutions([]);
     setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setAdmissionModes([]); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); setGapAcademicYearFrom(""); setGapAcademicYearTo(""); hasManuallySelectedSemester.current = false; setPreview(null);
   }
 
