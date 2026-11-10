@@ -13,4 +13,8 @@ CREATE TABLE IF NOT EXISTS public.student_enrollment_grievance_attachments (
 CREATE INDEX IF NOT EXISTS student_enrollment_grievance_attachments_created_idx
   ON public.student_enrollment_grievance_attachments (created_at DESC);
 
+-- Evidence is served only by authenticated backend endpoints, never the public Data API.
+ALTER TABLE public.student_enrollment_grievance_attachments ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.student_enrollment_grievance_attachments FROM anon, authenticated;
+
 COMMIT;
