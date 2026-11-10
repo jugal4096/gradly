@@ -63,6 +63,9 @@ export default function AcademicSetupPage() {
   const [grievanceDescription, setGrievanceDescription] = useState("");
   const [proposedCorrection, setProposedCorrection] = useState("");
   const [grievanceBusy, setGrievanceBusy] = useState(false);
+  const [selectedGrievanceFiles, setSelectedGrievanceFiles] = useState<File[]>([]);
+  const [institutionRequestOpen, setInstitutionRequestOpen] = useState(false);
+  const [grievanceOpen, setGrievanceOpen] = useState(false);
   const grievanceDetailsRef = useRef<HTMLDetailsElement>(null);
   type GrievanceEvidence = { id:string; fileName:string; mimeType:string; fileSize:number; uploadedAt:string };
   type GrievanceEvent = { id:number; eventType:string; fromStatus?:string|null; toStatus?:string|null; note?:string|null; createdAt:string };
@@ -601,7 +604,7 @@ export default function AcademicSetupPage() {
             {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No configured institution matched. You can submit a manual institution request below.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
             {institutions.length > 0 && !selected && <small className="academic-setup-helper">Configured in Gradly · available for academic setup</small>}
-            {selected && <div className="academic-setup-selected"><span className="academic-setup-selected-check">✓</span><span>{selected.name}</span><button type="button" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); }}>Change</button></div>}
+            {selected && <div className="academic-setup-selected"><span className="academic-setup-selected-check">✓</span><span>{selected.name}</span><button type="button" className="academic-setup-edit-institution" aria-label="Change selected institution" title="Change institution" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); }}>✎</button></div>}
           </section>
 
           {selected && <section className="academic-setup-field-section enrollment-section">
