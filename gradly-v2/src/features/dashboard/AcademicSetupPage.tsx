@@ -689,21 +689,25 @@ export default function AcademicSetupPage() {
 
         {!selected && <p className="academic-setup-first-step-note">Start by selecting your college or university. Your enrollment number comes next.</p>}
 
-        <details ref={requestDetailsRef} className="academic-setup-institution-request">
-          <summary>Can't find your institution?</summary>
-          {requestSent ? <p className="academic-setup-request-success">✓ Request submitted. Our team can review your institution.</p> : <form onSubmit={submitInstitutionRequest}>
-            <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
-            <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
-            <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send request"}</button>
-          </form>}
-        </details>
-        {institutionRequests.length > 0 && <section className="academic-setup-request-tracking">
-          <h3>Your institution requests</h3>
-          {institutionRequests.map(request=><div key={request.id} className="academic-setup-request-row">
-            <div><strong>{request.collegeName}</strong><small>{request.locality} · {new Date(request.createdAt).toLocaleDateString()}</small></div>
-            <span>{request.status.replace(/_/g," ")}</span>
-          </div>)}
-        </section>}
+        <section className="academic-setup-request-launch">
+          <div><strong>Missing your institution?</strong><span>Request that your college or university be added to Gradly.</span></div>
+          <button type="button" onClick={() => setInstitutionRequestOpen(true)}>Request institution <span>＋</span></button>
+        </section>
+        {institutionRequestOpen && <div className="academic-setup-modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setInstitutionRequestOpen(false); }}>
+          <section className="academic-setup-modal" role="dialog" aria-modal="true" aria-labelledby="institution-request-title">
+            <button type="button" className="academic-setup-modal-close" aria-label="Close" onClick={() => setInstitutionRequestOpen(false)}>×</button>
+            <p className="academic-setup-eyebrow">INSTITUTION DIRECTORY</p><h2 id="institution-request-title">Request an institution</h2>
+            <p className="academic-setup-modal-lead">Our team will review your college or university and add it to Gradly if eligible.</p>
+            {institutionRequests.some(item => ["PENDING","IN_REVIEW","NEEDS_INFO"].includes(item.status)) && <div className="academic-setup-open-request-notice">You already have an institution request awaiting review. Please wait until it is resolved before submitting another.</div>}
+            {requestSent ? <p className="academic-setup-request-success">✓ Request submitted. Our team can review your institution.</p> : <form onSubmit={submitInstitutionRequest}>
+              <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
+              <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
+              <button type="submit" disabled={requestBusy || institutionRequests.some(item => ["PENDING","IN_REVIEW","NEEDS_INFO"].includes(item.status))}>{requestBusy ? "Submitting…" : "Send request"}</button>
+            </form>}
+            {institutionRequests.length > 0 && <div className="academic-setup-request-tracking"><h3>Your institution requests</h3>{institutionRequests.map(request=><div key={request.id} className="academic-setup-request-row"><div><strong>{request.collegeName}</strong><small>{request.locality} · {new Date(request.createdAt).toLocaleDateString()}</small></div><span>{request.status.replace(/_/g," ")}</span></div>)}</div>}
+          </section>
+        </div>}
+
         <details ref={grievanceDetailsRef} className="academic-setup-institution-request academic-setup-grievance">
           <summary>Having trouble with your enrollment number or academic details?</summary>
           <form onSubmit={submitEnrollmentGrievance}>
