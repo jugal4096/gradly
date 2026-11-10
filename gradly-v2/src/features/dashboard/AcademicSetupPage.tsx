@@ -59,6 +59,7 @@ export default function AcademicSetupPage() {
   const [gapAcademicYearFrom, setGapAcademicYearFrom] = useState("");
   const [gapAcademicYearTo, setGapAcademicYearTo] = useState("");
   const [grievanceCategory, setGrievanceCategory] = useState("INVALID_ENROLLMENT");
+  const [grievanceReason, setGrievanceReason] = useState("");
   const [grievanceDescription, setGrievanceDescription] = useState("");
   const [proposedCorrection, setProposedCorrection] = useState("");
   const [grievanceBusy, setGrievanceBusy] = useState(false);
@@ -161,7 +162,7 @@ export default function AcademicSetupPage() {
           enrollment?: string; preview?: EnrollmentPreview | null; predictionConfirmed?: boolean | null;
           confirmedAdmissionMode?: string; selectedCurrentSemester?: string; expectedSemester?: number | null;
           expectedDurationEnded?: boolean; gapAcademicYearFrom?: string; gapAcademicYearTo?: string; pendingBacklogCount?: string;
-          grievanceCategory?: string; grievanceDescription?: string; proposedCorrection?: string;
+          grievanceCategory?: string; grievanceReason?: string; grievanceDescription?: string; proposedCorrection?: string;
         };
         if (draft.selected) setSelected(draft.selected);
         if (draft.query) setQuery(draft.query);
@@ -185,6 +186,7 @@ export default function AcademicSetupPage() {
         if (draft.gapAcademicYearTo) setGapAcademicYearTo(draft.gapAcademicYearTo);
         if (draft.pendingBacklogCount !== undefined) setPendingBacklogCount(draft.pendingBacklogCount);
         if (draft.grievanceCategory) setGrievanceCategory(draft.grievanceCategory);
+        if (draft.grievanceReason) setGrievanceReason(draft.grievanceReason);
         if (draft.grievanceDescription) setGrievanceDescription(draft.grievanceDescription);
         if (draft.proposedCorrection) setProposedCorrection(draft.proposedCorrection);
       }
@@ -202,7 +204,7 @@ export default function AcademicSetupPage() {
       selected, query, programId, branchId, curricula, curriculumId, admissionModes,
       enrollment, preview, predictionConfirmed, confirmedAdmissionMode,
       selectedCurrentSemester, expectedSemester, expectedDurationEnded,
-      gapAcademicYearFrom, gapAcademicYearTo, pendingBacklogCount, grievanceCategory, grievanceDescription, proposedCorrection,
+      gapAcademicYearFrom, gapAcademicYearTo, pendingBacklogCount, grievanceCategory, grievanceReason, grievanceDescription, proposedCorrection,
     };
     if (!selected && !query && !enrollment && !preview) {
       localStorage.removeItem(key);
@@ -453,17 +455,20 @@ export default function AcademicSetupPage() {
   async function submitEnrollmentGrievance(event: FormEvent) {
     event.preventDefault();
     if (!user || !selected) { setError("Select your institution before submitting an enrollment grievance."); return; }
-    if (grievanceDescription.trim().length < 10) { setError("Please describe the issue in at least 10 characters."); return; }
+    if (grievanceReason.trim().length < 10) { setError("Select a reason for requesting this correction."); return; }
+    const completeReason = grievanceReason.trim() + (grievanceDescription.trim() ? "\n\nAdditional details: " + grievanceDescription.trim() : "");
+    if (completeReason.length > 3000) { setError("The reason and additional details must be 3,000 characters or fewer."); return; }
     setGrievanceBusy(true); setError("");
     try {
       const token = await user.getIdToken();
       const response = await fetch(API + "/api/student/enrollment-grievances", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: grievanceDescription.trim(), proposedCorrection: proposedCorrection.trim() }),
+        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: completeReason, proposedCorrection: proposedCorrection.trim() }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
+      setGrievanceReason("");
       setGrievanceDescription("");
       setProposedCorrection("");
       try {
@@ -710,9 +715,23 @@ export default function AcademicSetupPage() {
             <label>What should the correct detail be?
               <textarea required minLength={2} maxLength={500} rows={2} value={proposedCorrection} onChange={e=>setProposedCorrection(e.target.value)} placeholder="Example: B.Tech Computer Science and Engineering; M.Tech specialization in AI" />
             </label>
-            <label>Reason for requesting this correction
-              <textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Explain why the detected detail is incorrect and how it can be verified." />
+            <label>Why are you requesting this correction?
+              <select required value={grievanceReason} onChange={e=>setGrievanceReason(e.target.value)}>
+                <option value="">Select a reason</option>
+                <option value="My enrollment number is correct, but Gradly detected the wrong programme.">Wrong programme detected</option>
+                <option value="My enrollment number is correct, but Gradly detected the wrong branch or department.">Wrong branch or department</option>
+                <option value="My enrollment number is correct, but Gradly detected the wrong M.Tech specialization.">Wrong M.Tech specialization</option>
+                <option value="The detected curriculum or academic scheme does not match my official records.">Wrong curriculum or scheme</option>
+                <option value="My admission mode or entry semester was detected incorrectly.">Wrong admission mode or entry semester</option>
+                <option value="My enrollment number has been read or parsed incorrectly.">Enrollment number parsed incorrectly</option>
+                <option value="My academic record is already registered, but Gradly is showing a duplicate or existing-registration issue.">Already registered / duplicate record</option>
+                <option value="My official academic record contains a different detail not covered by the options above.">Other academic record issue</option>
+              </select>
             </label>
+            <label>Additional details (optional)
+              <textarea maxLength={2800} rows={3} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Add any context that may help the reviewer." />
+            </label>
+            <p className="academic-setup-helper">You can attach proof after submitting: a photograph (JPG/PNG) or a PDF document. Submitting a grievance does not change your academic profile.</p>
             <p className="academic-setup-helper">Submitting a grievance does not change your academic profile. An authorised reviewer must verify and decide the request.</p>
             <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting…" : "Submit grievance"}</button>
           </form>
