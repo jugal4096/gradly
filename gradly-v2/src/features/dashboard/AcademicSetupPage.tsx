@@ -54,7 +54,6 @@ export default function AcademicSetupPage() {
   const selectedCurrentSemesterRef = useRef("");
   const hasManuallySelectedSemester = useRef(false);
   const [predictionConfirmed, setPredictionConfirmed] = useState<boolean | null>(null);
-  const [editingPrediction, setEditingPrediction] = useState(false);
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [gapAcademicYearFrom, setGapAcademicYearFrom] = useState("");
   const [gapAcademicYearTo, setGapAcademicYearTo] = useState("");
@@ -288,7 +287,7 @@ export default function AcademicSetupPage() {
         return;
       }
       setCurriculumId(result.curriculumId);
-      setPredictionConfirmed(null); setEditingPrediction(false);
+      setPredictionConfirmed(null); 
       const params = new URLSearchParams({ institutionId: selected.id, programId: result.programId, branchId: result.branchId });
       let options: Curriculum[] = [];
       try {
@@ -511,7 +510,7 @@ export default function AcademicSetupPage() {
             <div className="academic-setup-input-wrap">
               <input id="institution-search" value={query} onChange={e => {
                 const value = e.target.value;
-                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
+                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); 
                 window.clearTimeout(searchTimer.current);
                 searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
               }} placeholder="Search your college or university" autoComplete="organization" />
@@ -527,7 +526,7 @@ export default function AcademicSetupPage() {
           {selected && <section className="academic-setup-field-section enrollment-section">
             <label htmlFor="student-enrollment">Your enrollment number</label>
             <div className="academic-setup-enrollment-control">
-              <input id="student-enrollment" required value={enrollment} onChange={e => { previewSequence.current += 1; setPreviewBusy(false); setEnrollment(e.target.value); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPredictionConfirmed(null); setEditingPrediction(false);  }} placeholder="e.g. BE23S06F007" autoComplete="off" />
+              <input id="student-enrollment" required value={enrollment} onChange={e => { previewSequence.current += 1; setPreviewBusy(false); setEnrollment(e.target.value); setPreview(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPredictionConfirmed(null);   }} placeholder="e.g. BE23S06F007" autoComplete="off" />
               <button type="button" disabled={!enrollment.trim() || previewBusy} onClick={() => void fetchEnrollmentDetails()}>
                 {previewBusy ? <><span className="academic-setup-button-spinner" /> Checking</> : <>Identify <span>→</span></>}
               </button>
@@ -559,23 +558,12 @@ export default function AcademicSetupPage() {
                 <div><dt>Admission mode</dt><dd>{confirmedAdmissionMode || "Not specified"}</dd></div>
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
-              {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report issue</button></div> : <>
+              {predictionConfirmed === true ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report issue</button></div> : <>
                 <div className="academic-setup-data-question">Is this data correct?</div>
-                {!editingPrediction ? <div className="academic-setup-choice-row">
-                  <button type="button" className="academic-setup-choice primary-choice" onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>✓ Yes, everything is correct</button>
+                <div className="academic-setup-choice-row">
+                  <button type="button" className="academic-setup-choice primary-choice" onClick={() => { setPredictionConfirmed(true); setError(""); }}>✓ Yes, everything is correct</button>
                   <button type="button" className="academic-setup-choice" onClick={() => { setGrievanceCategory("WRONG_BRANCH"); setGrievanceDescription("The detected academic identity is incorrect. Please review my programme, branch, specialization or admission details."); setError("Detected identity fields are locked. Submit an enrollment grievance for an authorised review."); }}>Report incorrect details</button>
-                </div> : <div className="academic-setup-edit-fields">
-                  <div><label htmlFor="edit-programme">Programme · locked from enrollment</label><input id="edit-programme" value={programs.find(item => item.id === programId)?.name || preview.programme || ""} readOnly disabled /></div>
-                  <div><label htmlFor="edit-branch">Branch</label><select id="edit-branch" value={branchId} onChange={async e => {
-                    const nextBranchId=e.target.value; setPredictionConfirmed(null); setBranchId(nextBranchId); setCurricula([]); setCurriculumId("");
-                    const nextBranch=branches.find(item=>item.id===nextBranchId);
-                    if(!selected || !nextBranch || !user) return;
-                    try { const params=new URLSearchParams({institutionId:selected.id,programId:nextBranch.program_id,branchId:nextBranchId}); const response=await fetch(API+"/api/academic/curricula?"+params.toString()); const payload=await response.json(); if(!response.ok) throw new Error(payload.message||"Unable to load the selected branch curriculum."); const options=Array.isArray(payload.data)?payload.data as Curriculum[]:[]; setCurricula(options); if(options.length===1) setCurriculumId(options[0].id); } catch(e) { setError(e instanceof Error?e.message:"Unable to load curriculum options."); }
-                  }}><option value="">Select branch</option>{branches.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
-                  <div className="academic-setup-edit-wide"><label htmlFor="edit-scheme">Academic scheme</label><select id="edit-scheme" value={curriculumId} onChange={e => { setCurriculumId(e.target.value); setPredictionConfirmed(null); }}><option value="">Select scheme</option>{eligibleCurricula.map(item => <option key={item.id} value={item.id}>{item.scheme_name}{item.version ? " · "+item.version : ""}</option>)}</select></div>
-                  <div className="academic-setup-edit-wide"><label htmlFor="edit-admission-mode">Admission mode</label><select id="edit-admission-mode" value={selectedAdmissionMode?.id || ""} onChange={e => changeAdmissionMode(e.target.value)}><option value="">Select admission mode</option>{admissionModes.map(item => <option key={item.id} value={item.id}>{item.mode_name}</option>)}</select></div>
-                  <div className="academic-setup-edit-actions"><button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(false); setPredictionConfirmed(null); }}>Cancel</button><button type="button" className="academic-setup-choice primary-choice" disabled={!programId || !branchId || !curriculumId || !confirmedAdmissionMode.trim()} onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>Confirm updated details</button></div>
-                </div>}
+                </div>
               </>}
             <section className="academic-setup-confirmation academic-setup-journey">
               <div className="academic-setup-confirmation-heading"><h2>Your Academic Journey</h2><p>Choose the semester you are actually in. The prediction is only a comparison reference.</p></div>
