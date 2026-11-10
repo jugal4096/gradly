@@ -87,7 +87,7 @@ export async function downloadSuperAdminGrievanceEvidence(req: SuperAdminAuthent
     );
     if (!result.rowCount) return res.status(404).json({ success: false, message: "Evidence file not found." });
     const file = result.rows[0];
-    const safeName = String(file.original_filename).replace(/[\\r\\n"\\\\]/g, "_");
+    const safeName = String(file.original_filename).replace(/[\r\n"\\]/g, "_");
     res.setHeader("Content-Type", file.mime_type);
     res.setHeader("Content-Length", file.file_data.length);
     res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
@@ -169,7 +169,7 @@ export async function reviewSuperAdminEnrollmentGrievance(req: SuperAdminAuthent
       } else if (field === "ADMISSION_YEAR") {
         const year = Number(value);
         const currentYear = new Date().getFullYear();
-        if (!/^\\d{4}$/.test(value) || year < 1980 || year > currentYear) throw new Error("Enter a valid four-digit admission year.");
+        if (!/^\d{4}$/.test(value) || year < 1980 || year > currentYear) throw new Error("Enter a valid four-digit admission year.");
         column = "admission_year"; nextValue = year; previous = profile.admission_year;
       }
       await client.query(
@@ -184,7 +184,7 @@ export async function reviewSuperAdminEnrollmentGrievance(req: SuperAdminAuthent
         [grievance.id, correctionAudit],
       );
     }
-    const fullNote = correctionAudit ? note + "\\n" + correctionAudit : note;
+    const fullNote = correctionAudit ? note + "\n" + correctionAudit : note;
     const updated = await client.query(
       `UPDATE public.student_enrollment_grievances
        SET status = $2, admin_note = $3, reviewed_by = $4,
