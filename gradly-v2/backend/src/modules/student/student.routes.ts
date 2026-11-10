@@ -4,7 +4,7 @@ import { authenticateFirebaseToken } from "../../middleware/auth.middleware";
 import { getProfile, createStudentProfileController, updateStudentProfileController } from "./student.controller";
 import { listStudentAcademicRecords, saveStudentSemesterResult } from "./student-academic.controller";
 import { requestStudentInstitution, listStudentInstitutionRequests } from "./student-institution.controller";
-import { submitEnrollmentGrievance, listMyEnrollmentGrievances } from "./student-enrollment-grievance.controller";
+import { submitEnrollmentGrievance, listMyEnrollmentGrievances, uploadEnrollmentGrievanceEvidence, downloadEnrollmentGrievanceEvidence } from "./student-enrollment-grievance.controller";
 import { previewEnrollmentController } from "../academic/enrollment-intelligence.controller";
 
 const router = Router();
@@ -17,6 +17,8 @@ router.post("/institution-requests", requestStudentInstitution);
 router.get("/institution-requests", listStudentInstitutionRequests);
 router.post("/enrollment-grievances", submitEnrollmentGrievance);
 router.get("/enrollment-grievances", listMyEnrollmentGrievances);
+router.post("/enrollment-grievances/:grievanceId/evidence", uploadEnrollmentGrievanceEvidence);
+router.get("/enrollment-grievances/:grievanceId/evidence/:evidenceId", downloadEnrollmentGrievanceEvidence);
 router.post("/enrollment/preview", previewEnrollmentController);
 router.get("/academic/records", listStudentAcademicRecords);
 router.post("/academic/semesters", saveStudentSemesterResult);
