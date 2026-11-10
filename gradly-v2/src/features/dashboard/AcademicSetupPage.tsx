@@ -21,12 +21,12 @@ type EnrollmentPreview = {
 };
 
 function validateEnrollmentNumber(value: string): string | null {
-  if (!value) return "Enter your enrollment number."; 
-  if (!/^(BE|BT|MC|ME|MT)/.test(value)) return "Invalid enrollment number. Programme prefix is not recognized."; 
-  if (value[7] !== "F") return "Invalid enrollment number. The 8th character must be F."; 
-  if (value.length !== 11) return "Invalid enrollment number. It must contain exactly 11 characters."; 
+  if (!value) return "Invalid enrollment number."; 
+  if (!/^(BE|BT|MC|ME|MT)/.test(value)) return "Invalid enrollment number."; 
+  if (value[7] !== "F") return "Invalid enrollment number."; 
+  if (value.length !== 11) return "Invalid enrollment number."; 
   if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
-  if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number. Admission mode must be F or S.";
+  if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number.";
   if ((value.startsWith("ME") || value.startsWith("MT")) && value[4] !== "F") return "M.E. and M.Tech. admissions must be Regular (F) only."; 
   if (!/^\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
   if (!/^\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
@@ -190,7 +190,7 @@ export default function AcademicSetupPage() {
       const payload = await response.json();
       if (sequence !== previewSequence.current) return;
       if (!response.ok) {
-        if (response.status === 400) { setError(payload.message || "Enrollment number could not be validated."); setPreview(null); setExpectedSemester(null); return; }
+        if (response.status === 400) { setError(payload.code === "ENROLLMENT_ALREADY_CLAIMED" ? payload.message : "Invalid enrollment number."); setPreview(null); setExpectedSemester(null); return; }
         throw new Error(payload.message || "Unable to identify academic details.");
       }
       const result = payload.data as EnrollmentPreview;
