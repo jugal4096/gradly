@@ -54,10 +54,14 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
     await client.query("BEGIN");
     const result = await client.query(
       `INSERT INTO public.student_enrollment_grievances
-       (student_user_id, institution_id, enrollment_number, category, description)
-       VALUES ($1,$2,NULLIF($3,''),$4,$5)
+       (student_user_id, institution_id, enrollment_number, grievance_type, category, description)
+       VALUES ($1,$2,NULLIF($3,''),'ENROLLMENT_DATA_MISMATCH',$4,$5)
        RETURNING id, category, description, status, created_at AS "createdAt"`,
       [user.id, institutionId, enrollment, category, description],
+    );
+    await client.query(
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, to_status, note) VALUES ($1, 'STUDENT', $2, 'SUBMITTED', $3, $4)",
+      [result.rows[0].id, user.id, result.rows[0].status, description.slice(0, 2000)],
     );
     if (evidence) {
       await client.query(
@@ -129,7 +133,7 @@ export async function listMyEnrollmentGrievances(req: AuthenticatedRequest, res:
       `SELECT id, category, description, status, admin_note AS "adminNote",
               created_at AS "createdAt", updated_at AS "updatedAt", reviewed_at AS "reviewedAt"
        FROM public.student_enrollment_grievances
-       WHERE student_user_id = $1 ORDER BY uploaded_at DESC LIMIT 100`,
+       WHERE student_user_id = $1 ORDER BY created_at DESC LIMIT 100`,
       [user.id],
     );
     return res.json({ success:true, grievances:result.rows });
@@ -153,7 +157,7 @@ export async function listEnrollmentGrievancesForAdmin(req: AdminAuthenticatedRe
        LEFT JOIN public.student_enrollment_grievance_evidence a ON a.grievance_id = g.id
        WHERE g.institution_id = $1
        ORDER BY CASE WHEN g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') THEN 0 ELSE 1 END,
-                g.uploaded_at DESC
+                g.created_at DESC
        LIMIT 300`,
       [institutionId],
     );
@@ -195,31 +199,17 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
 
 export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
   if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
-  const query = buildEnrollmentGrievanceAuditQuery({
-    grievanceId: typeof req.query.grievanceId === "string" ? req.query.grievanceId : "",
-    reviewerId: typeof req.query.reviewerId === "string" ? req.query.reviewerId : "",
-    limit: Number(req.query.limit),
-  });
+  const grievanceId = typeof req.query.grievanceId === "string" ? req.query.grievanceId : "";
+  if (!grievanceId) return res.status(400).json({ success:false, message:"A grievance ID is required." });
   try {
     const result = await pool.query(
-      `SELECT e.id, e.grievance_id AS "grievanceId", e.reviewer_id AS "reviewerId",
-              e.reviewer_role AS "reviewerRole", e.institution_id AS "institutionId",
-              e.programme_scope AS "programmeScope", e.branch_scope AS "branchScope",
-              e.event_type AS "eventType", e.previous_status AS "previousStatus",
-              e.new_status AS "newStatus", e.old_values AS "oldValues",
-              e.new_values AS "newValues", e.decision_reason AS "decisionReason",
-              e.information_request AS "informationRequest", e.created_at AS "createdAt",
-              i.name AS institution
-       FROM public.student_enrollment_grievance_events e
-       JOIN public.institutions i ON i.id = e.institution_id
-       ${query.whereSql}
-       ORDER BY e.uploaded_at DESC, e.id DESC LIMIT ${query.limitParameter}`,
-      query.values,
+      "SELECT e.id, e.grievance_id AS \"grievanceId\", e.actor_user_id AS \"reviewerId\", e.actor_type AS \"reviewerRole\", e.event_type AS \"eventType\", e.from_status AS \"previousStatus\", e.to_status AS \"newStatus\", e.note AS \"decisionReason\", NULL::text AS \"informationRequest\", e.created_at AS \"createdAt\", i.name AS institution, NULL::text AS \"programmeScope\", NULL::text AS \"branchScope\", '{}'::jsonb AS \"oldValues\", '{}'::jsonb AS \"newValues\" FROM public.student_enrollment_grievance_events e JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id JOIN public.institutions i ON i.id = g.institution_id WHERE e.grievance_id = $1 ORDER BY e.created_at DESC, e.id DESC LIMIT 100",
+      [grievanceId],
     );
     return res.json({ success:true, events:result.rows });
   } catch (error) {
     console.error("Enrollment grievance audit history failed:", error);
-    return res.status(500).json({ success:false, message:"Unable to load reviewer decision history. Confirm the TO-09 migration has been applied." });
+    return res.status(500).json({ success:false, message:"Unable to load reviewer decision history." });
   }
 }
 
@@ -396,19 +386,8 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
       : null;
     await client.query(
-      `INSERT INTO public.student_enrollment_grievance_events
-       (grievance_id, reviewer_id, reviewer_role, institution_id, programme_scope, branch_scope,
-        event_type, previous_status, new_status, old_values, new_values, decision_reason, information_request)
-       VALUES ($1,$2,'SUPER_ADMIN',$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)`,
-      [
-        req.params.grievanceId, superAdminId, previous.institution_id,
-        previous.programme_scope || null, previous.branch_scope || null,
-        status === "NEEDS_INFO" ? "INFORMATION_REQUESTED" : correctionType ? "MAPPING_CORRECTED" : "DECISION_RECORDED",
-        previous.status, status,
-        JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null, mapping: mappingBefore }),
-        JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }),
-        note, status === "NEEDS_INFO" ? note : null,
-      ],
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1, 'SUPER_ADMIN', $2, 'STATUS_CHANGED', $3, $4, $5)",
+      [req.params.grievanceId, superAdminId, previous.status, status, note],
     );
     await client.query(
       `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
