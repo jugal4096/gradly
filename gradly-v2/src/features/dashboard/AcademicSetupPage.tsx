@@ -747,7 +747,11 @@ export default function AcademicSetupPage() {
                 <strong>Supporting evidence</strong>
                 {item.evidence && item.evidence.length > 0 ? item.evidence.map(file=><button type="button" key={file.id} onClick={()=>void downloadGrievanceEvidence(item.id,file)}>{file.fileName} · {(file.fileSize/1024).toFixed(0)} KB · Download</button>) : <small>No evidence attached yet.</small>}
                 {(item.evidence?.length || 0) < 5 && <div className="academic-setup-evidence-upload">
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" aria-label="Choose evidence file" onChange={e=>setEvidenceFiles(current=>({...current,[item.id]:e.target.files?.[0] || null}))} />
+                  <label className="academic-setup-file-picker" htmlFor={`evidence-file-${item.id}`}>
+                    <span className="academic-setup-file-picker-icon">＋</span>
+                    <span><strong>{evidenceFiles[item.id]?.name || "Choose a JPG, PNG or PDF"}</strong><small>Browse your device · Maximum 3 MB per file</small></span>
+                    <input id={`evidence-file-${item.id}`} type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" aria-label="Choose JPG, PNG or PDF evidence" onChange={e=>setEvidenceFiles(current=>({...current,[item.id]:e.target.files?.[0] || null}))} />
+                  </label>
                   <button type="button" disabled={!evidenceFiles[item.id] || evidenceBusy[item.id]} onClick={()=>void uploadGrievanceEvidence(item.id)}>{evidenceBusy[item.id] ? "Uploading…" : "Upload evidence"}</button>
                 </div>}
                 <small>PDF, JPG or PNG · Maximum 3 MB each · Up to 5 files</small>
