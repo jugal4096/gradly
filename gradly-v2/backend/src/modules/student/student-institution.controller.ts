@@ -14,14 +14,42 @@ export async function requestStudentInstitution(req: AuthenticatedRequest, res: 
   try {
     const user = await getGradlyUserByFirebaseUid(req.firebaseUser.uid);
     if (!user) return res.status(404).json({ message: "Gradly account was not found. Sign in again and retry." });
-    const result = await pool.query(
-      `INSERT INTO public.guest_institution_requests
-        (college_name, locality, guest_id, external_institution_id, source, status, requested_by_user_id)
-       VALUES ($1, $2, NULL, NULLIF($3, ''), 'STUDENT_SETUP', 'PENDING', $4)
-       RETURNING id, college_name, locality, status, created_at`,
-      [collegeName, locality, externalId, user.id],
-    );
-    return res.status(201).json({ message: "Your institution request has been sent to the Super Admin team.", request: result.rows[0] });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["student-institution-request:" + user.id]);
+      const pending = await client.query(
+        `SELECT id, college_name AS "collegeName", locality, status,
+                created_at AS "createdAt", reviewed_at AS "reviewedAt"
+         FROM public.guest_institution_requests
+         WHERE requested_by_user_id = $1 AND source = 'STUDENT_SETUP'
+           AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO')
+         ORDER BY created_at DESC LIMIT 1`,
+        [user.id],
+      );
+      if (pending.rowCount) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          code: "INSTITUTION_REQUEST_ALREADY_OPEN",
+          message: "You already have an institution request awaiting review. You can submit another request after it is resolved.",
+          request: pending.rows[0],
+        });
+      }
+      const result = await client.query(
+        `INSERT INTO public.guest_institution_requests
+          (college_name, locality, guest_id, external_institution_id, source, status, requested_by_user_id)
+         VALUES ($1, $2, NULL, NULLIF($3, ''), 'STUDENT_SETUP', 'PENDING', $4)
+         RETURNING id, college_name, locality, status, created_at`,
+        [collegeName, locality, externalId, user.id],
+      );
+      await client.query("COMMIT");
+      return res.status(201).json({ message: "Your institution request has been sent to the Super Admin team.", request: result.rows[0] });
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error("Student institution request failed:", error);
     return res.status(503).json({ message: "We couldn't submit your request right now. Please try again later." });
