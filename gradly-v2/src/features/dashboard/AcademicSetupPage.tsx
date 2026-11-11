@@ -621,7 +621,20 @@ export default function AcademicSetupPage() {
           {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
         </section>
       </div>}
-      {examSetupChoice && <div role="dialog" aria-modal="true" aria-labelledby="exam-choice-title" style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:1000,display:"grid",placeItems:"center",padding:20}}><section style={{background:"var(--surface,#fff)",color:"var(--text,#18202c)",padding:28,borderRadius:16,maxWidth:460,width:"100%",boxShadow:"0 16px 60px #0004"}}><h2 id="exam-choice-title">Set up your Exam Profile?</h2><p>This optional step helps Gradly prepare semester exam sessions for SGPA result fetching. You can skip it and still use the manual SGPA calculator.</p><div style={{display:"flex",gap:12,flexWrap:"wrap"}}><button type="button" onClick={()=>navigate("/exam-profile",{replace:true})}>Set up Exam Profile</button><button type="button" onClick={()=>{localStorage.removeItem("gradly_student_exam_profile");navigate("/dashboard",{replace:true});}}>Skip for now</button></div></section></div>}
+      {examSetupChoice && <div className="exam-choice-overlay" role="dialog" aria-modal="true" aria-labelledby="exam-choice-title" aria-describedby="exam-choice-description">
+        <section className="exam-choice-modal">
+          <div className="exam-choice-icon" aria-hidden="true"><span>∑</span><i>✓</i></div>
+          <span className="exam-choice-eyebrow">ONE LAST STEP · OPTIONAL</span>
+          <h2 id="exam-choice-title">Set up your <em>Exam Profile?</em></h2>
+          <p id="exam-choice-description">Let Gradly organise your semester exam sessions and prepare for SGPA result fetching. You can skip this and continue using the manual SGPA calculator anytime.</p>
+          <div className="exam-choice-benefits"><span><b>↗</b> Semester-wise exam timeline</span><span><b>◎</b> Ready for result fetching</span></div>
+          <div className="exam-choice-actions">
+            <button className="exam-choice-primary" type="button" onClick={()=>navigate("/exam-profile",{replace:true})}>Set up Exam Profile <span>→</span></button>
+            <button className="exam-choice-skip" type="button" onClick={()=>{localStorage.removeItem("gradly_student_exam_profile");navigate("/dashboard",{replace:true});}}>Skip for now</button>
+          </div>
+          <small className="exam-choice-footnote"><span>✓</span> You can configure this later from your dashboard.</small>
+        </section>
+      </div>}
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
   </main>;
