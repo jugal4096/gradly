@@ -2,7 +2,7 @@ export type ExamResultState = "NOT_APPEARED" | "AWAITING_RESULT" | "DECLARED" | 
 export type ExamSession = { semester: number; parity: "ODD" | "EVEN"; sessionLabel: string; academicYear: string; estimated: boolean; state: ExamResultState };
 export type ExamProfile = { version: 1; scheme: string; programme: string; totalSemesters: number; currentSemester: number | null; admissionYear: number; admissionMode: string; entrySemester: number; confirmedAt: string; sessions: ExamSession[] };
 
-export function semesterSession(semester: number, admissionYear: number, now = new Date()) {
+export function semesterSession(semester: number, admissionYear: number) {
   const academicYearStart = admissionYear + Math.floor((semester - 1) / 2);
   const odd = semester % 2 === 1;
   const start = odd ? academicYearStart : academicYearStart;
@@ -16,7 +16,7 @@ export function buildExamTimeline(input: { totalSemesters: number; currentSemest
   const entry = Math.max(1, Math.min(total, Math.trunc(input.entrySemester || 1)));
   return Array.from({ length: total - entry + 1 }, (_, index) => {
     const semester = entry + index;
-    const session = semesterSession(semester, input.admissionYear, input.now);
+    const session = semesterSession(semester, input.admissionYear);
     const state: ExamResultState = input.currentSemester === null ? "UNKNOWN" : semester < input.currentSemester ? "UNKNOWN" : semester === input.currentSemester ? "UNKNOWN" : "NOT_APPEARED";
     return { semester, ...session, state };
   });
