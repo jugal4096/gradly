@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { buildExamTimeline, detectSchemeFamily, type ExamProfile } from "./exam-profile-intelligence";
 import "./ExamProfileSetupPage.css";
 
-type AcademicProfile = { institutionName?: string; programName?: string; branchName?: string; scheme?: string; semester?: string; admissionYear?: number | string; admissionMode?: string; totalSemesters?: number; entrySemester?: number; academicProfileConfirmed?: boolean };
+type AcademicProfile = { institutionName?: string; programId?: string; programName?: string; branchId?: string; branchName?: string; curriculumId?: string; scheme?: string; semester?: string; admissionYear?: number | string; admissionMode?: string; totalSemesters?: number; entrySemester?: number; academicProfileConfirmed?: boolean };
 type EseStatus = "NOT_APPEARED" | "AWAITING_RESULT" | "PASSED" | "BACKLOG";
 type BacklogAttempt = { id: string; subject: string; session: string; status: "PLANNED" | "APPEARED" | "CLEARED" | "BACKLOG" };
 type SemesterRecord = { eseStatus: EseStatus; backlogAttempts: BacklogAttempt[] };
