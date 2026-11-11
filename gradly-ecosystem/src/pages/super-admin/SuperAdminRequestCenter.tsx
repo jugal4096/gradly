@@ -20,7 +20,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
   window.setTimeout(()=>URL.revokeObjectURL(objectUrl),120000);
  }catch(error){viewer?.close();throw error;}
 }
-\nexport default function SuperAdminRequestCenter(){
+export default function SuperAdminRequestCenter(){
  const navigate=useNavigate();
  const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState(""),[search,setSearch]=useState(""),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState(""),[correctionType,setCorrectionType]=useState(""),[correctionValue,setCorrectionValue]=useState(""),[correctionEntrySemester,setCorrectionEntrySemester]=useState("3"),[auditEvents,setAuditEvents]=useState<AuditEvent[]>([]),[auditLoading,setAuditLoading]=useState(false);
  const token=()=>localStorage.getItem("gradly_super_admin_token")||"";
