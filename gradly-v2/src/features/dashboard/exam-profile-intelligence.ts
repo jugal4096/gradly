@@ -26,7 +26,7 @@ export function detectSchemeFamily(scheme: string, programme: string, totalSemes
   const value = `${scheme} ${programme}`.toLowerCase();
   if (/mca/.test(value)) return "MCA";
   if (/m\.?tech|mtech/.test(value)) return "MTECH";
-  if (/cbcs/.test(value)) return "CBCS";
+  if (/\bnew[\s-]*cbcs\b/.test(value)) return "NEW CBCS";
   if (/nep/.test(value)) return "NEP";
   return totalSemesters === 4 ? "FOUR_SEMESTER" : totalSemesters === 8 ? "EIGHT_SEMESTER" : "CUSTOM";
 }
