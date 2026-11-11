@@ -76,7 +76,6 @@ export default function SuperAdminRequestCenter(){
  const isAdminRequest=(r:Row)=>["ADMIN_REQUEST","PASSWORD_RESET","ADMIN_CURRICULUM"].includes(r.source);
  const matchesSearch=(r:Row)=>{const q=search.trim().toLowerCase();return !q||[r.title,r.description,r.adminName,r.adminCode,r.adminEmail,r.institution,r.program,r.branch,r.targetUserId].some(v=>String(v||"").toLowerCase().includes(q));};
  const adminRows=useMemo(()=>rows.filter(r=>isAdminRequest(r)&&matchesSearch(r)),[rows,search]);
- const grievanceRows=useMemo(()=>rows.filter(r=>r.source==="ENROLLMENT_GRIEVANCE"&&matchesSearch(r)),[rows,search]);
  const userRows=useMemo(()=>rows.filter(r=>!isAdminRequest(r)&&matchesSearch(r)),[rows,search]);
  async function deleteRequest(row:Row){
   const sourceMap:Record<string,string>={ADMIN_REQUEST:"platform",PASSWORD_RESET:"password",ADMIN_CURRICULUM:"curriculum",STUDENT_SYLLABUS:"student",USER_FEEDBACK:"feedback",INSTITUTION_REQUEST:"institution"};
