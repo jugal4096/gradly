@@ -18,14 +18,14 @@ async function resolveProfile(req: AuthenticatedRequest, res: Response) {
     return null;
   }
   const result = await pool.query(
-    "SELECT id, curriculum_id FROM student_profiles WHERE user_id = $1 LIMIT 1",
+    "SELECT id, curriculum_id, current_semester_number FROM student_profiles WHERE user_id = $1 LIMIT 1",
     [user.id],
   );
   if (!result.rows[0]) {
     res.status(409).json({ message: "Complete your academic profile before saving results." });
     return null;
   }
-  return { user, profile: result.rows[0] as { id: string; curriculum_id: string } };
+  return { user, profile: result.rows[0] as { id: string; curriculum_id: string; current_semester_number: number | null } };
 }
 
 export async function listStudentAcademicRecords(req: AuthenticatedRequest, res: Response) {
@@ -99,6 +99,18 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       !Number.isInteger(attemptNumber) || attemptNumber < 1 ||
       !Array.isArray(courses) || courses.length === 0 || courses.length > 100) {
     return res.status(400).json({ message: "Provide a valid semester, attempt number and 1–100 subjects." });
+  }
+  const indiaMonth = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", month: "numeric" }).format(new Date()));
+  const promotionWindowOpen = indiaMonth === 1 || indiaMonth === 7;
+  const currentSemester = Number(resolved.profile.current_semester_number || 0);
+  const maximumAllowedSemester = currentSemester + (promotionWindowOpen ? 1 : 0);
+  if (semesterNumber > maximumAllowedSemester) {
+    return res.status(403).json({
+      code: "EXAM_SEMESTER_LOCKED",
+      message: promotionWindowOpen
+        ? "You may add exam details only up to the next semester during the January/July promotion window."
+        : "Higher-semester exam details are locked until January or July, after the December/June examination cycles.",
+    });
   }
   const normalized = [];
   for (const course of courses) {
