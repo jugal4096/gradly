@@ -24,11 +24,20 @@ export async function syncAuthUser(
       });
     }
 
-    const user = await synchronizeUser(
-      uid,
-      email,
-      name
-    );
+    const user = await synchronizeUser(uid, email, name);
+
+    if (user?.deleted_at) {
+      return res.status(403).json({
+        code: "ACCOUNT_DELETED",
+        message: "This Gradly account was deleted and can no longer be used to sign in.",
+      });
+    }
+    if (user && user.active !== true) {
+      return res.status(403).json({
+        code: "ACCOUNT_DISABLED",
+        message: "This Gradly account is currently disabled. Please contact the platform administrator.",
+      });
+    }
 
     return res.status(200).json({
       message: "User synchronized successfully.",
