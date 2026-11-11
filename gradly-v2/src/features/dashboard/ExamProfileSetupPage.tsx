@@ -47,6 +47,20 @@ export default function ExamProfileSetupPage() {
   const clearedAttempts = Object.values(semesterRecords).reduce((sum, record) => sum + record.backlogAttempts.filter(item => item.status === "CLEARED").length, 0);
   const progress = timeline.length ? Math.round((timeline.filter(item => ["PASSED","BACKLOG","AWAITING_RESULT"].includes(semesterRecords[item.semester]?.eseStatus || "")).length / timeline.length) * 100) : 0;
 
+  // A delayed appearance shifts the recommended schedule of later semesters by the same
+  // number of calendar years. Use the largest confirmed delay so it is not counted twice.
+  const confirmedDelayYears = timeline.reduce((maxDelay, item) => {
+    const chosenSession = sessionChoices[item.semester];
+    if (!chosenSession) return maxDelay;
+    const expectedYear = Number(item.sessionLabel.match(/\\d{4}/)?.[0]);
+    const actualYear = Number(chosenSession.match(/\\d{4}/)?.[0]);
+    if (!Number.isFinite(expectedYear) || !Number.isFinite(actualYear)) return maxDelay;
+    return Math.max(maxDelay, actualYear - expectedYear);
+  }, 0);
+  const nextSemester = current !== null && current < total ? current + 1 : null;
+  const nextBaseSession = nextSemester !== null ? buildExamTimeline({ totalSemesters: total, currentSemester: nextSemester, admissionYear, entrySemester }).find(item => item.semester === nextSemester) : null;
+  const recommendedNextSession = nextBaseSession ? nextBaseSession.sessionLabel.replace(/\\d{4}/, year => String(Number(year) + confirmedDelayYears)) : null;
+
   function confirm() {
     setBusy(true);
     const profile: ExamProfile = {
@@ -57,7 +71,7 @@ export default function ExamProfileSetupPage() {
       sessions: timeline.map(item => ({ ...item, sessionLabel: sessionChoices[item.semester] || item.sessionLabel, estimated: !sessionChoices[item.semester], state: semesterRecords[item.semester]?.eseStatus === "PASSED" ? "DECLARED" : semesterRecords[item.semester]?.eseStatus === "AWAITING_RESULT" ? "AWAITING_RESULT" : appeared.includes(String(item.semester)) ? "AWAITING_RESULT" : item.semester < (current || 0) ? "UNKNOWN" : "NOT_APPEARED" })),
     };
     const backlogAttempts = timeline.flatMap(item => (semesterRecords[item.semester]?.backlogAttempts || []).map(attempt => ({ ...attempt, semester: item.semester })));
-    localStorage.setItem("gradly_student_exam_profile", JSON.stringify({ ...profile, pendingBacklogCount: backlogs === "" ? null : Number(backlogs), appearedSemesters: appeared.map(Number), semesterRecords, backlogAttempts }));
+    localStorage.setItem("gradly_student_exam_profile", JSON.stringify({ ...profile, pendingBacklogCount: backlogs === "" ? null : Number(backlogs), appearedSemesters: appeared.map(Number), semesterRecords, backlogAttempts, academicDelayYears: confirmedDelayYears, recommendedNextSemester: nextSemester, recommendedNextSession }));
     setBusy(false);
     navigate("/dashboard", { replace: true });
   }
@@ -81,6 +95,11 @@ export default function ExamProfileSetupPage() {
       <p>Keep your ESE and re-exam records up to date. Every cleared backlog is a step forward.</p>
     </section>
 
+    {nextSemester && recommendedNextSession && <section className="exam-setup-delay-recommendation">
+      <div className="exam-setup-delay-icon">↗</div>
+      <div className="exam-setup-delay-copy"><small>PERSONALISED NEXT-SEMESTER RECOMMENDATION</small><h3>Semester {nextSemester}: {recommendedNextSession}</h3><p>{confirmedDelayYears > 0 ? `Based on your recorded ${confirmedDelayYears}-year delay in earlier ESE appearances, Gradly has shifted the next-semester recommendation by the same amount.` : "Based on your current academic timeline. If you appeared later than the scheduled session, update that semester's ESE session and Gradly will adjust this recommendation."}</p></div>
+      <span className="exam-setup-delay-badge">{confirmedDelayYears > 0 ? `+${confirmedDelayYears} year${confirmedDelayYears === 1 ? "" : "s"}` : "On schedule"}</span>
+    </section>}
     <section className="exam-setup-summary">
       <div><small>PROGRAMME</small><strong>{academic.programName || "Your programme"}</strong></div>
       <div><small>SCHEME</small><strong>{academic.scheme || "Curriculum-defined"}</strong></div>
