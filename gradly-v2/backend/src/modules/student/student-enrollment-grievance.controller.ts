@@ -211,8 +211,15 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
  const u=await client.query("UPDATE public.users SET active=$2,updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",[uid,active]);
  if(!u.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student account was not found or is deleted.'});}
  await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'SUPER_ADMIN',$2,'NOTE_ADDED',$3)",[req.params.grievanceId,actor,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
- await client.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
- await client.query('COMMIT'); return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',student:u.rows[0]});
+ await client.query('COMMIT');
+ let notificationSent=false;
+ try {
+   await pool.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
+   notificationSent=true;
+ } catch(notificationError) {
+   console.error("Student account access notification delivery failed (account change was saved):",notificationError);
+ }
+ return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',notificationSent,student:u.rows[0]});
  } catch(error) { await client.query('ROLLBACK').catch(()=>undefined); console.error('Super Admin grievance account action failed:',error); return res.status(500).json({success:false,message:'Unable to update student access.'}); } finally { client.release(); }
 }
 export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
@@ -407,15 +414,31 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1, 'SUPER_ADMIN', $2, 'STATUS_CHANGED', $3, $4, $5)",
       [req.params.grievanceId, superAdminId, previous.status, status, note],
     );
-    await client.query(
-      `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
-       SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
-              $2, '/student/notifications'
-       FROM public.student_enrollment_grievances WHERE id = $1`,
-      [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
-    );
     await client.query("COMMIT");
-    return res.json({ success:true, message:"Enrollment grievance reviewed. Any approved mapping correction is now active, and the student has been notified.", grievance:result.rows[0] });
+
+    // Notification delivery must never roll back an administrator's decision.
+    // Some production databases may not yet have the notifications migration.
+    let notificationSent = false;
+    try {
+      await pool.query(
+        `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
+         SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
+                $2, '/student/notifications'
+         FROM public.student_enrollment_grievances WHERE id = $1`,
+        [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
+      );
+      notificationSent = true;
+    } catch (notificationError) {
+      console.error("Enrollment grievance notification delivery failed (decision was saved):", notificationError);
+    }
+    return res.json({
+      success:true,
+      message: notificationSent
+        ? "Enrollment grievance reviewed and the student has been notified."
+        : "Enrollment grievance decision saved. In-app notification could not be delivered; check the student_notifications migration.",
+      notificationSent,
+      grievance:result.rows[0],
+    });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     if (error instanceof MappingCorrectionError) return res.status(400).json({ success:false, message:error.message });
