@@ -65,7 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loginWithEmail(email: string, password: string) {
     const result = await signInWithEmailAndPassword(auth, email, password);
     sessionStorage.removeItem(GUEST_SESSION_KEY); setIsGuest(false);
-    await syncUserWithBackend(result.user);
+    try {
+      await syncUserWithBackend(result.user);
+    } catch (error) {
+      await signOut(auth);
+      throw error;
+    }
   }
 
   async function loginWithGoogle() {
@@ -74,7 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const firebaseUser = result.user;
     sessionStorage.removeItem(GUEST_SESSION_KEY);
     setIsGuest(false);
-    await syncUserWithBackend(firebaseUser);
+    try {
+      await syncUserWithBackend(firebaseUser);
+    } catch (error) {
+      // Do not leave a deleted/disabled Firebase identity signed in locally.
+      await signOut(auth);
+      throw error;
+    }
   }
 
   function continueAsGuest() {
