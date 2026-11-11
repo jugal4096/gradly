@@ -77,7 +77,7 @@ export async function promoteCurrentSemester(req: AuthenticatedRequest, res: Res
     const user = await resolveStudentUser(req, res);
     if (!user) return;
     const requested = Number(req.body?.currentSemesterNumber);
-    const month = new Date().getUTCMonth() + 1;
+    const month = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", month: "numeric" }).format(new Date()));
     if (month !== 1 && month !== 7) {
       return res.status(403).json({ code: "SEMESTER_PROMOTION_CLOSED", message: "Semester promotion is available only in January and July, after the December and June examination cycles." });
     }
