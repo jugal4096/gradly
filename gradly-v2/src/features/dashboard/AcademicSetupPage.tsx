@@ -36,6 +36,7 @@ export default function AcademicSetupPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [examSetupChoice, setExamSetupChoice] = useState(false);
   const searchTimer = useRef<number | undefined>(undefined);
   const searchSequence = useRef(0);
   const previewSequence = useRef(0);
@@ -372,7 +373,7 @@ export default function AcademicSetupPage() {
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
-      navigate("/exam-profile", { replace: true });
+      setExamSetupChoice(true);
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
     finally { setSaving(false); }
   }
@@ -620,6 +621,7 @@ export default function AcademicSetupPage() {
           {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
         </section>
       </div>}
+      {examSetupChoice && <div role="dialog" aria-modal="true" aria-labelledby="exam-choice-title" style={{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",zIndex:1000,display:"grid",placeItems:"center",padding:20}}><section style={{background:"var(--surface,#fff)",color:"var(--text,#18202c)",padding:28,borderRadius:16,maxWidth:460,width:"100%",boxShadow:"0 16px 60px #0004"}}><h2 id="exam-choice-title">Set up your Exam Profile?</h2><p>This optional step helps Gradly prepare semester exam sessions for SGPA result fetching. You can skip it and still use the manual SGPA calculator.</p><div style={{display:"flex",gap:12,flexWrap:"wrap"}}><button type="button" onClick={()=>navigate("/exam-profile",{replace:true})}>Set up Exam Profile</button><button type="button" onClick={()=>{localStorage.removeItem("gradly_student_exam_profile");navigate("/dashboard",{replace:true});}}>Skip for now</button></div></section></div>}
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
   </main>;
