@@ -20,7 +20,7 @@ import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSupe
 import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
 import { getGuestSessionForSuperAdmin, listGuestSessionsForSuperAdmin } from "./superAdmin-guests.controller";
 import { acknowledgePlatformRequest, deleteRequestRecord, listPlatformRequests, reviewPlatformRequest } from "../admin/platform-request.controller";
-import { listEnrollmentGrievancesForSuperAdmin, listEnrollmentGrievanceAuditHistory, listEnrollmentGrievanceAccountActions, reviewEnrollmentGrievance, setEnrollmentGrievanceStudentAccessForSuperAdmin, downloadEnrollmentGrievanceAttachmentForSuperAdmin } from "../student/student-enrollment-grievance.controller";
+import { listEnrollmentGrievancesForSuperAdmin, deleteEnrollmentGrievanceForSuperAdmin, listEnrollmentGrievanceAuditHistory, listEnrollmentGrievanceAccountActions, reviewEnrollmentGrievance, setEnrollmentGrievanceStudentAccessForSuperAdmin, downloadEnrollmentGrievanceAttachmentForSuperAdmin } from "../student/student-enrollment-grievance.controller";
 
 const router = Router();
 
@@ -69,6 +69,7 @@ router.post(
  */
 router.get("/platform-requests", authenticateSuperAdminToken, listPlatformRequests);
 router.get("/enrollment-grievances", authenticateSuperAdminToken, listEnrollmentGrievancesForSuperAdmin);
+router.delete("/enrollment-grievances/:grievanceId", authenticateSuperAdminToken, deleteEnrollmentGrievanceForSuperAdmin);
 router.get("/enrollment-grievances/:grievanceId/attachment", authenticateSuperAdminToken, downloadEnrollmentGrievanceAttachmentForSuperAdmin);
 router.get("/enrollment-grievance-audit-history", authenticateSuperAdminToken, listEnrollmentGrievanceAuditHistory);
 router.get("/enrollment-grievance-account-actions", authenticateSuperAdminToken, listEnrollmentGrievanceAccountActions);
