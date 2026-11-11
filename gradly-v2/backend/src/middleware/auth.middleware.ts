@@ -34,16 +34,19 @@ async function authenticateFirebaseTokenWithOptions(
     // They are NOT reactivated: all normal student APIs keep enforcing active=true.
     // Unknown users are allowed through so first-time sign-in can complete /auth/sync.
     const account = await pool.query(
-      "SELECT active FROM public.users WHERE firebase_uid = $1 LIMIT 1",
+      "SELECT active, deleted_at FROM public.users WHERE firebase_uid = $1 LIMIT 1",
       [decodedToken.uid]
     );
-    if (
-      !allowDisabledAccount &&
-      account.rowCount &&
-      account.rows[0].active !== true
-    ) {
+    if (!allowDisabledAccount && account.rowCount && account.rows[0].deleted_at) {
       return res.status(403).json({
-        message: "This Gradly account is disabled. Contact the platform administrator.",
+        code: "ACCOUNT_DELETED",
+        message: "This Gradly account was deleted and can no longer be used to sign in.",
+      });
+    }
+    if (!allowDisabledAccount && account.rowCount && account.rows[0].active !== true) {
+      return res.status(403).json({
+        code: "ACCOUNT_DISABLED",
+        message: "This Gradly account is currently disabled. Please contact the platform administrator.",
       });
     }
 
