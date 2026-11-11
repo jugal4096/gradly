@@ -28,22 +28,8 @@ export async function previewEnrollmentController(req: AuthenticatedRequest, res
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof Error) {
-      const validationMessages: Record<string, string> = {
-        EMPTY_ENROLLMENT_NUMBER: "Enter your enrollment number.",
-        INVALID_PROGRAMME_PREFIX: "Invalid enrollment number. Programme prefix is not recognized.",
-        INVALID_ENROLLMENT_LENGTH: "Invalid enrollment number. It must contain exactly 11 characters.",
-        INVALID_ADMISSION_YEAR: "Invalid enrollment number. Admission year must contain two digits.",
-        INVALID_ADMISSION_MODE: "Invalid enrollment number. Admission mode must be F or S.",
-        INVALID_BRANCH_CODE: "Unrecognized branch code. Please verify your enrollment number.",
-        INVALID_EIGHTH_CHARACTER: "Invalid enrollment number. The 8th character must be F.",
-        INVALID_STUDENT_SERIAL: "Invalid enrollment number. The last three characters must contain only digits.",
-        DSE_ADMISSION_CYCLE_NOT_STARTED: "Direct Second Year admission for this enrollment year has not started yet. DSE intake becomes eligible only when the corresponding first-year cohort enters its second academic year, at the start of that session (normally July).",
-        FUTURE_ADMISSION_YEAR: "Invalid enrollment number. This academic admission year has not started yet; future-dated enrollment numbers are not accepted.",
-        BE_CBCS_DISCONTINUED: "Invalid enrollment number. The BE New CBCS scheme was discontinued after 2023; BE24 and later are not valid.",
-        BE23_FIRST_YEAR_NOT_ALLOWED: "Invalid enrollment number. BE23F is not valid because first-year admissions moved to NEP. BE23S Direct Second Year remains valid.",
-        BT_NEP_NOT_STARTED: "Invalid enrollment number. BT enrollment numbers before 2023 are not valid under the NEP scheme.",
-      };
-      const message = validationMessages[error.message];
+      const invalidCodes = new Set(["EMPTY_ENROLLMENT_NUMBER","INVALID_PROGRAMME_PREFIX","INVALID_ENROLLMENT_LENGTH","INVALID_ADMISSION_YEAR","INVALID_ADMISSION_MODE","INVALID_BRANCH_CODE","INVALID_EIGHTH_CHARACTER","INVALID_STUDENT_SERIAL","DSE_ADMISSION_CYCLE_NOT_STARTED","FUTURE_ADMISSION_YEAR","BE_CBCS_DISCONTINUED","BE23_FIRST_YEAR_NOT_ALLOWED","BT_NEP_NOT_STARTED","POSTGRADUATE_REGULAR_ADMISSION_ONLY","ME_CBCS_DISCONTINUED","MT_NEP_NOT_STARTED"]);
+      const message = invalidCodes.has(error.message) ? "Invalid enrollment number." : undefined;
       if (message) {
         res.status(400).json({ success: false, message, code: error.message });
         return;

@@ -604,3 +604,7 @@
 .admin-request-shell[data-theme="dark"] .ad-workspace .ad-request-list article{background:#202f25!important;border-color:#405649!important}
 .admin-request-shell[data-theme="dark"] .ad-workspace .ad-request-form input,.admin-request-shell[data-theme="dark"] .ad-workspace .ad-request-form select,.admin-request-shell[data-theme="dark"] .ad-workspace .ad-request-form textarea{background:#101a16!important;color:#f0f6f1!important;border-color:#405649!important}
 .admin-request-shell[data-theme="dark"] .ad-workspace .ad-secondary-btn{background:#182720!important;color:var(--admin-accent)!important;border-color:#405649!important}
+
+
+/* Student evidence attachment action */
+.ad-evidence-download{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border:1px solid #c8c8c8;border-radius:9px;background:#f7f7f7;color:#111;font:700 11px Manrope,sans-serif;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}.ad-evidence-download:hover{background:#eee;border-color:#111;transform:translateY(-1px)}

@@ -220,3 +220,7 @@ html[data-sa-theme="dark"] .sa-requests .sa-request-section article:hover { back
 html[data-sa-theme="dark"] .sa-request-audit{background:#211b30;border-color:#51416f}
 html[data-sa-theme="dark"] .sa-request-audit article{background:#202b37;border-color:#394553}
 html[data-sa-theme="dark"] .sa-request-audit article strong{color:#e7dcff}
+
+
+/* Student evidence attachment action */
+.sa-request-evidence{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border:1px solid #c8c8c8;border-radius:9px;background:#f7f7f7;color:#111;font:700 11px Manrope,sans-serif;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}.sa-request-evidence:hover{background:#eee;border-color:#111;transform:translateY(-1px)}
