@@ -60,6 +60,37 @@ export async function findAcademicFilters() {
 }
 
 
+/** Deleted student accounts remain visible to Super Admin with their original IDs and academic records. */
+export async function findDeletedStudents(search?: string) {
+  const result = await pool.query(
+    `SELECT
+       u.id, u.email, u.display_name, u.role, u.active, u.last_login_at,
+       u.created_at, u.updated_at, u.deleted_at,
+       sp.id AS student_profile_id, sp.student_identifier,
+       sp.current_semester_number, sp.current_cgpa, sp.current_earned_credits,
+       sp.admission_year, sp.graduation_year,
+       sp.institution_id, c.program_id, c.branch_id, c.scheme_id,
+       i.name AS institution_name, p.name AS program_name,
+       b.name AS branch_name, s.name AS scheme_name
+     FROM public.users u
+     LEFT JOIN public.student_profiles sp ON sp.user_id = u.id
+     LEFT JOIN public.curricula c ON c.id = sp.curriculum_id
+     LEFT JOIN public.institutions i ON i.id = sp.institution_id
+     LEFT JOIN public.programs p ON p.id = c.program_id
+     LEFT JOIN public.branches b ON b.id = c.branch_id
+     LEFT JOIN public.schemes s ON s.id = c.scheme_id
+     WHERE u.role = 'STUDENT' AND u.deleted_at IS NOT NULL
+       AND ($1::text IS NULL OR u.email ILIKE '%' || $1 || '%'
+         OR u.display_name ILIKE '%' || $1 || '%'
+         OR u.id::text ILIKE '%' || $1 || '%'
+         OR sp.student_identifier ILIKE '%' || $1 || '%')
+     ORDER BY u.deleted_at DESC
+     LIMIT 1000`,
+    [search?.trim() || null]
+  );
+  return result.rows;
+}
+
 /** All disabled, non-deleted accounts across roles for Super Admin recovery. */
 export async function findDisabledAccounts(search?: string) {
   const result = await pool.query(
