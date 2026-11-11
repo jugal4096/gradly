@@ -71,6 +71,8 @@ router.get("/platform-requests", authenticateSuperAdminToken, listPlatformReques
 router.get("/enrollment-grievances", authenticateSuperAdminToken, listEnrollmentGrievancesForSuperAdmin);
 router.get("/enrollment-grievance-audit-history", authenticateSuperAdminToken, listEnrollmentGrievanceAuditHistory);
 router.patch("/enrollment-grievances/:grievanceId/review", authenticateSuperAdminToken, reviewEnrollmentGrievance);
+// Accept POST as a compatibility alias for older Request Center clients.
+router.post("/enrollment-grievances/:grievanceId/review", authenticateSuperAdminToken, reviewEnrollmentGrievance);
 router.patch("/platform-requests/:requestId/acknowledge", authenticateSuperAdminToken, acknowledgePlatformRequest);
 router.patch("/platform-requests/:requestId/review", authenticateSuperAdminToken, reviewPlatformRequest);
 router.delete("/platform-requests/:source/:requestId", authenticateSuperAdminToken, deleteRequestRecord);
