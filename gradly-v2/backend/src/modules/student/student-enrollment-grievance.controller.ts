@@ -210,7 +210,14 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
  const uid=g.rows[0].student_user_id;
  const u=await client.query("UPDATE public.users SET active=$2,updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",[uid,active]);
  if(!u.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student account was not found or is deleted.'});}
- await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'SUPER_ADMIN',$2,'NOTE_ADDED',$3)",[req.params.grievanceId,actor,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
+ await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'SUPER_ADMIN',NULL,'NOTE_ADDED',$2)",[req.params.grievanceId,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
+ await client.query(
+   `INSERT INTO public.audit_logs
+    (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata)
+    VALUES ('SUPER_ADMIN', $1::uuid, 'SUPER_ADMIN', $2, 'student_enrollment_grievances', $3::uuid, $4::jsonb)`,
+   [actor, active ? 'GRIEVANCE_STUDENT_REACTIVATED' : 'GRIEVANCE_STUDENT_DISABLED', req.params.grievanceId,
+    JSON.stringify({ grievanceId: req.params.grievanceId, note, studentUserId: uid })],
+ );
  await client.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
  await client.query('COMMIT'); return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',student:u.rows[0]});
  } catch(error) { await client.query('ROLLBACK').catch(()=>undefined); console.error('Super Admin grievance account action failed:',error); return res.status(500).json({success:false,message:'Unable to update student access.'}); } finally { client.release(); }
@@ -241,7 +248,27 @@ export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthent
        LEFT JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id
        LEFT JOIN public.institutions i ON i.id = g.institution_id
        WHERE e.grievance_id = $1
-       ORDER BY e.created_at DESC, e.id DESC LIMIT 100`,
+       UNION ALL
+       SELECT a.id::text AS id, a.entity_id AS "grievanceId",
+              a.actor_id::text AS "reviewerId",
+              COALESCE(a.actor_role, a.actor_type) AS "reviewerRole",
+              a.actor_id::text AS "actorDisplay",
+              a.action AS "eventType",
+              a.before_data->>'status' AS "previousStatus",
+              a.after_data->>'status' AS "newStatus",
+              COALESCE(a.metadata->>'note', '') AS "decisionReason",
+              NULL::text AS "informationRequest",
+              a.created_at AS "createdAt", i.name AS institution,
+              NULL::text AS "programmeScope", NULL::text AS "branchScope",
+              COALESCE(a.before_data, '{}'::jsonb) AS "oldValues",
+              COALESCE(a.after_data, '{}'::jsonb) AS "newValues"
+       FROM public.audit_logs a
+       LEFT JOIN public.student_enrollment_grievances g ON g.id = a.entity_id
+       LEFT JOIN public.institutions i ON i.id = g.institution_id
+       WHERE a.entity_table = 'student_enrollment_grievances'
+         AND a.entity_id = $1
+         AND a.actor_type = 'SUPER_ADMIN'
+       ORDER BY "createdAt" DESC LIMIT 100`,
       [grievanceId],
     );
     return res.json({ success:true, events:result.rows });
@@ -440,11 +467,24 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
          JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }), note],
       );
     } else {
+      // Legacy schema links actor_user_id to public.users. Super Admins live in
+      // public.super_admins, so keep the event row's user FK NULL and record
+      // the real Super Admin identity in audit_logs.actor_id.
       await client.query(
         `INSERT INTO public.student_enrollment_grievance_events
          (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note)
-         VALUES ($1,'SUPER_ADMIN',$2,'STATUS_CHANGED',$3,$4,$5)`,
-        [req.params.grievanceId, superAdminId, previous.status, status, note],
+         VALUES ($1,'SUPER_ADMIN',NULL,'STATUS_CHANGED',$2,$3,$4)`,
+        [req.params.grievanceId, previous.status, status, note],
+      );
+      await client.query(
+        `INSERT INTO public.audit_logs
+         (actor_type, actor_id, actor_role, action, entity_table, entity_id, before_data, after_data, metadata)
+         VALUES ('SUPER_ADMIN', $1::uuid, 'SUPER_ADMIN', 'ENROLLMENT_GRIEVANCE_REVIEWED',
+                 'student_enrollment_grievances', $2::uuid, $3::jsonb, $4::jsonb, $5::jsonb)`,
+        [superAdminId, req.params.grievanceId,
+         JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
+         JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }),
+         JSON.stringify({ grievanceId: req.params.grievanceId, note })],
       );
     }
     await client.query("COMMIT");
@@ -568,7 +608,10 @@ export async function listEnrollmentGrievanceAccountActions(req: SuperAdminAuthe
               a.action,NULL::text AS "previousStatus",NULL::text AS "newStatus",
               COALESCE(a.metadata->>'note',a.action) AS note,a.created_at AS "createdAt"
        FROM public.audit_logs a
-       WHERE a.entity_table='users' AND a.metadata->>'grievanceId'=$1
+       WHERE (
+         (a.entity_table='users' AND a.metadata->>'grievanceId'=$1)
+         OR (a.entity_table='student_enrollment_grievances' AND a.entity_id=$1::uuid)
+       )
        ORDER BY "createdAt" DESC LIMIT 150`,
       [grievanceId],
     );
