@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { pool } from "../../config/database";
 import { AuthenticatedRequest } from "../../middleware/auth.middleware";
 import { createProfile, getStudentProfile, updateProfile } from "./student.service";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
@@ -146,3 +147,56 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
   }
 }
 
+
+
+/** Student-requested account deletion. The account is disabled and soft-deleted;
+ * the original ID, profile, academic records and audit history remain available
+ * only through the protected Super Admin directory.
+ */
+export async function deleteOwnStudentAccount(req: AuthenticatedRequest, res: Response) {
+  const firebaseUid = req.firebaseUser?.uid;
+  if (!firebaseUid) return res.status(401).json({ message: "User is not authenticated." });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const account = await client.query(
+      `SELECT id, role, deleted_at FROM public.users
+       WHERE firebase_uid = $1 FOR UPDATE`,
+      [firebaseUid]
+    );
+    if (!account.rowCount || account.rows[0].role !== "STUDENT") {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Student account was not found." });
+    }
+    if (account.rows[0].deleted_at) {
+      await client.query("ROLLBACK");
+      return res.status(410).json({ message: "This student account has already been deleted." });
+    }
+    const userId = account.rows[0].id;
+    await client.query(
+      `UPDATE public.users
+       SET active = FALSE, deleted_at = NOW(), updated_at = NOW()
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [userId]
+    );
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, ip_address, metadata)
+       VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_SELF_DELETED_ACCOUNT',
+               'users', $1, $2, $3::jsonb)`,
+      [userId, req.ip || req.socket.remoteAddress || null,
+       JSON.stringify({ initiatedBy: "STUDENT", softDeleted: true, retainedAcademicRecords: true })]
+    );
+    await client.query("COMMIT");
+    return res.status(200).json({
+      message: "Your Gradly account has been deleted. Your original student ID and academic records are retained for authorised Super Admin review.",
+      deleted: true,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Student self-service account deletion failed:", error);
+    return res.status(500).json({ message: "Unable to delete your Gradly account. Please try again." });
+  } finally {
+    client.release();
+  }
+}
