@@ -20,7 +20,8 @@ export default function ExamProfileSetupPage() {
   const current = Number(academic.semester) || null;
   const maximumExamSemester = current === null ? 0 : Math.min(total, current);
   const admissionYear = Number(academic.admissionYear) || new Date().getFullYear();
-  const entrySemester = Number(academic.entrySemester) || 1;
+  const inferredDirectSecondYear = /\\b(direct\\s*second\\s*year|dsy|lateral\\s*entry)\\b/i.test(`${academic.admissionMode || ""} ${academic.programName || ""}`);
+  const entrySemester = Math.max(1, Number(academic.entrySemester) || (inferredDirectSecondYear ? 3 : 1));
   const family = detectSchemeFamily(academic.scheme || "", academic.programName || "", total);
   const timeline = buildExamTimeline({ totalSemesters: total, currentSemester: current, admissionYear, entrySemester }).filter(item => item.semester <= maximumExamSemester);
   const [backlogs, setBacklogs] = useState("");
