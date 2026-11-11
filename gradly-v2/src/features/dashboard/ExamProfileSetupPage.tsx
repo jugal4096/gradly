@@ -11,6 +11,8 @@ export default function ExamProfileSetupPage() {
   }, []);
   const total = Math.max(1, Number(academic.totalSemesters) || (/mca|m\.?tech/i.test(academic.programName || "") ? 4 : 8));
   const current = Number(academic.semester) || null;
+  const promotionWindowOpen = [0, 6].includes(new Date().getMonth());
+  const maximumExamSemester = current === null ? 0 : Math.min(total, current + (promotionWindowOpen ? 1 : 0));
   const admissionYear = Number(academic.admissionYear) || new Date().getFullYear();
   const entrySemester = Number(academic.entrySemester) || 1;
   const [backlogs, setBacklogs] = useState("");
@@ -18,7 +20,7 @@ export default function ExamProfileSetupPage() {
   const [busy, setBusy] = useState(false);
   const family = detectSchemeFamily(academic.scheme || "", academic.programName || "", total);
   const timeline = buildExamTimeline({ totalSemesters: total, currentSemester: current, admissionYear, entrySemester });
-  function toggle(semester: number) { setAppeared(value => value.includes(String(semester)) ? value.filter(item => item !== String(semester)) : [...value, String(semester)]); }
+  function toggle(semester: number) { if (semester > maximumExamSemester) return; setAppeared(value => value.includes(String(semester)) ? value.filter(item => item !== String(semester)) : [...value, String(semester)]); }
   function confirm() {
     setBusy(true);
     const profile: ExamProfile = {
@@ -35,9 +37,9 @@ export default function ExamProfileSetupPage() {
   return <main className="exam-setup"><div className="exam-setup-wrap">
     <div className="exam-setup-brand"><span>G</span> Gradly <small>EXAM INTELLIGENCE</small></div>
     <p className="exam-setup-kicker">YOUR NEXT SETUP STEP</p><h1>Set up your Exam Profile</h1>
-    <p className="exam-setup-copy">Gradly has prepared an examination timeline from your academic profile. Review it and confirm which semester examinations you have appeared for.</p>
+    <p className="exam-setup-copy">Gradly has prepared an examination timeline from your academic profile. Review it and confirm which semester examinations you have appeared for.</p><p className="exam-setup-copy">{promotionWindowOpen ? "January/July promotion window is open: you may also add examination details for the next semester." : "Higher-semester examination details stay locked until the January/July window, following the December/June examination cycles."}</p>
     <section className="exam-setup-summary"><div><small>PROGRAMME</small><strong>{academic.programName || "Your programme"}</strong></div><div><small>SCHEME</small><strong>{academic.scheme || "Curriculum-defined"}</strong></div><div><small>STRUCTURE</small><strong>{total} semesters · {family}</strong></div><div><small>CURRENT SEMESTER</small><strong>{current ? `Semester ${current}` : "Please verify"}</strong></div></section>
-    <section className="exam-setup-card"><h2>Examination timeline</h2><p>Session labels are estimates. Your institution's published academic calendar takes priority.</p><div className="exam-setup-timeline">{timeline.map(item => <label className="exam-setup-row" key={item.semester}><input type="checkbox" checked={appeared.includes(String(item.semester))} onChange={() => toggle(item.semester)} /><span className="exam-setup-sem">S{item.semester}</span><span className="exam-setup-session"><strong>{item.sessionLabel}</strong><small>{item.parity} semester · {item.semester === current ? "Current semester" : item.semester < (current || 0) ? "Previous semester" : "Upcoming semester"}</small></span><span className="exam-setup-tag">{appeared.includes(String(item.semester)) ? "Appeared" : item.semester > (current || 0) ? "Upcoming" : "Unverified"}</span></label>)}</div></section>
+    <section className="exam-setup-card"><h2>Examination timeline</h2><p>Session labels are estimates. Your institution's published academic calendar takes priority.</p><div className="exam-setup-timeline">{timeline.map(item => <label className="exam-setup-row" key={item.semester}><input type="checkbox" checked={appeared.includes(String(item.semester))} disabled={item.semester > maximumExamSemester} onChange={() => toggle(item.semester)} /><span className="exam-setup-sem">S{item.semester}</span><span className="exam-setup-session"><strong>{item.sessionLabel}</strong><small>{item.parity} semester · {item.semester === current ? "Current semester" : item.semester < (current || 0) ? "Previous semester" : "Upcoming semester"}</small></span><span className="exam-setup-tag">{appeared.includes(String(item.semester)) ? "Appeared" : item.semester > (current || 0) ? "Upcoming" : "Unverified"}</span></label>)}</div></section>
     <section className="exam-setup-card exam-setup-backlog"><label htmlFor="backlogs">How many pending backlog / re-examination subjects do you currently have?</label><input id="backlogs" type="number" min="0" max="100" value={backlogs} onChange={e => setBacklogs(e.target.value)} placeholder="Not sure? Leave blank" /><small>You can update this later. Gradly will keep each attempt separate.</small></section>
     <div className="exam-setup-actions"><button className="exam-setup-primary" onClick={confirm} disabled={busy}>{busy ? "Saving…" : "Confirm exam profile & continue"}</button><button className="exam-setup-secondary" onClick={() => navigate("/academic-setup")}>Edit academic profile</button></div>
   </div></main>;
