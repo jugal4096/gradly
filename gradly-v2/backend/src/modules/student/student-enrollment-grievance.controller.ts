@@ -60,8 +60,8 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
       [user.id, institutionId, enrollment, category, description],
     );
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, to_status, note) VALUES ($1, 'STUDENT', $2, 'SUBMITTED', $3, $4)",
-      [result.rows[0].id, user.id, result.rows[0].status, description.slice(0, 2000)],
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason) VALUES ($1, $2, 'STUDENT', $3, 'DECISION_RECORDED', NULL, $4, $5)",
+      [result.rows[0].id, user.id, institutionId, result.rows[0].status, description.slice(0, 2000)],
     );
     if (evidence) {
       await client.query(
@@ -210,7 +210,7 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
  const uid=g.rows[0].student_user_id;
  const u=await client.query("UPDATE public.users SET active=$2,updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",[uid,active]);
  if(!u.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student account was not found or is deleted.'});}
- await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'SUPER_ADMIN',$2,'NOTE_ADDED',$3)",[req.params.grievanceId,actor,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
+ await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,reviewer_id,reviewer_role,institution_id,event_type,new_status,decision_reason) SELECT g.id,$2,'SUPER_ADMIN',g.institution_id,'DECISION_RECORDED',g.status,$3 FROM public.student_enrollment_grievances g WHERE g.id=$1",[req.params.grievanceId,actor,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
  await client.query('COMMIT');
  let notificationSent=false;
  try {
@@ -411,7 +411,7 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
       : null;
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1, 'SUPER_ADMIN', $2, 'STATUS_CHANGED', $3, $4, $5)",
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason) SELECT g.id,$2,'SUPER_ADMIN',g.institution_id,'STATUS_CHANGED',$3,$4,$5 FROM public.student_enrollment_grievances g WHERE g.id=$1",
       [req.params.grievanceId, superAdminId, previous.status, status, note],
     );
     await client.query("COMMIT");
@@ -474,7 +474,7 @@ export async function reviewEnrollmentGrievanceForAdmin(req: AdminAuthenticatedR
       [previous.id, status, note, adminId],
     );
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1,'ADMIN',$2,'STATUS_CHANGED',$3,$4,$5)",
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason) SELECT g.id,$2,'ADMIN',g.institution_id,'STATUS_CHANGED',$3,$4,$5 FROM public.student_enrollment_grievances g WHERE g.id=$1",
       [previous.id, adminId, previous.status, status, note],
     );
     await client.query(
@@ -513,7 +513,7 @@ export async function setEnrollmentGrievanceStudentAccess(req: AdminAuthenticate
     );
     if (!changed.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({success:false,message:"Student account was not found or is deleted."}); }
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'ADMIN',$2,'NOTE_ADDED',$3)",
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id,reviewer_id,reviewer_role,institution_id,event_type,new_status,decision_reason) SELECT g.id,$2,'ADMIN',g.institution_id,'DECISION_RECORDED',g.status,$3 FROM public.student_enrollment_grievances g WHERE g.id=$1",
       [req.params.grievanceId,adminId,"ACCOUNT_"+(active?"ENABLED":"DISABLED")+": "+note],
     );
     await client.query(
