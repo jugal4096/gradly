@@ -4,6 +4,7 @@ import LoginPage from "../features/auth/LoginPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import StudentPlatform from "../features/dashboard/StudentPlatform";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
+import ExamProfileSetupPage from "../features/dashboard/ExamProfileSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
@@ -28,6 +29,7 @@ export default function AppRoutes() {
     <Route path="/" element={<HomePage />} />
     <Route path="/login" element={<Navigate to="/" replace />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
+    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
