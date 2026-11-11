@@ -76,8 +76,7 @@ export default function SuperAdminRequestCenter(){
  const isAdminRequest=(r:Row)=>["ADMIN_REQUEST","PASSWORD_RESET","ADMIN_CURRICULUM"].includes(r.source);
  const matchesSearch=(r:Row)=>{const q=search.trim().toLowerCase();return !q||[r.title,r.description,r.adminName,r.adminCode,r.adminEmail,r.institution,r.program,r.branch,r.targetUserId].some(v=>String(v||"").toLowerCase().includes(q));};
  const adminRows=useMemo(()=>rows.filter(r=>isAdminRequest(r)&&matchesSearch(r)),[rows,search]);
- const grievanceRows=useMemo(()=>rows.filter(r=>r.source==="ENROLLMENT_GRIEVANCE"&&matchesSearch(r)),[rows,search]);
- const userRows=useMemo(()=>rows.filter(r=>!isAdminRequest(r)&&r.source!=="ENROLLMENT_GRIEVANCE"&&matchesSearch(r)),[rows,search]);
+ const userRows=useMemo(()=>rows.filter(r=>!isAdminRequest(r)&&matchesSearch(r)),[rows,search]);
  async function deleteRequest(row:Row){
   if(row.source==="ENROLLMENT_GRIEVANCE"){
    if(!window.confirm("Permanently delete this student grievance and its uploaded evidence? The deletion audit record will be retained."))return;
@@ -147,8 +146,7 @@ export default function SuperAdminRequestCenter(){
   {error&&<p className="sa-request-error">{error}</p>}{notice&&<p className="sa-request-success" role="status">{notice}</p>}
   <div className="sa-request-sections">
    {renderSection("Admin Requests","Requests submitted by institution and department administrators.",adminRows,"admin")}
-   {renderSection("Student Data Mismatch Grievances","Academic data mismatch requests submitted by students, including selected reason, additional comments and supporting evidence.",grievanceRows,"grievance")}
-   {renderSection("User Requests","Feedback, syllabus concerns and institution requests submitted by students and users.",userRows,"user")}
+   {renderSection("User Requests","Feedback, syllabus concerns, institution requests and student data mismatch requests submitted by students and users.",userRows,"user")}
   </div>
   {selected&&<div className="sa-request-overlay" onClick={()=>setSelected(null)}><section role="dialog" aria-modal="true" aria-labelledby="sa-request-drawer-title" className="sa-request-drawer" onClick={e=>e.stopPropagation()}><header><div><span>REQUEST DETAIL / {label(selected.source)}</span><h2 id="sa-request-drawer-title">{selected.title}</h2><p>{label(selected.requestType)} · {date(selected.createdAt)}</p></div><button onClick={()=>setSelected(null)} aria-label="Close"><X size={18}/></button></header>
    {error&&<p className="sa-request-error" role="alert">{error}</p>}{notice&&<p className="sa-request-success" role="status">{notice}</p>}
