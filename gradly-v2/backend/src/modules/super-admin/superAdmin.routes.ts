@@ -73,6 +73,8 @@ router.get("/enrollment-grievances/:grievanceId/attachment", authenticateSuperAd
 router.get("/enrollment-grievance-audit-history", authenticateSuperAdminToken, listEnrollmentGrievanceAuditHistory);
 router.get("/enrollment-grievance-account-actions", authenticateSuperAdminToken, listEnrollmentGrievanceAccountActions);
 router.patch("/enrollment-grievances/:grievanceId/review", authenticateSuperAdminToken, reviewEnrollmentGrievance);
+// Compatibility for clients still issuing POST to the review action.
+router.post("/enrollment-grievances/:grievanceId/review", authenticateSuperAdminToken, reviewEnrollmentGrievance);
 router.patch("/enrollment-grievances/:grievanceId/student-access", authenticateSuperAdminToken, setEnrollmentGrievanceStudentAccessForSuperAdmin);
 router.patch("/platform-requests/:requestId/acknowledge", authenticateSuperAdminToken, acknowledgePlatformRequest);
 router.patch("/platform-requests/:requestId/review", authenticateSuperAdminToken, reviewPlatformRequest);
