@@ -9,7 +9,7 @@ type BacklogAttempt = { id: string; subject: string; session: string; status: "P
 type SemesterRecord = { eseStatus: EseStatus; backlogAttempts: BacklogAttempt[] };
 type CurriculumSubject = { id: string | number; code?: string | null; name: string; credits?: number | string | null; courseType?: string | null; mandatory?: boolean | null };
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 const eseLabels: Record<EseStatus, string> = { NOT_APPEARED: "Not appeared yet", AWAITING_RESULT: "Result awaited", PASSED: "Passed", BACKLOG: "Backlog / failed" };
 const makeAttempt = (): BacklogAttempt => ({ id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, subject: "", session: "After ESE", status: "PLANNED" });
