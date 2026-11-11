@@ -100,6 +100,7 @@ export default function StudentPlatform() {
   const [guestCgpaResult,setGuestCgpaResult] = useState<number|null>(null);
   const [loginGate,setLoginGate] = useState(false);
   const [notice,setNotice] = useState("");
+  const [deletingAccount,setDeletingAccount] = useState(false);
   const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isGuest) {
       try { const saved=JSON.parse(localStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:({O:"A++",C:"C+",P:"C",F:"D"} as Record<string,string>)[subject.grade] || (POINTS[subject.grade]!==undefined?subject.grade:"A")})); } catch { /* use defaults */ }
@@ -233,6 +234,35 @@ export default function StudentPlatform() {
     else setMessages(current=>[...current,{id:Date.now(),author:user?.displayName||"You",body:message.trim(),time:"Just now",mine:true}]);
     setMessage("");setEditingId(null);
   }
+  async function deleteStudentAccount() {
+    if (isGuest || !user || deletingAccount) return;
+    const confirmation = window.prompt(
+      "This permanently removes your access to Gradly. Your original student ID and academic records will be retained for authorised Super Admin review. Type DELETE to confirm."
+    );
+    if (confirmation !== "DELETE") return;
+    setDeletingAccount(true);
+    setNotice("");
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(API + "/api/student/profile", {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + token, Accept: "application/json" },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Unable to delete your account.");
+      [
+        "gradly_student_profile",
+        "gradly_semester_results",
+        "gradly_subjects",
+        "gradly_exam_profile",
+      ].forEach((key) => localStorage.removeItem(key));
+      await signOut();
+      routeNavigate("/", { replace: true });
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Unable to delete your account.");
+      setDeletingAccount(false);
+    }
+  }
   function submitAi(event:FormEvent) {
     event.preventDefault(); if(!aiInput.trim()) return;
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
@@ -333,7 +363,7 @@ export default function StudentPlatform() {
 
 {section==="settings"&&<><SectionTitle kicker="YOUR WORKSPACE" title="Personalise Gradly" copy="Make your academic workspace comfortable, clear and easy to use."/><Card className="sp-preference-card"><div className="sp-card-head"><div><span>DISPLAY EXPERIENCE</span><h2>Choose your appearance</h2></div></div><div className="sp-theme-choices">{[{id:"light",icon:"☀",label:"Light",copy:"Bright and focused"},{id:"dark",icon:"☾",label:"Dark",copy:"Easy on the eyes"},{id:"system",icon:"◐",label:"Device",copy:"Follow your device"}].map(option=><button type="button" key={option.id} className={themeMode===option.id?"selected":""} onClick={()=>{setThemeMode(option.id as "light"|"dark"|"system");updateSetting("gradly_theme",option.id);}}><span>{option.icon}</span><strong>{option.label}</strong><small>{option.copy}</small>{themeMode===option.id&&<b>✓ Selected</b>}</button>)}</div></Card><Card className="sp-preference-card"><div className="sp-card-head"><div><span>READABILITY</span><h2>Typography</h2></div></div><div className="sp-inline-form"><label>Font family<select value={fontFamily} onChange={e=>{setFontFamily(e.target.value);updateSetting("gradly_font_family",e.target.value);}}><option>DM Sans</option><option>Manrope</option><option>Inter</option><option>Arial</option><option>Georgia</option><option>Verdana</option></select></label><label>Text size · {textSize}px<input type="range" min="12" max="20" value={textSize} onChange={e=>{setTextSize(Number(e.target.value));updateSetting("gradly_text_size",e.target.value);}}/></label></div><div className="sp-type-preview" style={{fontFamily,fontSize:textSize+"px"}}>The quick brown fox jumps over the lazy dog. <strong>Academic progress, made clearer.</strong></div><p className="sp-muted">Your appearance and typography preferences are saved in this browser.</p></Card></>}
 
-{section==="profile"&&<><SectionTitle kicker="YOUR DETAILS" title="Academic profile" copy="Review and update your institution and academic identity."/><Card><div className="sp-card-head"><div><span>STUDENT IDENTITY</span><h2>{user?.displayName||"Student"}</h2></div><span className="sp-status"><i/> Google verified</span></div><div className="sp-profile-grid"><div><span>Email</span><b>{user?.email||"—"}</b></div><div><span>Institution</span><b>{profile.institutionName||"Not selected"}</b></div><div><span>Programme</span><b>{profile.programName||"—"}</b></div><div><span>Branch</span><b>{profile.branchName||"—"}</b></div><div><span>Semester</span><b>{profile.semester||"—"}</b></div><div><span>Enrollment</span><b>{profile.enrollment||"—"}</b></div><div><span>Admission mode</span><b>{profile.admissionMode||"—"}</b></div><div><span>Scheme</span><b>{profile.scheme||"—"}</b></div></div><div className="sp-actions"><button className="sp-primary" onClick={()=>setOnboarding(true)}>Edit academic profile →</button><button className="sp-secondary" onClick={()=>routeNavigate("/exam-profile")}>Edit exam profile →</button></div></Card><Card><div className="sp-card-head"><div><span>SUPPORT</span><h2>Contact the developer</h2></div></div><p className="sp-muted">Report an issue, suggest a feature or share feedback about Gradly.</p><a className="sp-primary sp-link" href="https://github.com/jugal4096/gradly/issues" target="_blank" rel="noreferrer">Contact developer ↗</a></Card></>}
+{section==="profile"&&<><SectionTitle kicker="YOUR DETAILS" title="Academic profile" copy="Review and update your institution and academic identity."/><Card><div className="sp-card-head"><div><span>STUDENT IDENTITY</span><h2>{user?.displayName||"Student"}</h2></div><span className="sp-status"><i/> Google verified</span></div><div className="sp-profile-grid"><div><span>Email</span><b>{user?.email||"—"}</b></div><div><span>Institution</span><b>{profile.institutionName||"Not selected"}</b></div><div><span>Programme</span><b>{profile.programName||"—"}</b></div><div><span>Branch</span><b>{profile.branchName||"—"}</b></div><div><span>Semester</span><b>{profile.semester||"—"}</b></div><div><span>Enrollment</span><b>{profile.enrollment||"—"}</b></div><div><span>Admission mode</span><b>{profile.admissionMode||"—"}</b></div><div><span>Scheme</span><b>{profile.scheme||"—"}</b></div></div><div className="sp-actions"><button className="sp-primary" onClick={()=>setOnboarding(true)}>Edit academic profile →</button><button className="sp-secondary" onClick={()=>routeNavigate("/exam-profile")}>Edit exam profile →</button></div></Card><Card className="sp-preference-card"><div className="sp-card-head"><div><span>ACCOUNT CONTROL</span><h2>Delete Gradly account</h2></div></div><p className="sp-muted">This closes your entire student account and removes your access to Gradly. Your original student ID, academic profile, saved academic records and audit history are retained in restricted records so authorised Super Admins can review them. This action cannot be undone from your account.</p><div className="sp-actions"><button className="sp-secondary" type="button" onClick={() => void deleteStudentAccount()} disabled={deletingAccount || isGuest}>{deletingAccount ? "Deleting account…" : "Delete my Gradly account"}</button></div>{notice && <p className="sp-muted" role="alert">{notice}</p>}</Card><Card><div className="sp-card-head"><div><span>SUPPORT</span><h2>Contact the developer</h2></div></div><p className="sp-muted">Report an issue, suggest a feature or share feedback about Gradly.</p><a className="sp-primary sp-link" href="https://github.com/jugal4096/gradly/issues" target="_blank" rel="noreferrer">Contact developer ↗</a></Card></>}
       </div>
       <footer className="sp-footer"><span>© {new Date().getFullYear()} Gradly</span><span>CALCULATE · UNDERSTAND · PLAN</span><span>Built for your next chapter ✦</span></footer>
     </main>
