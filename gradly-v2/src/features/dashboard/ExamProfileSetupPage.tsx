@@ -32,7 +32,7 @@ export default function ExamProfileSetupPage() {
   function sessionOptions(semester: number) {
     const base = timeline.find(item => item.semester === semester);
     if (!base) return [];
-    const year = Number(base.sessionLabel.match(/\\d{4}/)?.[0]) || admissionYear;
+    const year = Number(base.sessionLabel.match(/\d{4}/)?.[0]) || admissionYear;
     const season = semester % 2 ? "November–December" : "May–June";
     return [year-1,year,year+1,year+2].filter(y=>y>=admissionYear).map(y=>`${season} ${y}`);
   }
@@ -52,14 +52,14 @@ export default function ExamProfileSetupPage() {
   const confirmedDelayYears = timeline.reduce((maxDelay, item) => {
     const chosenSession = sessionChoices[item.semester];
     if (!chosenSession) return maxDelay;
-    const expectedYear = Number(item.sessionLabel.match(/\\d{4}/)?.[0]);
-    const actualYear = Number(chosenSession.match(/\\d{4}/)?.[0]);
+    const expectedYear = Number(item.sessionLabel.match(/\d{4}/)?.[0]);
+    const actualYear = Number(chosenSession.match(/\d{4}/)?.[0]);
     if (!Number.isFinite(expectedYear) || !Number.isFinite(actualYear)) return maxDelay;
     return Math.max(maxDelay, actualYear - expectedYear);
   }, 0);
   const nextSemester = current !== null && current < total ? current + 1 : null;
   const nextBaseSession = nextSemester !== null ? buildExamTimeline({ totalSemesters: total, currentSemester: nextSemester, admissionYear, entrySemester }).find(item => item.semester === nextSemester) : null;
-  const recommendedNextSession = nextBaseSession ? nextBaseSession.sessionLabel.replace(/\\d{4}/, year => String(Number(year) + confirmedDelayYears)) : null;
+  const recommendedNextSession = nextBaseSession ? nextBaseSession.sessionLabel.replace(/\d{4}/, year => String(Number(year) + confirmedDelayYears)) : null;
 
   function confirm() {
     setBusy(true);
