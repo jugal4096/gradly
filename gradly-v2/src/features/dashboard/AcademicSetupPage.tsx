@@ -21,14 +21,14 @@ type EnrollmentPreview = {
 };
 
 function validateEnrollmentNumber(value: string): string | null {
-  if (!value) return "Enter your enrollment number."; 
-  if (!/^(BE|BT|MC|ME|MT)/.test(value)) return "Invalid enrollment number. Programme prefix is not recognized."; 
-  if (value[7] !== "F") return "Invalid enrollment number. The 8th character must be F."; 
-  if (value.length !== 11) return "Invalid enrollment number. It must contain exactly 11 characters."; 
-  if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number. Admission year must contain two digits."; 
-  if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number. Admission mode must be F or S.";
-  if ((value.startsWith("ME") || value.startsWith("MT")) && value[4] !== "F") return "M.E. and M.Tech. admissions must be Regular (F) only."; 
-  if (!/^\d{2}$/.test(value.slice(5, 7))) return "Unrecognized branch code. Please verify your enrollment number."; 
+  if (!value) return "Invalid enrollment number."; 
+  if (!/^(BE|BT|MC|ME|MT)/.test(value)) return "Invalid enrollment number."; 
+  if (value[7] !== "F") return "Invalid enrollment number."; 
+  if (value.length !== 11) return "Invalid enrollment number."; 
+  if (!/^\d{2}$/.test(value.slice(2, 4))) return "Invalid enrollment number."; 
+  if (!/^[FS]$/.test(value[4] || "")) return "Invalid enrollment number.";
+  if ((value.startsWith("ME") || value.startsWith("MT")) && value[4] !== "F") return "Invalid enrollment number."; 
+  if (!/^\d{2}$/.test(value.slice(5, 7))) return "Invalid enrollment number."; 
   if (!/^\d{3}$/.test(value.slice(-3))) return "Invalid enrollment number. The last three characters must contain only digits."; 
   return null;
 }
@@ -57,11 +57,12 @@ export default function AcademicSetupPage() {
   const [confirmedAdmissionMode, setConfirmedAdmissionMode] = useState("");
   const [gapAcademicYearFrom, setGapAcademicYearFrom] = useState("");
   const [gapAcademicYearTo, setGapAcademicYearTo] = useState("");
-  const [grievanceCategory, setGrievanceCategory] = useState("INVALID_ENROLLMENT");
+  const [grievanceReason, setGrievanceReason] = useState("");
   const [grievanceDescription, setGrievanceDescription] = useState("");
+  const [grievanceAttachment, setGrievanceAttachment] = useState<File | null>(null);
   const [grievanceBusy, setGrievanceBusy] = useState(false);
   const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;status:string;adminNote?:string|null;createdAt:string}>>([]);
-  const [institutionRequests, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
+  const [, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [enrollment, setEnrollment] = useState("");
@@ -72,6 +73,8 @@ export default function AcademicSetupPage() {
   const [requestCity, setRequestCity] = useState("");
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [supportModal, setSupportModal] = useState<"institution" | "appeal" | null>(null);
+  const [appealSent, setAppealSent] = useState(false);
 
   const programs = Array.from(new Map((selected?.branches || []).map(b => [b.program_id, { id: b.program_id, name: b.program_name }])).values());
   if (preview?.programId && preview.programme && !programs.some(p => p.id === preview.programId)) programs.push({ id: preview.programId, name: preview.programme });
@@ -100,6 +103,13 @@ export default function AcademicSetupPage() {
     .map(year => ({ value: String(year), label: year + "-" + String(year + 1).slice(-2) }));
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
+
+  useEffect(() => {
+    if (!supportModal) return;
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setSupportModal(null); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [supportModal]);
 
   useEffect(() => {
     if (academicGapYears === 0) { setGapAcademicYearFrom(""); setGapAcademicYearTo(""); return; }
@@ -180,7 +190,7 @@ export default function AcademicSetupPage() {
       const payload = await response.json();
       if (sequence !== previewSequence.current) return;
       if (!response.ok) {
-        if (response.status === 400) { setError(payload.message || "Enrollment number could not be validated."); setPreview(null); setExpectedSemester(null); return; }
+        if (response.status === 400) { setError(payload.code === "ENROLLMENT_ALREADY_CLAIMED" ? payload.message : "Invalid enrollment number."); setPreview(null); setExpectedSemester(null); return; }
         throw new Error(payload.message || "Unable to identify academic details.");
       }
       const result = payload.data as EnrollmentPreview;
@@ -367,19 +377,40 @@ export default function AcademicSetupPage() {
 
   async function submitEnrollmentGrievance(event: FormEvent) {
     event.preventDefault();
-    if (!user || !selected) { setError("Select your institution before submitting an enrollment grievance."); return; }
-    if (grievanceDescription.trim().length < 10) { setError("Please describe the issue in at least 10 characters."); return; }
+    if (!user || !selected) { setError("Select your institution before contacting our team."); return; }
+    if (!grievanceReason) { setError("Select the reason that best describes the data mismatch."); return; }
+    if (grievanceDescription.trim().length > 2000) { setError("Additional comments must be 2,000 characters or fewer."); return; }
     setGrievanceBusy(true); setError("");
     try {
       const token = await user.getIdToken();
+      let attachmentBase64 = "";
+      if (grievanceAttachment) {
+        attachmentBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result.split(",")[1] || "") : reject(new Error("Unable to read the selected document."));
+          reader.onerror = () => reject(new Error("Unable to read the selected document."));
+          reader.readAsDataURL(grievanceAttachment);
+        });
+      }
       const response = await fetch(API + "/api/student/enrollment-grievances", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ institutionId: selected.id, enrollmentNumber: enrollment.trim().toUpperCase(), category: grievanceCategory, description: grievanceDescription.trim() }),
+        body: JSON.stringify({
+          institutionId: selected.id,
+          enrollmentNumber: enrollment.trim().toUpperCase(),
+          category: grievanceReason,
+          description: ["Reason: " + ({ INVALID_ENROLLMENT: "Enrollment number or details are incorrect", WRONG_PROGRAMME: "Programme is incorrect", WRONG_BRANCH: "Branch or specialization is incorrect", WRONG_SCHEME: "Academic scheme is incorrect", WRONG_ADMISSION_MODE: "Admission mode is incorrect", WRONG_SEMESTER: "Predicted semester is incorrect", ALREADY_REGISTERED: "I already have an existing Gradly profile", OTHER: "Other data mismatch" } as Record<string, string>)[grievanceReason], grievanceDescription.trim() ? "Additional comment: " + grievanceDescription.trim() : ""].filter(Boolean).join("\n\n") + "\n\n" + ["Detected academic details:", "Institution: " + (selected?.name || "Not available"), "Enrollment number: " + enrollment.trim().toUpperCase(), "Programme: " + (preview?.programme || "Not available"), "Branch: " + (preview?.branch || "Not available"), "Academic scheme: " + (preview?.curriculumName || preview?.scheme || "Not available"), "Admission mode: " + (confirmedAdmissionMode || "Not available")].join("\n"),
+          attachmentName: grievanceAttachment?.name || "",
+          attachmentType: grievanceAttachment?.type || "",
+          attachmentBase64,
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to submit grievance.");
+      setGrievanceReason("");
       setGrievanceDescription("");
+      setGrievanceAttachment(null);
+      setAppealSent(true);
       try {
         const listResponse = await fetch(API + "/api/student/enrollment-grievances", { headers: { Authorization: "Bearer " + token } });
         const listData = await listResponse.json();
@@ -425,7 +456,8 @@ export default function AcademicSetupPage() {
       </header>
       <div className="academic-setup-progress" aria-label="Step 2 of 3"><span /></div>
 
-      <section className="academic-setup-content">
+      <section className={"academic-setup-content" + (previewBusy ? " is-identifying" : "") + (preview?.recognized ? " has-identification" : "")}>
+        <div className="academic-setup-flow">
         <div className="academic-setup-heading">
           <p className="academic-setup-eyebrow">ACADEMIC PROFILE</p>
           <h1>Let's set up your academic profile.</h1>
@@ -437,19 +469,22 @@ export default function AcademicSetupPage() {
         <form className="academic-setup-form" onSubmit={saveProfile}>
           <section className="academic-setup-field-section">
             <label htmlFor="institution-search">Your institution</label>
-            <div className="academic-setup-input-wrap">
-              <input id="institution-search" value={query} onChange={e => {
+            <div className={"academic-setup-input-wrap" + (selected ? " has-institution" : "")}>
+              <input id="institution-search" value={query} readOnly={!!selected} onChange={e => {
                 const value = e.target.value;
                 previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
                 window.clearTimeout(searchTimer.current);
                 searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
               }} placeholder="Search your college or university" autoComplete="organization" />
+              {selected && <button type="button" className="academic-setup-institution-edit" aria-label="Change institution" title="Change institution" onClick={() => {
+                previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
+              }}>✎</button>}
               {searching && <span className="academic-setup-search-spinner" />}
             </div>
             {searching && <small className="academic-setup-helper">Searching institutions…</small>}
-            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution below.</small>}
+            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution here.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
-            {selected && <div className="academic-setup-selected"><span className="academic-setup-selected-check">✓</span><span>{selected.name}</span><button type="button" onClick={() => { previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); }}>Change</button></div>}
+            {!selected && <div className="academic-setup-support-actions"><button type="button" className="academic-setup-support-link" onClick={() => { setRequestSent(false); setSupportModal("institution"); }}><span className="academic-setup-support-icon">＋</span><span>Can't find your institution?</span><span className="academic-setup-support-arrow">↗</span></button></div>}
           </section>
 
           {selected && <section className="academic-setup-field-section enrollment-section">
@@ -488,7 +523,12 @@ export default function AcademicSetupPage() {
                 <div><dt>Academic scheme</dt><dd>{curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "—"}</dd></div>
               </dl>
               {predictionConfirmed === true && !editingPrediction ? <div className="academic-setup-confirmed-state"><span>✓</span><div><strong>Academic details confirmed</strong><small>You've confirmed these details for your Gradly profile.</small></div><button type="button" onClick={() => { setPredictionConfirmed(null); setEditingPrediction(true); }}>Edit</button></div> : <>
-                <div className="academic-setup-data-question">Is this data correct?</div>
+                <button type="button" className="academic-setup-support-link academic-setup-appeal-link" onClick={() => { setAppealSent(false); setSupportModal("appeal"); }}>
+                <span className="academic-setup-support-icon">↗</span>
+                <span>Data mismatch? Contact our team</span>
+                <span className="academic-setup-support-arrow">→</span>
+              </button>
+              <div className="academic-setup-data-question">Is this data correct?</div>
                 {!editingPrediction ? <div className="academic-setup-choice-row">
                   <button type="button" className="academic-setup-choice primary-choice" onClick={() => { setPredictionConfirmed(true); setEditingPrediction(false); setError(""); }}>✓ Yes, everything is correct</button>
                   <button type="button" className="academic-setup-choice" onClick={() => { setEditingPrediction(true); setPredictionConfirmed(null); setError(""); }}>No, I want to edit it</button>
@@ -536,55 +576,48 @@ export default function AcademicSetupPage() {
 
         {!selected && <p className="academic-setup-first-step-note">Start by selecting your college or university. Your enrollment number comes next.</p>}
 
-        <details className="academic-setup-institution-request">
-          <summary>Can't find your institution?</summary>
-          {requestSent ? <p className="academic-setup-request-success">✓ Request submitted. Our team can review your institution.</p> : <form onSubmit={submitInstitutionRequest}>
+
+        </div>
+      </section>
+      {supportModal && <div className="academic-setup-dialog-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setSupportModal(null); }}>
+        <section className="academic-setup-dialog" role="dialog" aria-modal="true" aria-labelledby="academic-support-title">
+          <button type="button" className="academic-setup-dialog-close" aria-label="Close dialog" onClick={() => setSupportModal(null)}>×</button>
+          <p className="academic-setup-dialog-eyebrow">{supportModal === "institution" ? "INSTITUTION DIRECTORY" : "STUDENT SUPPORT"}</p>
+          <h2 id="academic-support-title">{supportModal === "institution" ? "Can't find your institution?" : "Data mismatch? Contact our team"}</h2>
+          <p className="academic-setup-dialog-description">{supportModal === "institution" ? "Tell us which college or university is missing. Our team can review your request." : "Share what looks incorrect and attach a supporting document if you have one. Your enrollment number and detected academic details are included automatically."}</p>
+          {supportModal === "institution" ? (requestSent ? <div className="academic-setup-request-success">✓ Institution request submitted successfully.</div> : <form onSubmit={submitInstitutionRequest}>
             <label>College or university name<input required minLength={2} maxLength={160} value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="Institution name" /></label>
             <label>City or district<input required minLength={2} maxLength={160} value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="e.g. Solapur, Maharashtra" /></label>
-            <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send request"}</button>
-          </form>}
-        </details>
-        {institutionRequests.length > 0 && <section className="academic-setup-request-tracking">
-          <h3>Your institution requests</h3>
-          {institutionRequests.map(request=><div key={request.id} className="academic-setup-request-row">
-            <div><strong>{request.collegeName}</strong><small>{request.locality} · {new Date(request.createdAt).toLocaleDateString()}</small></div>
-            <span>{request.status.replace(/_/g," ")}</span>
-          </div>)}
-        </section>}
-        <details className="academic-setup-institution-request academic-setup-grievance">
-          <summary>Having trouble with your enrollment number or academic details?</summary>
-          <form onSubmit={submitEnrollmentGrievance}>
-            <label>Issue category
-              <select value={grievanceCategory} onChange={e=>setGrievanceCategory(e.target.value)}>
-                <option value="INVALID_ENROLLMENT">Enrollment number marked invalid</option>
-                <option value="ALREADY_REGISTERED">Enrollment number already registered</option>
-                <option value="WRONG_PROGRAMME">Incorrect programme / degree</option>
-                <option value="WRONG_SCHEME">Incorrect academic scheme</option>
-                <option value="WRONG_BRANCH">Incorrect branch</option>
-                <option value="WRONG_ADMISSION_MODE">Incorrect admission mode</option>
-                <option value="WRONG_SEMESTER">Incorrect semester prediction</option>
-                <option value="OTHER">Other enrollment issue</option>
-              </select>
+            <button type="submit" disabled={requestBusy}>{requestBusy ? "Submitting…" : "Send institution request"}</button>
+          </form>) : (appealSent ? <div className="academic-setup-request-success">✓ Your request has been sent to our team.</div> : <form onSubmit={submitEnrollmentGrievance}>
+            <div className="academic-setup-support-context">
+              <span><small>INSTITUTION</small><strong>{selected?.name || "—"}</strong></span>
+              <span><small>ENROLLMENT NUMBER</small><strong>{enrollment.trim().toUpperCase() || "—"}</strong></span>
+              <span><small>IDENTIFIED PROGRAMME</small><strong>{preview?.programme || "—"}</strong></span>
+              <span><small>IDENTIFIED BRANCH</small><strong>{preview?.branch || "—"}</strong></span>
+            </div>
+            <label htmlFor="academic-mismatch-reason">Select a reason<select id="academic-mismatch-reason" required value={grievanceReason} onChange={e => setGrievanceReason(e.target.value)}><option value="">Choose the issue that best matches</option><option value="INVALID_ENROLLMENT">Enrollment number or details are incorrect</option><option value="WRONG_PROGRAMME">Programme is incorrect</option><option value="WRONG_BRANCH">Branch or specialization is incorrect</option><option value="WRONG_SCHEME">Academic scheme is incorrect</option><option value="WRONG_ADMISSION_MODE">Admission mode is incorrect</option><option value="WRONG_SEMESTER">Predicted semester is incorrect</option><option value="ALREADY_REGISTERED">I already have an existing Gradly profile</option><option value="OTHER">Other data mismatch</option></select></label>
+            <label htmlFor="academic-mismatch-comment">Additional comment <span>Optional</span><textarea id="academic-mismatch-comment" maxLength={2000} rows={4} value={grievanceDescription} onChange={e => setGrievanceDescription(e.target.value)} placeholder="Add any details that may help our team understand the issue…" /></label>
+            <label className="academic-setup-upload-label">Supporting document <span>Optional · PDF, JPG or PNG · Up to 5 MB</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={e => {
+                const file = e.target.files?.[0] || null;
+                if (file && (!["application/pdf","image/jpeg","image/png"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+                  setError("Choose a PDF, JPG or PNG document up to 5 MB.");
+                  e.currentTarget.value = "";
+                  setGrievanceAttachment(null);
+                  return;
+                }
+                setError("");
+                setGrievanceAttachment(file);
+              }} />
             </label>
-            <label>Enrollment number (if available)
-              <input value={enrollment} onChange={e=>setEnrollment(e.target.value.toUpperCase())} maxLength={32} placeholder="e.g. BE23S06F007" />
-            </label>
-            <label>Describe your issue
-              <textarea required minLength={10} maxLength={3000} rows={4} value={grievanceDescription} onChange={e=>setGrievanceDescription(e.target.value)} placeholder="Explain what happened so the Super Admin team can verify your record." />
-            </label>
-            <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Submitting…" : "Submit grievance"}</button>
-          </form>
-          {grievances.length > 0 && <div className="academic-setup-grievance-list">
-            <h3>Your grievance history</h3>
-            {grievances.map(item=><article key={item.id}>
-              <div><strong>{item.category.replace(/_/g," ")}</strong><span>{item.status.replace(/_/g," ")}</span></div>
-              <p>{item.description}</p>
-              {item.adminNote && <small>Admin response: {item.adminNote}</small>}
-              <small>Submitted {new Date(item.createdAt).toLocaleDateString()}</small>
-            </article>)}
-          </div>}
-        </details>
-      </section>
+            {grievanceAttachment && <div className="academic-setup-file-selected"><span>▤</span><strong>{grievanceAttachment.name}</strong><small>{(grievanceAttachment.size / 1024 / 1024).toFixed(2)} MB</small><button type="button" onClick={() => setGrievanceAttachment(null)}>Remove</button></div>}
+            <button type="submit" disabled={grievanceBusy || !selected}>{grievanceBusy ? "Sending to our team…" : "Submit to our team"}</button>
+            {grievances.length > 0 && <div className="academic-setup-dialog-history"><strong>Previous support requests</strong>{grievances.map(item => <article key={item.id}><span>Data mismatch request</span><small>{item.status.replace(/_/g," ")} · {new Date(item.createdAt).toLocaleDateString()}</small></article>)}</div>}
+          </form>)}
+          {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
+        </section>
+      </div>}
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
   </main>;

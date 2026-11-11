@@ -10,7 +10,7 @@ import { getAdminWorkspaceProfile } from "./admin.repository";
 import { createSubjectChangeRequest, listSubjectChangeRequests, listWorkspaceNotifications, markWorkspaceNotificationRead } from "./admin-workspace.controller";
 import { getAdminPrivacyActivity, listDepartmentSyllabusFeedback, reviewDepartmentSyllabusFeedback } from "./admin-privacy.controller";
 import { createPlatformRequest, listAdminPlatformRequests } from "./platform-request.controller";
-import { listEnrollmentGrievancesForAdmin } from "../student/student-enrollment-grievance.controller";
+import { listEnrollmentGrievancesForAdmin, downloadEnrollmentGrievanceAttachmentForAdmin, reviewEnrollmentGrievanceForAdmin, setEnrollmentGrievanceStudentAccess } from "../student/student-enrollment-grievance.controller";
 
 const router = Router();
 
@@ -42,6 +42,9 @@ router.get(
 
 router.get("/platform-requests", authenticateAdminToken, listAdminPlatformRequests);
 router.get("/enrollment-grievances", authenticateAdminToken, listEnrollmentGrievancesForAdmin);
+router.get("/enrollment-grievances/:grievanceId/attachment", authenticateAdminToken, downloadEnrollmentGrievanceAttachmentForAdmin);
+router.patch("/enrollment-grievances/:grievanceId/review", authenticateAdminToken, reviewEnrollmentGrievanceForAdmin);
+router.patch("/enrollment-grievances/:grievanceId/student-access", authenticateAdminToken, setEnrollmentGrievanceStudentAccess);
 router.post("/platform-requests", authenticateAdminToken, createPlatformRequest);
 router.get("/workspace-notifications", authenticateAdminToken, listWorkspaceNotifications);
 router.patch("/workspace-notifications/:notificationId/read", authenticateAdminToken, markWorkspaceNotificationRead);
