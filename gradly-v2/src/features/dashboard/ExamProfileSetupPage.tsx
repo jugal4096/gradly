@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildExamTimeline, detectSchemeFamily, type ExamProfile } from "./exam-profile-intelligence";
 import "./ExamProfileSetupPage.css";
@@ -7,6 +7,9 @@ type AcademicProfile = { institutionName?: string; programName?: string; branchN
 type EseStatus = "NOT_APPEARED" | "AWAITING_RESULT" | "PASSED" | "BACKLOG";
 type BacklogAttempt = { id: string; subject: string; session: string; status: "PLANNED" | "APPEARED" | "CLEARED" | "BACKLOG" };
 type SemesterRecord = { eseStatus: EseStatus; backlogAttempts: BacklogAttempt[] };
+type CurriculumSubject = { id: string | number; code?: string | null; name: string; credits?: number | string | null; courseType?: string | null; mandatory?: boolean | null };
+
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
 
 const eseLabels: Record<EseStatus, string> = { NOT_APPEARED: "Not appeared yet", AWAITING_RESULT: "Result awaited", PASSED: "Passed", BACKLOG: "Backlog / failed" };
 const makeAttempt = (): BacklogAttempt => ({ id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, subject: "", session: "After ESE", status: "PLANNED" });
@@ -29,6 +32,36 @@ export default function ExamProfileSetupPage() {
   const [sessionChoices, setSessionChoices] = useState<Record<number,string>>({});
   const [semesterRecords, setSemesterRecords] = useState<Record<number, SemesterRecord>>(() => Object.fromEntries(timeline.map(item => [item.semester, { eseStatus: "NOT_APPEARED", backlogAttempts: [] }])));
   const [busy, setBusy] = useState(false);
+  const [subjectsBySemester, setSubjectsBySemester] = useState<Record<number, CurriculumSubject[]>>({});
+  const [subjectLoading, setSubjectLoading] = useState<Record<number, boolean>>({});
+  const [subjectErrors, setSubjectErrors] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!academic.curriculumId) return;
+    let cancelled = false;
+    const loadSubjects = async () => {
+      for (const item of timeline) {
+        if (cancelled) return;
+        setSubjectLoading(previous => ({ ...previous, [item.semester]: true }));
+        try {
+          const response = await fetch(`${API}/api/academic/curricula/${encodeURIComponent(academic.curriculumId!)}/semesters/${item.semester}/subjects`);
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.message || "Unable to load curriculum subjects.");
+          if (!cancelled) {
+            const rows = Array.isArray(payload.data) ? payload.data as CurriculumSubject[] : [];
+            setSubjectsBySemester(previous => ({ ...previous, [item.semester]: rows }));
+            setSubjectErrors(previous => ({ ...previous, [item.semester]: "" }));
+          }
+        } catch (error) {
+          if (!cancelled) setSubjectErrors(previous => ({ ...previous, [item.semester]: error instanceof Error ? error.message : "Unable to load curriculum subjects." }));
+        } finally {
+          if (!cancelled) setSubjectLoading(previous => ({ ...previous, [item.semester]: false }));
+        }
+      }
+    };
+    void loadSubjects();
+    return () => { cancelled = true; };
+  }, [academic.curriculumId, timeline.map(item => item.semester).join(",")]);
 
   function sessionOptions(semester: number) {
     const base = timeline.find(item => item.semester === semester);
@@ -127,7 +160,7 @@ export default function ExamProfileSetupPage() {
             {record.backlogAttempts.length === 0 && <div className="exam-setup-empty">No backlog appearances recorded for this semester. Add one whenever a subject needs a re-exam.</div>}
             {record.backlogAttempts.map((attempt,index)=><div className="exam-setup-attempt" key={attempt.id}>
               <div className="exam-setup-attempt-number">{index+1}</div>
-              <label className="exam-setup-field"><span>Subject / course</span><input value={attempt.subject} onChange={event=>updateAttempt(item.semester,attempt.id,{subject:event.target.value})} placeholder="e.g. Engineering Mathematics" /></label>
+              <label className="exam-setup-field"><span>Subject / course</span><select value={attempt.subject} onChange={event=>updateAttempt(item.semester,attempt.id,{subject:event.target.value})} disabled={subjectLoading[item.semester] || (!academic.curriculumId)}><option value="">{subjectLoading[item.semester] ? "Loading curriculum subjects…" : "Select a subject"}</option>{(subjectsBySemester[item.semester] || []).map(subject=><option key={subject.id} value={subject.name}>{subject.code ? `${subject.code} · ` : ""}{subject.name}{subject.credits ? ` · ${subject.credits} credits` : ""}</option>)}</select>{subjectErrors[item.semester] && <small className="exam-setup-subject-hint">{subjectErrors[item.semester]}</small>}{academic.curriculumId && !subjectLoading[item.semester] && !subjectErrors[item.semester] && !(subjectsBySemester[item.semester] || []).length && <small className="exam-setup-subject-hint">No active subjects are configured for this semester in the selected curriculum.</small>}{!academic.curriculumId && <small className="exam-setup-subject-hint">Complete your academic profile with a curriculum to get subject recommendations.</small>}</label>
               <label className="exam-setup-field"><span>Re-exam session</span><select value={attempt.session} onChange={event=>updateAttempt(item.semester,attempt.id,{session:event.target.value})}><option>After ESE</option><option>Winter re-exam</option><option>Summer re-exam</option><option>Special examination</option><option>Other</option></select></label>
               <label className="exam-setup-field"><span>Attempt status</span><select value={attempt.status} onChange={event=>updateAttempt(item.semester,attempt.id,{status:event.target.value as BacklogAttempt["status"]})}><option value="PLANNED">Planned</option><option value="APPEARED">Appeared</option><option value="CLEARED">Cleared</option><option value="BACKLOG">Not cleared</option></select></label>
               <button className="exam-setup-remove" type="button" aria-label="Remove appearance" onClick={()=>updateSemester(item.semester,{backlogAttempts:record.backlogAttempts.filter(entry=>entry.id!==attempt.id)})}>×</button>
