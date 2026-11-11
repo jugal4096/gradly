@@ -28,7 +28,10 @@ export default function LoginPage() {
       navigate("/dashboard", { replace: true });
     } catch (loginError) {
       console.error(loginError);
-      setError(loginError instanceof Error ? loginError.message : "Sign-in could not be completed. Please try again.");
+      const message = loginError instanceof Error ? loginError.message : "";
+      setError(message.includes("was deleted")
+        ? "This account was deleted and cannot be used to sign in. You can continue as a guest or contact Gradly support if this was a mistake."
+        : message || "Sign-in could not be completed. Please try again.");
     } finally {
       setLoggingIn(false);
     }
