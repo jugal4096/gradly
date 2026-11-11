@@ -26,12 +26,6 @@ export async function syncAuthUser(
 
     const user = await synchronizeUser(uid, email, name);
 
-    if (user?.deleted_at) {
-      return res.status(403).json({
-        code: "ACCOUNT_DELETED",
-        message: "This Gradly account was deleted and can no longer be used to sign in.",
-      });
-    }
     if (user && user.active !== true) {
       return res.status(403).json({
         code: "ACCOUNT_DISABLED",
