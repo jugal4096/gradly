@@ -5,14 +5,14 @@ import "./ExamProfileSetupPage.css";
 
 type AcademicProfile = { institutionName?: string; programId?: string; programName?: string; branchId?: string; branchName?: string; curriculumId?: string; scheme?: string; semester?: string; admissionYear?: number | string; admissionMode?: string; totalSemesters?: number; entrySemester?: number; academicProfileConfirmed?: boolean };
 type EseStatus = "NOT_APPEARED" | "AWAITING_RESULT" | "PASSED" | "BACKLOG";
-type BacklogAttempt = { id: string; subject: string; session: string; status: "PLANNED" | "APPEARED" | "CLEARED" | "BACKLOG" };
+type BacklogAttempt = { id: string; subject: string; session: string };
 type SemesterRecord = { eseStatus: EseStatus; backlogAttempts: BacklogAttempt[] };
 type CurriculumSubject = { id: string | number; code?: string | null; name: string; credits?: number | string | null; courseType?: string | null; mandatory?: boolean | null };
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 
 const eseLabels: Record<EseStatus, string> = { NOT_APPEARED: "Not appeared yet", AWAITING_RESULT: "Result awaited", PASSED: "Passed", BACKLOG: "Backlog / failed" };
-const makeAttempt = (): BacklogAttempt => ({ id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, subject: "", session: "After ESE", status: "PLANNED" });
+const makeAttempt = (): BacklogAttempt => ({ id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, subject: "", session: "" });
 
 export default function ExamProfileSetupPage() {
   const navigate = useNavigate();
@@ -70,7 +70,7 @@ export default function ExamProfileSetupPage() {
     const season = semester % 2 ? "November–December" : "May–June";
     return [year-1,year,year+1,year+2].filter(y=>y>=admissionYear).map(y=>`${season} ${y}`);
   }
-  function updateSemester(semester: number, patch: Partial<SemesterRecord>) {
+  function reExamSessionOptions() {\n    const firstYear = Math.max(admissionYear, 2000);\n    const lastYear = new Date().getFullYear() + 1;\n    return Array.from({ length: Math.max(1, lastYear - firstYear + 1) }, (_, index) => firstYear + index)\n      .flatMap(year => [`Re-exam Nov–Dec ${year}`, `Re-exam May–June ${year}`]);\n  }\n  function updateSemester(semester: number, patch: Partial<SemesterRecord>) {
     setSemesterRecords(previous => ({ ...previous, [semester]: { eseStatus: "NOT_APPEARED", backlogAttempts: [], ...previous[semester], ...patch } }));
   }
   function updateAttempt(semester: number, id: string, patch: Partial<BacklogAttempt>) {
@@ -124,7 +124,7 @@ export default function ExamProfileSetupPage() {
     </section>
 
     <section className="exam-setup-progress">
-      <div className="exam-setup-progress-top"><div><small>JOURNEY PROGRESS</small><strong>{progress}% tracked</strong></div><span className="exam-setup-streak">✦ {clearedAttempts} backlog {clearedAttempts === 1 ? "subject" : "subjects"} cleared</span></div>
+      <div className="exam-setup-progress-top"><div><small>JOURNEY PROGRESS</small><strong>{progress}% tracked</strong></div><span className="exam-setup-streak">✦ {totalAttempts} re-exam {totalAttempts === 1 ? "appearance" : "appearances"} recorded</span></div>
       <div className="exam-setup-progress-track"><i style={{ width: `${progress}%` }} /></div>
       <p>Keep your ESE and re-exam records up to date. Every cleared backlog is a step forward.</p>
     </section>
@@ -161,8 +161,7 @@ export default function ExamProfileSetupPage() {
             {record.backlogAttempts.map((attempt,index)=><div className="exam-setup-attempt" key={attempt.id}>
               <div className="exam-setup-attempt-number">{index+1}</div>
               <label className="exam-setup-field"><span>Subject / course</span><select value={attempt.subject} onChange={event=>updateAttempt(item.semester,attempt.id,{subject:event.target.value})} disabled={subjectLoading[item.semester] || (!academic.curriculumId)}><option value="">{subjectLoading[item.semester] ? "Loading curriculum subjects…" : "Select a subject"}</option>{(subjectsBySemester[item.semester] || []).map(subject=><option key={subject.id} value={subject.name}>{subject.code ? `${subject.code} · ` : ""}{subject.name}{subject.credits ? ` · ${subject.credits} credits` : ""}</option>)}</select>{subjectErrors[item.semester] && <small className="exam-setup-subject-hint">{subjectErrors[item.semester]}</small>}{academic.curriculumId && !subjectLoading[item.semester] && !subjectErrors[item.semester] && !(subjectsBySemester[item.semester] || []).length && <small className="exam-setup-subject-hint">No active subjects are configured for this semester in the selected curriculum.</small>}{!academic.curriculumId && <small className="exam-setup-subject-hint">Complete your academic profile with a curriculum to get subject recommendations.</small>}</label>
-              <label className="exam-setup-field"><span>Re-exam session</span><select value={attempt.session} onChange={event=>updateAttempt(item.semester,attempt.id,{session:event.target.value})}><option>After ESE</option><option>Winter re-exam</option><option>Summer re-exam</option><option>Special examination</option><option>Other</option></select></label>
-              <label className="exam-setup-field"><span>Attempt status</span><select value={attempt.status} onChange={event=>updateAttempt(item.semester,attempt.id,{status:event.target.value as BacklogAttempt["status"]})}><option value="PLANNED">Planned</option><option value="APPEARED">Appeared</option><option value="CLEARED">Cleared</option><option value="BACKLOG">Not cleared</option></select></label>
+              <label className="exam-setup-field"><span>Re-exam session</span><select value={attempt.session} onChange={event=>updateAttempt(item.semester,attempt.id,{session:event.target.value})}><option value="">Select re-exam session</option>{!reExamSessionOptions().includes(attempt.session) && attempt.session && <option value={attempt.session}>{attempt.session} (saved)</option>}{reExamSessionOptions().map(option=><option key={option} value={option}>{option}</option>)}</select></label>
               <button className="exam-setup-remove" type="button" aria-label="Remove appearance" onClick={()=>updateSemester(item.semester,{backlogAttempts:record.backlogAttempts.filter(entry=>entry.id!==attempt.id)})}>×</button>
             </div>)}
           </div>
