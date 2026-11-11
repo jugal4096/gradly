@@ -71,6 +71,48 @@ function readProfilePayload(body: Record<string, unknown>) {
   };
 }
 
+/** Promote a confirmed student profile by exactly one semester during the January/July window. */
+export async function promoteCurrentSemester(req: AuthenticatedRequest, res: Response) {
+  try {
+    const user = await resolveStudentUser(req, res);
+    if (!user) return;
+    const requested = Number(req.body?.currentSemesterNumber);
+    const month = new Date().getUTCMonth() + 1;
+    if (month !== 1 && month !== 7) {
+      return res.status(403).json({ code: "SEMESTER_PROMOTION_CLOSED", message: "Semester promotion is available only in January and July, after the December and June examination cycles." });
+    }
+    if (!Number.isInteger(requested) || requested < 2 || requested > 12) {
+      return res.status(400).json({ message: "Select a valid next semester." });
+    }
+    const result = await pool.query(
+      `UPDATE public.student_profiles sp
+       SET current_semester_number = $2, updated_at = NOW()
+       FROM public.users u, public.curricula c
+       WHERE sp.user_id = u.id AND u.id = $1 AND u.active = TRUE
+         AND u.deleted_at IS NULL AND sp.curriculum_id = c.id
+         AND sp.academic_profile_confirmed IS TRUE
+         AND sp.academic_status <> 'GRADUATED'
+         AND $2 = sp.current_semester_number + 1
+         AND $2 <= COALESCE(c.total_semesters, 12)
+       RETURNING sp.id, sp.current_semester_number`,
+      [user.id, requested]
+    );
+    if (!result.rowCount) {
+      return res.status(409).json({ code: "SEMESTER_PROMOTION_NOT_ALLOWED", message: "You can move forward by exactly one semester only during the January/July promotion window. Your academic identity remains locked." });
+    }
+    await pool.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, metadata)
+       VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_SEMESTER_PROMOTED', 'student_profiles', $2, $3::jsonb)`,
+      [user.id, result.rows[0].id, JSON.stringify({ currentSemesterNumber: requested, promotionWindow: month === 1 ? "JANUARY" : "JULY" })]
+    );
+    return res.status(200).json({ message: "Semester updated. Your academic profile is locked again.", currentSemesterNumber: requested, locked: true });
+  } catch (error) {
+    console.error("Semester promotion failed:", error);
+    return res.status(500).json({ message: "Unable to update your current semester." });
+  }
+}
+
 export async function getProfile(req: AuthenticatedRequest, res: Response) {
   try {
     const user = await resolveStudentUser(req, res);
