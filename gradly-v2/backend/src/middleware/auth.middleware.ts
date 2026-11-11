@@ -37,11 +37,18 @@ async function authenticateFirebaseTokenWithOptions(
       "SELECT active, deleted_at FROM public.users WHERE firebase_uid = $1 LIMIT 1",
       [decodedToken.uid]
     );
+    // A verified owner signing in again restores a self-deleted student account.
+    // Keep this recovery before the active-account check so an early protected
+    // request cannot race the /auth/sync call and reject the returning user.
     if (!allowDisabledAccount && account.rowCount && account.rows[0].deleted_at) {
-      return res.status(403).json({
-        code: "ACCOUNT_DELETED",
-        message: "This Gradly account was deleted and can no longer be used to sign in.",
-      });
+      await pool.query(
+        `UPDATE public.users
+         SET active = TRUE, deleted_at = NULL, updated_at = NOW()
+         WHERE firebase_uid = $1 AND deleted_at IS NOT NULL`,
+        [decodedToken.uid]
+      );
+      account.rows[0].active = true;
+      account.rows[0].deleted_at = null;
     }
     if (!allowDisabledAccount && account.rowCount && account.rows[0].active !== true) {
       return res.status(403).json({
