@@ -608,3 +608,50 @@
 
 /* Student evidence attachment action */
 .ad-evidence-download{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border:1px solid #c8c8c8;border-radius:9px;background:#f7f7f7;color:#111;font:700 11px Manrope,sans-serif;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}.ad-evidence-download:hover{background:#eee;border-color:#111;transform:translateY(-1px)}
+
+
+/* Student grievance actions — touch-friendly, accessible controls. */
+.ad-workspace .ad-grievance-actions{
+  display:grid;gap:12px;margin-top:16px;padding:16px;
+  border:1px solid #e8e0f2;border-radius:14px;
+  background:linear-gradient(145deg,#fbf9ff,#fff);
+}
+.ad-workspace .ad-grievance-note-label{display:grid;gap:7px;color:#4d3d65;font-size:11px;font-weight:800}
+.ad-workspace .ad-grievance-note-label span{color:#8b809b;font-size:10px;font-weight:500}
+.ad-workspace .ad-grievance-actions textarea{
+  width:100%;min-height:82px;padding:12px 13px;border:1px solid #ded5ec;border-radius:10px;
+  background:#fff;color:#302440;font:12px/1.6 "DM Sans",sans-serif;resize:vertical;outline:none;
+}
+.ad-workspace .ad-grievance-actions textarea:focus{
+  border-color:#8b68cf;box-shadow:0 0 0 3px rgba(125,88,196,.14)
+}
+.ad-workspace .ad-grievance-action-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.ad-workspace .ad-grievance-action-buttons button{
+  display:inline-flex;align-items:center;justify-content:center;min-height:40px;
+  padding:9px 13px;border:1px solid #ded5ec;border-radius:10px;
+  color:#59427f;background:#fff;font:750 11px "DM Sans",sans-serif;
+  cursor:pointer;transition:background .16s,border-color .16s,transform .16s,box-shadow .16s;
+}
+.ad-workspace .ad-grievance-action-buttons button:hover:not(:disabled){
+  transform:translateY(-1px);box-shadow:0 5px 14px rgba(53,35,85,.09)
+}
+.ad-workspace .ad-grievance-action-buttons button.is-review{background:#f2edff;border-color:#d9cbf8;color:#5c3ca4}
+.ad-workspace .ad-grievance-action-buttons button.is-info{background:#eef6ff;border-color:#cfe2f8;color:#285f91}
+.ad-workspace .ad-grievance-action-buttons button.is-reject{background:#fff1f2;border-color:#f2d0d4;color:#a23e4c}
+.ad-workspace .ad-grievance-action-buttons button.is-disable{background:#fff7eb;border-color:#f0dfbd;color:#8c5c18}
+.ad-workspace .ad-grievance-action-buttons button.is-enable{background:#edf9f1;border-color:#cde9d5;color:#267248}
+.ad-workspace .ad-grievance-action-buttons button:disabled{opacity:.55;cursor:wait}
+.ad-workspace .ad-grievance-feedback{margin:0;padding:10px 12px;border-radius:9px;font-size:11px;line-height:1.5}
+.ad-workspace .ad-grievance-feedback.is-error{border:1px solid #f0cbd0;background:#fff5f6;color:#a13b49}
+.ad-workspace .ad-grievance-feedback.is-success{border:1px solid #d0e8d6;background:#f1faf3;color:#286d43}
+.ad-workspace .ad-grievance-saving{color:#7650c9;font-weight:700}
+@media(max-width:650px){
+ .ad-workspace .ad-grievance-actions{padding:12px}
+ .ad-workspace .ad-grievance-action-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ad-workspace .ad-grievance-action-buttons button{width:100%;min-height:44px;padding:9px 8px;font-size:10px}
+ .ad-workspace .ad-grievance-action-buttons button:last-child{grid-column:1/-1}
+}
+.admin-request-shell[data-theme="dark"] .ad-workspace .ad-grievance-actions{background:#1d2c23;border-color:#405748}
+.admin-request-shell[data-theme="dark"] .ad-workspace .ad-grievance-note-label{color:#dce9e0}
+.admin-request-shell[data-theme="dark"] .ad-workspace .ad-grievance-actions textarea{background:#101a16;color:#e2eee6;border-color:#405748}
+.admin-request-shell[data-theme="dark"] .ad-workspace .ad-grievance-action-buttons button{filter:brightness(.88)}
