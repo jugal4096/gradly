@@ -221,7 +221,19 @@ export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthent
   if (!grievanceId) return res.status(400).json({ success:false, message:"A grievance ID is required." });
   try {
     const result = await pool.query(
-      "SELECT e.id, e.grievance_id AS \"grievanceId\", e.actor_user_id AS \"reviewerId\", e.actor_type AS \"reviewerRole\", COALESCE(a.full_name,a.admin_code,e.actor_user_id::text) AS \"actorDisplay\", e.event_type AS \"eventType\", e.from_status AS \"previousStatus\", e.to_status AS \"newStatus\", e.note AS \"decisionReason\", NULL::text AS \"informationRequest\", e.created_at AS \"createdAt\", i.name AS institution, NULL::text AS \"programmeScope\", NULL::text AS \"branchScope\", '{}'::jsonb AS \"oldValues\", '{}'::jsonb AS \"newValues\" FROM public.student_enrollment_grievance_events e JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id JOIN public.institutions i ON i.id = g.institution_id LEFT JOIN public.admins a ON a.id::text=e.actor_user_id::text WHERE e.grievance_id = $1 ORDER BY e.created_at DESC, e.id DESC LIMIT 100",
+      `SELECT e.id, e.grievance_id AS "grievanceId",
+              e.reviewer_id AS "reviewerId", e.reviewer_role AS "reviewerRole",
+              e.reviewer_id::text AS "actorDisplay", e.event_type AS "eventType",
+              e.previous_status AS "previousStatus", e.new_status AS "newStatus",
+              e.decision_reason AS "decisionReason", e.information_request AS "informationRequest",
+              e.created_at AS "createdAt", i.name AS institution,
+              e.programme_scope AS "programmeScope", e.branch_scope AS "branchScope",
+              e.old_values AS "oldValues", e.new_values AS "newValues"
+       FROM public.student_enrollment_grievance_events e
+       JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id
+       JOIN public.institutions i ON i.id = g.institution_id
+       WHERE e.grievance_id = $1
+       ORDER BY e.created_at DESC, e.id DESC LIMIT 100`,
       [grievanceId],
     );
     return res.json({ success:true, events:result.rows });
@@ -404,18 +416,28 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
       : null;
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1, 'SUPER_ADMIN', $2, 'STATUS_CHANGED', $3, $4, $5)",
-      [req.params.grievanceId, superAdminId, previous.status, status, note],
-    );
-    await client.query(
-      `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
-       SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
-              $2, '/student/notifications'
-       FROM public.student_enrollment_grievances WHERE id = $1`,
-      [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
+      `INSERT INTO public.student_enrollment_grievance_events
+       (grievance_id, reviewer_id, reviewer_role, institution_id, event_type,
+        previous_status, new_status, old_values, new_values, decision_reason)
+       VALUES ($1,$2,'SUPER_ADMIN',$3,'STATUS_CHANGED',$4,$5,$6::jsonb,$7::jsonb,$8)`,
+      [req.params.grievanceId, superAdminId, previous.institution_id, previous.status, status,
+       JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
+       JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }), note],
     );
     await client.query("COMMIT");
-    return res.json({ success:true, message:"Enrollment grievance reviewed. Any approved mapping correction is now active, and the student has been notified.", grievance:result.rows[0] });
+    // Notification delivery is best-effort; a notification error must not undo the reviewer decision.
+    try {
+      await pool.query(
+        `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
+         SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
+                $2, '/student/notifications'
+         FROM public.student_enrollment_grievances WHERE id = $1`,
+        [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
+      );
+    } catch (notificationError) {
+      console.error("Enrollment grievance notification failed after decision commit:", notificationError);
+    }
+    return res.json({ success:true, message:"Enrollment grievance reviewed.", grievance:result.rows[0] });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     if (error instanceof MappingCorrectionError) return res.status(400).json({ success:false, message:error.message });
