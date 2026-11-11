@@ -329,15 +329,20 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
         note, status === "NEEDS_INFO" ? note : null,
       ],
     );
-    await client.query(
-      `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
-       SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
-              $2, '/student/notifications'
-       FROM public.student_enrollment_grievances WHERE id = $1`,
-      [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
-    );
     await client.query("COMMIT");
-    return res.json({ success:true, message:"Enrollment grievance reviewed. Any approved mapping correction is now active, and the student has been notified.", grievance:result.rows[0] });
+    // Notifications are best-effort and must never roll back a recorded reviewer decision.
+    try {
+      await pool.query(
+        `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
+         SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
+                $2, '/student/notifications'
+         FROM public.student_enrollment_grievances WHERE id = $1`,
+        [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
+      );
+    } catch (notificationError) {
+      console.error("Enrollment grievance notification failed after decision commit:", notificationError);
+    }
+    return res.json({ success:true, message:"Enrollment grievance reviewed.", grievance:result.rows[0] });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     if (error instanceof MappingCorrectionError) return res.status(400).json({ success:false, message:error.message });
