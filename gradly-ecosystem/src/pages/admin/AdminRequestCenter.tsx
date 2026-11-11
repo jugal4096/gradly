@@ -21,7 +21,7 @@ async function openEvidence(url:string,authToken:string){
   window.setTimeout(()=>URL.revokeObjectURL(objectUrl),120000);
  }catch(error){viewer?.close();throw error;}
 }
-\nexport default function AdminRequestCenter(){
+export default function AdminRequestCenter(){
  const [rows,setRows]=useState<RequestRow[]>([]),[grievances,setGrievances]=useState<EnrollmentGrievanceRow[]>([]),[unread,setUnread]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const [grievanceBusy,setGrievanceBusy]=useState("");const [grievanceNote,setGrievanceNote]=useState<Record<string,string>>({});
  const [requestType,setType]=useState("SYSTEM_CHANGE"),[title,setTitle]=useState(""),[description,setDescription]=useState(""),[targetUserId,setTarget]=useState(""),[priority,setPriority]=useState("NORMAL"),[busy,setBusy]=useState(false);
