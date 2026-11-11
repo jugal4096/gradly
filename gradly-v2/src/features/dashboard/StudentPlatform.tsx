@@ -268,7 +268,7 @@ export default function StudentPlatform() {
   async function deleteStudentAccount() {
     if (isGuest || !user || deletingAccount) return;
     const confirmation = window.prompt(
-      "This permanently removes your access to Gradly. Your original student ID and academic records will be retained for authorised Super Admin review. Type DELETE to confirm."
+      "Delete your Gradly student account? Your saved academic records are currently retained for administrator review. Type DELETE to confirm."
     );
     if (confirmation !== "DELETE") return;
     setDeletingAccount(true);
@@ -286,6 +286,7 @@ export default function StudentPlatform() {
         "gradly_semester_results",
         "gradly_subjects",
         "gradly_exam_profile",
+        "gradly_student_exam_profile",
       ].forEach((key) => localStorage.removeItem(key));
       await signOut();
       routeNavigate("/", { replace: true });
