@@ -199,6 +199,44 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
   }
 }
 
+export async function deleteEnrollmentGrievanceForSuperAdmin(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const actor = req.superAdmin?.superAdminId;
+  if (!actor) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
+  const grievanceId = req.params.grievanceId;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query(
+      "SELECT * FROM public.student_enrollment_grievances WHERE id = $1 FOR UPDATE",
+      [grievanceId],
+    );
+    if (!found.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ success:false, message:"Student request was not found or has already been deleted." });
+    }
+    const grievance = found.rows[0];
+    await client.query(
+      `INSERT INTO public.audit_logs
+       (actor_type, actor_id, actor_role, action, entity_table, entity_id, before_data, metadata)
+       VALUES ('SUPER_ADMIN', $1::uuid, 'SUPER_ADMIN', 'ENROLLMENT_GRIEVANCE_DELETED',
+               'student_enrollment_grievances', $2::uuid, $3::jsonb, $4::jsonb)`,
+      [actor, grievanceId, JSON.stringify(grievance),
+       JSON.stringify({ grievanceId, studentUserId: grievance.student_user_id, category: grievance.category, status: grievance.status })],
+    );
+    await client.query("DELETE FROM public.student_enrollment_grievance_evidence WHERE grievance_id = $1", [grievanceId]);
+    await client.query("DELETE FROM public.student_enrollment_grievance_events WHERE grievance_id = $1", [grievanceId]);
+    await client.query("DELETE FROM public.student_enrollment_grievances WHERE id = $1", [grievanceId]);
+    await client.query("COMMIT");
+    return res.json({ success:true, message:"Student request deleted. The deletion audit record has been retained." });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    console.error("Super Admin enrollment grievance deletion failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to delete this student request." });
+  } finally {
+    client.release();
+  }
+}
+
 export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: SuperAdminAuthenticatedRequest, res: Response) {
  const actor=req.superAdmin?.superAdminId; const active=req.body?.active; const note=typeof req.body?.note==='string'?req.body.note.trim():'';
  if(!actor)return res.status(401).json({success:false,message:'Super Admin authentication required.'});
