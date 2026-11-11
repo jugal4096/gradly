@@ -24,6 +24,7 @@ export async function syncUser(data: SyncUserData) {
       display_name = EXCLUDED.display_name,
       last_login_at = NOW(),
       updated_at = NOW()
+    WHERE users.deleted_at IS NULL
 
     RETURNING
       id,
@@ -34,7 +35,8 @@ export async function syncUser(data: SyncUserData) {
       active,
       last_login_at,
       created_at,
-      updated_at;
+      updated_at,
+      deleted_at;
   `;
 
   const values = [
@@ -44,8 +46,15 @@ export async function syncUser(data: SyncUserData) {
   ];
 
   const result = await pool.query(query, values);
+  if (result.rows[0]) return result.rows[0];
 
-  return result.rows[0];
+  // Do not update or recreate a previously deleted account during sign-in.
+  const existing = await pool.query(
+    `SELECT id, firebase_uid, email, display_name, role, active, deleted_at
+     FROM users WHERE firebase_uid = $1 LIMIT 1`,
+    [data.firebaseUid]
+  );
+  return existing.rows[0] ?? null;
 }
 
 /**
