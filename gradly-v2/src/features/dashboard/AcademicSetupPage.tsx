@@ -62,7 +62,6 @@ export default function AcademicSetupPage() {
   const [grievanceAttachment, setGrievanceAttachment] = useState<File | null>(null);
   const [grievanceBusy, setGrievanceBusy] = useState(false);
   const [grievances, setGrievances] = useState<Array<{id:string;category:string;description:string;status:string;adminNote?:string|null;createdAt:string}>>([]);
-  const [institutionRequests, setInstitutionRequests] = useState<Array<{id:string;collegeName:string;locality:string;status:string;createdAt:string;reviewedAt?:string|null}>>([]);
   const [preview, setPreview] = useState<EnrollmentPreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [enrollment, setEnrollment] = useState("");
