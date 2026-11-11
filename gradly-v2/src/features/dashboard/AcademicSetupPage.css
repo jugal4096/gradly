@@ -34,7 +34,7 @@
 .academic-setup-field-section { position: relative; min-width: 0; margin: 0; }
 .academic-setup-field-section > label, .academic-setup-confirm-fields label, .academic-setup-advanced-fields label, .academic-setup-institution-request label, .academic-setup-edit-fields label, .academic-setup-current-semester label, .academic-setup-gap-period-fields label { display: block; margin: 0 0 7px; color: #363b50; font-size: 11px; font-weight: 700; }
 .academic-setup-input-wrap, .academic-setup-enrollment-control { position: relative; display: flex; align-items: center; min-width: 0; }
-.academic-setup-input-wrap input, .academic-setup-enrollment-control input, .academic-setup-confirm-fields select, .academic-setup-advanced-fields select, .academic-setup-institution-request input, .academic-setup-edit-fields input, .academic-setup-edit-fields select, .academic-setup-current-semester select, .academic-setup-gap-period-fields select, .academic-setup-dialog form input, .academic-setup-dialog form select, .academic-setup-dialog textarea { width: 100%; min-width: 0; height: 43px; padding: 0 12px; border: 1px solid #dfe2eb; border-radius: 8px; outline: none; background: #fff; color: #252a40; font: 500 12px inherit; }
+.academic-setup-input-wrap input, .academic-setup-enrollment-control input, .academic-setup-confirm-fields select, .academic-setup-advanced-fields select, .academic-setup-institution-request input, .academic-setup-edit-fields input, .academic-setup-edit-fields select, .academic-setup-current-semester select, .academic-setup-gap-period-fields select, .academic-setup-dialog form input, .academic-setup-dialog form select, .academic-setup-dialog textarea { width: 100%; min-width: 0; height: 43px; padding: 0 12px; border: 1px solid #dfe2eb; border-radius: 8px; outline: none; background: #fff; color: #252a40; font: 500 12px system-ui, sans-serif; }
 .academic-setup-page input:focus, .academic-setup-page select:focus, .academic-setup-page textarea:focus { border-color: #8579c7; outline: 3px solid rgba(98, 84, 184, .10); outline-offset: 0; }
 .academic-setup-page input::placeholder, .academic-setup-page textarea::placeholder { color: #a1a5b2; }
 .academic-setup-helper { display: block; margin-top: 6px; color: #858a9b; font-size: 10px; line-height: 1.5; }
@@ -53,7 +53,7 @@
 .enrollment-section { margin-top: 2px; padding-top: 18px; border-top: 1px solid #eff0f4; }
 .academic-setup-enrollment-control { gap: 8px; }
 .academic-setup-enrollment-control input { flex: 1; }
-.academic-setup-enrollment-control button, .academic-setup-continue, .academic-setup-institution-request button, .academic-setup-dialog form button, .academic-setup-grievance form button { border: 0; border-radius: 8px; background: var(--as-accent); color: #fff; font: 700 11px inherit; cursor: pointer; }
+.academic-setup-enrollment-control button, .academic-setup-continue, .academic-setup-institution-request button, .academic-setup-dialog form button, .academic-setup-grievance form button { border: 0; border-radius: 8px; background: var(--as-accent); color: #fff; font: 700 11px system-ui, sans-serif; cursor: pointer; }
 .academic-setup-enrollment-control button { flex: 0 0 auto; min-height: 39px; padding: 0 13px; }
 .academic-setup-enrollment-control button:disabled, .academic-setup-continue:disabled, .academic-setup-dialog form button:disabled { opacity: .55; cursor: not-allowed; }
 .academic-setup-enrollment-control button:hover:not(:disabled), .academic-setup-continue:hover:not(:disabled), .academic-setup-institution-request button:hover, .academic-setup-dialog form button:hover, .academic-setup-grievance form button:hover { background: var(--as-accent-hover); }
@@ -91,12 +91,12 @@
 .academic-setup-predicted-grid dd { text-align: left; font-size: 10px; line-height: 1.45; }
 .academic-setup-predicted-grid .academic-setup-predicted-wide { grid-column: 1 / -1; }
 .academic-setup-predicted-note { margin: 7px 0 0; color: var(--as-muted); font-size: 9px; line-height: 1.5; }
-.academic-setup-support-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; padding: 0; border: 0; background: transparent; color: var(--as-accent); font: 650 10px inherit; text-decoration: none; cursor: pointer; }
+.academic-setup-support-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; padding: 0; border: 0; background: transparent; color: var(--as-accent); font: 650 10px system-ui, sans-serif; text-decoration: none; cursor: pointer; }
 .academic-setup-support-icon { display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #eeebf8; }
 .academic-setup-support-arrow { margin-left: 2px; }
 .academic-setup-data-question { margin-top: 13px; color: #393452; font-size: 10px; font-weight: 750; }
 .academic-setup-choice-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.academic-setup-choice { min-height: 38px; padding: 8px 11px; border: 1px solid #dedfe8; border-radius: 8px; background: #fff; color: #565c70; font: 650 10px inherit; cursor: pointer; }
+.academic-setup-choice { min-height: 38px; padding: 8px 11px; border: 1px solid #dedfe8; border-radius: 8px; background: #fff; color: #565c70; font: 650 10px system-ui, sans-serif; cursor: pointer; }
 .academic-setup-choice.primary-choice { border-color: var(--as-accent); background: var(--as-accent); color: #fff; }
 .academic-setup-choice:disabled { opacity: .5; cursor: not-allowed; }
 .academic-setup-confirmed-state { display: flex; align-items: center; gap: 9px; margin-top: 12px; padding: 10px; border: 1px solid #d4e8da; border-radius: 8px; background: #f4faf5; }
