@@ -65,3 +65,12 @@ test("student routes require Firebase authentication before onboarding and griev
   assert.match(studentRoutes, /router\.post\("\/institution-requests", requestStudentInstitution\)/);
   assert.match(studentRoutes, /router\.post\("\/enrollment-grievances", submitEnrollmentGrievance\)/);
 });
+
+test("grievance event writes match the immutable TO-09 audit table schema", () => {
+  for (const column of ["reviewer_id", "reviewer_role", "institution_id", "previous_status", "new_status", "decision_reason"]) {
+    assert.match(migration, new RegExp("\\b" + column + "\\b"));
+    assert.match(controller, new RegExp("\\b" + column + "\\b"));
+  }
+  assert.doesNotMatch(controller, /student_enrollment_grievance_events[^\n]*(actor_type|actor_user_id|from_status|to_status|\bnote\b)/);
+  assert.match(controller, /event_type[^\n]*'DECISION_RECORDED'/);
+});

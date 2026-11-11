@@ -60,8 +60,8 @@ export async function submitEnrollmentGrievance(req: AuthenticatedRequest, res: 
       [user.id, institutionId, enrollment, category, description],
     );
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, to_status, note) VALUES ($1, 'STUDENT', $2, 'SUBMITTED', $3, $4)",
-      [result.rows[0].id, user.id, result.rows[0].status, description.slice(0, 2000)],
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason) VALUES ($1, $2, 'STUDENT', $3, 'DECISION_RECORDED', NULL, $4, $5)",
+      [result.rows[0].id, user.id, institutionId, result.rows[0].status, description.slice(0, 2000)],
     );
     if (evidence) {
       await client.query(
@@ -210,9 +210,16 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
  const uid=g.rows[0].student_user_id;
  const u=await client.query("UPDATE public.users SET active=$2,updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",[uid,active]);
  if(!u.rowCount){await client.query('ROLLBACK');return res.status(404).json({success:false,message:'Student account was not found or is deleted.'});}
- await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'SUPER_ADMIN',$2,'NOTE_ADDED',$3)",[req.params.grievanceId,actor,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
- await client.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
- await client.query('COMMIT'); return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',student:u.rows[0]});
+ await client.query("INSERT INTO public.student_enrollment_grievance_events (grievance_id,reviewer_id,reviewer_role,institution_id,event_type,new_status,decision_reason) SELECT g.id,$2,'SUPER_ADMIN',g.institution_id,'DECISION_RECORDED',g.status,$3 FROM public.student_enrollment_grievances g WHERE g.id=$1",[req.params.grievanceId,actor,'ACCOUNT_'+(active?'ENABLED':'DISABLED')+': '+note]);
+ await client.query('COMMIT');
+ let notificationSent=false;
+ try {
+   await pool.query("INSERT INTO public.student_notifications (user_id,notification_type,title,message,action_url) VALUES ($1,'ENROLLMENT_GRIEVANCE','Student account access updated',$2,'/student/notifications')",[uid,active?'Your Gradly student account has been reactivated.':'Your Gradly student account has been disabled. Contact the platform administrator.']);
+   notificationSent=true;
+ } catch(notificationError) {
+   console.error("Student account access notification delivery failed (account change was saved):",notificationError);
+ }
+ return res.json({success:true,message:active?'Student login reactivated.':'Student login disabled.',notificationSent,student:u.rows[0]});
  } catch(error) { await client.query('ROLLBACK').catch(()=>undefined); console.error('Super Admin grievance account action failed:',error); return res.status(500).json({success:false,message:'Unable to update student access.'}); } finally { client.release(); }
 }
 export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
@@ -221,7 +228,7 @@ export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthent
   if (!grievanceId) return res.status(400).json({ success:false, message:"A grievance ID is required." });
   try {
     const result = await pool.query(
-      "SELECT e.id, e.grievance_id AS \"grievanceId\", e.actor_user_id AS \"reviewerId\", e.actor_type AS \"reviewerRole\", COALESCE(a.full_name,a.admin_code,e.actor_user_id::text) AS \"actorDisplay\", e.event_type AS \"eventType\", e.from_status AS \"previousStatus\", e.to_status AS \"newStatus\", e.note AS \"decisionReason\", NULL::text AS \"informationRequest\", e.created_at AS \"createdAt\", i.name AS institution, NULL::text AS \"programmeScope\", NULL::text AS \"branchScope\", '{}'::jsonb AS \"oldValues\", '{}'::jsonb AS \"newValues\" FROM public.student_enrollment_grievance_events e JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id JOIN public.institutions i ON i.id = g.institution_id LEFT JOIN public.admins a ON a.id::text=e.actor_user_id::text WHERE e.grievance_id = $1 ORDER BY e.created_at DESC, e.id DESC LIMIT 100",
+      "SELECT e.id, e.grievance_id AS \"grievanceId\", e.reviewer_id AS \"reviewerId\", e.reviewer_role AS \"reviewerRole\", COALESCE(a.full_name,a.admin_code,e.reviewer_id::text) AS \"actorDisplay\", e.event_type AS \"eventType\", e.previous_status AS \"previousStatus\", e.new_status AS \"newStatus\", e.decision_reason AS \"decisionReason\", e.information_request AS \"informationRequest\", e.created_at AS \"createdAt\", i.name AS institution, e.programme_scope AS \"programmeScope\", e.branch_scope AS \"branchScope\", e.old_values AS \"oldValues\", e.new_values AS \"newValues\" FROM public.student_enrollment_grievance_events e JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id JOIN public.institutions i ON i.id = e.institution_id LEFT JOIN public.admins a ON a.id::text=e.reviewer_id::text WHERE e.grievance_id = $1 ORDER BY e.created_at DESC, e.id DESC LIMIT 100",
       [grievanceId],
     );
     return res.json({ success:true, events:result.rows });
@@ -404,23 +411,53 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
       : null;
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1, 'SUPER_ADMIN', $2, 'STATUS_CHANGED', $3, $4, $5)",
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason) SELECT g.id,$2,'SUPER_ADMIN',g.institution_id,'STATUS_CHANGED',$3,$4,$5 FROM public.student_enrollment_grievances g WHERE g.id=$1",
       [req.params.grievanceId, superAdminId, previous.status, status, note],
     );
-    await client.query(
-      `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
-       SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
-              $2, '/student/notifications'
-       FROM public.student_enrollment_grievances WHERE id = $1`,
-      [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
-    );
     await client.query("COMMIT");
-    return res.json({ success:true, message:"Enrollment grievance reviewed. Any approved mapping correction is now active, and the student has been notified.", grievance:result.rows[0] });
+
+    // Notification delivery must never roll back an administrator's decision.
+    // Some production databases may not yet have the notifications migration.
+    let notificationSent = false;
+    try {
+      await pool.query(
+        `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)
+         SELECT student_user_id, 'ENROLLMENT_GRIEVANCE', 'Enrollment grievance updated',
+                $2, '/student/notifications'
+         FROM public.student_enrollment_grievances WHERE id = $1`,
+        [req.params.grievanceId, `Your enrollment grievance status is now ${status.replace(/_/g, " ")}. ${note}`],
+      );
+      notificationSent = true;
+    } catch (notificationError) {
+      console.error("Enrollment grievance notification delivery failed (decision was saved):", notificationError);
+    }
+    return res.json({
+      success:true,
+      message: notificationSent
+        ? "Enrollment grievance reviewed and the student has been notified."
+        : "Enrollment grievance decision saved. In-app notification could not be delivered; check the student_notifications migration.",
+      notificationSent,
+      grievance:result.rows[0],
+    });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     if (error instanceof MappingCorrectionError) return res.status(400).json({ success:false, message:error.message });
-    console.error("Enrollment grievance review failed:", error);
-    return res.status(500).json({ success:false, message:"Unable to update enrollment grievance." });
+    console.error("Enrollment grievance review failed:", {
+      grievanceId: req.params.grievanceId,
+      code: (error as { code?: string })?.code,
+      constraint: (error as { constraint?: string })?.constraint,
+      detail: (error as { detail?: string })?.detail,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    const diagnostic = process.env.NODE_ENV !== "production"
+      ? (error instanceof Error ? error.message : String(error))
+      : undefined;
+    return res.status(500).json({
+      success:false,
+      message:"Unable to update enrollment grievance.",
+      ...(diagnostic ? { diagnostic } : {}),
+    });
   } finally {
     client.release();
   }
@@ -451,7 +488,7 @@ export async function reviewEnrollmentGrievanceForAdmin(req: AdminAuthenticatedR
       [previous.id, status, note, adminId],
     );
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note) VALUES ($1,'ADMIN',$2,'STATUS_CHANGED',$3,$4,$5)",
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id, reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason) SELECT g.id,$2,'ADMIN',g.institution_id,'STATUS_CHANGED',$3,$4,$5 FROM public.student_enrollment_grievances g WHERE g.id=$1",
       [previous.id, adminId, previous.status, status, note],
     );
     await client.query(
@@ -490,7 +527,7 @@ export async function setEnrollmentGrievanceStudentAccess(req: AdminAuthenticate
     );
     if (!changed.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({success:false,message:"Student account was not found or is deleted."}); }
     await client.query(
-      "INSERT INTO public.student_enrollment_grievance_events (grievance_id,actor_type,actor_user_id,event_type,note) VALUES ($1,'ADMIN',$2,'NOTE_ADDED',$3)",
+      "INSERT INTO public.student_enrollment_grievance_events (grievance_id,reviewer_id,reviewer_role,institution_id,event_type,new_status,decision_reason) SELECT g.id,$2,'ADMIN',g.institution_id,'DECISION_RECORDED',g.status,$3 FROM public.student_enrollment_grievances g WHERE g.id=$1",
       [req.params.grievanceId,adminId,"ACCOUNT_"+(active?"ENABLED":"DISABLED")+": "+note],
     );
     await client.query(
@@ -513,9 +550,9 @@ export async function listEnrollmentGrievanceAccountActions(req: SuperAdminAuthe
   if (!grievanceId) return res.status(400).json({success:false,message:"A grievance ID is required."});
   try {
     const result = await pool.query(
-      `SELECT e.id::text AS id,e.actor_type AS "actorRole",e.actor_user_id AS "actorId",
-              e.event_type AS action,e.from_status AS "previousStatus",e.to_status AS "newStatus",
-              e.note,e.created_at AS "createdAt"
+      `SELECT e.id::text AS id,e.reviewer_role AS "actorRole",e.reviewer_id::text AS "actorId",
+              e.event_type AS action,e.previous_status AS "previousStatus",e.new_status AS "newStatus",
+              e.decision_reason AS note,e.created_at AS "createdAt"
        FROM public.student_enrollment_grievance_events e
        WHERE e.grievance_id=$1
        UNION ALL
