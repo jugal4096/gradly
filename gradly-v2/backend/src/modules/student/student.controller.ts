@@ -89,7 +89,7 @@ export async function promoteCurrentSemester(req: AuthenticatedRequest, res: Res
        SET current_semester_number = $2, updated_at = NOW()
        FROM public.users u, public.curricula c
        WHERE sp.user_id = u.id AND u.id = $1 AND u.active = TRUE
-         AND u.deleted_at IS NULL AND sp.curriculum_id = c.id
+         AND u.deleted_at IS NULL AND u.role = 'STUDENT' AND sp.curriculum_id = c.id
          AND sp.academic_profile_confirmed IS TRUE
          AND sp.academic_status <> 'GRADUATED'
          AND $2 = sp.current_semester_number + 1
