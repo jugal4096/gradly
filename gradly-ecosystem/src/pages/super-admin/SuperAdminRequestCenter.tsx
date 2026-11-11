@@ -22,7 +22,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
 }
 \nexport default function SuperAdminRequestCenter(){
  const navigate=useNavigate();
- const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[search,setSearch]=useState(""),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState(""),[correctionType,setCorrectionType]=useState(""),[correctionValue,setCorrectionValue]=useState(""),[correctionEntrySemester,setCorrectionEntrySemester]=useState("3"),[auditEvents,setAuditEvents]=useState<AuditEvent[]>([]),[auditLoading,setAuditLoading]=useState(false);
+ const [rows,setRows]=useState<Row[]>([]),[counts,setCounts]=useState<Counts>({}),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState(""),[search,setSearch]=useState(""),[selected,setSelected]=useState<Row|null>(null),[reviewNote,setReviewNote]=useState(""),[busy,setBusy]=useState(false),[deleting,setDeleting]=useState(""),[correctionType,setCorrectionType]=useState(""),[correctionValue,setCorrectionValue]=useState(""),[correctionEntrySemester,setCorrectionEntrySemester]=useState("3"),[auditEvents,setAuditEvents]=useState<AuditEvent[]>([]),[auditLoading,setAuditLoading]=useState(false);
  const token=()=>localStorage.getItem("gradly_super_admin_token")||"";
  const load=useCallback(async()=>{
   setLoading(true);
@@ -134,7 +134,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
   <header><div><span>OPERATIONS / REQUEST MANAGEMENT</span><h1>Request Log</h1><p>Review and manage Admin and User requests in one consolidated workspace.</p></div><button onClick={()=>void load()}><RefreshCw size={15}/> Refresh</button></header>
   <section className="sa-request-stats"><article><span>Unattended requests</span><strong>{counts.unattended??open}</strong><small>Awaiting administrator review</small></article><article><span>New / unacknowledged</span><strong>{counts.unacknowledged??0}</strong><small>Not yet acknowledged</small></article><article><span>Pending requests</span><strong>{counts.pending??0}</strong><small>Awaiting first review</small></article></section>
   <section className="sa-request-toolbar"><label><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by request, requester, institution or user ID…"/></label></section>
-  {error&&<p className="sa-request-error">{error}</p>}
+  {error&&<p className="sa-request-error">{error}</p>}{notice&&<p className="sa-request-success" role="status">{notice}</p>}
   <div className="sa-request-sections">
    {renderSection("Admin Requests","Requests submitted by institution and department administrators.",adminRows,"admin")}
    {renderSection("Student Data Mismatch Grievances","Academic data mismatch requests submitted by students, including selected reason, additional comments and supporting evidence.",grievanceRows,"grievance")}
