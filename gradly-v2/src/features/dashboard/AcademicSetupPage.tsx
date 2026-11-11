@@ -138,7 +138,7 @@ export default function AcademicSetupPage() {
             academicProfileConfirmed: Boolean(p.academic_profile_confirmed), pendingBacklogCount: p.pending_backlog_count ?? null,
             academicGapYears: p.academic_gap_years ?? null, predictedSemesterNumber: p.predicted_semester_number ?? null,
           }));
-          navigate(localStorage.getItem("gradly_student_exam_profile") ? "/dashboard" : "/exam-profile", { replace: true });
+          navigate(localStorage.getItem("gradly_student_exam_profile") || localStorage.getItem("gradly_exam_profile_skipped") === "true" ? "/dashboard" : "/exam-profile", { replace: true });
         }
       } catch { /* A missing profile is expected during first-time setup. */ }
     })();
@@ -372,6 +372,7 @@ export default function AcademicSetupPage() {
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
+      localStorage.removeItem("gradly_exam_profile_skipped");
       navigate("/exam-profile", { replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
     finally { setSaving(false); }
