@@ -536,9 +536,9 @@ export async function listEnrollmentGrievanceAccountActions(req: SuperAdminAuthe
   if (!grievanceId) return res.status(400).json({success:false,message:"A grievance ID is required."});
   try {
     const result = await pool.query(
-      `SELECT e.id::text AS id,e.actor_type AS "actorRole",e.actor_user_id AS "actorId",
-              e.event_type AS action,e.from_status AS "previousStatus",e.to_status AS "newStatus",
-              e.note,e.created_at AS "createdAt"
+      `SELECT e.id::text AS id,e.reviewer_role AS "actorRole",e.reviewer_id::text AS "actorId",
+              e.event_type AS action,e.previous_status AS "previousStatus",e.new_status AS "newStatus",
+              e.decision_reason AS note,e.created_at AS "createdAt"
        FROM public.student_enrollment_grievance_events e
        WHERE e.grievance_id=$1
        UNION ALL
