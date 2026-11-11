@@ -102,9 +102,9 @@ export default function ExamProfileSetupPage() {
             <label className="exam-setup-field"><span>ESE session</span><select value={sessionChoices[item.semester] || item.sessionLabel} onChange={event=>setSessionChoices(previous=>({...previous,[item.semester]:event.target.value}))}>{!sessionOptions(item.semester).includes(item.sessionLabel)&&<option value={item.sessionLabel}>{item.sessionLabel} (estimated)</option>}{sessionOptions(item.semester).map(option=><option key={option} value={option}>{option}</option>)}</select></label>
             <label className="exam-setup-field"><span>ESE outcome</span><select value={record.eseStatus} onChange={event=>updateSemester(item.semester,{eseStatus:event.target.value as EseStatus})}>{Object.entries(eseLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
           </div>
-          {record.eseStatus === "BACKLOG" && <div className="exam-setup-backlog-panel">
-            <div className="exam-setup-backlog-head"><div><small>BACKLOG CLEARANCE</small><h4>Re-examination appearances</h4><p>Add each subject you need to reappear for after the ESE.</p></div><button type="button" onClick={()=>updateSemester(item.semester,{backlogAttempts:[...record.backlogAttempts,makeAttempt()]})}>＋ Add appearance</button></div>
-            {record.backlogAttempts.length === 0 && <div className="exam-setup-empty">No re-exam appearances added yet. Add a subject to start tracking its next attempt.</div>}
+          <div className="exam-setup-backlog-panel">
+            <div className="exam-setup-backlog-head"><div><small>BACKLOG CLEARANCE</small><h4>Re-examination appearances</h4><p>Record every subject you reappear for after an ESE, including attempts from earlier sessions.</p></div><button type="button" onClick={()=>updateSemester(item.semester,{backlogAttempts:[...record.backlogAttempts,makeAttempt()]})}>＋ Add appearance</button></div>
+            {record.backlogAttempts.length === 0 && <div className="exam-setup-empty">No backlog appearances recorded for this semester. Add one whenever a subject needs a re-exam.</div>}
             {record.backlogAttempts.map((attempt,index)=><div className="exam-setup-attempt" key={attempt.id}>
               <div className="exam-setup-attempt-number">{index+1}</div>
               <label className="exam-setup-field"><span>Subject / course</span><input value={attempt.subject} onChange={event=>updateAttempt(item.semester,attempt.id,{subject:event.target.value})} placeholder="e.g. Engineering Mathematics" /></label>
@@ -112,8 +112,7 @@ export default function ExamProfileSetupPage() {
               <label className="exam-setup-field"><span>Attempt status</span><select value={attempt.status} onChange={event=>updateAttempt(item.semester,attempt.id,{status:event.target.value as BacklogAttempt["status"]})}><option value="PLANNED">Planned</option><option value="APPEARED">Appeared</option><option value="CLEARED">Cleared</option><option value="BACKLOG">Not cleared</option></select></label>
               <button className="exam-setup-remove" type="button" aria-label="Remove appearance" onClick={()=>updateSemester(item.semester,{backlogAttempts:record.backlogAttempts.filter(entry=>entry.id!==attempt.id)})}>×</button>
             </div>)}
-          </div>}
-          {record.eseStatus !== "BACKLOG" && record.backlogAttempts.length > 0 && <div className="exam-setup-backlog-panel"><div className="exam-setup-backlog-head"><div><small>PREVIOUS BACKLOG RECORDS</small><h4>Re-examination appearances</h4></div><button type="button" onClick={()=>updateSemester(item.semester,{eseStatus:"BACKLOG",backlogAttempts:[...record.backlogAttempts]})}>＋ Add appearance</button></div>{record.backlogAttempts.map(attempt=><p className="exam-setup-saved-attempt" key={attempt.id}>{attempt.subject || "Subject not named"} · {attempt.session} · {attempt.status}</p>)}</div>}
+          </div>
         </article>;
       })}
     </div>
