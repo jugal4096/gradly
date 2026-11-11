@@ -5,6 +5,7 @@ import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admi
 import { pool } from "../../config/database";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 import { isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber } from "../academic/enrollment-progression";
+import { buildEnrollmentGrievanceAuditQuery } from "../academic/enrollment-grievance-audit-query";
 
 const categories = new Set(["INVALID_ENROLLMENT", "ALREADY_REGISTERED", "WRONG_PROGRAMME", "WRONG_SCHEME", "WRONG_BRANCH", "WRONG_ADMISSION_MODE", "WRONG_SEMESTER", "OTHER"]);
 const reviewStatuses = new Set(["IN_REVIEW", "NEEDS_INFO", "RESOLVED", "REJECTED"]);
@@ -109,6 +110,36 @@ export async function listEnrollmentGrievancesForSuperAdmin(req: SuperAdminAuthe
   }
 }
 
+export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthenticatedRequest, res: Response) {
+  if (!req.superAdmin?.superAdminId) return res.status(401).json({ success:false, message:"Super Admin authentication required." });
+  const query = buildEnrollmentGrievanceAuditQuery({
+    grievanceId: typeof req.query.grievanceId === "string" ? req.query.grievanceId : "",
+    reviewerId: typeof req.query.reviewerId === "string" ? req.query.reviewerId : "",
+    limit: Number(req.query.limit),
+  });
+  try {
+    const result = await pool.query(
+      `SELECT e.id, e.grievance_id AS "grievanceId", e.reviewer_id AS "reviewerId",
+              e.reviewer_role AS "reviewerRole", e.institution_id AS "institutionId",
+              e.programme_scope AS "programmeScope", e.branch_scope AS "branchScope",
+              e.event_type AS "eventType", e.previous_status AS "previousStatus",
+              e.new_status AS "newStatus", e.old_values AS "oldValues",
+              e.new_values AS "newValues", e.decision_reason AS "decisionReason",
+              e.information_request AS "informationRequest", e.created_at AS "createdAt",
+              i.name AS institution
+       FROM public.student_enrollment_grievance_events e
+       JOIN public.institutions i ON i.id = e.institution_id
+       ${query.whereSql}
+       ORDER BY e.created_at DESC, e.id DESC LIMIT ${query.limitParameter}`,
+      query.values,
+    );
+    return res.json({ success:true, events:result.rows });
+  } catch (error) {
+    console.error("Enrollment grievance audit history failed:", error);
+    return res.status(500).json({ success:false, message:"Unable to load reviewer decision history. Confirm the TO-09 migration has been applied." });
+  }
+}
+
 class MappingCorrectionError extends Error {}
 
 export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequest, res: Response) {
@@ -130,11 +161,16 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
   }
 
   const client = await pool.connect();
+  let mappingBefore: Record<string, unknown> | null = null;
   try {
     await client.query("BEGIN");
     const existing = await client.query(
-      `SELECT id, institution_id, enrollment_number FROM public.student_enrollment_grievances
-       WHERE id = $1 AND status IN ('PENDING','IN_REVIEW','NEEDS_INFO') FOR UPDATE`,
+      `SELECT g.id, g.institution_id, g.enrollment_number, g.status, g.admin_note,
+              COALESCE(to_jsonb(sp)->>'programme_name', to_jsonb(sp)->>'program_name', to_jsonb(sp)->>'programme') AS programme_scope,
+              COALESCE(to_jsonb(sp)->>'branch_name', to_jsonb(sp)->>'branch') AS branch_scope
+       FROM public.student_enrollment_grievances g
+       LEFT JOIN public.student_profiles sp ON sp.user_id = g.student_user_id
+       WHERE g.id = $1 AND g.status IN ('PENDING','IN_REVIEW','NEEDS_INFO') FOR UPDATE OF g`,
       [req.params.grievanceId],
     );
     if (!existing.rowCount) {
@@ -150,6 +186,13 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
       catch { throw new MappingCorrectionError("The enrollment number is not structurally valid. Resolve the student's source record before changing a mapping."); }
 
       if (correctionType === "BRANCH") {
+        const before = await client.query(
+          `SELECT branch_name AS "branchName", program_name_pattern AS "programNamePattern"
+           FROM public.enrollment_branch_codes
+           WHERE institution_id = $1 AND branch_code = $2 AND programme_prefix = $3 LIMIT 1`,
+          [grievance.institution_id, parsed.branchCode, parsed.prefix],
+        );
+        mappingBefore = before.rows[0] || null;
         const branch = await client.query(
           `SELECT b.name, p.name AS program_name
            FROM public.branches b JOIN public.programs p ON p.id = b.program_id
@@ -174,6 +217,13 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
           [grievance.institution_id, parsed.branchCode, parsed.prefix, branch.rows[0].name, "%" + branch.rows[0].program_name + "%"],
         );
       } else if (correctionType === "SCHEME") {
+        const before = await client.query(
+          `SELECT scheme_label AS "schemeLabel" FROM public.enrollment_program_rules
+           WHERE prefix = $1 AND (institution_id = $2 OR institution_id IS NULL)
+           ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
+          [parsed.prefix, grievance.institution_id],
+        );
+        mappingBefore = before.rows[0] || null;
         const scheme = await client.query("SELECT name FROM public.schemes WHERE LOWER(name) = LOWER($1) LIMIT 1", [correctionValue]);
         if (!scheme.rowCount || !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, scheme.rows[0].name)) {
           throw new MappingCorrectionError(parsed.prefix === "BE" ? "BE enrollment mappings must resolve to New CBCS." : parsed.prefix === "BT" ? "BT enrollment mappings must resolve to NEP." : "Choose a valid scheme configured for this programme.");
@@ -192,6 +242,13 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
         );
         if (!correctedSchemeRule.rowCount) throw new MappingCorrectionError("No programme rule exists to receive the scheme correction.");
       } else if (correctionType === "ADMISSION_MODE") {
+        const before = await client.query(
+          `SELECT mode_name AS "modeName", entry_semester AS "entrySemester"
+           FROM public.enrollment_admission_modes
+           WHERE institution_id = $1 AND mode_code = $2 AND programme_prefix = $3 LIMIT 1`,
+          [grievance.institution_id, parsed.admissionModeCode, parsed.prefix],
+        );
+        mappingBefore = before.rows[0] || null;
         const entrySemester = Number.isInteger(requestedEntrySemester) && requestedEntrySemester >= 1 && requestedEntrySemester <= 20
           ? requestedEntrySemester : parsed.admissionModeCode === "S" ? 3 : 1;
         await client.query(
@@ -203,6 +260,16 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
           [grievance.institution_id, parsed.admissionModeCode, parsed.prefix, correctionValue, entrySemester],
         );
       } else if (correctionType === "PROGRAMME") {
+        const before = await client.query(
+          `SELECT programme_name_pattern AS "programmeNamePattern",
+                  programme_alternate_pattern AS "programmeAlternatePattern",
+                  programme_alias_patterns AS "programmeAliasPatterns"
+           FROM public.enrollment_program_rules
+           WHERE prefix = $1 AND (institution_id = $2 OR institution_id IS NULL)
+           ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
+          [parsed.prefix, grievance.institution_id],
+        );
+        mappingBefore = before.rows[0] || null;
         const program = await client.query(
           "SELECT name FROM public.programs WHERE institution_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1",
           [grievance.institution_id, correctionValue],
@@ -240,6 +307,25 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
        WHERE id = $1
        RETURNING id, status, admin_note AS "adminNote", updated_at AS "updatedAt"`,
       [req.params.grievanceId, status, note, superAdminId],
+    );
+    const previous = existing.rows[0];
+    const mappingSnapshot = correctionType
+      ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
+      : null;
+    await client.query(
+      `INSERT INTO public.student_enrollment_grievance_events
+       (grievance_id, reviewer_id, reviewer_role, institution_id, programme_scope, branch_scope,
+        event_type, previous_status, new_status, old_values, new_values, decision_reason, information_request)
+       VALUES ($1,$2,'SUPER_ADMIN',$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)`,
+      [
+        req.params.grievanceId, superAdminId, previous.institution_id,
+        previous.programme_scope || null, previous.branch_scope || null,
+        status === "NEEDS_INFO" ? "INFORMATION_REQUESTED" : correctionType ? "MAPPING_CORRECTED" : "DECISION_RECORDED",
+        previous.status, status,
+        JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null, mapping: mappingBefore }),
+        JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }),
+        note, status === "NEEDS_INFO" ? note : null,
+      ],
     );
     await client.query(
       `INSERT INTO public.student_notifications (user_id, notification_type, title, message, action_url)

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --test src/modules/guest/guest.academic.repository.test.ts src/modules/academic/enrollment-intelligence.service.test.ts",
+    "test": "tsx --test src/modules/guest/guest.academic.repository.test.ts src/modules/academic/enrollment-intelligence.service.test.ts src/modules/academic/enrollment-grievance-audit-query.test.ts src/modules/student/student-profile-identity.test.ts src/modules/student/student-enrollment-grievance.contract.test.ts",
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts"
   },

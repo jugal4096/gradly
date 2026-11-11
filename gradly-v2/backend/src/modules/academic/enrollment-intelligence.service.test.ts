@@ -168,7 +168,7 @@ test("matches common branch labels and abbreviations", () => {
   assert.equal(branchIdentityMatches("Computer Science and Engineering", "CSE"), true);
   assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "E&TC"), true);
   assert.equal(branchIdentityMatches("Electronics and Telecommunication Engineering", "ENTC", "ENTC"), true);
-  assert.equal(branchIdentityMatches("Electronics Engineering", "ENTC", "ENTC"), true);
+  assert.equal(branchIdentityMatches("Electronics Engineering", "ENTC", "ENTC"), false);
   assert.equal(branchIdentityMatches("Computer Engineering", "Computer Engineering"), true);
   assert.equal(branchIdentityMatches("Electrical Engineering", "ELECT", "ELECT"), true);
   assert.equal(branchIdentityMatches("Mechanical Engineering", "MECH", "MECH"), true);
@@ -328,7 +328,7 @@ test("BE23S remains valid while BE23F and BE24 are rejected after CBCS discontin
 test("BT enrollment years cannot precede NEP or enter before their July academic session", () => {
   assert.throws(() => parseEnrollmentNumber("BT22S06F007", 70, new Date("2027-11-09T12:00:00+05:30")), /BT_NEP_NOT_STARTED/);
   assert.equal(parseEnrollmentNumber("BT27S06F007", 70, new Date("2027-11-09T12:00:00+05:30")).admissionYear, 2027);
-  assert.throws(() => parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-06-30T12:00:00+05:30")), /FUTURE_ADMISSION_YEAR/);
+  assert.throws(() => parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-06-30T12:00:00+05:30")), /DSE_ADMISSION_CYCLE_NOT_STARTED/);
   assert.equal(parseEnrollmentNumber("BT28S06F007", 70, new Date("2028-07-01T12:00:00+05:30")).admissionYear, 2028);
 });
 

@@ -206,3 +206,17 @@ html[data-sa-theme="dark"] .sa-requests .sa-request-section article:hover { back
 .sa-grievance-correction>small{font-size:11px;line-height:1.5;color:#827694}
 .sa-grievance-correction label{display:grid;gap:6px;font-size:11px;font-weight:700;color:#594b70}
 .sa-grievance-correction input,.sa-grievance-correction select{width:100%;border:1px solid #e0d8ed;border-radius:8px;background:#fff;color:#35264f;padding:10px;font:inherit}
+
+
+.sa-request-audit{display:grid;gap:12px;margin:18px 0;padding:15px;border:1px solid #e4dcf2;border-radius:12px;background:#faf8ff}
+.sa-request-audit h3{margin:0;color:#44316e;font-size:13px}
+.sa-request-audit>p{margin:0;color:#827694;font-size:12px}
+.sa-request-audit article{display:grid;gap:6px;padding:12px;border:1px solid #e8e1f2;border-radius:9px;background:#fff}
+.sa-request-audit article strong{font-size:12px;color:#35264f}
+.sa-request-audit article small{font-size:10px;color:#827694;overflow-wrap:anywhere}
+.sa-request-audit article p{margin:0;font-size:12px;line-height:1.5}
+.sa-request-audit details summary{cursor:pointer;font-size:11px;font-weight:700;color:#6340b7}
+.sa-request-audit pre{max-width:100%;overflow:auto;padding:10px;border-radius:8px;background:#f4f0fa;font-size:10px}
+html[data-sa-theme="dark"] .sa-request-audit{background:#211b30;border-color:#51416f}
+html[data-sa-theme="dark"] .sa-request-audit article{background:#202b37;border-color:#394553}
+html[data-sa-theme="dark"] .sa-request-audit article strong{color:#e7dcff}
