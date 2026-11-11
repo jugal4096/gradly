@@ -11,11 +11,14 @@ const date=(s:string)=>s?new Date(s).toLocaleString("en-IN",{dateStyle:"medium",
 const legacyPath=(source:string)=>source==="PASSWORD_RESET"?"/super-admin/password-requests":source==="ADMIN_CURRICULUM"?"/super-admin/admin-requests":"/super-admin/feedback";
 
 async function openStudentEvidence(grievanceId:string,authToken:string){
- const response=await fetch(API_ROOT+"/super-admin/enrollment-grievances/"+encodeURIComponent(grievanceId)+"/attachment",{headers:{Authorization:"Bearer "+authToken}});
- if(!response.ok)throw new Error("Unable to download the student's supporting document.");
- const blob=await response.blob();const objectUrl=URL.createObjectURL(blob);const opened=window.open(objectUrl,"_blank","noopener");
- if(!opened){const link=document.createElement("a");link.href=objectUrl;link.download="student-support-evidence";link.click();}
- window.setTimeout(()=>URL.revokeObjectURL(objectUrl),60000);
+ const viewer=window.open("about:blank","_blank");
+ try{
+  const response=await fetch(API_ROOT+"/super-admin/enrollment-grievances/"+encodeURIComponent(grievanceId)+"/attachment",{headers:{Authorization:"Bearer "+authToken}});
+  if(!response.ok)throw new Error("Unable to open the student's supporting document. Check your Super Admin session and try again.");
+  const blob=await response.blob();const objectUrl=URL.createObjectURL(blob);
+  if(viewer){viewer.location.href=objectUrl;}else{const link=document.createElement("a");link.href=objectUrl;link.target="_blank";link.rel="noopener";link.click();}
+  window.setTimeout(()=>URL.revokeObjectURL(objectUrl),120000);
+ }catch(error){viewer?.close();throw error;}
 }
 \nexport default function SuperAdminRequestCenter(){
  const navigate=useNavigate();
@@ -108,7 +111,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
    const r=await fetch(endpoint,{method:"PATCH",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify(isEnrollmentGrievance?{status:next,adminNote:reviewNote,correctionType:correctionValue.trim()?correctionType:"",correctionValue:correctionValue.trim(),correctionEntrySemester:Number(correctionEntrySemester)}:{status:next,reviewNote})});
    const d=await r.json().catch(()=>({}));
    if(!r.ok||d.success===false)throw new Error(d.message||"Unable to update request.");
-   setSelected(null);setReviewNote("");await load();
+   setSelected(null);setReviewNote("");setNotice(d.message||"Request action completed.");await load();
   }catch(e){setError(e instanceof Error?e.message:"Unable to update request.");}finally{setBusy(false);}
  }
  async function setGrievanceStudentAccess(active:boolean){
@@ -118,7 +121,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
   setBusy(true);setError("");
   try{
    const r=await fetch(API_ROOT+"/super-admin/enrollment-grievances/"+encodeURIComponent(selected.id.replace(/^enrollment-/,""))+"/student-access",{method:"PATCH",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({active,note:reviewNote})});
-   const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Unable to update student access.");
+   const d=await r.json().catch(()=>({}));if(!r.ok||d.success===false)throw new Error(d.message||"Unable to update student access.");
    setError("");await loadAuditHistory(selected.id.replace(/^enrollment-/,""));await load();
   }catch(e){setError(e instanceof Error?e.message:"Unable to update student access.");}finally{setBusy(false);}
  }
