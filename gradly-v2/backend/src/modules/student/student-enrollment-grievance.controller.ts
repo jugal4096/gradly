@@ -442,8 +442,22 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     if (error instanceof MappingCorrectionError) return res.status(400).json({ success:false, message:error.message });
-    console.error("Enrollment grievance review failed:", error);
-    return res.status(500).json({ success:false, message:"Unable to update enrollment grievance." });
+    console.error("Enrollment grievance review failed:", {
+      grievanceId: req.params.grievanceId,
+      code: (error as { code?: string })?.code,
+      constraint: (error as { constraint?: string })?.constraint,
+      detail: (error as { detail?: string })?.detail,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    const diagnostic = process.env.NODE_ENV !== "production"
+      ? (error instanceof Error ? error.message : String(error))
+      : undefined;
+    return res.status(500).json({
+      success:false,
+      message:"Unable to update enrollment grievance.",
+      ...(diagnostic ? { diagnostic } : {}),
+    });
   } finally {
     client.release();
   }
