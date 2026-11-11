@@ -122,7 +122,7 @@ async function openStudentEvidence(grievanceId:string,authToken:string){
   try{
    const r=await fetch(API_ROOT+"/super-admin/enrollment-grievances/"+encodeURIComponent(selected.id.replace(/^enrollment-/,""))+"/student-access",{method:"PATCH",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({active,note:reviewNote})});
    const d=await r.json().catch(()=>({}));if(!r.ok||d.success===false)throw new Error(d.message||"Unable to update student access.");
-   setError("");await loadAuditHistory(selected.id.replace(/^enrollment-/,""));await load();
+   setError("");setNotice(d.message||"Student account access updated.");await loadAuditHistory(selected.id.replace(/^enrollment-/,""));await load();
   }catch(e){setError(e instanceof Error?e.message:"Unable to update student access.");}finally{setBusy(false);}
  }
  async function acknowledge(row:Row){if(row.source!=="ADMIN_REQUEST"||row.acknowledgedAt)return;await fetch(API_ROOT+"/super-admin/platform-requests/"+encodeURIComponent(row.id)+"/acknowledge",{method:"PATCH",headers:{Authorization:"Bearer "+token()}});void load();}
