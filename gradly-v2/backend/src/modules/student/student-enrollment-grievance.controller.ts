@@ -220,18 +220,26 @@ export async function listEnrollmentGrievanceAuditHistory(req: SuperAdminAuthent
   const grievanceId = typeof req.query.grievanceId === "string" ? req.query.grievanceId : "";
   if (!grievanceId) return res.status(400).json({ success:false, message:"A grievance ID is required." });
   try {
+    // Read both the current reviewer schema and legacy event rows. to_jsonb(row)
+    // keeps this endpoint compatible even if the TO-09 migration has not yet run.
     const result = await pool.query(
-      `SELECT e.id, e.grievance_id AS "grievanceId",
-              e.reviewer_id AS "reviewerId", e.reviewer_role AS "reviewerRole",
-              e.reviewer_id::text AS "actorDisplay", e.event_type AS "eventType",
-              e.previous_status AS "previousStatus", e.new_status AS "newStatus",
-              e.decision_reason AS "decisionReason", e.information_request AS "informationRequest",
+      `SELECT e.id::text AS id, e.grievance_id AS "grievanceId",
+              COALESCE(to_jsonb(e)->>'reviewer_id', to_jsonb(e)->>'actor_user_id') AS "reviewerId",
+              COALESCE(to_jsonb(e)->>'reviewer_role', to_jsonb(e)->>'actor_type') AS "reviewerRole",
+              COALESCE(to_jsonb(e)->>'reviewer_id', to_jsonb(e)->>'actor_user_id') AS "actorDisplay",
+              COALESCE(to_jsonb(e)->>'event_type', 'DECISION_RECORDED') AS "eventType",
+              COALESCE(to_jsonb(e)->>'previous_status', to_jsonb(e)->>'from_status') AS "previousStatus",
+              COALESCE(to_jsonb(e)->>'new_status', to_jsonb(e)->>'to_status') AS "newStatus",
+              COALESCE(to_jsonb(e)->>'decision_reason', to_jsonb(e)->>'note', '') AS "decisionReason",
+              to_jsonb(e)->>'information_request' AS "informationRequest",
               e.created_at AS "createdAt", i.name AS institution,
-              e.programme_scope AS "programmeScope", e.branch_scope AS "branchScope",
-              e.old_values AS "oldValues", e.new_values AS "newValues"
+              to_jsonb(e)->>'programme_scope' AS "programmeScope",
+              to_jsonb(e)->>'branch_scope' AS "branchScope",
+              COALESCE(to_jsonb(e)->'old_values', '{}'::jsonb) AS "oldValues",
+              COALESCE(to_jsonb(e)->'new_values', '{}'::jsonb) AS "newValues"
        FROM public.student_enrollment_grievance_events e
-       JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id
-       JOIN public.institutions i ON i.id = g.institution_id
+       LEFT JOIN public.student_enrollment_grievances g ON g.id = e.grievance_id
+       LEFT JOIN public.institutions i ON i.id = g.institution_id
        WHERE e.grievance_id = $1
        ORDER BY e.created_at DESC, e.id DESC LIMIT 100`,
       [grievanceId],
@@ -415,15 +423,30 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
     const mappingSnapshot = correctionType
       ? { type: correctionType, value: correctionValue, entrySemester: correctionType === "ADMISSION_MODE" ? requestedEntrySemester : null }
       : null;
-    await client.query(
-      `INSERT INTO public.student_enrollment_grievance_events
-       (grievance_id, reviewer_id, reviewer_role, institution_id, event_type,
-        previous_status, new_status, old_values, new_values, decision_reason)
-       VALUES ($1,$2,'SUPER_ADMIN',$3,'STATUS_CHANGED',$4,$5,$6::jsonb,$7::jsonb,$8)`,
-      [req.params.grievanceId, superAdminId, previous.institution_id, previous.status, status,
-       JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
-       JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }), note],
+    // Support both TO-09 reviewer columns and the legacy audit table shape.
+    const auditSchema = await client.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'student_enrollment_grievance_events'`,
     );
+    const auditColumns = new Set(auditSchema.rows.map((row: { column_name: string }) => row.column_name));
+    if (auditColumns.has("reviewer_id")) {
+      await client.query(
+        `INSERT INTO public.student_enrollment_grievance_events
+         (grievance_id, reviewer_id, reviewer_role, institution_id, event_type,
+          previous_status, new_status, old_values, new_values, decision_reason)
+         VALUES ($1,$2,'SUPER_ADMIN',$3,'STATUS_CHANGED',$4,$5,$6::jsonb,$7::jsonb,$8)`,
+        [req.params.grievanceId, superAdminId, previous.institution_id, previous.status, status,
+         JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
+         JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }), note],
+      );
+    } else {
+      await client.query(
+        `INSERT INTO public.student_enrollment_grievance_events
+         (grievance_id, actor_type, actor_user_id, event_type, from_status, to_status, note)
+         VALUES ($1,'SUPER_ADMIN',$2,'STATUS_CHANGED',$3,$4,$5)`,
+        [req.params.grievanceId, superAdminId, previous.status, status, note],
+      );
+    }
     await client.query("COMMIT");
     // Notification delivery is best-effort; a notification error must not undo the reviewer decision.
     try {
