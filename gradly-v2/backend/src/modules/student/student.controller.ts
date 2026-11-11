@@ -215,6 +215,23 @@ export async function deleteOwnStudentAccount(req: AuthenticatedRequest, res: Re
       return res.status(410).json({ message: "This student account has already been deleted." });
     }
     const userId = account.rows[0].id;
+    // Remove student-owned academic data before disabling the login. This is
+    // transactional: any foreign-key failure rolls back the entire deletion.
+    await client.query(
+      `DELETE FROM public.student_semester_courses
+       WHERE student_semester_id IN (
+         SELECT ss.id FROM public.student_semesters ss
+         JOIN public.student_profiles sp ON sp.id = ss.student_profile_id
+         WHERE sp.user_id = $1
+       )`, [userId]
+    );
+    await client.query(
+      `DELETE FROM public.student_semesters
+       WHERE student_profile_id IN (SELECT id FROM public.student_profiles WHERE user_id = $1)`,
+      [userId]
+    );
+    await client.query("DELETE FROM public.student_profiles WHERE user_id = $1", [userId]);
+    await client.query("DELETE FROM public.student_enrollment_grievances WHERE student_user_id = $1", [userId]);
     await client.query(
       `UPDATE public.users
        SET active = FALSE, deleted_at = NOW(), updated_at = NOW()
@@ -227,11 +244,11 @@ export async function deleteOwnStudentAccount(req: AuthenticatedRequest, res: Re
        VALUES ('STUDENT', $1, 'STUDENT', 'STUDENT_SELF_DELETED_ACCOUNT',
                'users', $1, $2, $3::jsonb)`,
       [userId, req.ip || req.socket.remoteAddress || null,
-       JSON.stringify({ initiatedBy: "STUDENT", softDeleted: true, retainedAcademicRecords: true })]
+       JSON.stringify({ initiatedBy: "STUDENT", softDeleted: true, retainedAcademicRecords: false, freshOnboardingOnReturn: true })]
     );
     await client.query("COMMIT");
     return res.status(200).json({
-      message: "Your Gradly account has been deleted. Your original student ID and academic records are retained for authorised Super Admin review.",
+      message: "Your Gradly account has been deleted. Your saved academic profile and semester records were deleted. Signing in again starts fresh onboarding.",
       deleted: true,
     });
   } catch (error) {
