@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { submitStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
 import { authenticateFirebaseToken } from "../../middleware/auth.middleware";
-import { getProfile, createStudentProfileController, updateStudentProfileController, deleteOwnStudentAccount } from "./student.controller";
+import { getProfile, createStudentProfileController, updateStudentProfileController, deleteOwnStudentAccount, promoteCurrentSemester } from "./student.controller";
 import { listStudentAcademicRecords, saveStudentSemesterResult } from "./student-academic.controller";
 import { requestStudentInstitution, listStudentInstitutionRequests } from "./student-institution.controller";
 import { submitEnrollmentGrievance, listMyEnrollmentGrievances } from "./student-enrollment-grievance.controller";
@@ -11,6 +11,7 @@ const router = Router();
 router.use(authenticateFirebaseToken);
 router.delete("/profile", deleteOwnStudentAccount);
 router.get("/profile", getProfile);
+router.patch("/profile/current-semester", promoteCurrentSemester);
 router.post("/syllabus-feedback", submitStudentSyllabusFeedback);
 router.post("/profile", createStudentProfileController);
 router.put("/profile", updateStudentProfileController);
