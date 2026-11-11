@@ -70,7 +70,13 @@ export default function ExamProfileSetupPage() {
     const season = semester % 2 ? "November–December" : "May–June";
     return [year-1,year,year+1,year+2].filter(y=>y>=admissionYear).map(y=>`${season} ${y}`);
   }
-  function reExamSessionOptions() {\n    const firstYear = Math.max(admissionYear, 2000);\n    const lastYear = new Date().getFullYear() + 1;\n    return Array.from({ length: Math.max(1, lastYear - firstYear + 1) }, (_, index) => firstYear + index)\n      .flatMap(year => [`Re-exam Nov–Dec ${year}`, `Re-exam May–June ${year}`]);\n  }\n  function updateSemester(semester: number, patch: Partial<SemesterRecord>) {
+  function reExamSessionOptions() {
+    const firstYear = Math.max(admissionYear, 2000);
+    const lastYear = new Date().getFullYear() + 1;
+    return Array.from({ length: Math.max(1, lastYear - firstYear + 1) }, (_, index) => firstYear + index)
+      .flatMap(year => [`Re-exam Nov–Dec ${year}`, `Re-exam May–June ${year}`]);
+  }
+  function updateSemester(semester: number, patch: Partial<SemesterRecord>) {
     setSemesterRecords(previous => ({ ...previous, [semester]: { eseStatus: "NOT_APPEARED", backlogAttempts: [], ...previous[semester], ...patch } }));
   }
   function updateAttempt(semester: number, id: string, patch: Partial<BacklogAttempt>) {
