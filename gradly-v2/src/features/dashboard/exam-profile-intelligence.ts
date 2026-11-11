@@ -8,7 +8,6 @@ export function semesterSession(semester: number, admissionYear: number, now = n
   const start = odd ? academicYearStart : academicYearStart;
   const year = odd ? start : start + 1;
   const label = odd ? `November–December ${year}` : `May–June ${year}`;
-  const currentAcademicYearStart = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
   return { parity: odd ? "ODD" as const : "EVEN" as const, sessionLabel: label, academicYear: `${start}-${String(start + 1).slice(-2)}`, estimated: true };
 }
 
