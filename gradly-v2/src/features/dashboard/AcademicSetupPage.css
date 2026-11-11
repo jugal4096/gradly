@@ -403,3 +403,159 @@
 @media(max-width:460px){.academic-setup-gap-period-fields{grid-template-columns:1fr}}
 
 .academic-setup-confirmation.academic-setup-journey{margin:18px 0 0;padding:17px 0 0;border:0;border-top:1px solid rgba(132,116,196,.18);background:transparent;box-shadow:none;border-radius:0}
+
+
+/* Gradly Academic Setup — dimensional interface refinement */
+.academic-setup-page{
+  --as-ink:#25243a;
+  --as-violet:#7665d7;
+  --as-violet-deep:#5546b5;
+  --as-glass:rgba(255,255,255,.76);
+  perspective:1400px;
+  background:
+    radial-gradient(ellipse at 12% 12%,rgba(160,139,255,.24),transparent 34%),
+    radial-gradient(ellipse at 88% 18%,rgba(115,174,255,.19),transparent 32%),
+    radial-gradient(ellipse at 50% 100%,rgba(197,183,255,.16),transparent 38%),
+    var(--as-page);
+}
+.academic-setup-page:before,.academic-setup-page:after{
+  filter:blur(88px);opacity:.52;animation:asAmbientFloat 14s ease-in-out infinite alternate;
+}
+.academic-setup-page:after{animation-delay:-7s}
+.academic-setup-wrap{transform-style:preserve-3d}
+.academic-setup-header{
+  position:relative;z-index:2;
+  border-bottom:1px solid rgba(137,126,190,.13);
+  backdrop-filter:blur(16px);
+}
+.academic-setup-brand{letter-spacing:-1px}
+.academic-setup-logo{
+  width:34px;height:34px;border-radius:11px;
+  background:linear-gradient(145deg,#9b8bf2 0%,#6655c7 55%,#493b9e 100%);
+  box-shadow:0 7px 0 rgba(64,51,142,.13),0 12px 24px rgba(101,82,197,.25),inset 0 1px 0 #ffffff9c;
+  transform:translateZ(18px);
+}
+.academic-setup-step{padding:9px 12px;border:1px solid rgba(137,126,190,.18);border-radius:999px;background:rgba(255,255,255,.48);backdrop-filter:blur(12px)}
+.academic-setup-progress{height:5px;margin-top:2px;background:rgba(125,111,190,.12);box-shadow:inset 0 1px 2px rgba(39,30,88,.08)}
+.academic-setup-progress span{background:linear-gradient(90deg,#a99afa,#6957ce);box-shadow:0 0 14px rgba(118,101,215,.55)}
+.academic-setup-heading{position:relative;transform-style:preserve-3d}
+.academic-setup-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 11px;
+  border:1px solid rgba(139,122,220,.2);border-radius:999px;
+  background:rgba(255,255,255,.55);box-shadow:0 5px 18px rgba(75,58,145,.06);
+}
+.academic-setup-eyebrow:before{content:"";width:6px;height:6px;border-radius:50%;background:#7d69dd;box-shadow:0 0 0 4px rgba(125,105,221,.12)}
+.academic-setup-heading h1{
+  text-wrap:balance;
+  background:linear-gradient(110deg,#29263f 10%,#6856bb 52%,#3e527f 95%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 10px 28px rgba(94,77,164,.08);
+}
+.theme-dark .academic-setup-heading h1{background:linear-gradient(110deg,#f4f0ff 10%,#c2b4ff 55%,#b7d0ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.academic-setup-form{
+  position:relative;isolation:isolate;overflow:visible;
+  border:1px solid rgba(255,255,255,.9);
+  background:linear-gradient(145deg,rgba(255,255,255,.91),rgba(249,247,255,.82));
+  box-shadow:0 2px 0 rgba(255,255,255,.9) inset,0 1px 0 rgba(119,101,198,.08),0 24px 65px rgba(57,47,113,.10),0 6px 16px rgba(57,47,113,.045);
+  transform:translateZ(0);
+  transition:box-shadow .3s ease,border-color .3s ease;
+}
+.academic-setup-form:before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(125deg,rgba(255,255,255,.72),transparent 34%,rgba(167,151,255,.08) 72%,transparent);
+}
+.academic-setup-form:hover{box-shadow:0 2px 0 #fff inset,0 30px 76px rgba(57,47,113,.13),0 8px 20px rgba(57,47,113,.06)}
+.theme-dark .academic-setup-form{
+  border-color:rgba(153,137,214,.25);
+  background:linear-gradient(145deg,rgba(34,32,52,.96),rgba(25,25,40,.94));
+  box-shadow:0 1px 0 rgba(255,255,255,.07) inset,0 26px 70px rgba(0,0,0,.3);
+}
+.academic-setup-field-section>label{letter-spacing:.01em}
+.academic-setup-input-wrap input,.academic-setup-enrollment-control input,
+.academic-setup-edit-fields select,.academic-setup-current-semester select,
+.academic-setup-institution-request input{
+  box-shadow:0 2px 5px rgba(48,39,93,.025),inset 0 1px 2px rgba(40,34,75,.025);
+}
+.academic-setup-input-wrap input:hover,.academic-setup-enrollment-control input:hover,
+.academic-setup-edit-fields select:hover,.academic-setup-current-semester select:hover{border-color:#c5b9ee}
+.academic-setup-selected{
+  border-color:#d8d0fa;background:linear-gradient(110deg,#f5f1ff,#fff);
+  box-shadow:0 7px 18px rgba(104,83,191,.07),inset 0 1px 0 #fff;
+}
+.academic-setup-results{border-color:#ded7f6;box-shadow:0 18px 38px rgba(48,39,93,.14);backdrop-filter:blur(18px)}
+.academic-setup-results button{transition:background .16s,padding .16s}
+.academic-setup-results button:hover{padding-left:17px}
+.academic-setup-enrollment-control button,.academic-setup-continue{
+  position:relative;overflow:hidden;
+  background:linear-gradient(115deg,#7665d7 0%,#6552c2 55%,#5142a7 100%);
+  box-shadow:0 5px 0 #44368f,0 10px 22px rgba(92,72,177,.24),inset 0 1px 0 rgba(255,255,255,.3);
+  transform:translateY(-2px);
+}
+.academic-setup-enrollment-control button:after,.academic-setup-continue:after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 15%,rgba(255,255,255,.22) 48%,transparent 76%);
+  transform:translateX(-120%);transition:transform .65s ease;
+}
+.academic-setup-enrollment-control button:hover:not(:disabled):after,.academic-setup-continue:hover:not(:disabled):after{transform:translateX(120%)}
+.academic-setup-enrollment-control button:active,.academic-setup-continue:active{transform:translateY(2px);box-shadow:0 1px 0 #44368f,0 4px 10px rgba(92,72,177,.18)}
+.academic-setup-predicted{
+  position:relative;overflow:hidden;
+  border:1px solid rgba(167,151,231,.62);
+  background:linear-gradient(135deg,rgba(244,240,255,.98),rgba(250,249,255,.95) 52%,rgba(237,244,255,.96));
+  box-shadow:0 2px 0 rgba(255,255,255,.95) inset,0 16px 38px rgba(103,83,187,.10),0 4px 10px rgba(103,83,187,.05);
+  transform:perspective(1000px) rotateX(.35deg);
+}
+.academic-setup-predicted:after{
+  content:"";position:absolute;right:-42px;top:-65px;width:190px;height:190px;border-radius:50%;
+  border:1px solid rgba(132,112,211,.13);box-shadow:0 0 0 18px rgba(132,112,211,.035),0 0 0 38px rgba(132,112,211,.025);
+  pointer-events:none;
+}
+.theme-dark .academic-setup-predicted{background:linear-gradient(135deg,rgba(45,37,69,.98),rgba(34,34,55,.96) 55%,rgba(30,43,67,.96));border-color:#5d4c96}
+.academic-setup-predicted-sparkle{box-shadow:0 5px 12px rgba(110,88,195,.14),inset 0 1px 0 #fff}
+.academic-setup-auto-tag{box-shadow:0 3px 9px rgba(105,84,190,.07)}
+.academic-setup-predicted-grid dd{
+  box-shadow:0 3px 9px rgba(55,45,105,.035),inset 0 1px 0 rgba(255,255,255,.9);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.academic-setup-predicted-grid dd:hover{transform:translateY(-2px);border-color:#b7a8ed;box-shadow:0 8px 16px rgba(80,63,154,.09),inset 0 1px 0 #fff}
+.theme-dark .academic-setup-predicted-grid dd{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.academic-setup-confirmation.academic-setup-journey{position:relative}
+.academic-setup-prediction-reference,.academic-setup-delay,.academic-setup-gap-period{
+  box-shadow:0 5px 16px rgba(55,45,105,.045),inset 0 1px 0 rgba(255,255,255,.85);
+}
+.academic-setup-current-semester select{box-shadow:0 3px 10px rgba(55,45,105,.04)}
+.academic-setup-choice{box-shadow:0 3px 8px rgba(55,45,105,.045)}
+.academic-setup-choice.primary-choice{box-shadow:0 4px 0 #4d3e9f,0 8px 16px rgba(92,72,177,.17),inset 0 1px 0 rgba(255,255,255,.2)}
+.academic-setup-choice.primary-choice:active{transform:translateY(2px);box-shadow:0 1px 0 #4d3e9f}
+.academic-setup-continue{min-height:54px;letter-spacing:.01em}
+.academic-setup-error{box-shadow:0 7px 20px rgba(163,64,78,.06)}
+.academic-setup-dialog{
+  border:1px solid rgba(255,255,255,.85);
+  background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(247,245,255,.98));
+  box-shadow:0 30px 90px rgba(22,18,54,.28),0 2px 0 rgba(255,255,255,.9) inset;
+}
+.theme-dark .academic-setup-dialog{background:linear-gradient(145deg,#242239,#1b1b2c);border-color:#51476e}
+.academic-setup-theme-toggle{
+  box-shadow:0 4px 0 rgba(79,63,151,.08),0 8px 18px rgba(45,35,90,.08),inset 0 1px 0 #fff;
+}
+.academic-setup-theme-toggle:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(79,63,151,.08)}
+.academic-setup-footer{opacity:.78}
+@keyframes asAmbientFloat{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(18px,-24px,0) scale(1.08)}}
+@media(prefers-reduced-motion:no-preference){
+  .academic-setup-heading{animation:academicReveal .55s cubic-bezier(.2,.7,.2,1) both}
+  .academic-setup-form{animation:academicReveal .65s .06s cubic-bezier(.2,.7,.2,1) both}
+  .academic-setup-predicted-grid>div{animation:academicReveal .35s ease-out both}
+  .academic-setup-predicted-grid>div:nth-child(2){animation-delay:.04s}
+  .academic-setup-predicted-grid>div:nth-child(3){animation-delay:.08s}
+  .academic-setup-predicted-grid>div:nth-child(4){animation-delay:.12s}
+  .academic-setup-predicted-grid>div:nth-child(5){animation-delay:.16s}
+}
+@media(prefers-reduced-motion:reduce){
+  .academic-setup-page:before,.academic-setup-page:after{animation:none}
+  .academic-setup-form,.academic-setup-predicted{transform:none}
+}
+@media(max-width:760px){
+  .academic-setup-form{border-radius:18px}
+  .academic-setup-predicted{transform:none}
+  .academic-setup-predicted:after{width:120px;height:120px;right:-55px;top:-45px}
+}
