@@ -229,19 +229,19 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          (student_profile_id, curriculum_id, semester_id, attempt_number,
           status, result_publication_status, result_source, verified,
           credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
-       VALUES ($1, $2, $3, $4, 'COMPLETED', 'DECLARED', 'MANUAL_ENTRY', FALSE,
-               $5, $6, $7, NOW(), NOW())
+       VALUES ($1, $2, $3, $4, 'COMPLETED', 'NOT_PUBLISHED', 'MANUAL_ENTRY', FALSE,
+               $5, $6, $7, NOW(), NULL)
        ON CONFLICT (student_profile_id, semester_id, attempt_number)
        DO UPDATE SET curriculum_id = EXCLUDED.curriculum_id,
                      status = 'COMPLETED',
-                     result_publication_status = 'DECLARED',
+                     result_publication_status = 'NOT_PUBLISHED',
                      result_source = 'MANUAL_ENTRY',
                      verified = FALSE,
                      credits_registered = EXCLUDED.credits_registered,
                      credits_earned = EXCLUDED.credits_earned,
                      sgpa = EXCLUDED.sgpa,
                      sgpa_calculated_at = NOW(),
-                     result_declared_at = NOW(),
+                     result_declared_at = NULL,
                      updated_at = NOW()
        RETURNING id, semester_id, attempt_number, created_at, updated_at`,
       [resolved.profile.id, resolved.profile.curriculum_id, semesterId, attemptNumber,
@@ -259,10 +259,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
           (student_semester_id, curriculum_subject_id, course_code_snapshot,
            course_name_snapshot, credits, registration_status, grade_symbol,
            grade_point, result_status, result_source, verified, attempt_number)
-         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7, 'DECLARED', 'MANUAL_ENTRY', FALSE, $8)`,
+         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7, $8, 'MANUAL_ENTRY', FALSE, $9)`,
         [semesterRecord.id, course.subject.id, course.subject.course_code || "",
          course.subject.course_name, Number(course.subject.credits), course.grade,
-         course.point, attemptNumber],
+         course.point, course.passed ? "PASS" : "FAIL", attemptNumber],
       );
     }
 
