@@ -295,6 +295,7 @@ export default function StudentPlatform() {
       if (!response.ok) throw new Error(data.message || "Semester could not be updated.");
       const updated = { ...profile, semester: String(data.currentSemesterNumber || target) };
       setProfile(updated);
+      setSelectedSemester(target);
       localStorage.setItem("gradly_student_profile", JSON.stringify(updated));
       setNotice("Current semester updated. Your academic profile is locked again.");
       setNextSemester("");
