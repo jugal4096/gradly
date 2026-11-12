@@ -100,16 +100,11 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       !Array.isArray(courses) || courses.length === 0 || courses.length > 100) {
     return res.status(400).json({ message: "Provide a valid semester, attempt number and 1–100 subjects." });
   }
-  const indiaMonth = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", month: "numeric" }).format(new Date()));
-  const promotionWindowOpen = indiaMonth === 1 || indiaMonth === 7;
   const currentSemester = Number(resolved.profile.current_semester_number || 0);
-  const maximumAllowedSemester = currentSemester + (promotionWindowOpen ? 1 : 0);
-  if (semesterNumber > maximumAllowedSemester) {
+  if (!currentSemester || semesterNumber > currentSemester) {
     return res.status(403).json({
-      code: "EXAM_SEMESTER_LOCKED",
-      message: promotionWindowOpen
-        ? "You may add exam details only up to the next semester during the January/July promotion window."
-        : "Higher-semester exam details are locked until January or July, after the December/June examination cycles.",
+      code: "SGPA_SEMESTER_LOCKED",
+      message: "Manual SGPA entry is available only for semesters up to your current semester.",
     });
   }
   const normalized = [];
@@ -142,19 +137,41 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "No curriculum semester is configured for this semester. Check your academic profile and scheme." });
     }
-    const inserted = await client.query(
-      `INSERT INTO student_semesters
-         (student_profile_id, curriculum_id, semester_id, attempt_number,
-         status, result_publication_status, result_source, verified,
-         credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
-       VALUES ($1, $2, $3, $4, 'COMPLETED', 'DECLARED', 'MANUAL_ENTRY', FALSE,
-               $5, $6, $7, NOW(), NOW())
-       RETURNING id, semester_id, attempt_number`,
-      [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
-       creditsRegistered, normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0),
-       Number(sgpa.toFixed(2))],
+    const earnedCredits = normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0);
+    const existing = await client.query(
+      `SELECT id FROM student_semesters
+       WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
+       ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
+      [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
     );
-    const semesterRecord = inserted.rows[0];
+    let semesterRecord: { id: string; semester_id: string; attempt_number: number };
+    if (existing.rows[0]) {
+      const updated = await client.query(
+        `UPDATE student_semesters
+         SET curriculum_id = $2, status = 'COMPLETED', result_publication_status = 'DECLARED',
+             result_source = 'MANUAL_ENTRY', verified = FALSE,
+             credits_registered = $3, credits_earned = $4, sgpa = $5,
+             sgpa_calculated_at = NOW(), result_declared_at = NOW()
+         WHERE id = $1
+         RETURNING id, semester_id, attempt_number`,
+        [existing.rows[0].id, resolved.profile.curriculum_id, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
+      );
+      semesterRecord = updated.rows[0];
+      await client.query("DELETE FROM student_semester_courses WHERE student_semester_id = $1", [semesterRecord.id]);
+    } else {
+      const inserted = await client.query(
+        `INSERT INTO student_semesters
+           (student_profile_id, curriculum_id, semester_id, attempt_number,
+           status, result_publication_status, result_source, verified,
+           credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
+         VALUES ($1, $2, $3, $4, 'COMPLETED', 'DECLARED', 'MANUAL_ENTRY', FALSE,
+                 $5, $6, $7, NOW(), NOW())
+         RETURNING id, semester_id, attempt_number`,
+        [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
+         creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
+      );
+      semesterRecord = inserted.rows[0];
+    }
     for (const course of normalized) {
       const curriculumSubject = course.code
         ? await client.query(
@@ -178,6 +195,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     return res.status(201).json({
       message: "Semester result saved.",
       semester: { id: semesterRecord.id, semesterNumber, attemptNumber, sgpa: Number(sgpa.toFixed(2)), credits: creditsRegistered },
+      updated: Boolean(existing.rows[0]),
     });
   } catch (error) {
     await client.query("ROLLBACK");
