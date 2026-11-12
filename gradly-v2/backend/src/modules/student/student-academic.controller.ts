@@ -132,7 +132,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const semesterId = String(semesterResult.rows[0].id);
 
     const gradingResult = await client.query(
-      `SELECT gd.symbol, gd.grade_point, gd.pass
+      `SELECT gd.symbol, gd.grade_point, gd.pass, gs.decimal_places
        FROM curricula c
        JOIN grading_systems gs ON gs.id = c.grading_system_id AND gs.active = TRUE
        JOIN grade_definitions gd ON gd.grading_system_id = gs.id
@@ -144,6 +144,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(409).json({ message: "A grading scale is not configured for your selected curriculum." });
     }
+    const decimalPlaces = Math.max(0, Math.min(4, Number(gradingResult.rows[0].decimal_places ?? 2)));
     const gradeMap = new Map<string, { point: number; passed: boolean }>(
       gradingResult.rows.map((grade) => [String(grade.symbol).trim().toUpperCase(), {
         point: Number(grade.grade_point), passed: Boolean(grade.pass),
@@ -180,7 +181,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
 
     const selectedIds = new Set(ids);
-    const missingMandatory = curriculumSubjects.rows.filter((subject) => subject.mandatory && !selectedIds.has(String(subject.id)));
+    const missingMandatory = curriculumSubjects.rows.filter((subject) => subject.mandatory && Number(subject.credits) > 0 && !selectedIds.has(String(subject.id)));
     if (missingMandatory.length) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "Include all mandatory subjects before saving this semester." });
@@ -197,7 +198,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "The selected subjects do not contain valid credits." });
     }
-    const sgpa = Number((weightedPoints / creditsRegistered).toFixed(2));
+    const multiplier = 10 ** decimalPlaces;
+    const sgpa = Math.round(((weightedPoints / creditsRegistered) + Number.EPSILON) * multiplier) / multiplier;
 
     const existing = await client.query(
       `SELECT id, result_source, verified
@@ -263,6 +265,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         sgpa,
         credits: creditsRegistered,
         savedAt: semesterRecord.updated_at,
+        decimalPlaces,
       },
     });
   } catch (error) {
