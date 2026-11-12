@@ -9,7 +9,8 @@ type Profile = { institutionId: string; institutionName: string; programId: stri
 type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; curriculumSubjectId?: string };
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
-type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null };
+type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_snapshot?: string | null; course_name_snapshot?: string | null; credits?: number | string | null; grade_symbol?: string | null; grade_point?: number | string | null };
+type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; id?: string | number | null };
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
@@ -110,6 +111,10 @@ export default function StudentPlatform() {
     }
     return [{id:1,name:"",credits:3,grade:"A"}];
   });
+  const [selectedSemester,setSelectedSemester] = useState<number>(()=>Number(profile.semester)||1);
+  const [loadingCurriculum,setLoadingCurriculum] = useState(false);
+  const [savingSemester,setSavingSemester] = useState(false);
+  const [savedSubjectsBySemester,setSavedSubjectsBySemester] = useState<Record<number,Subject[]>>({});
   const [sgpa,setSgpa] = useState<number|null>(null);
   const [results,setResults] = useState<SemesterResult[]>(() => {
     try { return JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]"); } catch { return []; }
@@ -146,13 +151,22 @@ export default function StudentPlatform() {
         if(profileResponse.ok && profileData.profile && !cancelled) {
           const p=profileData.profile;
           const next:Profile={institutionId:p.institution_id||"",institutionName:p.institution_name||"",programId:p.program_id||"",programName:p.program_name||"",branchId:p.branch_id||"",branchName:p.branch_name||"",curriculumId:p.curriculum_id||"",semester:String(p.current_semester_number||""),enrollment:p.student_identifier||"",admissionYear:String(p.admission_year||new Date().getFullYear()),admissionMode:p.admission_mode_name||"Regular",admissionNumber:"",scheme:p.scheme_name||""};
-          setProfile(next); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false);
+          setProfile(next); setSelectedSemester(Number(next.semester)||1); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false);
         }
         const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
         const recordsData=await recordsResponse.json();
         if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
-          const saved:SemesterResult[]=(recordsData.records as AcademicRecordApi[]).map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
-          setResults(saved); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
+          const academicRecords=recordsData.records as AcademicRecordApi[];
+          const saved:SemesterResult[]=academicRecords.map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
+          const savedSubjects:Record<number,Subject[]>={};
+          academicRecords.forEach(row=>{
+            const semesterNumber=Number(row.semester_number);
+            if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>({
+              id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
+              courseCode:course.course_code_snapshot||"",curriculumSubjectId:course.curriculum_subject_id||undefined,
+            }));
+          });
+          setResults(saved); setSavedSubjectsBySemester(savedSubjects); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
         }
       } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
     })();
@@ -160,23 +174,39 @@ export default function StudentPlatform() {
   }, [isGuest, user]);
 
   useEffect(() => {
-    if (isGuest || !user || !profile.curriculumId || !profile.semester) return;
+    if (isGuest || !user || !profile.curriculumId || !selectedSemester) return;
     let cancelled=false;
+    setLoadingCurriculum(true);
     void (async()=>{
       try {
-        const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${encodeURIComponent(profile.semester)}/subjects`);
+        const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${selectedSemester}/subjects`);
         const data=await response.json();
         if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
-        if(!cancelled && Array.isArray(data.data) && data.data.length) {
-          setSubjects((data.data as CurriculumSubjectApi[]).map((item,index)=>({id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:"A",courseCode:item.code||"",curriculumSubjectId:String(item.id||"")})));
-          setSgpa(null);
-        }
-      } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
+        if(cancelled) return;
+        const saved=savedSubjectsBySemester[selectedSemester]||[];
+        const savedBySubject=new Map<string,Subject>();
+        saved.forEach(subject=>{
+          if(subject.curriculumSubjectId) savedBySubject.set("id:"+subject.curriculumSubjectId,subject);
+          if(subject.courseCode) savedBySubject.set("code:"+subject.courseCode,subject);
+        });
+        const curriculumSubjects=(Array.isArray(data.data)?data.data:[]) as CurriculumSubjectApi[];
+        setSubjects(curriculumSubjects.map((item,index)=>{
+          const subjectId=String(item.id||"");
+          const courseCode=String(item.code||"");
+          const previous=savedBySubject.get("id:"+subjectId)||savedBySubject.get("code:"+courseCode);
+          return {id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:previous?.grade||"",courseCode,curriculumSubjectId:subjectId};
+        }));
+        setSgpa(null);
+      } catch(error) {
+        if(!cancelled) { setSubjects([]); setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
+      } finally {
+        if(!cancelled) setLoadingCurriculum(false);
+      }
     })();
     return ()=>{cancelled=true;};
-  }, [isGuest, user, profile.curriculumId, profile.semester]);
+  }, [isGuest, user, profile.curriculumId, selectedSemester, savedSubjectsBySemester]);
 
-  const weighted = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+POINTS[s.grade]*s.credits,0);
+  const weighted = subjects.filter(s=>s.name.trim() && s.credits>0 && POINTS[s.grade]!==undefined).reduce((sum,s)=>sum+(POINTS[s.grade]??0)*s.credits,0);
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const computedSgpa = countedCredits ? weighted/countedCredits : 0;
   const cgpaCredits = results.reduce((sum,r)=>sum+r.credits,0);
@@ -190,27 +220,34 @@ export default function StudentPlatform() {
     setSubjects(current=>[...current,{id:Math.max(0,...current.map(s=>s.id))+1,name:isGuest?`Subject ${current.length+1}`:"",credits:isGuest?Math.min(1,Math.max(0,20-countedCredits)):3,grade:"A"}]); setSgpa(null);
   }
   function calculateSgpa() {
-    if(!countedCredits) { setNotice("Add at least one subject with a name and positive credits."); return; }
+    if(!countedCredits) { setNotice("No curriculum subjects with valid credits are available for this semester."); return; }
+    if(subjects.some(subject=>subject.name.trim()&&subject.credits>0&&POINTS[subject.grade]===undefined)) { setNotice("Select a grade for every subject before calculating SGPA."); return; }
     setSgpa(computedSgpa);
   }
   async function saveSemester() {
     if(sgpa===null) { setNotice("Calculate your SGPA before saving it."); return; }
-    const semesterNumber=isGuest?Number(guestSemester):(Number(profile.semester)||results.length+1);
+    const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
+    if(!isGuest && semesterNumber>Number(profile.semester)) { setNotice("You can save results only up to your current semester."); return; }
+    const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
+    if(!gradedCourses.length||gradedCourses.some(subject=>POINTS[subject.grade]===undefined)) { setNotice("Select a valid grade for every curriculum subject before saving."); return; }
     const row:SemesterResult={id:crypto.randomUUID(),semester:semesterNumber,sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
     if(!isGuest) {
       if(!user || !profile.curriculumId) { setNotice("Save your academic profile and select a curriculum scheme before recording results."); return; }
+      setSavingSemester(true);
       try {
         const token=await user.getIdToken();
         const response=await fetch(API+"/api/student/academic/semesters",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({
-          semesterNumber,attemptNumber:1,courses:subjects.filter(subject=>subject.name.trim()&&subject.credits>0).map(subject=>({courseCode:subject.courseCode||"",courseName:subject.name,credits:subject.credits,gradeSymbol:subject.grade,gradePoint:POINTS[subject.grade]}))
+          semesterNumber,attemptNumber:1,courses:gradedCourses.map(subject=>({courseCode:subject.courseCode||"",courseName:subject.name,credits:subject.credits,gradeSymbol:subject.grade,gradePoint:POINTS[subject.grade]}))
         })});
         const data=await response.json();
         if(!response.ok) throw new Error(data.message||"Unable to save semester result.");
         row.id=data.semester.id;
       } catch(error) { setNotice(error instanceof Error?error.message:"Unable to save semester result."); return; }
+      finally { setSavingSemester(false); }
     }
     const next=[...results.filter(item=>item.semester!==row.semester),row].sort((a,b)=>a.semester-b.semester);
-    setResults(next); localStorage.setItem(isGuest?"gradly_guest_semester_results":"gradly_semester_results",JSON.stringify(next));
+    setResults(next); setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:subjects}));
+    localStorage.setItem(isGuest?"gradly_guest_semester_results":"gradly_semester_results",JSON.stringify(next));
     setNotice(isGuest?"Semester result saved on this device.":"Semester subject grades saved to your Gradly academic record.");
   }
   function navigate(next:Section) {
@@ -371,7 +408,7 @@ export default function StudentPlatform() {
           <div className="sp-section-row"><div><span className="sp-kicker">YOUR TOOLKIT</span><h2>Your tools. One clear direction.</h2></div><span>01 — 06</span></div>
           <div className="sp-feature-grid">{[{id:"sgpa" as Section,n:"01",t:"SGPA analysis",d:"Calculate, simulate and track semester grades.",ic:"∑"},{id:"cgpa" as Section,n:"02",t:"CGPA analysis",d:"Understand your cumulative performance.",ic:"◈"},{id:"planner" as Section,n:"03",t:"Academic planner",d:"Work backwards from your target SGPA or CGPA.",ic:"⌁"},{id:"tracker" as Section,n:"04",t:"Progress tracker",d:"Visualise your results across semesters.",ic:"▥"},{id:"community" as Section,n:"05",t:"Community & notes",d:"Share study material and talk with classmates.",ic:"☷"},{id:"assistant" as Section,n:"06",t:"Gradly AI assistant",d:"Get academic guidance in one conversation.",ic:"✳"}].map(item=><button className="sp-feature" key={item.id} onClick={()=>navigate(item.id)}><span>{item.n} / {item.ic}</span><strong>{item.t}</strong><p>{item.d}</p><i>↗</i></button>)}</div>
         </>}
-        {section==="sgpa"&&<><section className="sp-calculator-hero"><div className="sp-calculator-hero-copy"><span className="sp-calc-eyebrow">GRADLY · ACADEMIC TOOLS</span><h1>SGPA calculator</h1><p>Bring your semester grades together and see your performance clearly.</p></div><div className="sp-calc-art" aria-hidden="true"><div className="sp-calc-orbit sp-calc-orbit-one"/><div className="sp-calc-orbit sp-calc-orbit-two"/><div className="sp-calc-cube"><span>G</span><i>✦</i></div><div className="sp-calc-float sp-calc-float-one">A+</div><div className="sp-calc-float sp-calc-float-two">10</div></div><div className="sp-calc-glow"/></section><div className="sp-two-col"><Card><div className="sp-card-head"><div><span>YOUR SUBJECTS</span><h2>Grade entry</h2></div><b>{subjects.length} subjects</b></div><div className="sp-subject-head"><span>SUBJECT</span><span>CREDITS</span><span>GRADE</span><span/></div>{subjects.map((s,index)=><div className="sp-subject-row" key={s.id}><input aria-label={"Subject "+(index+1)} placeholder={"Subject "+(index+1)} value={s.name} onChange={e=>{setSubjects(cur=>cur.map(x=>x.id===s.id?{...x,name:e.target.value}:x));setSgpa(null);}}/><input aria-label="Credits" type="number" min="0" max={isGuest?Math.max(0,20-(countedCredits-s.credits)):undefined} step="0.5" value={s.credits} onChange={e=>{const value=Math.max(0,Number(e.target.value)||0);setSubjects(cur=>cur.map(x=>x.id===s.id?{...x,credits:isGuest?Math.min(value,Math.max(0,20-cur.filter(y=>y.id!==s.id).reduce((sum,y)=>sum+y.credits,0))):value}:x));setSgpa(null);}}/><div className="sp-grade-options" role="radiogroup" aria-label={"Choose grade for "+(s.name||"subject "+(index+1))}>{gradeNames.map(g=><button type="button" key={g} role="radio" aria-checked={s.grade===g} className={s.grade===g?"selected":""} onClick={()=>{setSubjects(cur=>cur.map(x=>x.id===s.id?{...x,grade:g}:x));setSgpa(null);}}><strong>{g}</strong><small>{POINTS[g]} pts</small></button>)}</div><button className="sp-remove" disabled={subjects.length===1} onClick={()=>setSubjects(cur=>cur.filter(x=>x.id!==s.id))}>×</button></div>)}<button className="sp-add" onClick={addSubject} disabled={isGuest&&countedCredits>=20}>＋ Add subject</button>{isGuest&&<div className="sp-muted">Credits used: {countedCredits.toFixed(1)} / 20 maximum</div>}<div className="sp-actions"><button className="sp-primary" onClick={calculateSgpa}>Calculate SGPA →</button>{!isGuest&&<button className="sp-secondary" onClick={saveSemester} disabled={sgpa===null}>Save to tracker</button>}</div></Card><Card className="sp-result"><span>YOUR SGPA</span><div className="sp-score">{sgpa===null?"—":sgpa.toFixed(2)}<small>/ 10</small></div><h3>{sgpa===null?"Your result appears here":"Calculation complete"}</h3><p>{sgpa===null?"Add subject names, credits and grades to calculate your semester result.":"Your weighted semester grade point average."}</p><div className="sp-result-line"><span>Counted credits</span><b>{countedCredits}</b></div><div className="sp-result-line"><span>Weighted points</span><b>{weighted.toFixed(2)}</b></div></Card></div></>}
+        {section==="sgpa"&&<><section className="sp-calculator-hero"><div className="sp-calculator-hero-copy"><span className="sp-calc-eyebrow">GRADLY · ACADEMIC TOOLS</span><h1>SGPA calculator</h1><p>Bring your semester grades together and see your performance clearly.</p></div><div className="sp-calc-art" aria-hidden="true"><div className="sp-calc-orbit sp-calc-orbit-one"/><div className="sp-calc-orbit sp-calc-orbit-two"/><div className="sp-calc-cube"><span>G</span><i>✦</i></div><div className="sp-calc-float sp-calc-float-one">A+</div><div className="sp-calc-float sp-calc-float-two">10</div></div><div className="sp-calc-glow"/></section><div className="sp-entry-modes"><button type="button" className="sp-entry-mode selected" aria-pressed="true"><span>MANUAL ENTRY</span><strong>Enter grades yourself</strong><small>Available now</small></button><button type="button" className="sp-entry-mode unavailable" disabled aria-disabled="true"><span>ONLINE FETCHING</span><strong>Fetch official results</strong><small>Coming soon</small></button></div><div className="sp-two-col"><Card><div className="sp-card-head"><div><span>YOUR SUBJECTS</span><h2>Grade entry</h2></div>{!isGuest&&<label className="sp-semester-picker">SEMESTER<select value={String(selectedSemester)} onChange={event=>{setSelectedSemester(Number(event.target.value));setSgpa(null);setNotice("");}}>{Array.from({length:Math.max(1,Math.min(12,Number(profile.semester)||1))},(_,index)=>index+1).map(semester=><option key={semester} value={semester}>Semester {semester}</option>)}</select></label>}<b>{subjects.length} subjects</b></div>{!isGuest&&<p className="sp-muted sp-semester-saved">{results.some(result=>result.semester===selectedSemester)?"Saved grades are loaded. You can edit and save them again.":"Select grades for this semester, then calculate and save your SGPA."}</p>}{!isGuest&&loadingCurriculum&&<p className="sp-muted">Loading subjects from your curriculum…</p>}{!isGuest&&!loadingCurriculum&&subjects.length===0&&<div className="sp-empty compact"><span>◈</span><p>No subjects are configured for Semester {selectedSemester} in your selected curriculum.</p></div>}<div className="sp-subject-head"><span>SUBJECT</span><span>CREDITS</span><span>GRADE</span><span/></div>{subjects.map((s,index)=><div className="sp-subject-row" key={s.id}><input aria-label={"Subject "+(index+1)} title={s.courseCode||s.name} placeholder={"Subject "+(index+1)} value={s.name} readOnly={!isGuest} onChange={e=>{setSubjects(cur=>cur.map(x=>x.id===s.id?{...x,name:e.target.value}:x));setSgpa(null);}}/><input aria-label="Credits" type="number" min="0" max={isGuest?Math.max(0,20-(countedCredits-s.credits)):undefined} step="0.5" value={s.credits} readOnly={!isGuest} onChange={e=>{const value=Math.max(0,Number(e.target.value)||0);setSubjects(cur=>cur.map(x=>x.id===s.id?{...x,credits:isGuest?Math.min(value,Math.max(0,20-cur.filter(y=>y.id!==s.id).reduce((sum,y)=>sum+y.credits,0))):value}:x));setSgpa(null);}}/><div className="sp-grade-options" role="radiogroup" aria-label={"Choose grade for "+(s.name||"subject "+(index+1))}>{gradeNames.map(g=><button type="button" key={g} role="radio" aria-checked={s.grade===g} className={s.grade===g?"selected":""} onClick={()=>{setSubjects(cur=>cur.map(x=>x.id===s.id?{...x,grade:g}:x));setSgpa(null);}}><strong>{g}</strong><small>{POINTS[g]} pts</small></button>)}</div>{isGuest&&<button className="sp-remove" disabled={subjects.length===1} onClick={()=>setSubjects(cur=>cur.filter(x=>x.id!==s.id))}>×</button>}</div>)}{isGuest&&<button className="sp-add" onClick={addSubject} disabled={countedCredits>=20}>＋ Add subject</button>}{isGuest&&<div className="sp-muted">Credits used: {countedCredits.toFixed(1)} / 20 maximum</div>}<div className="sp-actions"><button className="sp-primary" onClick={calculateSgpa} disabled={loadingCurriculum||(!isGuest&&!subjects.length)}>Calculate SGPA →</button>{!isGuest&&<button className="sp-secondary" onClick={saveSemester} disabled={sgpa===null||savingSemester}>{savingSemester?"Saving…":"Save to tracker"}</button>}</div></Card><Card className="sp-result"><span>YOUR SGPA</span><div className="sp-score">{sgpa===null?"—":sgpa.toFixed(2)}<small>/ 10</small></div><h3>{sgpa===null?"Your result appears here":"Calculation complete"}</h3><p>{sgpa===null?"Add subject names, credits and grades to calculate your semester result.":"Your weighted semester grade point average."}</p><div className="sp-result-line"><span>Counted credits</span><b>{countedCredits}</b></div><div className="sp-result-line"><span>Weighted points</span><b>{weighted.toFixed(2)}</b></div></Card></div></>}
         {section==="sgpaWhatIf"&&<><SectionTitle kicker="SGPA ANALYSIS" title="SGPA what-if analysis" copy="Change possible subject grades and credits to compare alternative semester outcomes."/><Card><div className="sp-card-head"><div><span>SCENARIO INPUT</span><h2>Compare a target against your current SGPA</h2></div></div><div className="sp-inline-form"><label>Target SGPA<input type="number" min="0" max="10" step=".01" value={whatIf} onChange={e=>setWhatIf(e.target.value)}/></label><div className="sp-inline-result"><span>Current calculated SGPA</span><strong>{sgpa===null?"Not calculated":sgpa.toFixed(2)}</strong></div><div className="sp-inline-result"><span>Difference to target</span><strong>{sgpa===null?"—":(Number(whatIf)-sgpa).toFixed(2)}</strong></div></div><p className="sp-muted">This compares the target with the current entered grades. It does not predict official marks or guarantee a result.</p></Card></>}
 
 {section==="sgpaPlanner"&&<><SectionTitle kicker="TARGET-BASED PLANNING" title="SGPA planner" copy="Set a target SGPA and compare several subject-wise grade combinations based on the credits you entered."/><Card><div className="sp-card-head"><div><span>YOUR TARGET</span><h2>What SGPA are you aiming for?</h2></div></div><div className="sp-inline-form"><label>Target SGPA<input type="number" min="0" max="10" step=".01" value={targetSgpa} onChange={e=>setTargetSgpa(e.target.value)}/></label><div className="sp-inline-result"><span>Subjects in your calculator</span><strong>{subjects.filter(s=>s.credits>0).length}</strong></div><div className="sp-inline-result"><span>Total subject credits</span><strong>{subjects.reduce((sum,s)=>sum+Math.max(0,s.credits),0)}</strong></div></div><p className="sp-muted">The planner uses the subjects and credits from SGPA calculator. Update those entries first if your semester load differs.</p></Card><div className="sp-feature-grid sp-plan-scenarios">{sgpaScenarios.map((plan,i)=><Card key={plan.label}><div className="sp-card-head"><div><span>SCENARIO {String(i+1).padStart(2,"0")}</span><h2>{plan.label}</h2></div></div><div className="sp-score">{plan.projected.toFixed(2)}<small> projected SGPA</small></div><p className="sp-muted">{plan.description}</p>{subjects.filter(s=>s.credits>0).map((subject,index)=><div className="sp-history-row" key={subject.id}><span>{subject.name.trim()||"Subject "+(index+1)} · {subject.credits} credits</span><strong>{plan.grades[subject.id]||"D"} · {POINTS[plan.grades[subject.id]||"D"]}</strong></div>)}</Card>)}</div><p className="sp-muted">These are mathematical planning scenarios using the GECA reference points. They are not predictions of awarded grades. Your institution's current scheme and official marksheet remain authoritative.</p></>}
