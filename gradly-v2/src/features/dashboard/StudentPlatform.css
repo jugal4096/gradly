@@ -816,4 +816,4 @@
 .sp-dark-theme .sp-entry-mode{background:#19263a;border-color:#304159;color:#eaf2fa}
 .sp-dark-theme .sp-entry-mode.selected{background:linear-gradient(120deg,rgba(53,190,169,.12),rgba(112,128,224,.1));border-color:#36b7a5}
 .sp-dark-theme .sp-semester-picker select{background:#18283d;border-color:#34455c;color:#edf4fb}
-@media(max-width:560px){.sp-entry-modes{gap:8px}.sp-entry-mode{min-height:82px;padding:12px}.sp-entry-mode strong{font-size:11px}.sp-semester-picker{min-width:105px}.sp-card-head{flex-wrap:wrap}}
+@media(max-width:560px){.sp-entry-modes{gap:8px}.sp-entry-mode{min-height:82px;padding:12px}.sp-entry-mode strong{font-size:11px}.sp-sgpa-card-head{flex-wrap:wrap}.sp-semester-picker{min-width:105px}}
