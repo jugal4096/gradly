@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { branchIdentityMatches, enrollmentBranchMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
+import { isNewCbcsBranchSupported } from "./new-cbcs-availability";
 import { academicStatusForSemester, availableSemesterOptions, resolveCurrentSemesterSelection } from "../../../../src/features/dashboard/academic-setup-state";
 
 const calendar = { academicYearStartMonth: 7, oddSemesterStartMonth: 7, oddSemesterEndMonth: 12 };
@@ -213,6 +214,26 @@ test("completed programme is available only as an explicit student selection", (
   assert.equal(academicStatusForSemester("7"), "ENROLLED");
 });
 
+
+test("GECA B.Tech New CBCS remains available only for IT; other programmes and institutions are unaffected", () => {
+  const base = {
+    programmePrefix: "BE",
+    institutionName: "Government College of Engineering, Chhatrapati Sambhajinagar",
+    programmeName: "Bachelor of Technology",
+    schemeName: "New CBCS",
+  };
+  assert.equal(isNewCbcsBranchSupported({ ...base, branchName: "IT", branchCode: "IT" }), true);
+  assert.equal(isNewCbcsBranchSupported({ ...base, branchName: "Information Technology", branchCode: "IT" }), true);
+  for (const [branchName, branchCode] of [
+    ["CIVIL", "CIVIL"], ["CSE", "CSE"], ["ELECT", "ELECT"], ["ENTC", "ENTC"], ["MECH", "MECH"],
+  ]) {
+    assert.equal(isNewCbcsBranchSupported({ ...base, branchName, branchCode }), false, branchName);
+  }
+  assert.equal(isNewCbcsBranchSupported({ ...base, programmePrefix: "BT", branchName: "CIVIL", branchCode: "CIVIL" }), true);
+  assert.equal(isNewCbcsBranchSupported({ ...base, institutionName: "Other Engineering University", branchName: "CIVIL", branchCode: "CIVIL" }), true);
+  assert.equal(isNewCbcsBranchSupported({ ...base, programmeName: "Master of Technology", branchName: "CIVIL", branchCode: "CIVIL" }), true);
+  assert.equal(isNewCbcsBranchSupported({ ...base, schemeName: "NEP", branchName: "CIVIL", branchCode: "CIVIL" }), true);
+});
 
 test("BE is restricted to NEW CBCS and BT is restricted to NEP", () => {
   assert.equal(isAllowedSchemeForEnrollmentPrefix("BE", "New CBCS"), true);

@@ -1,4 +1,5 @@
 import { pool } from "../../config/database";
+import { isNewCbcsBranchSupported } from "../academic/new-cbcs-availability";
 import { enrollmentBranchMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "../academic/enrollment-progression";
 
 export class StudentProfileValidationError extends Error {
@@ -13,7 +14,10 @@ type ProfileInput = {
   academicProfileOverrides?: Record<string, unknown>;
 };
 
-export async function validateStudentProfileConfiguration(input: ProfileInput): Promise<number | null> {
+export async function validateStudentProfileConfiguration(
+  input: ProfileInput,
+  options: { allowExistingProfile?: boolean } = {},
+): Promise<number | null> {
   let parsed;
   try { parsed = parseEnrollmentNumber(input.studentIdentifier); }
   catch (error) {
@@ -47,11 +51,12 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (!programmeRule.rows[0] && parsed.prefix !== "ME" && parsed.prefix !== "MT" && parsed.prefix !== "MC") throw new StudentProfileValidationError("PROGRAMME_PREFIX_NOT_CONFIGURED", "This enrollment prefix is not configured for the selected institution.");
 
   const curriculumResult = await pool.query(
-    `SELECT c.id, c.institution_id,
+    `SELECT c.id, c.institution_id, i.name AS institution_name,
             COALESCE(c.total_semesters, (SELECT COUNT(*)::int FROM public.semesters sem WHERE sem.curriculum_id = c.id)) AS total_semesters,
             p.name AS program_name, b.name AS branch_name, b.code AS branch_code,
             sp.name AS specialization_name, sp.code AS specialization_code, sc.name AS scheme_name
      FROM public.curricula c
+     JOIN public.institutions i ON i.id = c.institution_id
      JOIN public.programs p ON p.id = c.program_id
      JOIN public.branches b ON b.id = c.branch_id
      LEFT JOIN public.specializations sp ON sp.id = c.specialization_id
@@ -69,6 +74,20 @@ export async function validateStudentProfileConfiguration(input: ProfileInput): 
   if (!isAllowedSchemeForEnrollmentPrefix(parsed.prefix, String(curriculum.scheme_name || ""))) {
     const expected = parsed.prefix === "BE" || parsed.prefix === "ME" ? "New CBCS" : parsed.prefix === "BT" || parsed.prefix === "MT" ? "NEP" : "the configured MCA scheme";
     throw new StudentProfileValidationError("SCHEME_PREFIX_MISMATCH", `The selected academic scheme is not valid for this enrollment prefix. Expected ${expected}.`);
+  }
+
+  if (!options.allowExistingProfile && !isNewCbcsBranchSupported({
+    programmePrefix: parsed.prefix,
+    institutionName: String(curriculum.institution_name ?? ""),
+    programmeName: String(curriculum.program_name ?? ""),
+    branchName: String(curriculum.branch_name ?? ""),
+    branchCode: curriculum.branch_code ?? null,
+    schemeName: String(curriculum.scheme_name ?? ""),
+  })) {
+    throw new StudentProfileValidationError(
+      "NEW_CBCS_BRANCH_DISCONTINUED",
+      "Sorry, New CBCS is discontinued for this branch and is no longer supported by Gradly. New CBCS support continues only for the IT branch.",
+    );
   }
 
   if (input.academicProfileOverrides?.branch !== true) {
