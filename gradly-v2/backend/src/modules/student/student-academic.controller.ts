@@ -7,6 +7,13 @@ type StudentProfile = {
   id: string;
   curriculum_id: string;
 };
+type CurriculumSubjectRow = {
+  id: string;
+  course_code: string | null;
+  course_name: string;
+  credits: number | string;
+  mandatory: boolean | null;
+};
 
 async function resolveProfile(req: AuthenticatedRequest, res: Response) {
   if (!req.firebaseUser) {
@@ -146,9 +153,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
     const decimalPlaces = Math.max(0, Math.min(4, Number(gradingResult.rows[0].decimal_places ?? 2)));
     const gradeMap = new Map<string, { point: number; passed: boolean }>(
-      gradingResult.rows.map((grade) => [String(grade.symbol).trim().toUpperCase(), {
-        point: Number(grade.grade_point), passed: Boolean(grade.pass),
-      }]),
+      gradingResult.rows.map((grade): [string, { point: number; passed: boolean }] => [
+        String(grade.symbol).trim().toUpperCase(),
+        { point: Number(grade.grade_point), passed: Boolean(grade.pass) },
+      ]),
     );
 
     const curriculumSubjects = await client.query(
@@ -157,13 +165,16 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
        WHERE curriculum_id = $1 AND semester_id = $2 AND active = TRUE`,
       [resolved.profile.curriculum_id, semesterId],
     );
-    const subjectMap = new Map(curriculumSubjects.rows.map((subject) => [String(subject.id), subject]));
+    const subjectRows = curriculumSubjects.rows as CurriculumSubjectRow[];
+    const subjectMap = new Map<string, CurriculumSubjectRow>(
+      subjectRows.map((subject): [string, CurriculumSubjectRow] => [String(subject.id), subject]),
+    );
     if (ids.some((id: string) => !subjectMap.has(id))) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "One or more selected subjects do not belong to this semester's active curriculum." });
     }
 
-    const normalized = [];
+    const normalized: Array<{ subject: CurriculumSubjectRow; grade: string; point: number; passed: boolean }> = [];
     for (const course of courses) {
       const subject = subjectMap.get(String(course.curriculumSubjectId));
       const grade = String(course.gradeSymbol ?? "").trim().toUpperCase();
@@ -181,7 +192,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
 
     const selectedIds = new Set(ids);
-    const missingMandatory = curriculumSubjects.rows.filter((subject) => subject.mandatory && Number(subject.credits) > 0 && !selectedIds.has(String(subject.id)));
+    const missingMandatory = subjectRows.filter((subject) => subject.mandatory && Number(subject.credits) > 0 && !selectedIds.has(String(subject.id)));
     if (missingMandatory.length) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "Include all mandatory subjects before saving this semester." });
