@@ -178,11 +178,12 @@ export default function StudentPlatform() {
           const scale:GradeOption[]=data.gradingScale.map((grade:GradeOption)=>({symbol:String(grade.symbol),gradePoint:Number(grade.gradePoint),pass:Boolean(grade.pass)}));
           const savedRecord=results.find(row=>row.semester===Number(selectedSemester)&&(row.attemptNumber||1)===1);
           const savedCourses=savedRecord?.courses||[];
+          const defaultGrade=scale.find(grade=>grade.symbol==="A")?.symbol||scale[0].symbol;
           setGradeScale(scale);
           setGradeDecimals(Math.max(0,Math.min(4,Number(data.gradingSystem?.decimalPlaces??2))));
           setSubjects((data.data as CurriculumSubjectApi[]).map((item,index)=>{
             const saved=savedCourses.find(course=>course.curriculumSubjectId===String(item.id||"")||(item.code&&course.courseCode===item.code));
-            return {id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:saved?.grade||scale[0].symbol,courseCode:item.code||"",curriculumSubjectId:String(item.id||""),mandatory:Boolean(item.mandatory)};
+            return {id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:saved?.grade||defaultGrade,courseCode:item.code||"",curriculumSubjectId:String(item.id||""),mandatory:Boolean(item.mandatory)};
           }));
           setSgpa(savedRecord?.sgpa??null);
         }
