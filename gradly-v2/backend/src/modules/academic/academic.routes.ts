@@ -179,7 +179,31 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
        ORDER BY cs.course_code, cs.course_name`,
       [curriculumId, number],
     );
-    res.status(200).json({ success: true, data: result.rows });
+    const grading = await pool.query(
+      `SELECT gs.name, gs.decimal_places, gs.rounding_mode,
+              gd.symbol, gd.grade_point, gd.pass
+       FROM curricula c
+       JOIN grading_systems gs ON gs.id = c.grading_system_id AND gs.active = TRUE
+       JOIN grade_definitions gd ON gd.grading_system_id = gs.id
+       WHERE c.id = $1
+       ORDER BY gd.grade_point DESC, gd.symbol ASC`,
+      [curriculumId],
+    );
+    const gradingScale = grading.rows.map((row) => ({
+      symbol: row.symbol,
+      gradePoint: Number(row.grade_point),
+      pass: Boolean(row.pass),
+    }));
+    res.status(200).json({
+      success: true,
+      data: result.rows,
+      gradingSystem: grading.rows[0] ? {
+        name: grading.rows[0].name,
+        decimalPlaces: Number(grading.rows[0].decimal_places ?? 2),
+        roundingMode: grading.rows[0].rounding_mode,
+      } : null,
+      gradingScale,
+    });
   } catch (error) {
     console.error("GET curriculum subjects error:", error);
     res.status(500).json({ success: false, message: "Failed to load curriculum subjects." });
