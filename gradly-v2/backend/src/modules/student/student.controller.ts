@@ -168,7 +168,8 @@ export async function updateStudentProfileController(req: AuthenticatedRequest, 
         ? existingProfile.academic_profile_overrides
         : {};
     }
-    const predictedSemesterNumber = await validateStudentProfileConfiguration(payload);
+    const isSameSavedAcademicIdentity = existingProfile.institution_id === payload.institutionId && existingProfile.curriculum_id === payload.curriculumId;
+    const predictedSemesterNumber = await validateStudentProfileConfiguration(payload, { allowExistingProfile: isSameSavedAcademicIdentity });
     const profile = await updateProfile({ ...payload, predictedSemesterNumber, userId: user.id });
     if (!profile) {
       return res.status(409).json({
