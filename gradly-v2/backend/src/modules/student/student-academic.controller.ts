@@ -40,9 +40,9 @@ export async function listStudentAcademicRecords(req: AuthenticatedRequest, res:
               ss.result_declared_at, ss.created_at, ss.updated_at
        FROM student_semesters ss
        JOIN semesters sem ON sem.id = ss.semester_id
-       WHERE ss.student_profile_id = $1
+       WHERE ss.student_profile_id = $1 AND ss.curriculum_id = $2
        ORDER BY sem.semester_number, ss.attempt_number`,
-      [resolved.profile.id],
+      [resolved.profile.id, resolved.profile.curriculum_id],
     );
     const courses = await pool.query(
       `SELECT c.id, c.student_semester_id, c.curriculum_subject_id,
@@ -52,9 +52,9 @@ export async function listStudentAcademicRecords(req: AuthenticatedRequest, res:
               c.verified, c.attempt_number
        FROM student_semester_courses c
        JOIN student_semesters ss ON ss.id = c.student_semester_id
-       WHERE ss.student_profile_id = $1
+       WHERE ss.student_profile_id = $1 AND ss.curriculum_id = $2
        ORDER BY c.course_name_snapshot`,
-      [resolved.profile.id],
+      [resolved.profile.id, resolved.profile.curriculum_id],
     );
     const courseMap = new Map<string, typeof courses.rows>();
     for (const course of courses.rows) {
