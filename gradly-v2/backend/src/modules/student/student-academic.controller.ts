@@ -184,9 +184,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       const subject = subjectMap.get(String(course.curriculumSubjectId));
       const grade = String(course.gradeSymbol ?? "").trim().toUpperCase();
       const gradeDefinition = gradeMap.get(grade);
-      if (!subject || !gradeDefinition) {
+      if (!subject || Number(subject.credits) <= 0 || !gradeDefinition) {
         await client.query("ROLLBACK");
-        return res.status(400).json({ message: "Choose a valid grade for every selected curriculum subject." });
+        return res.status(400).json({ message: "Choose a valid grade for every selected credit-bearing curriculum subject." });
       }
       normalized.push({
         subject,
