@@ -10,7 +10,7 @@ type Subject = { id: number; name: string; credits: number; grade: string; cours
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string; attemptNumber?: number; courses?: Subject[]; resultSource?: string; verified?: boolean };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
 type AcademicRecordCourseApi = { curriculum_subject_id?: string | null; course_code_snapshot?: string | null; course_name_snapshot?: string | null; credits?: number | string | null; grade_symbol?: string | null; grade_point?: number | string | null };
-type AcademicRecordApi = { id: string | number; semester_number: number | string; attempt_number?: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; result_source?: string | null; verified?: boolean; courses?: AcademicRecordCourseApi[] };
+type AcademicRecordApi = { id: string | number; semester_number: number | string; attempt_number?: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; updated_at?: string | null; result_source?: string | null; verified?: boolean; courses?: AcademicRecordCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; id?: string | number | null; mandatory?: boolean | null };
 type GradeOption = { symbol: string; gradePoint: number; pass: boolean };
 
@@ -153,7 +153,7 @@ export default function StudentPlatform() {
         const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
         const recordsData=await recordsResponse.json();
         if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
-          const saved:SemesterResult[]=(recordsData.records as AcademicRecordApi[]).map((row)=>({id:String(row.id),semester:Number(row.semester_number),attemptNumber:Number(row.attempt_number||1),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString(),resultSource:row.result_source||"MANUAL_ENTRY",verified:Boolean(row.verified),courses:(row.courses||[]).map((course,index)=>({id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:course.grade_symbol||"",courseCode:course.course_code_snapshot||"",curriculumSubjectId:course.curriculum_subject_id||""}))}));
+          const saved:SemesterResult[]=(recordsData.records as AcademicRecordApi[]).map((row)=>({id:String(row.id),semester:Number(row.semester_number),attemptNumber:Number(row.attempt_number||1),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.updated_at||row.created_at||new Date().toISOString(),resultSource:row.result_source||"MANUAL_ENTRY",verified:Boolean(row.verified),courses:(row.courses||[]).map((course,index)=>({id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:course.grade_symbol||"",courseCode:course.course_code_snapshot||"",curriculumSubjectId:course.curriculum_subject_id||""}))}));
           setResults(saved); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
         }
       } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
