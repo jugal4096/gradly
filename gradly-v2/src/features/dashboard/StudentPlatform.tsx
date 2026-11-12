@@ -271,7 +271,8 @@ export default function StudentPlatform() {
   const desired=Number(targetSgpa);
   const programmeName=profile.programName.toLowerCase();
   const isDirectSecondYear=/dse|direct second year/i.test(profile.admissionMode);
-  const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:isDirectSecondYear?6:8;
+  const isFourSemesterProgramme=programmeName.includes("mca")||programmeName.includes("master of computer applications")||programmeName.includes("m.tech")||programmeName.includes("mtech")||programmeName.includes("master of technology");
+  const totalProgrammeSemesters=isFourSemesterProgramme?4:isDirectSecondYear?6:8;
   const minSelectableSemester=isDirectSecondYear?3:1;
   const maxSelectableSemester=Math.max(minSelectableSemester,Math.min(totalProgrammeSemesters,Number(profile.semester)||minSelectableSemester));
   const selectableSemesters=Array.from({length:maxSelectableSemester-minSelectableSemester+1},(_,index)=>minSelectableSemester+index);
