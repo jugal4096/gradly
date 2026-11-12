@@ -6,6 +6,7 @@ import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 type StudentProfile = {
   id: string;
   curriculum_id: string;
+  current_semester_number: number | null;
 };
 type CurriculumSubjectRow = {
   id: string;
@@ -26,7 +27,7 @@ async function resolveProfile(req: AuthenticatedRequest, res: Response) {
     return null;
   }
   const result = await pool.query(
-    "SELECT id, curriculum_id FROM student_profiles WHERE user_id = $1 LIMIT 1",
+    "SELECT id, curriculum_id, current_semester_number FROM student_profiles WHERE user_id = $1 LIMIT 1",
     [user.id],
   );
   if (!result.rows[0]) {
@@ -115,6 +116,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         !Number.isInteger(attemptNumber) || attemptNumber !== 1 ||
         !Array.isArray(courses) || courses.length === 0 || courses.length > 100) {
       return res.status(400).json({ message: "Choose a valid semester and provide 1–100 curriculum subjects." });
+    }
+    const currentSemesterNumber = Number(resolved.profile.current_semester_number);
+    if (Number.isInteger(currentSemesterNumber) && currentSemesterNumber > 0 && semesterNumber > currentSemesterNumber) {
+      return res.status(400).json({ message: "You can only save results for your current or previous semesters." });
     }
 
     const ids = courses.map((course: { curriculumSubjectId?: unknown }) => String(course?.curriculumSubjectId ?? "").trim());
