@@ -1,4 +1,5 @@
 import { pool } from "../../config/database";
+import { isNewCbcsBranchSupported } from "./new-cbcs-availability";
 
 import { enrollmentBranchMatches, isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber, predictSemester, programmeMatchesEnrollmentPrefix, resolveEnrollmentBranchCode } from "./enrollment-progression";
 export { parseEnrollmentNumber, predictSemester } from "./enrollment-progression";
@@ -137,6 +138,26 @@ export async function previewEnrollment(institutionId: string, rawEnrollmentNumb
     );
   }
   const branch = uniqueBranches[0];
+
+  if (!isNewCbcsBranchSupported({
+    programmePrefix: parsed.prefix,
+    institutionName,
+    programmeName: String(program.name ?? ""),
+    branchName: String(branch.name ?? ""),
+    branchCode: branch.code ?? null,
+    schemeName: parsed.prefix === "BE" ? "New CBCS" : String(rule.scheme_label ?? ""),
+  })) {
+    return {
+      ...unresolved(
+        "NEW_CBCS_BRANCH_DISCONTINUED",
+        "Sorry, New CBCS is discontinued for this branch and is no longer supported by Gradly. New CBCS support continues only for the IT branch.",
+        parsed,
+      ),
+      programme: program.name, programId: program.id, branch: branch.name, branchId: branch.id,
+      admissionYear: parsed.admissionYear,
+      curriculumOptions: [],
+    };
+  }
 
   const modeResult = await pool.query(
     `SELECT em.mode_code, em.mode_name, em.entry_semester, am.id AS admission_mode_id
