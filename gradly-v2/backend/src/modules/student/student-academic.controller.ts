@@ -153,16 +153,15 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const curriculumSubjects = await client.query(
       `SELECT id, course_code, course_name, credits, mandatory
        FROM curriculum_subjects
-       WHERE curriculum_id = $1 AND semester_id = $2
-         AND active = TRUE AND id = ANY($3::uuid[])`,
-      [resolved.profile.curriculum_id, semesterId, ids],
+       WHERE curriculum_id = $1 AND semester_id = $2 AND active = TRUE`,
+      [resolved.profile.curriculum_id, semesterId],
     );
-    if (curriculumSubjects.rows.length !== ids.length) {
+    const subjectMap = new Map(curriculumSubjects.rows.map((subject) => [String(subject.id), subject]));
+    if (ids.some((id: string) => !subjectMap.has(id))) {
       await client.query("ROLLBACK");
       return res.status(400).json({ message: "One or more selected subjects do not belong to this semester's active curriculum." });
     }
 
-    const subjectMap = new Map(curriculumSubjects.rows.map((subject) => [String(subject.id), subject]));
     const normalized = [];
     for (const course of courses) {
       const subject = subjectMap.get(String(course.curriculumSubjectId));
