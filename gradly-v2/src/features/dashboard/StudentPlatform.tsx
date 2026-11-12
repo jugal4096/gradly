@@ -177,6 +177,8 @@ export default function StudentPlatform() {
     if (isGuest || !user || !profile.curriculumId || !selectedSemester) return;
     let cancelled=false;
     setLoadingCurriculum(true);
+    setSubjects([]);
+    setSgpa(null);
     void (async()=>{
       try {
         const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${selectedSemester}/subjects`);
