@@ -798,3 +798,22 @@
 .sp-cgpa-result-panel .sp-score{font-size:clamp(38px,4vw,54px)}
 .sp-cgpa-result-panel>p{max-width:34ch}
 @media(max-width:760px){.sp-cgpa-workspace-grid{grid-template-columns:1fr}.sp-cgpa-workspace-grid>.sp-cgpa-result-panel{position:static}}
+
+
+/* SGPA entry modes and curriculum semester controls */
+.sp-entry-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.sp-entry-mode{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-height:86px;padding:15px 17px;border:1px solid var(--line,#dce4ee);border-radius:16px;background:var(--panel,#fff);color:var(--ink,#183047);text-align:left}
+.sp-entry-mode span{font-size:9px;font-weight:900;letter-spacing:1.5px;color:var(--muted,#7c8b9b)}
+.sp-entry-mode strong{font-size:13px;font-weight:800}
+.sp-entry-mode small{font-size:11px;color:#168879;font-weight:700}
+.sp-entry-mode.selected{border-color:#36b7a5;background:linear-gradient(120deg,rgba(53,190,169,.08),rgba(112,128,224,.06));box-shadow:0 7px 18px rgba(40,125,132,.07)}
+.sp-entry-mode.unavailable{opacity:.62;cursor:not-allowed}
+.sp-entry-mode.unavailable small{color:var(--muted,#7c8b9b)}
+.sp-semester-picker{display:flex;flex-direction:column;gap:5px;min-width:132px;font-size:9px;font-weight:900;letter-spacing:1px;color:var(--muted,#7c8b9b)}
+.sp-semester-picker select{height:35px;padding:6px 10px;border:1px solid var(--line,#dce4ee);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#183047);font:inherit;font-size:11px;letter-spacing:0}
+.sp-semester-saved{margin:-4px 0 13px;font-size:11px}
+.sp-subject-row input[readonly]{cursor:default;background:rgba(125,145,165,.07)}
+.sp-dark-theme .sp-entry-mode{background:#19263a;border-color:#304159;color:#eaf2fa}
+.sp-dark-theme .sp-entry-mode.selected{background:linear-gradient(120deg,rgba(53,190,169,.12),rgba(112,128,224,.1));border-color:#36b7a5}
+.sp-dark-theme .sp-semester-picker select{background:#18283d;border-color:#34455c;color:#edf4fb}
+@media(max-width:560px){.sp-entry-modes{gap:8px}.sp-entry-mode{min-height:82px;padding:12px}.sp-entry-mode strong{font-size:11px}.sp-semester-picker{min-width:105px}.sp-card-head{flex-wrap:wrap}}
