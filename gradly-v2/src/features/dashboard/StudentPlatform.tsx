@@ -181,7 +181,7 @@ export default function StudentPlatform() {
           const defaultGrade=scale.find(grade=>grade.symbol==="A")?.symbol||scale[0].symbol;
           setGradeScale(scale);
           setGradeDecimals(Math.max(0,Math.min(4,Number(data.gradingSystem?.decimalPlaces??2))));
-          setSubjects((data.data as CurriculumSubjectApi[]).map((item,index)=>{
+          setSubjects((data.data as CurriculumSubjectApi[]).filter(item=>Number(item.credits||0)>0).map((item,index)=>{
             const saved=savedCourses.find(course=>course.curriculumSubjectId===String(item.id||"")||(item.code&&course.courseCode===item.code));
             return {id:index+1,name:item.name||"",credits:Number(item.credits||0),grade:saved?.grade||defaultGrade,courseCode:item.code||"",curriculumSubjectId:String(item.id||""),mandatory:Boolean(item.mandatory)};
           }));
