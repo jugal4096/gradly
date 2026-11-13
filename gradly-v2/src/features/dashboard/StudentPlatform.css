@@ -1242,3 +1242,69 @@
 @media(max-width:760px){.sp-whatif-workspace{grid-template-columns:1fr}.sp-whatif-sidebar{position:static;display:grid;grid-template-columns:1fr 1fr}.sp-whatif-semester-picker{align-items:stretch;flex-direction:column}.sp-whatif-semester-control{flex-basis:auto;width:100%}.sp-whatif-semester-footer .sp-whatif-loading-label{margin-left:0}}
 @media(max-width:520px){.sp-whatif-sidebar{grid-template-columns:1fr}.sp-whatif-semester-control select{min-height:58px;font-size:18px}.sp-whatif-semester-footer{gap:10px}.sp-whatif-semester-footer label{width:100%;justify-content:space-between}.sp-whatif-semester-footer input{width:110px}}
 @media(prefers-reduced-motion:reduce){.sp-whatif-live-dot,.sp-whatif-estimate-number,.sp-whatif-subject,.sp-whatif-grade-options button.selected{animation:none!important}.sp-whatif-semester-control select,.sp-whatif-target-track span{transition:none!important}}
+
+
+/* SGPA planner: future-semester goal simulator */
+.sp-sgpa-planner-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:clamp(22px,4vw,36px);margin:0 0 18px;border:1px solid var(--sp-border,#ddd);border-radius:18px;background:linear-gradient(120deg,#171717 0%,#333 58%,#555 100%);color:#fff;overflow:hidden;position:relative}
+.sp-sgpa-planner-hero:after{content:"";position:absolute;width:240px;height:240px;border:1px solid rgba(255,255,255,.15);border-radius:50%;right:70px;top:-155px;box-shadow:0 0 0 22px rgba(255,255,255,.035),0 0 0 48px rgba(255,255,255,.025);pointer-events:none}
+.sp-sgpa-planner-hero>div:first-child{position:relative;z-index:1}
+.sp-sgpa-planner-hero>div:first-child>span,.sp-sgpa-planner-results-heading>div>span{font-size:9px;font-weight:850;letter-spacing:.15em;color:#aaa}
+.sp-sgpa-planner-hero h2{font-size:clamp(23px,3.5vw,34px);letter-spacing:-.045em;margin:10px 0 7px}
+.sp-sgpa-planner-hero p{max-width:550px;color:#ccc;font-size:12px;line-height:1.6;margin:0}
+.sp-sgpa-planner-hero-mark{width:105px;height:105px;flex:0 0 105px;border:1px solid rgba(255,255,255,.5);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;box-shadow:0 0 0 8px rgba(255,255,255,.07);animation:spPlannerFloat 4s ease-in-out infinite}
+.sp-sgpa-planner-hero-mark strong{font-size:39px;line-height:1;letter-spacing:-.06em}
+.sp-sgpa-planner-hero-mark small{font-size:8px;letter-spacing:.15em;color:#ccc;margin-top:5px;font-weight:800}
+.sp-sgpa-planner-controls{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(160px,1fr) repeat(2,minmax(120px,.7fr));gap:13px;align-items:end}
+.sp-sgpa-planner-controls>label{display:flex;flex-direction:column;gap:7px;font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--sp-muted,#777)}
+.sp-sgpa-planner-semester select{width:100%;min-height:59px;padding:12px 42px 12px 14px;border:1.5px solid var(--sp-border,#ddd);border-radius:11px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);font-size:17px;font-weight:850;cursor:pointer;transition:box-shadow .2s,border-color .2s}
+.sp-sgpa-planner-semester select:focus-visible,.sp-sgpa-planner-target input:focus-visible{outline:3px solid rgba(100,100,100,.2);outline-offset:2px}
+.sp-sgpa-planner-target>div{display:flex;align-items:center;gap:7px;min-height:59px;padding:0 13px;border:1.5px solid var(--sp-border,#ddd);border-radius:11px;background:var(--sp-subtle,#f7f7f7)}
+.sp-sgpa-planner-target input{width:100%;min-width:0;border:0;background:transparent;color:var(--sp-text,#171717);font-size:25px;font-weight:900;letter-spacing:-.04em;outline:none}
+.sp-sgpa-planner-target small{font-size:11px;color:var(--sp-muted,#777);white-space:nowrap}
+.sp-sgpa-planner-fact{min-height:59px;padding:10px 12px;border:1px solid var(--sp-border,#ddd);border-radius:10px;background:var(--sp-subtle,#f8f8f8);display:flex;flex-direction:column;justify-content:center;gap:5px}
+.sp-sgpa-planner-fact span{font-size:8px;font-weight:850;letter-spacing:.1em;color:var(--sp-muted,#777)}
+.sp-sgpa-planner-fact strong{font-size:19px;font-weight:900;font-variant-numeric:tabular-nums}
+.sp-sgpa-planner-setup>.sp-muted{margin-bottom:0}
+.sp-sgpa-planner-subject-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sp-sgpa-planner-subject{display:flex;align-items:center;gap:10px;min-width:0;padding:10px;border:1px solid var(--sp-border,#e3e3e3);border-radius:10px;background:var(--sp-subtle,#fafafa);animation:spPlannerFloatIn .28s ease both}
+.sp-sgpa-planner-subject>div{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.sp-sgpa-planner-subject>div strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-sgpa-planner-subject>div small{font-size:9px;color:var(--sp-muted,#777)}
+.sp-sgpa-planner-subject>b{font-size:10px;white-space:nowrap}
+.sp-sgpa-planner-credit-total{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid var(--sp-border,#ddd);font-size:9px;letter-spacing:.1em;font-weight:850;color:var(--sp-muted,#777)}
+.sp-sgpa-planner-credit-total strong{font-size:17px;color:var(--sp-text,#171717);letter-spacing:0}
+.sp-sgpa-planner-credit-total small{font-size:10px;color:var(--sp-muted,#777);font-weight:600}
+.sp-sgpa-planner-results-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:27px 0 13px}
+.sp-sgpa-planner-results-heading h2{font-size:clamp(21px,3vw,27px);letter-spacing:-.04em;margin:6px 0}
+.sp-sgpa-planner-results-heading p{font-size:11px;color:var(--sp-muted,#777);margin:0}
+.sp-sgpa-planner-live{padding:7px 10px;border:1px solid var(--sp-border,#ddd);border-radius:99px;font-size:8px;font-weight:850;letter-spacing:.12em;white-space:nowrap}
+.sp-sgpa-planner-cards{align-items:start}
+.sp-sgpa-planner-report{min-width:0;overflow:hidden;animation:spPlannerFloatIn .38s ease both;transition:transform .2s,box-shadow .2s}
+.sp-sgpa-planner-report:hover{transform:translateY(-4px);box-shadow:0 13px 30px rgba(0,0,0,.08)}
+.sp-sgpa-planner-report-top{display:flex;justify-content:space-between;gap:8px;padding-bottom:11px;border-bottom:1px solid var(--sp-border,#ddd);font-size:8px;font-weight:850;letter-spacing:.1em;color:var(--sp-muted,#777)}
+.sp-sgpa-planner-report-top span:last-child{color:var(--sp-text,#171717)}
+.sp-sgpa-planner-report h3{font-size:15px;letter-spacing:-.025em;margin:13px 0 8px}
+.sp-sgpa-planner-report-score{font-size:39px;line-height:1;font-weight:950;letter-spacing:-.065em;font-variant-numeric:tabular-nums;animation:spPlannerFloatIn .45s ease both}
+.sp-sgpa-planner-report-score small{font-size:10px;letter-spacing:0;color:var(--sp-muted,#777);font-weight:700;margin-left:6px}
+.sp-sgpa-planner-target-status{display:inline-flex;margin-top:10px;padding:6px 8px;border-radius:6px;background:#171717;color:#fff;font-size:8px;font-weight:850;letter-spacing:.08em}
+.sp-sgpa-planner-report>.sp-muted{font-size:10px;line-height:1.5;margin:11px 0}
+.sp-sgpa-planner-report-rows{border-top:1px solid var(--sp-border,#ddd);margin-top:10px}
+.sp-sgpa-planner-report-rows .sp-history-row{align-items:flex-start;gap:8px;padding:8px 0}
+.sp-sgpa-planner-report-rows .sp-history-row>span{font-size:9px;line-height:1.45;min-width:0}
+.sp-sgpa-planner-report-rows .sp-history-row>span b{display:inline-block;font-size:8px;color:var(--sp-muted,#777);margin-right:4px}
+.sp-sgpa-planner-report-rows .sp-history-row>span small{color:var(--sp-muted,#777)}
+.sp-sgpa-planner-report-rows .sp-history-row>strong{font-size:9px;white-space:nowrap}
+.sp-sgpa-planner-report-foot{display:flex;justify-content:space-between;gap:8px;padding-top:12px;margin-top:4px;border-top:1px solid var(--sp-border,#ddd);font-size:9px;color:var(--sp-muted,#777)}
+.sp-sgpa-planner-report-foot strong{color:var(--sp-text,#171717)}
+.sp-dark-theme .sp-sgpa-planner-hero{background:linear-gradient(120deg,#050505,#252525 58%,#393939)}
+.sp-dark-theme .sp-sgpa-planner-semester select,.sp-dark-theme .sp-sgpa-planner-target>div{background:#191919;color:#f5f5f5;border-color:#454545}
+.sp-dark-theme .sp-sgpa-planner-target input{color:#f5f5f5}
+.sp-dark-theme .sp-sgpa-planner-fact,.sp-dark-theme .sp-sgpa-planner-subject{background:#202020;border-color:#414141}
+.sp-dark-theme .sp-sgpa-planner-credit-total strong{color:#f5f5f5}
+.sp-dark-theme .sp-sgpa-planner-report-top{border-color:#444}
+.sp-dark-theme .sp-sgpa-planner-target-status{background:#f5f5f5;color:#171717}
+@keyframes spPlannerFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes spPlannerFloatIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:850px){.sp-sgpa-planner-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.sp-sgpa-planner-hero{padding:21px}.sp-sgpa-planner-hero-mark{width:80px;height:80px;flex-basis:80px}.sp-sgpa-planner-hero-mark strong{font-size:30px}.sp-sgpa-planner-subject-list{grid-template-columns:1fr}.sp-sgpa-planner-results-heading{align-items:flex-start;flex-direction:column}.sp-sgpa-planner-cards{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.sp-sgpa-planner-hero-mark,.sp-sgpa-planner-subject,.sp-sgpa-planner-report,.sp-sgpa-planner-report-score{animation:none!important}.sp-sgpa-planner-report{transition:none!important}}
