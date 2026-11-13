@@ -832,3 +832,17 @@
 .sp-dark-theme .sp-curriculum-head{color:#a7b6c8}
 .sp-guest-subject-table{width:100%}
 @media(max-width:900px){.sp-curriculum-head,.sp-curriculum-row{grid-template-columns:minmax(180px,1.4fr) minmax(100px,.72fr) minmax(105px,.78fr) 62px minmax(180px,1.3fr) 20px;gap:8px}}
+
+
+/* Larger, clearer grade-selection tiles for SGPA manual entry. */
+.sp-grade-options{gap:7px}
+.sp-grade-options button{min-height:49px;padding:7px 5px;flex-direction:column;gap:2px;border-radius:10px;border-width:1.5px;box-shadow:0 2px 5px rgba(35,55,80,.045)}
+.sp-grade-options button strong{font:800 14px Manrope;line-height:1.15}
+.sp-grade-options button small{font:650 9px 'DM Sans';line-height:1.2}
+.sp-grade-options button:hover{transform:translateY(-2px);box-shadow:0 6px 13px rgba(48,75,110,.12)}
+.sp-grade-options button.selected{border-width:2px;box-shadow:0 0 0 2px rgba(45,171,153,.12),0 6px 14px rgba(40,145,135,.13)}
+.sp-grade-options button:focus-visible{outline:3px solid rgba(57,177,160,.35);outline-offset:2px}
+.sp-curriculum-head,.sp-curriculum-row{min-width:1040px;grid-template-columns:minmax(190px,1.35fr) minmax(110px,.72fr) minmax(110px,.72fr) 68px minmax(250px,1.55fr) 20px;gap:10px}
+.sp-curriculum-row .sp-grade-options{min-width:250px;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.sp-curriculum-head,.sp-curriculum-row{min-width:1040px;grid-template-columns:minmax(190px,1.3fr) minmax(110px,.72fr) minmax(110px,.72fr) 64px minmax(250px,1.5fr) 20px;gap:8px}}
+@media(max-width:640px){.sp-grade-options{gap:5px}.sp-grade-options button{min-height:44px;padding:6px 3px}.sp-grade-options button strong{font-size:13px}.sp-grade-options button small{font-size:8px}}
