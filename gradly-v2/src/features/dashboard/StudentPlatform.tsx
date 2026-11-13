@@ -20,6 +20,16 @@ const PE4_OPTIONS = [
   {code:"ITPE4003",name:"Image Processing and Computer Vision",labCode:"ITPE4004",labName:"Lab Image Processing and Computer Vision"},
   {code:"ITPE4005",name:"Cloud Computing",labCode:"ITPE4006",labName:"Lab Cloud Computing"},
 ];
+const PE6_PAIR_OPTIONS = [
+  {code:"ITPE3001",name:"Mobile Computing",credits:3,labCode:"ITPE3002",labName:"Lab Mobile Computing"},
+  {code:"ITPE3003",name:"Cryptography & Network Security",credits:3,labCode:"ITPE3004",labName:"Lab Cryptography & Network Security"},
+  {code:"ITPE3005",name:"Advanced DBMS",credits:3,labCode:"ITPE3006",labName:"Lab Advanced DBMS"},
+  {code:"ITPE3007",name:"Data Mining",credits:3,labCode:"ITPE3008",labName:"Lab Data Mining"},
+];
+const PE6_THIRD_OPTIONS: ElectiveOption[] = [
+  {code:"ITPE3031",name:"Speech and Natural Language Processing",credits:3},
+  {code:"ITPE3032",name:"Deep Learning",credits:3},
+];
 const PE5_OPTIONS: ElectiveOption[] = [
   {code:"ITPE4010",name:"Reinforcement Learning",credits:3},{code:"ITPE4011",name:"Applied Accelerated Artificial Intelligence",credits:3},
   {code:"ITPE4012",name:"Deep Learning for Computer Vision",credits:3},{code:"ITPE4013",name:"Cyber Security and Privacy",credits:3},
@@ -30,7 +40,10 @@ const PE_OPTIONS: ElectiveOption[] = [
   ...PE5_OPTIONS,
 ];
 function peOptionsForSemester(semester:number):ElectiveOption[] {
-  if(semester===6) return PE4_OPTIONS.map(option=>({code:option.code,name:option.name,credits:3}));
+  if(semester===6) return [
+    ...PE6_PAIR_OPTIONS.map(option=>({code:option.code,name:`${option.name} (PE I & II · theory + lab)`,credits:option.credits})),
+    ...PE6_THIRD_OPTIONS.map(option=>({...option,name:`${option.name} (PE III)`})),
+  ];
   if(semester===7) return PE5_OPTIONS;
   return [];
 }
@@ -457,10 +470,20 @@ export default function StudentPlatform() {
     const option=options.find(item=>item.code===addCourseCode);
     if(!option) { setNotice("That subject is not available."); return; }
     if(addCourseType==="UHV" && uhvAlreadyUsed) { setNotice("Universal Human Values can be added only once throughout your degree."); return; }
-    if(addCourseType!=="UHV" && creditsForSemesterLimit+option.credits>28) { setNotice(`Adding ${option.name} would exceed the 28-credit semester limit.`); return; }
-    if(subjects.some(subject=>subject.courseCode===option.code)) { setNotice("This course is already added to the semester."); return; }
+    const pe6Pair=addCourseType==="PE"&&selectedSemester===6?PE6_PAIR_OPTIONS.find(item=>item.code===option.code):undefined;
+    const pe6Third=addCourseType==="PE"&&selectedSemester===6?PE6_THIRD_OPTIONS.find(item=>item.code===option.code):undefined;
+    const creditCost=option.credits+(pe6Pair?1:0);
+    if(addCourseType!=="UHV"&&creditsForSemesterLimit+creditCost>28) { setNotice(`Adding ${option.name} and its matching lab would exceed the 28-credit semester limit.`); return; }
+    if(subjects.some(subject=>subject.courseCode===option.code||(pe6Pair&&subject.courseCode===pe6Pair.labCode))) { setNotice("This course or its matching lab is already added to the semester."); return; }
+    if(pe6Pair&&subjects.some(subject=>/^ITPE300[1357]$/.test(subject.courseCode||""))) { setNotice("Only one theory-and-lab pair can be selected from Professional Electives I & II."); return; }
+    if(pe6Third&&subjects.some(subject=>/^ITPE303[12]$/.test(subject.courseCode||""))) { setNotice("Only one subject can be selected from Professional Elective III."); return; }
     const courseType=addCourseType==="OE"?"Open Elective (OE)":addCourseType==="HS"?"Humanities & Social Sciences (HS)":addCourseType==="PE"?"Professional Elective (PE)":"Universal Human Values (UHV)";
-    setSubjects(current=>[...current,{id:Math.max(0,...current.map(subject=>subject.id))+1,name:option.name,credits:option.credits,grade:"",courseCode:option.code,courseType,isCustom:true}]);
+    const nextId=Math.max(0,...subjects.map(subject=>subject.id))+1;
+    setSubjects(current=>[
+      ...current,
+      {id:nextId,name:pe6Pair?pe6Pair.name:pe6Third?pe6Third.name:option.name,credits:option.credits,grade:"",courseCode:option.code,courseType,isCustom:true},
+      ...(pe6Pair?[{id:nextId+1,name:pe6Pair.labName,credits:1,grade:"",courseCode:pe6Pair.labCode,courseType:"Professional Elective Lab (PE I & II)",isCustom:true}]:[]),
+    ]);
     setSgpa(null); setNotice(""); setAddCourseDialogOpen(false); setAddCourseType(null); setAddCourseCode("");
   }
   function removeSubject(subjectId:number) {
