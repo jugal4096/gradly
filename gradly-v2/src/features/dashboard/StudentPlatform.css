@@ -1475,3 +1475,8 @@
 .sp-cgpa-tracker-chart-wrap{background:radial-gradient(ellipse at 50% 0%,rgba(56,189,248,.14),transparent 60%),linear-gradient(155deg,#111d2a,#14151d)}
 @media(max-width:1050px){.sp-cgpa-planner-grid{grid-template-columns:1fr 1fr}.sp-cgpa-planner-card:last-child{grid-column:1/-1}}
 @media(max-width:720px){.sp-cgpa-planner-grid,.sp-cgpa-planner-compare{grid-template-columns:1fr}.sp-cgpa-planner-card:last-child{grid-column:auto}.sp-cgpa-planner-goal .sp-card-head{align-items:flex-start;flex-direction:column}.sp-cgpa-planner-target{width:100%}}
+
+
+/* CGPA SVG uses its own namespaced gradients so the SGPA chart styles cannot shadow them */
+.sp-cgpa-tracker-chart-wrap .sp-tracker-area{fill:url(#cgpaTrackerAreaGradient)}
+.sp-cgpa-tracker-chart-wrap .sp-tracker-line{stroke:url(#cgpaTrackerLineGradient)}
