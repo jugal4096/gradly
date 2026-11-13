@@ -120,6 +120,14 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
     normalized.push({ code, name, credits, grade, point });
   }
+  const openElectiveCodes = new Set([
+    "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027","MEOE0050",
+    "EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
+  ]);
+  const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code));
+  if (new Set(submittedOECodes).size !== submittedOECodes.length) {
+    return res.status(409).json({ code: "OE_ALREADY_REGISTERED", message: "An Open Elective can be registered only once throughout your degree. Remove the duplicate subject." });
+  }
   const uhvCourses = normalized.filter(course => course.code.toUpperCase() === "INHS1020");
   if (uhvCourses.length > 1) {
     return res.status(400).json({ code: "UHV_DUPLICATE", message: "Universal Human Values can be registered only once throughout your degree." });
@@ -152,6 +160,27 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
        ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
       [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
     );
+    if (submittedOECodes.length) {
+      const priorOE = await client.query(
+        `SELECT c.course_code_snapshot, c.course_name_snapshot, sem.semester_number
+         FROM student_semester_courses c
+         JOIN student_semesters ss ON ss.id = c.student_semester_id
+         JOIN semesters sem ON sem.id = ss.semester_id
+         WHERE ss.student_profile_id = $1
+           AND UPPER(COALESCE(c.course_code_snapshot, '')) = ANY($2::text[])
+           AND NOT (ss.semester_id = $3 AND ss.attempt_number = $4)
+         LIMIT 1`,
+        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id, attemptNumber],
+      );
+      if (priorOE.rows.length) {
+        await client.query("ROLLBACK");
+        const prior = priorOE.rows[0];
+        return res.status(409).json({
+          code: "OE_ALREADY_REGISTERED",
+          message: `${prior.course_name_snapshot || prior.course_code_snapshot} has already been opted in Semester ${prior.semester_number}. An Open Elective can be registered only once throughout your degree.`,
+        });
+      }
+    }
     if (uhvCourses.length) {
       const priorUhv = await client.query(
         `SELECT c.id
