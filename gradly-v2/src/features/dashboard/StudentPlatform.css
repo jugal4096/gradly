@@ -1016,7 +1016,7 @@
   line-height:1.6;
 }
 .sp-semester-history-row{
-  grid-template-columns:minmax(90px,1fr) minmax(75px,.8fr) minmax(90px,1fr) minmax(90px,1fr) auto auto;
+  grid-template-columns:minmax(90px,1fr) minmax(75px,.8fr) minmax(90px,1fr) minmax(90px,1fr) auto auto auto;
 }
 .sp-semester-history-row .sp-download-result{
   min-height:31px;
