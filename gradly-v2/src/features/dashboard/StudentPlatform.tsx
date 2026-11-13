@@ -17,6 +17,7 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").repla
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
 const gradeNames = Object.keys(POINTS);
+const isDseAdmission = (admissionMode: string, enrollment: string) => /\\bDSE\\b|DIRECT\\s+SECOND\\s+YEAR|SECOND\\s+YEAR\\s+DIRECT/i.test(admissionMode||"") || String(enrollment||"").trim().toUpperCase().replace(/\\s+/g,"")[4] === "S";
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
   { id:"home",label:"Overview",icon:"⌂",group:"WORKSPACE" },
@@ -111,7 +112,7 @@ export default function StudentPlatform() {
     }
     return [{id:1,name:"",credits:3,grade:"A"}];
   });
-  const isDirectSecondYear = /\bDSE\b|DIRECT\s+SECOND\s+YEAR|SECOND\s+YEAR\s+DIRECT/i.test(profile.admissionMode||"");
+  const isDirectSecondYear = isDseAdmission(profile.admissionMode,profile.enrollment);
   const firstAvailableSemester = isDirectSecondYear ? 3 : 1;
   const currentSemester = Math.max(firstAvailableSemester,Math.min(12,Number(profile.semester)||firstAvailableSemester));
   const [selectedSemester,setSelectedSemester] = useState<number>(()=>Math.max(isDirectSecondYear?3:1,Number(profile.semester)|| (isDirectSecondYear?3:1)));
@@ -154,7 +155,7 @@ export default function StudentPlatform() {
         if(profileResponse.ok && profileData.profile && !cancelled) {
           const p=profileData.profile;
           const next:Profile={institutionId:p.institution_id||"",institutionName:p.institution_name||"",programId:p.program_id||"",programName:p.program_name||"",branchId:p.branch_id||"",branchName:p.branch_name||"",curriculumId:p.curriculum_id||"",semester:String(p.current_semester_number||""),enrollment:p.student_identifier||"",admissionYear:String(p.admission_year||new Date().getFullYear()),admissionMode:p.admission_mode_name||"Regular",admissionNumber:"",scheme:p.scheme_name||""};
-          setProfile(next); setSelectedSemester(Math.max(/\bDSE\b|DIRECT\s+SECOND\s+YEAR|SECOND\s+YEAR\s+DIRECT/i.test(next.admissionMode||"")?3:1,Number(next.semester)||1)); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false);
+          setProfile(next); setSelectedSemester(Math.max(isDseAdmission(next.admissionMode,next.enrollment)?3:1,Number(next.semester)||(isDseAdmission(next.admissionMode,next.enrollment)?3:1))); localStorage.setItem("gradly_student_profile",JSON.stringify(next)); setOnboarding(false);
         }
         const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
         const recordsData=await recordsResponse.json();
