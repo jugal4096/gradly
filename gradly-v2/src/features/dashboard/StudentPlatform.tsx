@@ -227,10 +227,14 @@ export default function StudentPlatform() {
           const savedSubjects:Record<number,Subject[]>={};
           academicRecords.forEach(row=>{
             const semesterNumber=Number(row.semester_number);
-            if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>({
-              id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
-              courseCode:course.course_code_snapshot||"",curriculumSubjectId:course.curriculum_subject_id||undefined,
-            }));
+            if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>{
+              const code=course.course_code_snapshot||"";
+              const courseType=OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":"Additional course";
+              return {
+                id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
+                courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined,
+              };
+            });
           });
           setResults(saved); setSavedSubjectsBySemester(savedSubjects); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
         }
