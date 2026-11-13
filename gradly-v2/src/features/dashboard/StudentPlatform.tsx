@@ -268,6 +268,10 @@ export default function StudentPlatform() {
   }, [isGuest, subjects]);
 
   useEffect(() => {
+    setCgpaWhatIfSgpas(Object.fromEntries(results.map(row=>[row.semester,String(row.sgpa)])));
+  }, [results]);
+
+  useEffect(() => {
     if (isGuest || !user) return;
     let cancelled=false;
     void (async()=>{
