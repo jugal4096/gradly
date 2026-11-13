@@ -121,34 +121,70 @@ function buildSgpaScenarios(targetInput:number, subjects:Subject[]) {
   const rows=subjects.filter(subject=>Number.isFinite(subject.credits)&&subject.credits>0);
   const totalCredits=rows.reduce((sum,subject)=>sum+subject.credits,0);
   const target=Math.max(0,Math.min(10,Number.isFinite(targetInput)?targetInput:0));
-  const scale=Object.entries(POINTS).sort((a,b)=>a[1]-b[1]);
-  const lower=scale.filter(([,points])=>points<=target).at(-1)||scale[0];
-  const upper=scale.find(([,points])=>points>lower[1])||lower;
-  const balanced=scale.find(([,points])=>points>=target)||scale[scale.length-1];
-  const makeMixed=(ordered:Subject[])=>{
-    const grades:Record<number,string>={};
-    rows.forEach(subject=>{grades[subject.id]=lower[0];});
-    let weighted=rows.reduce((sum,subject)=>sum+lower[1]*subject.credits,0);
-    const required=target*totalCredits;
-    for(const subject of ordered){
-      if(weighted>=required)break;
-      grades[subject.id]=upper[0];
-      weighted+=(upper[1]-lower[1])*subject.credits;
-    }
-    return {grades,projected:totalCredits?weighted/totalCredits:0};
-  };
-  const uniformGrades:Record<number,string>={};
-  rows.forEach(subject=>{uniformGrades[subject.id]=balanced[0];});
-  const uniformPoints=rows.reduce((sum,subject)=>sum+balanced[1]*subject.credits,0);
-  const creditPriority=makeMixed([...rows].sort((a,b)=>b.credits-a.credits||a.id-b.id));
-  const spreadPriority=makeMixed([...rows].sort((a,b)=>a.credits-b.credits||b.id-a.id));
-  return [
-    {label:"Balanced grade plan",description:"Keep the same target-band grade across every subject.",grades:uniformGrades,projected:totalCredits?uniformPoints/totalCredits:0},
-    {label:"High-credit-first mix",description:"Prioritise higher-credit subjects when moving up to the next grade band.",grades:creditPriority.grades,projected:creditPriority.projected},
-    {label:"Spread-across-subjects mix",description:"Distribute the higher grade across lower-credit subjects first.",grades:spreadPriority.grades,projected:spreadPriority.projected},
+  const scale=100;
+  const units=rows.map(subject=>Math.round(subject.credits*scale));
+  const totalUnits=units.reduce((sum,value)=>sum+value,0);
+  const gradeScale=Object.entries(POINTS).sort((a,b)=>a[1]-b[1]);
+  const emptyGrades:Record<number,string>={};
+  if(!rows.length||!totalCredits) return [
+    {label:"Balanced grade plan",description:"A balanced subject-wise grade combination.",grades:emptyGrades,projected:0},
+    {label:"High-credit-first mix",description:"Prioritise higher-credit subjects.",grades:emptyGrades,projected:0},
+    {label:"Alternative subject mix",description:"Distribute grade points differently across subjects.",grades:emptyGrades,projected:0},
   ];
-}
 
+  // Dynamic programming searches the discrete grade scale for exact weighted SGPA combinations.
+  let paths=new Map<number,string[][]>([[0,[[]]]]);
+  rows.forEach((subject,index)=>{
+    const next=new Map<number,string[][]>();
+    for(const [weighted,combinations] of paths) {
+      for(const [grade,points] of gradeScale) {
+        const score=weighted+points*units[index];
+        const stored=next.get(score)||[];
+        for(const combination of combinations) {
+          if(stored.length>=3) break;
+          stored.push([...combination,grade]);
+        }
+        next.set(score,stored);
+      }
+    }
+    paths=next;
+  });
+
+  const desiredWeighted=target*totalUnits;
+  const exactKey=Math.round(desiredWeighted);
+  const exactPaths=Math.abs(desiredWeighted-exactKey)<0.000001?(paths.get(exactKey)||[]):[];
+  let selectedPaths:string[][];
+  if(exactPaths.length) {
+    selectedPaths=[...exactPaths];
+    while(selectedPaths.length<3) selectedPaths.push([...selectedPaths[selectedPaths.length%exactPaths.length]]);
+  } else {
+    const nearestKeys=[...paths.keys()].sort((a,b)=>Math.abs(a-desiredWeighted)-Math.abs(b-desiredWeighted));
+    selectedPaths=[];
+    const signatures=new Set<string>();
+    for(const key of nearestKeys) {
+      for(const combination of paths.get(key)||[]) {
+        const signature=combination.join("|");
+        if(!signatures.has(signature)) {signatures.add(signature);selectedPaths.push(combination);}
+        if(selectedPaths.length===3) break;
+      }
+      if(selectedPaths.length===3) break;
+    }
+    while(selectedPaths.length<3) selectedPaths.push([...(selectedPaths[0]||rows.map(()=>gradeScale[0][0]))]);
+  }
+
+  const labels=["Balanced grade plan","High-credit-first mix","Alternative subject mix"];
+  const descriptions=[
+    exactPaths.length?"Exact target using a balanced grade distribution.":"Closest available grade combination with a balanced starting mix.",
+    exactPaths.length?"A second independent grade combination for the same exact target.":"Prioritise higher-credit subjects when adjusting toward the target.",
+    exactPaths.length?"A third independent grade combination for the same exact target.":"A different subject-wise mix, with the actual SGPA shown below.",
+  ];
+  return selectedPaths.slice(0,3).map((combination,index)=>{
+    const grades:Record<number,string>={};
+    rows.forEach((subject,rowIndex)=>{grades[subject.id]=combination[rowIndex]||"D";});
+    const weighted=rows.reduce((sum,subject)=>sum+POINTS[grades[subject.id]]*subject.credits,0);
+    return {label:labels[index],description:descriptions[index],grades,projected:weighted/totalCredits};
+  });
+}
 function SectionTitle({ kicker, title, copy }: { kicker:string; title:string; copy:string }) {
   return <div className="sp-heading"><span>{kicker}</span><h1>{title}</h1><p>{copy}</p></div>;
 }
