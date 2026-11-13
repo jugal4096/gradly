@@ -1,0 +1,11 @@
+import { useState, type FormEvent } from "react";
+import { ArrowLeft, FlaskConical, LockKeyhole } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../lib/superAdminSession";
+import "./Tester.css";
+
+export default function TesterLogin(){
+ const [loginId,setLoginId]=useState("");const [password,setPassword]=useState("");const [error,setError]=useState("");const [busy,setBusy]=useState(false);const navigate=useNavigate();
+ async function submit(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const r=await fetch(API_BASE_URL+"/api/tester/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({loginId,password})});const d=await r.json();if(!r.ok||!d.token)throw new Error(d.message||"Unable to sign in.");localStorage.setItem("gradly_tester_token",d.token);localStorage.setItem("gradly_tester_login_id",d.tester.loginId);navigate("/tester/workspace",{replace:true});}catch(e){setError(e instanceof Error?e.message:"Unable to connect to Gradly.");}finally{setBusy(false);}}
+ return <main className="tester-auth-page"><header><Link to="/"><ArrowLeft size={16}/> Gradly Ecosystem</Link><span><i/> TEST ENVIRONMENT</span></header><section className="tester-auth-panel"><div className="tester-auth-mark"><FlaskConical size={25}/></div><span className="tester-auth-kicker">ISOLATED ACCESS / 04</span><h1>Continue as a Tester</h1><p>Sign in with the tester ID and password assigned by your Super Admin.</p><form onSubmit={submit}><label htmlFor="tester-login-id">TESTER ID</label><input id="tester-login-id" autoComplete="username" value={loginId} onChange={e=>setLoginId(e.target.value)} required/><label htmlFor="tester-login-password">PASSWORD</label><div className="tester-password-wrap"><LockKeyhole size={16}/><input id="tester-login-password" type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} required/></div>{error&&<div className="tester-login-error" role="alert">{error}</div>}<button disabled={busy}>{busy?"VERIFYING…":"SIGN IN TO TEST MODE"}</button></form><small>Tester activity is isolated. Academic test cases are saved only in this browser.</small></section></main>;
+}
