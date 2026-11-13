@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS tester_accounts (
   last_login_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_tester_accounts_status ON tester_accounts(status);
+ALTER TABLE tester_accounts ENABLE ROW LEVEL SECURITY;
