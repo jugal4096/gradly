@@ -190,7 +190,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            course_name_snapshot, credits, registration_status, grade_symbol,
            grade_point, result_status, result_source, attempt_number)
          VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7,
-                 CASE WHEN $7 > 0 THEN 'PASS' ELSE 'FAIL' END, 'MANUAL_ENTRY', $8)`,
+                 CASE WHEN $7::numeric > 0::numeric THEN 'PASS' ELSE 'FAIL' END, 'MANUAL_ENTRY', $8)`,
         [semesterRecord.id, curriculumSubject.rows[0]?.id ?? null, course.code || null,
          course.name, course.credits, course.grade || null, course.point, attemptNumber],
       );
