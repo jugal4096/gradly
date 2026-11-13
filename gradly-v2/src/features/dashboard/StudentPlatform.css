@@ -887,3 +887,25 @@
   .sp-curriculum-row .sp-grade-options button strong{font-size:14px!important}
   .sp-curriculum-row .sp-grade-options button small{font-size:9px!important}
 }
+
+@media(max-width:1100px){
+  .sp-curriculum-head{display:none!important}
+  .sp-curriculum-row{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:9px 12px!important;
+    padding:15px 0!important;
+  }
+  .sp-curriculum-row .sp-subject-identity{grid-column:1/-1}
+  .sp-curriculum-row .sp-subject-identity input{width:100%;min-height:42px}
+  .sp-curriculum-row .sp-course-code-cell,
+  .sp-curriculum-row .sp-course-type-cell{min-width:0;overflow-wrap:anywhere}
+  .sp-curriculum-row>input[aria-label="Credits"]{width:100%;min-height:40px}
+  .sp-curriculum-row .sp-grade-options{
+    grid-column:1/-1!important;width:100%;min-width:0!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;
+  }
+  .sp-curriculum-row .sp-grade-options button{min-height:49px!important;padding:7px 4px!important}
+  .sp-curriculum-row .sp-grade-options button strong{font-size:14px!important}
+  .sp-curriculum-row .sp-grade-options button small{font-size:9px!important}
+}
