@@ -1319,3 +1319,14 @@
 .sp-dark-theme .sp-sgpa-planner-elective-tools select{background:#191919;color:#f5f5f5;border-color:#454545}
 @media(max-width:760px){.sp-sgpa-planner-elective-tools{grid-template-columns:1fr 1fr}.sp-sgpa-planner-elective-tools .sp-add{grid-column:1/-1}}
 @media(max-width:520px){.sp-sgpa-planner-elective-tools{grid-template-columns:1fr}}
+
+/* Independent SGPA report-card controls */
+.sp-sgpa-planner-report-rows .sp-history-row{grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px}
+.sp-sgpa-planner-report-rows .sp-history-row>span{min-width:0;line-height:1.45}
+.sp-sgpa-planner-report-rows .sp-history-row>select{min-width:92px;max-width:112px;padding:7px 8px;border:1px solid var(--sp-border,#d8d8d8);border-radius:8px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);font:inherit;font-size:10px}
+.sp-sgpa-planner-report-rows .sp-history-row>.sp-remove{width:28px;height:28px;flex:0 0 28px}
+.sp-sgpa-planner-report>.sp-secondary{margin:0 0 12px;padding:8px 11px;font-size:10px}
+.sp-sgpa-planner-elective-tools{grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) auto}
+.sp-sgpa-planner-elective-tools select{min-width:0;max-width:100%}
+.sp-dark-theme .sp-sgpa-planner-report-rows .sp-history-row>select{background:#191919;color:#f5f5f5;border-color:#454545}
+@media(max-width:620px){.sp-sgpa-planner-report-rows .sp-history-row{grid-template-columns:minmax(0,1fr) auto auto}.sp-sgpa-planner-elective-tools{grid-template-columns:1fr}.sp-sgpa-planner-elective-tools .sp-add{width:100%}}
