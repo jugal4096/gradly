@@ -52,6 +52,7 @@ import SuperAdminPasswordRequests from "./pages/super-admin/SuperAdminPasswordRe
 import SuperAdminSecurityAlerts from "./pages/super-admin/SuperAdminSecurityAlerts";
 import SuperAdminAdminMessages from "./pages/super-admin/SuperAdminAdminMessages";
 import SuperAdminRequestCenter from "./pages/super-admin/SuperAdminRequestCenter";
+import SuperAdminTesterManagement from "./pages/super-admin/SuperAdminTesterManagement";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -166,6 +167,8 @@ function App() {
             path="users"
             element={<SuperAdminUsers />}
           />
+
+          <Route path="testers" element={<SuperAdminTesterManagement />} />
 
           {/* Preserve old bookmarks while keeping blacklist management inside Settings. */}
           <Route
