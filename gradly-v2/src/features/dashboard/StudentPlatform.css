@@ -1120,3 +1120,72 @@
   .sp-add-elective-modal .sp-save-success-actions{flex-direction:column-reverse}
   .sp-add-elective-modal .sp-save-success-actions button{width:100%}
 }
+
+
+/* What-if analysis: interactive academic simulator */
+.sp-whatif-hero{
+  display:flex;align-items:center;justify-content:space-between;gap:28px;
+  padding:clamp(22px,4vw,38px);margin:0 0 20px;border:1px solid var(--sp-border,#dedede);
+  border-radius:18px;background:linear-gradient(135deg,#fff 0%,#f4f4f4 100%);color:#171717;
+}
+.sp-whatif-hero-copy{max-width:650px}
+.sp-whatif-eyebrow,.sp-whatif-hero-tags span,.sp-whatif-grade-heading>span,.sp-whatif-credit-meter>div:first-child>span{
+  font-size:9px;font-weight:850;letter-spacing:.14em;color:#737373
+}
+.sp-whatif-hero-copy h2{font-size:clamp(24px,3.5vw,36px);line-height:1.08;letter-spacing:-.045em;margin:12px 0 10px}
+.sp-whatif-hero-copy p{max-width:520px;color:#666;font-size:13px;line-height:1.65;margin:0}
+.sp-whatif-hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.sp-whatif-hero-tags span{padding:7px 9px;border:1px solid #d8d8d8;border-radius:999px;background:#fff;font-size:8px}
+.sp-whatif-score-orb{width:132px;height:132px;flex:0 0 132px;border-radius:50%;border:1px solid #bdbdbd;background:#171717;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 0 7px rgba(0,0,0,.045),0 12px 28px rgba(0,0,0,.12)}
+.sp-whatif-score-orb span{font-size:9px;letter-spacing:.15em;color:#c7c7c7;font-weight:800}
+.sp-whatif-score-orb strong{font-size:35px;line-height:1.15;letter-spacing:-.05em}
+.sp-whatif-score-orb small{font-size:10px;color:#bdbdbd}
+.sp-whatif-subject{padding:17px 0;border-bottom:1px solid var(--sp-border,#e5e5e5)}
+.sp-whatif-subject:last-of-type{border-bottom:0}
+.sp-whatif-subject-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sp-whatif-subject-identity{display:flex;align-items:center;gap:12px;flex:1 1 280px;min-width:0}
+.sp-whatif-index{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#171717;color:#fff;font-size:11px;font-weight:800}
+.sp-whatif-subject-identity>div{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.sp-whatif-subject-identity input:first-child{font-weight:750;font-size:13px;min-width:0}
+.sp-whatif-subject-identity input:last-child{font-size:10px;color:var(--sp-muted,#777);min-width:0}
+.sp-whatif-subject-identity input,.sp-whatif-subject-actions input{width:100%;padding:7px 9px;border:1px solid var(--sp-border,#dedede);border-radius:7px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717)}
+.sp-whatif-subject-actions{display:flex;align-items:flex-end;gap:10px}
+.sp-whatif-subject-actions label{font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--sp-muted,#777)}
+.sp-whatif-subject-actions input{display:block;width:78px;margin-top:5px;font-size:12px}
+.sp-whatif-remove{padding:8px 11px;border:1px solid var(--sp-border,#ddd);border-radius:7px;background:transparent;color:var(--sp-muted,#777);font-size:10px;font-weight:750;cursor:pointer}
+.sp-whatif-remove:hover{border-color:#999;color:var(--sp-text,#171717)}
+.sp-whatif-grade-area{margin:14px 0 0 46px;padding:12px 13px;border-radius:11px;background:var(--sp-subtle,#f7f7f7)}
+.sp-whatif-grade-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.sp-whatif-grade-heading strong{font-size:11px}
+.sp-whatif-grade-heading strong small{font-size:10px;color:var(--sp-muted,#777);font-weight:500}
+.sp-whatif-grade-options{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.sp-whatif-grade-options button{min-width:0;min-height:49px;border:1px solid var(--sp-border,#ddd);border-radius:8px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);cursor:pointer;transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.sp-whatif-grade-options button:hover{transform:translateY(-2px);border-color:#888}
+.sp-whatif-grade-options button.selected{background:#171717;color:#fff;border-color:#171717;box-shadow:0 3px 9px rgba(0,0,0,.12)}
+.sp-whatif-grade-options button strong{display:block;font-size:12px}
+.sp-whatif-grade-options button small{display:block;font-size:9px;opacity:.7;margin-top:2px}
+.sp-whatif-credit-meter{padding:14px 0 2px;margin-top:14px;border-top:1px solid var(--sp-border,#e5e5e5)}
+.sp-whatif-credit-meter>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sp-whatif-credit-meter>div:first-child>strong{font-size:16px;font-variant-numeric:tabular-nums}
+.sp-whatif-credit-meter>div:first-child>strong small{font-size:10px;color:var(--sp-muted,#777);font-weight:500}
+.sp-whatif-credit-track{height:8px;margin:10px 0 6px;border-radius:99px;background:var(--sp-border,#e5e5e5);overflow:hidden}
+.sp-whatif-credit-track span{display:block;height:100%;border-radius:99px;background:#171717;transition:width .2s ease}
+.sp-whatif-credit-meter>small{font-size:10px;color:var(--sp-muted,#777)}
+.sp-whatif-subject-actions button:focus-visible,.sp-whatif-grade-options button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.sp-dark-theme .sp-whatif-hero{background:linear-gradient(135deg,#202020,#151515);color:#f5f5f5;border-color:#414141}
+.sp-dark-theme .sp-whatif-hero-copy p,.sp-dark-theme .sp-whatif-eyebrow,.sp-dark-theme .sp-whatif-hero-tags span{color:#bdbdbd}
+.sp-dark-theme .sp-whatif-hero-tags span{background:#242424;border-color:#444}
+.sp-dark-theme .sp-whatif-score-orb{background:#f5f5f5;color:#171717;border-color:#fff}
+.sp-dark-theme .sp-whatif-score-orb span,.sp-dark-theme .sp-whatif-score-orb small{color:#555}
+.sp-dark-theme .sp-whatif-index{background:#f5f5f5;color:#171717}
+.sp-dark-theme .sp-whatif-grade-options button.selected{background:#f5f5f5;color:#171717;border-color:#f5f5f5}
+.sp-dark-theme .sp-whatif-credit-track span{background:#f5f5f5}
+@media(max-width:640px){
+  .sp-whatif-hero{align-items:flex-start;padding:20px;gap:12px}
+  .sp-whatif-score-orb{width:94px;height:94px;flex-basis:94px}
+  .sp-whatif-score-orb strong{font-size:27px}
+  .sp-whatif-score-orb span{font-size:7px}
+  .sp-whatif-grade-area{margin-left:0}
+  .sp-whatif-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .sp-whatif-subject-top{align-items:flex-start}
+}
