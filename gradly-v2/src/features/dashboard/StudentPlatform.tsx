@@ -487,7 +487,12 @@ export default function StudentPlatform() {
     setSgpa(null); setNotice(""); setAddCourseDialogOpen(false); setAddCourseType(null); setAddCourseCode("");
   }
   function removeSubject(subjectId:number) {
-    setSubjects(current=>current.filter(subject=>subject.id!==subjectId));
+    setSubjects(current=>{
+      const selected=current.find(subject=>subject.id===subjectId);
+      const paired=selected?PE6_PAIR_OPTIONS.find(option=>option.code===selected.courseCode||option.labCode===selected.courseCode):undefined;
+      if(!paired) return current.filter(subject=>subject.id!==subjectId);
+      return current.filter(subject=>subject.id!==subjectId&&subject.courseCode!==paired.code&&subject.courseCode!==paired.labCode);
+    });
     setSgpa(null); setNotice("");
   }
   function removeElective(subjectId:number) {
