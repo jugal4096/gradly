@@ -120,9 +120,15 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
     normalized.push({ code, name, credits, grade, point });
   }
+  const uhvCourses = normalized.filter(course => course.code.toUpperCase() === "INHS1020");
+  if (uhvCourses.length > 1) {
+    return res.status(400).json({ code: "UHV_DUPLICATE", message: "Universal Human Values can be registered only once throughout your degree." });
+  }
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
-  if (creditsRegistered > 28) {
-    return res.status(400).json({ code: "SEMESTER_CREDIT_LIMIT", message: "A semester cannot exceed 28 registered credits." });
+  const creditsWithoutUhv = normalized.filter(course => course.code.toUpperCase() !== "INHS1020")
+    .reduce((sum, course) => sum + course.credits, 0);
+  if (creditsWithoutUhv > 28) {
+    return res.status(400).json({ code: "SEMESTER_CREDIT_LIMIT", message: "A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance." });
   }
   const sgpa = normalized.reduce((sum, course) => sum + course.credits * course.point, 0) / creditsRegistered;
   const client = await pool.connect();
@@ -140,13 +146,32 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "No curriculum semester is configured for this semester. Check your academic profile and scheme." });
     }
-    const earnedCredits = normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0);
     const existing = await client.query(
       `SELECT id FROM student_semesters
        WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
        ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
       [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
     );
+    if (uhvCourses.length) {
+      const priorUhv = await client.query(
+        `SELECT c.id
+         FROM student_semester_courses c
+         JOIN student_semesters ss ON ss.id = c.student_semester_id
+         WHERE ss.student_profile_id = $1
+           AND UPPER(COALESCE(c.course_code_snapshot, '')) = 'INHS1020'
+           AND NOT (ss.semester_id = $2 AND ss.attempt_number = $3)
+         LIMIT 1`,
+        [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
+      );
+      if (priorUhv.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          code: "UHV_ALREADY_REGISTERED",
+          message: "Universal Human Values has already been registered in another semester. It can be added only once throughout your degree.",
+        });
+      }
+    }
+    const earnedCredits = normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0);
     let semesterRecord: { id: string; semester_id: string; attempt_number: number };
     if (existing.rows[0]) {
       const updated = await client.query(
