@@ -938,3 +938,11 @@
 @media (max-width: 640px) {
   .sp-subject-identity select { font-size:12px; }
 }
+
+.sp-dropped-electives{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:1px dashed #d8dee7;border-radius:9px}
+.sp-dropped-electives>span{font-size:10px;color:#748196;margin-right:4px}
+.sp-dropped-electives button{border:1px solid #dce3eb;background:#f8fafc;color:#40566d;border-radius:7px;padding:7px 9px;font:600 10px 'DM Sans';cursor:pointer}
+.sp-dropped-electives button:hover{background:#eef3f8}
+.sp-dark-theme .sp-dropped-electives{border-color:#34455c}
+.sp-dark-theme .sp-dropped-electives>span{color:#aab8c8}
+.sp-dark-theme .sp-dropped-electives button{background:#18283d;border-color:#34455c;color:#e1ebf5}
