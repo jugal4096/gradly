@@ -121,6 +121,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     normalized.push({ code, name, credits, grade, point });
   }
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
+  if (creditsRegistered > 28) {
+    return res.status(400).json({ code: "SEMESTER_CREDIT_LIMIT", message: "A semester cannot exceed 28 registered credits." });
+  }
   const sgpa = normalized.reduce((sum, course) => sum + course.credits * course.point, 0) / creditsRegistered;
   const client = await pool.connect();
   try {
