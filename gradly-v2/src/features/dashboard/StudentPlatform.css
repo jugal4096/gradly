@@ -1429,3 +1429,49 @@
 .sp-cgpa-whatif-progress>i>b{display:block;width:100%;min-height:0;border-radius:6px 6px 0 0;background:linear-gradient(0deg,#64748b,#38bdf8,#86efac);transition:height .35s ease}
 @media(max-width:760px){.sp-cgpa-whatif-row{grid-template-columns:54px minmax(110px,1fr) minmax(65px,.6fr);gap:9px}.sp-cgpa-whatif-weight{display:none}.sp-cgpa-whatif-change{grid-column:3;grid-row:1}.sp-cgpa-whatif-input{grid-column:2;grid-row:1}.sp-cgpa-whatif-sem{grid-column:1;grid-row:1}.sp-cgpa-whatif-summary-top{grid-template-columns:1fr 1fr}.sp-cgpa-whatif-summary-top>div:first-child{grid-column:span 2}}
 @media(max-width:430px){.sp-cgpa-whatif-row{grid-template-columns:42px minmax(95px,1fr) 64px;padding:9px;gap:7px}.sp-cgpa-whatif-sem strong{font-size:19px}.sp-cgpa-whatif-input input{padding:9px 7px;font-size:14px}.sp-cgpa-whatif-credit strong,.sp-cgpa-whatif-change strong{font-size:13px}}
+
+
+/* CGPA scenario planner */
+.sp-cgpa-planner-goal{background:radial-gradient(ellipse at 90% 0%,rgba(56,189,248,.12),transparent 48%),linear-gradient(145deg,#1a2029,#151515)}
+.sp-cgpa-planner-goal .sp-card-head{align-items:center}
+.sp-cgpa-planner-target{display:flex;flex-direction:column;gap:7px;min-width:145px;color:#aab6c4;font-size:8px;font-weight:800;letter-spacing:1px}
+.sp-cgpa-planner-target input{width:100%;padding:11px 12px;border:1px solid #536174;border-radius:9px;background:#10151d;color:#fff;font:800 20px Manrope;outline:none}
+.sp-cgpa-planner-target input:focus{border-color:#7dd3fc;box-shadow:0 0 0 3px #38bdf822}
+.sp-cgpa-planner-target-scale{display:flex;justify-content:space-between;color:#7f8b9a;font-size:8px;margin-top:12px}
+.sp-cgpa-planner-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;align-items:start}
+.sp-cgpa-planner-card{min-width:0;padding:16px;background:linear-gradient(155deg,#1b222c,#15171c);border-color:#354150}
+.sp-cgpa-planner-card-head{display:flex;justify-content:space-between;gap:9px;align-items:flex-start}
+.sp-cgpa-planner-card-head>div{min-width:0}
+.sp-cgpa-planner-card-head>div>span{font-size:8px;letter-spacing:1.2px;font-weight:800;color:#8da4ba}
+.sp-cgpa-planner-card-head h2{font:750 17px Manrope;color:#f5f7fa;margin:6px 0}
+.sp-cgpa-planner-card-head p{font-size:9px;line-height:1.5;color:#98a4b2;margin:0}
+.sp-cgpa-planner-card-mark{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border:1px solid #526276;border-radius:9px;color:#b9ddf7;font:800 13px Manrope;background:#233246}
+.sp-cgpa-planner-score{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin:18px 0 8px}
+.sp-cgpa-planner-score strong{font:850 37px Manrope;letter-spacing:-1.5px;color:#fff}
+.sp-cgpa-planner-score>span{font-size:9px;color:#9ba9b8}
+.sp-cgpa-planner-score small{flex-basis:100%;font-size:9px;color:#a8b7c8}
+.sp-cgpa-planner-progress{height:8px;position:relative;border-radius:20px;background:#303b49;overflow:visible;margin:14px 0 8px}
+.sp-cgpa-planner-progress>i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#64748b,#38bdf8,#34d399);transition:width .35s}
+.sp-cgpa-planner-progress>b{position:absolute;top:-4px;width:2px;height:16px;background:#fbbf24;box-shadow:0 0 7px #fbbf2488}
+.sp-cgpa-planner-target-result{font-size:8px;font-weight:800;letter-spacing:.8px;color:#b7d7f0;margin:9px 0 12px}
+.sp-cgpa-planner-semesters{display:grid;gap:7px}
+.sp-cgpa-planner-semester{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px;border:1px solid #343f4d;border-radius:9px;background:#141a22}
+.sp-cgpa-planner-semester>span{min-width:0}
+.sp-cgpa-planner-semester>span>b{display:block;color:#e7edf5;font-size:9px;letter-spacing:.5px}
+.sp-cgpa-planner-semester>span>small{display:block;color:#8492a2;font-size:8px;margin-top:4px}
+.sp-cgpa-planner-semester input{width:82px;min-width:0;padding:8px 6px;border:1px solid #465568;border-radius:7px;background:#0d131b;color:#fff;text-align:center;font:750 14px Manrope;outline:none}
+.sp-cgpa-planner-semester input:focus{border-color:#7dd3fc;box-shadow:0 0 0 2px #38bdf822}
+.sp-cgpa-planner-card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid #343f4d;color:#a0adbc;font-size:8px}
+.sp-cgpa-planner-card-foot button{border:0;background:none;color:#b9d9f2;font:700 8px 'DM Sans';cursor:pointer}
+.sp-cgpa-planner-compare{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.sp-cgpa-planner-compare>div{min-width:0;padding:13px;border:1px solid #394555;border-radius:10px;background:#171e27}
+.sp-cgpa-planner-compare span{display:block;color:#a5b2c1;font-size:8px;letter-spacing:.5px}
+.sp-cgpa-planner-compare strong{display:block;color:#f5f8fc;font:800 25px Manrope;margin:8px 0}
+.sp-cgpa-planner-compare i{display:block;height:6px;border-radius:20px;background:#303b49;overflow:hidden}
+.sp-cgpa-planner-compare i b{display:block;height:100%;background:linear-gradient(90deg,#64748b,#38bdf8,#34d399);border-radius:20px}
+.sp-cgpa-planner-compare small{display:block;color:#9aa8b7;font-size:8px;margin-top:7px}
+.sp-cgpa-tracker-overview .sp-tracker-score{background:radial-gradient(ellipse at 85% 0%,rgba(56,189,248,.18),transparent 55%),linear-gradient(145deg,#202b38,#121820)}
+.sp-cgpa-tracker-insights .sp-card{min-width:0}
+.sp-cgpa-tracker-chart-wrap{background:radial-gradient(ellipse at 50% 0%,rgba(56,189,248,.14),transparent 60%),linear-gradient(155deg,#111d2a,#14151d)}
+@media(max-width:1050px){.sp-cgpa-planner-grid{grid-template-columns:1fr 1fr}.sp-cgpa-planner-card:last-child{grid-column:1/-1}}
+@media(max-width:720px){.sp-cgpa-planner-grid,.sp-cgpa-planner-compare{grid-template-columns:1fr}.sp-cgpa-planner-card:last-child{grid-column:auto}.sp-cgpa-planner-goal .sp-card-head{align-items:flex-start;flex-direction:column}.sp-cgpa-planner-target{width:100%}}
