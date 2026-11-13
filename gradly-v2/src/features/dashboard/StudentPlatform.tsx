@@ -140,8 +140,8 @@ function buildSgpaScenarios(targetInput:number, subjects:Subject[]) {
   const uniformGrades:Record<number,string>={};
   rows.forEach(subject=>{uniformGrades[subject.id]=balanced[0];});
   const uniformPoints=rows.reduce((sum,subject)=>sum+balanced[1]*subject.credits,0);
-  const creditPriority=makeMixed([...rows].sort((a,b)=>b.credits-a.credits));
-  const spreadPriority=makeMixed([...rows].sort((a,b)=>a.credits-b.credits));
+  const creditPriority=makeMixed([...rows].sort((a,b)=>b.credits-a.credits||a.id-b.id));
+  const spreadPriority=makeMixed([...rows].sort((a,b)=>a.credits-b.credits||b.id-a.id));
   return [
     {label:"Balanced grade plan",description:"Keep the same target-band grade across every subject.",grades:uniformGrades,projected:totalCredits?uniformPoints/totalCredits:0},
     {label:"High-credit-first mix",description:"Prioritise higher-credit subjects when moving up to the next grade band.",grades:creditPriority.grades,projected:creditPriority.projected},
