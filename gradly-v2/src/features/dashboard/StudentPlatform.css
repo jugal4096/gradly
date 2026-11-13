@@ -946,3 +946,30 @@
 .sp-dark-theme .sp-dropped-electives{border-color:#34455c}
 .sp-dark-theme .sp-dropped-electives>span{color:#aab8c8}
 .sp-dark-theme .sp-dropped-electives button{background:#18283d;border-color:#34455c;color:#e1ebf5}
+
+
+/* Current-semester journey notice */
+.sp-semester-journey{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) 86px;gap:15px;align-items:center;margin:0 0 20px;padding:20px 21px;border:1px solid #d9e2ed;border-radius:15px;background:linear-gradient(115deg,#f4f7fb 0%,#fff 58%,#f3f6fa 100%);overflow:hidden}
+.sp-semester-journey:after{content:"";position:absolute;right:-35px;top:-68px;width:190px;height:190px;border:1px solid rgba(89,111,143,.10);border-radius:50%;box-shadow:0 0 0 18px rgba(89,111,143,.035),0 0 0 38px rgba(89,111,143,.025);pointer-events:none}
+.sp-semester-journey-mark{width:44px;height:44px;display:grid;place-items:center;border:1px solid #d7e0eb;border-radius:13px;background:#fff;color:#647c9a;font-size:21px;box-shadow:0 4px 12px rgba(43,61,83,.06)}
+.sp-semester-journey-copy{min-width:0;position:relative;z-index:1}
+.sp-semester-journey-meta{display:flex;align-items:center;gap:7px;color:#75869b;font-size:8px;font-weight:900;letter-spacing:1.3px}
+.sp-semester-live-dot{width:7px;height:7px;border-radius:50%;background:#6f9b85;box-shadow:0 0 0 4px rgba(111,155,133,.12)}
+.sp-semester-journey-meta b{margin-left:4px;padding:4px 7px;border:1px solid #dce4ed;border-radius:5px;background:#fff;color:#536a83;font-size:8px;letter-spacing:.6px}
+.sp-semester-journey-copy h3{margin:8px 0 5px;color:#27384c;font:750 17px Manrope;letter-spacing:-.35px}
+.sp-semester-journey-copy p{max-width:650px;margin:0;color:#68788b;font-size:10px;line-height:1.7}
+.sp-semester-journey-copy button{display:inline-flex;align-items:center;gap:10px;margin-top:12px;padding:9px 12px;border:1px solid #cbd7e4;border-radius:8px;background:#fff;color:#354c66;font:700 10px 'DM Sans';cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.sp-semester-journey-copy button:hover{background:#edf2f7;border-color:#aebfd1;transform:translateY(-1px)}
+.sp-semester-journey-copy button span{font-size:14px}
+.sp-semester-journey-copy>small{display:block;margin-top:8px;color:#8b98a8;font-size:9px;line-height:1.5}
+.sp-semester-journey-progress{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:78px;border-left:1px solid #e1e7ee}
+.sp-semester-journey-progress span{color:#8392a3;font-size:7px;font-weight:900;letter-spacing:1px}
+.sp-semester-journey-progress strong{margin:1px 0;color:#344b64;font:800 35px Manrope;line-height:1.1}
+.sp-semester-journey-progress small{color:#8492a2;font-size:8px}
+@media(max-width:620px){.sp-semester-journey{grid-template-columns:38px minmax(0,1fr);gap:11px;padding:15px}.sp-semester-journey-mark{width:36px;height:36px}.sp-semester-journey-copy h3{font-size:15px}.sp-semester-journey-progress{grid-column:2;align-items:flex-start;min-height:0;border-left:0;border-top:1px solid #e1e7ee;padding-top:9px;flex-direction:row;gap:8px}.sp-semester-journey-progress strong{font-size:18px}.sp-semester-journey-progress small{align-self:center}}
+.sp-dark-theme .sp-semester-journey{border-color:#34465b;background:linear-gradient(115deg,#17283b,#1b2d42 60%,#19293c)}
+.sp-dark-theme .sp-semester-journey-mark,.sp-dark-theme .sp-semester-journey-meta b,.sp-dark-theme .sp-semester-journey-copy button{border-color:#40546c;background:#20344a;color:#dce8f4}
+.sp-dark-theme .sp-semester-journey-meta,.sp-dark-theme .sp-semester-journey-copy>small,.sp-dark-theme .sp-semester-journey-progress span,.sp-dark-theme .sp-semester-journey-progress small{color:#9fb0c3}
+.sp-dark-theme .sp-semester-journey-copy h3,.sp-dark-theme .sp-semester-journey-progress strong{color:#eff5fb}
+.sp-dark-theme .sp-semester-journey-copy p{color:#b2c0cf}
+.sp-dark-theme .sp-semester-journey-progress{border-color:#34465b}
