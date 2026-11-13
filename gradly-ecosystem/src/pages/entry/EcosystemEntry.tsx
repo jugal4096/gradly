@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  FlaskConical,
   Monitor,
   Settings,
   Shield,
@@ -209,6 +210,18 @@ function EcosystemEntry() {
 
             </div>
 
+          </a>
+
+
+          {/* TESTER */}
+          <a href="/tester/login" className="interface-module tester-module">
+            <div className="module-icon"><FlaskConical size={32} strokeWidth={1.8} /></div>
+            <div className="module-content">
+              <span className="module-number">04 / TEST ENVIRONMENT</span>
+              <h3>Continue as a Tester</h3>
+              <p>Explore isolated enrollment scenarios and preview the student workspace without changing real student records.</p>
+            </div>
+            <div className="continue-button"><span>CONTINUE AS TESTER</span><ArrowRight size={18} /></div>
           </a>
 
         </div>
