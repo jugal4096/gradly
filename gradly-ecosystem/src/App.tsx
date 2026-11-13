@@ -10,6 +10,8 @@ import {
 // =====================================================
 
 import EcosystemEntry from "./pages/entry/EcosystemEntry";
+import TesterLogin from "./pages/tester/TesterLogin";
+import TesterWorkspace from "./pages/tester/TesterWorkspace";
 
 // =====================================================
 // ADMIN
@@ -67,6 +69,9 @@ function App() {
           path="/"
           element={<EcosystemEntry />}
         />
+
+        <Route path="/tester/login" element={<TesterLogin />} />
+        <Route path="/tester/workspace" element={<TesterWorkspace />} />
 
         {/* =============================================
             ADMIN PORTAL
