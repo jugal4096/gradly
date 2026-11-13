@@ -55,7 +55,8 @@ import {
     const semestersWithCumulativeCgpa = semestersWithCourses.map((semester) => {
       const credits = Number(semester.credits_registered ?? 0);
       const sgpa = Number(semester.sgpa);
-      if (credits > 0 && Number.isFinite(credits) && Number.isFinite(sgpa)) {
+      if (semester.sgpa !== null && semester.sgpa !== undefined &&
+          credits > 0 && Number.isFinite(credits) && Number.isFinite(sgpa)) {
         cumulativeCredits += credits;
         cumulativeWeightedPoints += sgpa * credits;
       }
