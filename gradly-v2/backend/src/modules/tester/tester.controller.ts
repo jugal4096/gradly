@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { pool } from "../../config/database";
 import { createTesterToken } from "../../config/jwt";
 import { TesterAuthenticatedRequest } from "./tester-auth.middleware";
+import { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
 
 const safeLoginId = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9._-]{3,80}$/.test(value.trim());
 
@@ -43,7 +44,7 @@ export async function listTesterAccounts(_req: Request, res: Response) {
   }
 }
 
-export async function createTesterAccount(req: Request, res: Response) {
+export async function createTesterAccount(req: SuperAdminAuthenticatedRequest, res: Response) {
   const { loginId, password } = req.body ?? {};
   if (!safeLoginId(loginId)) return res.status(400).json({ message: "Tester ID must be 3–80 characters and use letters, numbers, dots, underscores or hyphens." });
   if (typeof password !== "string" || password.length < 10 || password.length > 128) return res.status(400).json({ message: "Set a password between 10 and 128 characters." });
@@ -51,7 +52,7 @@ export async function createTesterAccount(req: Request, res: Response) {
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await pool.query(
       "INSERT INTO tester_accounts (login_id,password_hash,created_by) VALUES ($1,$2,$3) RETURNING id,login_id,status,created_at",
-      [loginId.trim(), passwordHash, String(req.body?.createdBy || "SUPER_ADMIN").slice(0,120)]
+      [loginId.trim(), passwordHash, String(req.superAdmin?.adminCode || req.superAdmin?.superAdminId || "SUPER_ADMIN").slice(0,120)]
     );
     return res.status(201).json({ tester: result.rows[0], message: "Tester account created." });
   } catch (error: any) {
