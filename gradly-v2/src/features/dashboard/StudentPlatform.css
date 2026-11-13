@@ -909,3 +909,32 @@
   .sp-curriculum-row .sp-grade-options button strong{font-size:14px!important}
   .sp-curriculum-row .sp-grade-options button small{font-size:9px!important}
 }
+
+
+/* Curriculum elective selectors */
+.sp-subject-identity select {
+  display:block;
+  width:100%;
+  min-width:0;
+  margin-top:7px;
+  padding:10px 34px 10px 12px;
+  border:1px solid var(--sp-border, #d7d7d7);
+  border-radius:8px;
+  background:#fff;
+  color:#171717;
+  font:inherit;
+  font-size:13px;
+  line-height:1.4;
+}
+.sp-subject-identity > strong {
+  display:block;
+  color:#555;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.sp-subject-identity { min-width:0; }
+@media (max-width: 640px) {
+  .sp-subject-identity select { font-size:12px; }
+}
