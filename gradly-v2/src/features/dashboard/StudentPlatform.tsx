@@ -494,7 +494,6 @@ export default function StudentPlatform() {
   const trackerHelpingSubjects = trackerSubjectRows.filter(subject=>subject.impact>0.0005);
   const trackerDamagingSubjects = [...trackerSubjectRows].filter(subject=>subject.impact< -0.0005).sort((a,b)=>a.impact-b.impact);
   const trackerNeutralSubjects = trackerSubjectRows.filter(subject=>Math.abs(subject.impact)<=0.0005);
-  const trackerSubjectImpactTotal = trackerSubjectRows.reduce((sum,subject)=>sum+subject.impact,0);
   const trackerSubjectComputedSgpa = trackerSubjectRows.length&&trackerSubjectRows.reduce((sum,subject)=>sum+subject.credits,0)>0?trackerSubjectRows.reduce((sum,subject)=>sum+subject.credits*subject.gradePoint,0)/trackerSubjectRows.reduce((sum,subject)=>sum+subject.credits,0):null;
   const trackerSubjectInference = !trackerSubjectRows.length?"Subject-level grade details are unavailable for this semester.":trackerDamagingSubjects.length===0?"No subject is below this semester's SGPA benchmark. Your listed subjects are all matching or lifting the semester average.":trackerHelpingSubjects.length===0?"No subject is above the semester SGPA benchmark. Prioritise the subjects with the largest negative weighted impact.":`${trackerHelpingSubjects.length} subject(s) lifted the result above the semester benchmark, while ${trackerDamagingSubjects.length} subject(s) pulled it down. Start with the largest negative impact, especially where the subject carries more credits.`;
   const normalizedSubjectSearch = subjectSearch.trim().toLowerCase();
