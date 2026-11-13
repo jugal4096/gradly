@@ -1189,3 +1189,56 @@
   .sp-whatif-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}
   .sp-whatif-subject-top{align-items:flex-start}
 }
+
+
+/* What-if simulator layout refinement */
+.sp-whatif-semester-card{overflow:hidden;position:relative}
+.sp-whatif-semester-card:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#171717,#888);opacity:.85}
+.sp-whatif-semester-picker{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.sp-whatif-semester-picker h2{font-size:clamp(19px,2.2vw,25px);letter-spacing:-.035em;margin:8px 0 5px}
+.sp-whatif-semester-picker p{font-size:12px;color:var(--sp-muted,#777);margin:0}
+.sp-whatif-semester-control{display:flex;flex-direction:column;gap:7px;flex:0 0 min(310px,42%);font-size:9px;font-weight:850;letter-spacing:.14em;color:var(--sp-muted,#777)}
+.sp-whatif-semester-control select{width:100%;min-height:62px;padding:12px 48px 12px 17px;border:1.5px solid var(--sp-border,#d8d8d8);border-radius:13px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);font-size:19px;font-weight:850;letter-spacing:-.025em;cursor:pointer;box-shadow:0 5px 15px rgba(0,0,0,.045);transition:border-color .2s,box-shadow .2s,transform .2s}
+.sp-whatif-semester-control select:hover{border-color:#777;box-shadow:0 8px 20px rgba(0,0,0,.09);transform:translateY(-1px)}
+.sp-whatif-semester-control select:focus-visible{outline:3px solid rgba(90,90,90,.22);outline-offset:3px}
+.sp-whatif-semester-footer{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:19px;padding-top:14px;border-top:1px solid var(--sp-border,#e5e5e5)}
+.sp-whatif-semester-footer label{display:flex;align-items:center;gap:9px;font-size:10px;font-weight:800;color:var(--sp-muted,#777)}
+.sp-whatif-semester-footer input{width:88px;padding:8px 10px;border:1px solid var(--sp-border,#ddd);border-radius:8px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);font-weight:750}
+.sp-whatif-semester-footer>span{font-size:10px;color:var(--sp-muted,#777)}
+.sp-whatif-semester-footer .sp-whatif-loading-label{margin-left:auto;font-weight:800;letter-spacing:.04em}
+.sp-whatif-workspace{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start;margin-bottom:18px}
+.sp-whatif-editor-card{min-width:0}
+.sp-whatif-sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:18px}
+.sp-whatif-estimate-card{overflow:hidden;position:relative;background:linear-gradient(155deg,var(--sp-surface,#fff),var(--sp-subtle,#f6f6f6))}
+.sp-whatif-estimate-card:after{content:"";position:absolute;top:-70px;right:-65px;width:155px;height:155px;border:1px solid var(--sp-border,#ddd);border-radius:50%;box-shadow:0 0 0 16px rgba(120,120,120,.035),0 0 0 34px rgba(120,120,120,.025);pointer-events:none}
+.sp-whatif-estimate-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;font-weight:850;letter-spacing:.12em;color:var(--sp-muted,#777)}
+.sp-whatif-live-dot{padding:4px 7px;border-radius:99px;background:#171717;color:#fff;font-size:8px;letter-spacing:.1em;animation:spWhatIfPulse 2s ease-in-out infinite}
+.sp-whatif-estimate-number{position:relative;z-index:1;margin:17px 0 4px;font-size:clamp(37px,4vw,49px);line-height:1;font-weight:900;letter-spacing:-.065em;font-variant-numeric:tabular-nums;animation:spWhatIfRise .35s ease-out}
+.sp-whatif-estimate-number small{font-size:12px;letter-spacing:0;color:var(--sp-muted,#777);font-weight:650;margin-left:5px}
+.sp-whatif-estimate-card>p{margin:0;font-size:10px;color:var(--sp-muted,#777)}
+.sp-whatif-estimate-divider{height:1px;background:var(--sp-border,#ddd);margin:18px 0 10px}
+.sp-whatif-stat-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:11px;color:var(--sp-muted,#777)}
+.sp-whatif-stat-row strong{color:var(--sp-text,#171717);font-weight:800;font-variant-numeric:tabular-nums}
+.sp-whatif-estimate-card .sp-whatif-credit-meter{margin-top:12px}
+.sp-whatif-credit-note{margin-top:12px!important;font-size:9px!important;line-height:1.5}
+.sp-whatif-target-card{background:#171717;color:#fff;border-color:#171717}
+.sp-whatif-target-card .sp-whatif-eyebrow{color:#bdbdbd}
+.sp-whatif-target-card h3{font-size:27px;letter-spacing:-.045em;margin:9px 0 4px}
+.sp-whatif-target-card p{font-size:10px;line-height:1.5;color:#c8c8c8;margin:0}
+.sp-whatif-target-track{height:6px;border-radius:99px;background:#444;overflow:hidden;margin-top:14px}
+.sp-whatif-target-track span{display:block;height:100%;border-radius:99px;background:#fff;transition:width .35s cubic-bezier(.2,.8,.2,1)}
+.sp-whatif-subject{animation:spWhatIfRise .28s ease both}
+.sp-whatif-grade-options button.selected{animation:spWhatIfSelect .22s ease-out}
+.sp-dark-theme .sp-whatif-semester-control select{background:#191919;color:#f5f5f5;border-color:#454545}
+.sp-dark-theme .sp-whatif-estimate-card{background:linear-gradient(155deg,#202020,#171717)}
+.sp-dark-theme .sp-whatif-target-card{background:#f5f5f5;color:#171717;border-color:#f5f5f5}
+.sp-dark-theme .sp-whatif-target-card .sp-whatif-eyebrow,.sp-dark-theme .sp-whatif-target-card p{color:#555}
+.sp-dark-theme .sp-whatif-target-track{background:#ddd}
+.sp-dark-theme .sp-whatif-target-track span{background:#171717}
+@keyframes spWhatIfPulse{0%,100%{box-shadow:0 0 0 0 rgba(110,110,110,.25)}50%{box-shadow:0 0 0 5px rgba(110,110,110,0)}}
+@keyframes spWhatIfRise{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spWhatIfSelect{0%{transform:scale(.96)}65%{transform:scale(1.035)}100%{transform:scale(1)}}
+@media(max-width:1000px){.sp-whatif-workspace{grid-template-columns:minmax(0,1fr) 255px;gap:12px}}
+@media(max-width:760px){.sp-whatif-workspace{grid-template-columns:1fr}.sp-whatif-sidebar{position:static;display:grid;grid-template-columns:1fr 1fr}.sp-whatif-semester-picker{align-items:stretch;flex-direction:column}.sp-whatif-semester-control{flex-basis:auto;width:100%}.sp-whatif-semester-footer .sp-whatif-loading-label{margin-left:0}}
+@media(max-width:520px){.sp-whatif-sidebar{grid-template-columns:1fr}.sp-whatif-semester-control select{min-height:58px;font-size:18px}.sp-whatif-semester-footer{gap:10px}.sp-whatif-semester-footer label{width:100%;justify-content:space-between}.sp-whatif-semester-footer input{width:110px}}
+@media(prefers-reduced-motion:reduce){.sp-whatif-live-dot,.sp-whatif-estimate-number,.sp-whatif-subject,.sp-whatif-grade-options button.selected{animation:none!important}.sp-whatif-semester-control select,.sp-whatif-target-track span{transition:none!important}}
