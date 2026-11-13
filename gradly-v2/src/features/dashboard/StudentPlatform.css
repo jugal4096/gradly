@@ -1083,6 +1083,10 @@
 }
 
 /* OE / HS course picker. */
+/* Keep the category controls above the dimmed backdrop and clickable. */
+.sp-add-elective-modal{position:relative;z-index:1201;pointer-events:auto}
+.sp-add-elective-types{position:relative;z-index:1202;pointer-events:auto}
+.sp-add-elective-types button{position:relative;z-index:1203;pointer-events:auto;touch-action:manipulation}
 .sp-add-elective-modal{
   width:min(100%,560px);padding:30px;border:1px solid var(--sp-border,#dedede);
   border-radius:16px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);
