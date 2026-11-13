@@ -817,3 +817,18 @@
 .sp-dark-theme .sp-entry-mode.selected{background:linear-gradient(120deg,rgba(53,190,169,.12),rgba(112,128,224,.1));border-color:#36b7a5}
 .sp-dark-theme .sp-semester-picker select{background:#18283d;border-color:#34455c;color:#edf4fb}
 @media(max-width:560px){.sp-entry-modes{gap:8px}.sp-entry-mode{min-height:82px;padding:12px}.sp-entry-mode strong{font-size:11px}.sp-sgpa-card-head{flex-wrap:wrap}.sp-semester-picker{min-width:105px}}
+
+
+/* Curriculum SGPA rows: explicit subject, course code and course type columns. */
+.sp-curriculum-table{width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+.sp-curriculum-head,.sp-curriculum-row{min-width:850px;grid-template-columns:minmax(190px,1.5fr) minmax(105px,.72fr) minmax(110px,.78fr) 68px minmax(190px,1.35fr) 20px;gap:10px}
+.sp-curriculum-head{padding:0 0 11px;font-size:9px;font-weight:800;letter-spacing:.8px;color:#718197}
+.sp-curriculum-row{padding:11px 0;align-items:center}
+.sp-curriculum-row .sp-subject-identity{min-width:0}
+.sp-curriculum-row .sp-subject-identity input{min-height:42px;font-size:12px}
+.sp-course-code-cell{font:650 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:#40556c;overflow-wrap:anywhere}
+.sp-course-type-cell{font-size:11px;font-weight:650;color:#52677c;overflow-wrap:anywhere}
+.sp-dark-theme .sp-course-code-cell,.sp-dark-theme .sp-course-type-cell{color:#d4e0ec}
+.sp-dark-theme .sp-curriculum-head{color:#a7b6c8}
+.sp-guest-subject-table{width:100%}
+@media(max-width:900px){.sp-curriculum-head,.sp-curriculum-row{grid-template-columns:minmax(180px,1.4fr) minmax(100px,.72fr) minmax(105px,.78fr) 62px minmax(180px,1.3fr) 20px;gap:8px}}
