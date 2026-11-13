@@ -846,3 +846,44 @@
 .sp-curriculum-row .sp-grade-options{min-width:250px;grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:900px){.sp-curriculum-head,.sp-curriculum-row{min-width:1040px;grid-template-columns:minmax(190px,1.3fr) minmax(110px,.72fr) minmax(110px,.72fr) 64px minmax(250px,1.5fr) 20px;gap:8px}}
 @media(max-width:640px){.sp-grade-options{gap:5px}.sp-grade-options button{min-height:44px;padding:6px 3px}.sp-grade-options button strong{font-size:13px}.sp-grade-options button small{font-size:8px}}
+
+
+/* SGPA curriculum table: fit the viewport without shrinking grade controls. */
+.sp-curriculum-table{overflow-x:visible!important;overflow-y:visible}
+.sp-curriculum-head,.sp-curriculum-row{
+  min-width:0!important;
+  grid-template-columns:minmax(120px,1.35fr) minmax(78px,.72fr) minmax(82px,.78fr) 54px minmax(240px,1.55fr) 16px!important;
+  gap:8px!important;
+}
+.sp-curriculum-row .sp-grade-options{min-width:240px!important;grid-template-columns:repeat(4,minmax(0,1fr))}
+.sp-curriculum-row .sp-grade-options button{min-width:0;min-height:49px}
+@media(max-width:1050px) and (min-width:761px){
+  .sp-content{padding-left:18px!important;padding-right:18px!important}
+  .sp-curriculum-head,.sp-curriculum-row{
+    grid-template-columns:minmax(105px,1.2fr) minmax(72px,.7fr) minmax(76px,.72fr) 48px minmax(240px,1.5fr) 14px!important;
+    gap:6px!important;
+  }
+}
+@media(max-width:760px){
+  .sp-curriculum-head{display:none!important}
+  .sp-curriculum-row{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    gap:9px 12px!important;
+    padding:15px 0!important;
+  }
+  .sp-curriculum-row .sp-subject-identity{grid-column:1/-1}
+  .sp-curriculum-row .sp-subject-identity input{width:100%;min-height:42px}
+  .sp-curriculum-row .sp-course-code-cell,
+  .sp-curriculum-row .sp-course-type-cell{min-width:0;overflow-wrap:anywhere}
+  .sp-curriculum-row>input[aria-label="Credits"]{width:100%;min-height:40px}
+  .sp-curriculum-row .sp-grade-options{
+    grid-column:1/-1!important;
+    width:100%;min-width:0!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+  .sp-curriculum-row .sp-grade-options button{min-height:49px!important;padding:7px 4px!important}
+  .sp-curriculum-row .sp-grade-options button strong{font-size:14px!important}
+  .sp-curriculum-row .sp-grade-options button small{font-size:9px!important}
+}
