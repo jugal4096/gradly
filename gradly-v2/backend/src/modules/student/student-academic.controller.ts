@@ -151,10 +151,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     if (existing.rows[0]) {
       const updated = await client.query(
         `UPDATE student_semesters
-         SET curriculum_id = $2, status = 'COMPLETED', result_publication_status = 'DECLARED',
+         SET curriculum_id = $2, status = 'COMPLETED', result_publication_status = 'NOT_PUBLISHED',
              result_source = 'MANUAL_ENTRY', verified = FALSE,
              credits_registered = $3, credits_earned = $4, sgpa = $5,
-             sgpa_calculated_at = NOW(), result_declared_at = NOW()
+             sgpa_calculated_at = NOW(), result_declared_at = NULL
          WHERE id = $1
          RETURNING id, semester_id, attempt_number`,
         [existing.rows[0].id, resolved.profile.curriculum_id, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
@@ -167,8 +167,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            (student_profile_id, curriculum_id, semester_id, attempt_number,
            status, result_publication_status, result_source, verified,
            credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
-         VALUES ($1, $2, $3, $4, 'COMPLETED', 'DECLARED', 'MANUAL_ENTRY', FALSE,
-                 $5, $6, $7, NOW(), NOW())
+         VALUES ($1, $2, $3, $4, 'COMPLETED', 'NOT_PUBLISHED', 'MANUAL_ENTRY', FALSE,
+                 $5, $6, $7, NOW(), NULL)
          RETURNING id, semester_id, attempt_number`,
         [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
          creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
@@ -189,7 +189,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
           (student_semester_id, curriculum_subject_id, course_code_snapshot,
            course_name_snapshot, credits, registration_status, grade_symbol,
            grade_point, result_status, result_source, attempt_number)
-         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7, 'DECLARED', 'MANUAL_ENTRY', $8)`,
+         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7,
+                 CASE WHEN $7 > 0 THEN 'PASS' ELSE 'FAIL' END, 'MANUAL_ENTRY', $8)`,
         [semesterRecord.id, curriculumSubject.rows[0]?.id ?? null, course.code || null,
          course.name, course.credits, course.grade || null, course.point, attemptNumber],
       );
