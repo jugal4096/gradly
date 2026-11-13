@@ -75,6 +75,7 @@ import {
     credits_registered: number | null;
     credits_earned: number | null;
     sgpa: number | null;
+    cumulative_cgpa: number | string | null;
     result_declared_at: string | null;
     courses: Course[];
   }
@@ -544,7 +545,19 @@ import {
   
                       <div>
                         <span>
-                          CREDITS
+                          CUMULATIVE CGPA
+                        </span>
+  
+                        <strong>
+                          {semester.cumulative_cgpa !== null
+                            ? Number(semester.cumulative_cgpa).toFixed(2)
+                            : "—"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>
+                          CREDITS EARNED
                         </span>
   
                         <strong>
