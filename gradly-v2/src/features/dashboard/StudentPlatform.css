@@ -1081,3 +1081,38 @@
   .sp-save-success-actions{flex-direction:column-reverse}
   .sp-save-success-actions button{width:100%}
 }
+
+/* OE / HS course picker. */
+.sp-add-elective-modal{
+  width:min(100%,560px);padding:30px;border:1px solid var(--sp-border,#dedede);
+  border-radius:16px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);
+  box-shadow:0 24px 80px rgba(0,0,0,.24);
+}
+.sp-add-elective-modal h2{margin:10px 0 8px;font-size:25px;letter-spacing:-.04em}
+.sp-add-elective-modal>p{margin:0 0 18px;color:var(--sp-muted,#737373);font-size:12px;line-height:1.65}
+.sp-add-elective-types{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.sp-add-elective-types button{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:54px;
+  padding:12px;border:1px solid var(--sp-border,#dedede);border-radius:9px;
+  background:transparent;color:inherit;text-align:left;font:inherit;font-size:12px;cursor:pointer;
+}
+.sp-add-elective-types button strong{font-size:11px}
+.sp-add-elective-types button.selected{border-color:var(--sp-strong,#171717);background:var(--sp-strong,#171717);color:var(--sp-surface,#fff)}
+.sp-add-elective-select{display:flex;flex-direction:column;gap:8px;margin:12px 0;color:var(--sp-muted,#737373);font-size:9px;font-weight:800;letter-spacing:.08em}
+.sp-add-elective-select select{
+  width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--sp-border,#dedede);
+  border-radius:8px;background:var(--sp-surface,#fff);color:var(--sp-text,#171717);font:inherit;font-size:12px;
+}
+.sp-add-elective-credit-note{margin:10px 0 0!important;font-size:11px!important}
+.sp-add-elective-modal .sp-save-success-actions{justify-content:flex-end;margin-top:22px}
+.sp-add-elective-modal .sp-save-success-actions button:disabled{opacity:.45;cursor:not-allowed}
+.sp-dark-theme .sp-add-elective-modal{background:#171717;color:#f5f5f5;border-color:#3a3a3a}
+.sp-dark-theme .sp-add-elective-types button{border-color:#555}
+.sp-dark-theme .sp-add-elective-types button.selected{background:#f5f5f5;color:#171717;border-color:#f5f5f5}
+.sp-dark-theme .sp-add-elective-select select{background:#202020;color:#f5f5f5;border-color:#555}
+@media(max-width:520px){
+  .sp-add-elective-modal{padding:22px 18px}
+  .sp-add-elective-types{grid-template-columns:1fr}
+  .sp-add-elective-modal .sp-save-success-actions{flex-direction:column-reverse}
+  .sp-add-elective-modal .sp-save-success-actions button{width:100%}
+}
