@@ -973,3 +973,81 @@
 .sp-dark-theme .sp-semester-journey-copy h3,.sp-dark-theme .sp-semester-journey-progress strong{color:#eff5fb}
 .sp-dark-theme .sp-semester-journey-copy p{color:#b2c0cf}
 .sp-dark-theme .sp-semester-journey-progress{border-color:#34465b}
+
+
+/* Search the loaded curriculum without removing hidden subjects from SGPA calculations. */
+.sp-subject-search{
+  display:flex;
+  flex:1 1 190px;
+  min-width:170px;
+  max-width:260px;
+  flex-direction:column;
+  gap:5px;
+  color:var(--sp-muted,#737373);
+}
+.sp-subject-search>span{
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.sp-subject-search input{
+  width:100%;
+  min-height:38px;
+  padding:8px 11px;
+  border:1px solid var(--sp-border,#dedede);
+  border-radius:8px;
+  outline:none;
+  background:var(--sp-surface,#fff);
+  color:var(--sp-text,#171717);
+  font:inherit;
+  font-size:11px;
+}
+.sp-subject-search input:focus{
+  border-color:var(--sp-strong,#555);
+  box-shadow:0 0 0 2px #77777718;
+}
+.sp-subject-search-empty{
+  margin:13px 0 0;
+  padding:13px;
+  border:1px dashed var(--sp-border,#dedede);
+  border-radius:8px;
+  color:var(--sp-muted,#737373);
+  font-size:11px;
+  line-height:1.6;
+}
+.sp-semester-history-row{
+  grid-template-columns:minmax(90px,1fr) minmax(75px,.8fr) minmax(90px,1fr) minmax(90px,1fr) auto auto;
+}
+.sp-semester-history-row .sp-download-result{
+  min-height:31px;
+  padding:6px 9px;
+  border:1px solid #9a9a9a;
+  border-radius:7px;
+  background:transparent;
+  color:inherit;
+  cursor:pointer;
+  font:inherit;
+  font-size:9px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.sp-semester-history-row .sp-download-result:hover{
+  background:#eeeeee;
+  border-color:#555;
+}
+.sp-dark-theme .sp-semester-history-row .sp-download-result:hover{
+  background:#292929;
+  border-color:#aaa;
+}
+@media(max-width:850px){
+  .sp-semester-history-row{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .sp-semester-history-row .sp-download-result{
+    justify-self:start;
+  }
+}
+@media(max-width:560px){
+  .sp-subject-search{max-width:none;flex-basis:100%}
+  .sp-semester-history-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+}
