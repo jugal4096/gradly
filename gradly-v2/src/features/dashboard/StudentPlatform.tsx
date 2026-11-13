@@ -240,7 +240,7 @@ export default function StudentPlatform() {
           if(subject.courseCode) savedBySubject.set("code:"+subject.courseCode,subject);
         });
         const curriculumSubjects=(Array.isArray(data.data)?data.data:[]) as CurriculumSubjectApi[];
-        setSubjects(curriculumSubjects.map((item,index)=>{
+        const loadedCurriculumSubjects: Subject[] = curriculumSubjects.map((item,index)=>{
           const subjectId=String(item.id||"");
           const courseCode=String(item.code||"");
           const previous=savedBySubject.get("id:"+subjectId)||savedBySubject.get("code:"+courseCode)||electiveSaved.find(subject=>subject.curriculumSubjectId===subjectId);
@@ -249,7 +249,11 @@ export default function StudentPlatform() {
           const option=kind==="OE"?OE_OPTIONS.find(x=>x.code===selectedCode):kind==="HS"?hsOptionsForSemester(selectedSemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):undefined;
           const pe4=kind==="PE4"?PE4_OPTIONS.find(x=>x.code===selectedCode):kind==="PE4LAB"?PE4_OPTIONS.find(x=>x.labCode===selectedCode):undefined;
           return {id:index+1,name:previous?.name||item.name||"",credits:previous?.credits??Number(item.credits||0),grade:previous?.grade||"",courseCode:selectedCode,courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4, ...((option||pe4)?{}:{})};
-        })).concat(saved.filter(subject=>!subject.curriculumSubjectId).map((subject,index)=>({...subject,id:curriculumSubjects.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}))));
+        });
+        const customSavedSubjects: Subject[] = saved
+          .filter(subject=>!subject.curriculumSubjectId)
+          .map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
+        setSubjects([...loadedCurriculumSubjects,...customSavedSubjects]);
         setSgpa(null);
       } catch(error) {
         if(!cancelled) { setSubjects([]); setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
