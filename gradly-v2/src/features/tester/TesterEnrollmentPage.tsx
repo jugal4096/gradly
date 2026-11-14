@@ -304,7 +304,7 @@ export default function TesterEnrollmentPage() {
           {preview.candidates.length > 1 && <p className="tester-entry-hint">More than one eligible curriculum is configured. Select the scheme used for this enrollment.</p>}
           <button className="tester-entry-primary" type="button" onClick={openWorkspace} disabled={!curriculumId}>Open student workspace →</button>
         </section>}
-        <p className="tester-entry-footnote">Tester data exists only in this open browser session. It is not saved to a student account or the database. Refreshing or exiting clears the preview.</p>
+        <p className="tester-entry-footnote">The virtual workspace is saved only in this browser’s local storage so you can refresh and continue. Gradly reads academic master data from the database, but tester activity is never written to it. Exit Tester clears the local virtual session.</p>
       </section>
     </main>
   );
