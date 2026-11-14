@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useTester, type TesterAcademicProfile } from "./TesterContext";
@@ -121,8 +121,14 @@ export default function TesterEnrollmentPage() {
   const navigate = useNavigate();
   const { isTester, enterTester, setTesterProfile, exitTester } = useTester();
   const { clearGuestMode } = useAuth();
+  const initialized = useRef(false);
 
-  useEffect(() => { clearGuestMode(); if (!isTester) enterTester(); }, []);
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    clearGuestMode();
+    if (!isTester) enterTester();
+  }, [clearGuestMode, enterTester, isTester]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institutionId, setInstitutionId] = useState("");
   const [enrollment, setEnrollment] = useState("");
