@@ -10,6 +10,7 @@ import {
 // =====================================================
 
 import EcosystemEntry from "./pages/entry/EcosystemEntry";
+import TesterHostPage from "./pages/tester/TesterHostPage";
 
 // =====================================================
 // ADMIN
@@ -67,6 +68,9 @@ function App() {
           path="/"
           element={<EcosystemEntry />}
         />
+
+        {/* Tester stays on the Ecosystem origin; the Student App tester runtime is embedded. */}
+        <Route path="/tester/*" element={<TesterHostPage />} />
 
         {/* =============================================
             ADMIN PORTAL
