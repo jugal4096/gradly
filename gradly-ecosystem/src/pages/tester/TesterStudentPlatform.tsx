@@ -80,7 +80,7 @@ type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_sn
 type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; id?: string | number | null };
 
-const API = API_BASE_URL.replace(/\\/+$/, "");
+const API = API_BASE_URL;
 // Tester state is tab-scoped and namespaced; normal student storage remains unchanged.
 const studentStorage = {
   getItem(key: string) { const prefix = sessionStorage.getItem("gradly_tester_storage_prefix"); return prefix ? sessionStorage.getItem(prefix + ":" + key) : localStorage.getItem(key); },
