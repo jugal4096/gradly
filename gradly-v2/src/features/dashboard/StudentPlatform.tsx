@@ -855,13 +855,8 @@ export default function StudentPlatform() {
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
   const remainingCredits=Math.max(0,Number(totalCredits||0)-Number(earnedCredits||0));
-  const desired=Number(targetSgpa);
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
-  const remainingSemesters=Math.max(1,totalProgrammeSemesters-results.length);
-  const completedWeightedPoints=results.reduce((sum,r)=>sum+r.sgpa*r.credits,0);
-  const completedCredits=results.reduce((sum,r)=>sum+r.credits,0);
-  const averageFutureCredits=results.length?completedCredits/results.length:20;
   const whatIfScenarios=buildSgpaScenarios(Number(whatIf),whatIfSubjects);
 
   if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
