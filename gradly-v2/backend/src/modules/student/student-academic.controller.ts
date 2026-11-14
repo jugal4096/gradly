@@ -186,6 +186,43 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const curriculumContext = await client.query(
+      `SELECT sc.name AS scheme_name, p.name AS programme_name,
+              b.code AS branch_code, b.name AS branch_name
+       FROM curricula c
+       LEFT JOIN schemes sc ON sc.id = c.scheme_id
+       LEFT JOIN programs p ON p.id = c.program_id
+       LEFT JOIN branches b ON b.id = c.branch_id
+       WHERE c.id = $1 LIMIT 1`,
+      [resolved.profile.curriculum_id],
+    );
+    const context = curriculumContext.rows[0] || {};
+    const isNepBtech = /\bnep\b/i.test(String(context.scheme_name || "")) &&
+      !/new\s*cbcs/i.test(String(context.scheme_name || "")) &&
+      /bachelor of technology|\bb\.?\s*tech\b|\bb\.?\s*e\.?\b/i.test(String(context.programme_name || ""));
+    if (isNepBtech && submittedOECodes.length) {
+      const majorDepartment = getMajorDepartmentCode(String(context.branch_code || ""), String(context.branch_name || ""));
+      for (const code of submittedOECodes) {
+        const option = nepOpenElectiveCatalog.find(item => item.code.toUpperCase() === code);
+        if (!option) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ code: "NEP_OE_NOT_APPROVED", message: "This Open Elective is not in the approved NEP Open Elective catalogue." });
+        }
+        if (option.semester !== semesterNumber) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ code: "NEP_OE_WRONG_SEMESTER", message: `${code} is approved only for Semester ${option.semester}.` });
+        }
+        if (majorDepartment && option.department === majorDepartment) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ code: "NEP_OE_SAME_DEPARTMENT", message: "Choose an Open Elective offered by a department other than your major department." });
+        }
+        const submittedCourse = normalized.find(course => course.code.toUpperCase() === code);
+        if (option.credits > 0 && submittedCourse && submittedCourse.credits !== option.credits) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ code: "NEP_OE_CREDIT_MISMATCH", message: `${code} carries ${option.credits} credits in the approved NEP catalogue.` });
+        }
+      }
+    }
     const semesterResult = await client.query(
       `SELECT DISTINCT sem.id
        FROM curriculum_subjects cs
