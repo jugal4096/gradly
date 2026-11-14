@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { ArrowLeft, FlaskConical, LockKeyhole } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
+import "./Tester.css";
 
 const API = API_BASE_URL.replace(/\\/+$/, "");
 
