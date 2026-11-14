@@ -9,10 +9,7 @@ import {
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  // Student and Tester are separate entry modes inside the Student App deployment.
-  // Tester must open its enrollment-number login screen, never the Ecosystem host.
   const mainAppUrl = "https://gradly-peach.vercel.app";
-  const testerUrl = "https://gradly-peach.vercel.app/tester";
 
   return (
     <main className="system-page">
@@ -130,7 +127,7 @@ function EcosystemEntry() {
 
           {/* TESTER */}
           <a
-            href={testerUrl}
+            href="/tester"
             className="interface-module tester-module"
           >
             <div className="module-icon">
