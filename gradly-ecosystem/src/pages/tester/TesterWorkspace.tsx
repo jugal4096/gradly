@@ -41,6 +41,8 @@ export default function TesterWorkspace(){
  const [verified,setVerified]=useState(false);
  const [resolving,setResolving]=useState(false);
  const [launching,setLaunching]=useState(false);
+ const [studentFrameUrl,setStudentFrameUrl]=useState("");
+ const [frameScenarioId,setFrameScenarioId]=useState("");
 
  useEffect(()=>{
   if(!token){navigate("/tester/login",{replace:true});return;}
@@ -53,6 +55,16 @@ export default function TesterWorkspace(){
  },[token,navigate]);
 
  useEffect(()=>{localStorage.setItem(STORE+":"+loginId,JSON.stringify(cases));},[cases,loginId]);
+
+ useEffect(()=>{
+  const studentOrigin=new URL(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").origin;
+  const onStudentMessage=(event:MessageEvent)=>{
+   if(event.origin!==studentOrigin||event.data?.type!=="GRADLY_TESTER_EXIT")return;
+   setStudentFrameUrl("");setFrameScenarioId("");
+  };
+  window.addEventListener("message",onStudentMessage);
+  return()=>window.removeEventListener("message",onStudentMessage);
+ },[]);
 
  useEffect(()=>{
   if(institutionQuery.trim().length<2){setInstitutions([]);return;}
@@ -129,18 +141,18 @@ export default function TesterWorkspace(){
   if(!active||!token)return;
   setLaunching(true);setError("");
   try{
-   const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").replace(/\/+$/,"");
+   const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").replace(/\\/+$/,"");
    const target=new URL(base+"/dashboard");
    const params=new URLSearchParams();
    params.set("testerToken",token);params.set("testerId",loginId);params.set("testerCaseId",active.id);
    params.set("testerProfile",JSON.stringify(active));params.set("testerReturnUrl",window.location.origin+"/tester/workspace");
    target.hash=params.toString();
-   const opened=window.open(target.toString(),"_blank");
-   if(!opened)throw new Error("Your browser blocked the new tab. Allow pop-ups for Gradly and try again.");
-   opened.opener=null;
-  }catch(e){setError(e instanceof Error?e.message:"Could not launch the student workspace.");}
+   setStudentFrameUrl(target.toString());setFrameScenarioId(active.id);
+  }catch(e){setError(e instanceof Error?e.message:"Could not load the virtual student workspace.");}
   finally{setLaunching(false);}
  }
+
+ function closeStudentWorkspace(){setStudentFrameUrl("");setFrameScenarioId("");}
 
  if(!verified&&!error)return <main className="tester-loading">Verifying isolated tester access…</main>;
  return <main className="tester-workspace">
@@ -185,10 +197,12 @@ export default function TesterWorkspace(){
    <section className="tester-preview">{active?<><div className="tester-preview-top"><div><span>STUDENT WORKSPACE / SELECTED SCENARIO</span><h2>{active.label}</h2></div><span className="tester-preview-badge">SIMULATED PROFILE</span></div>
     <div className="tester-student-hero"><div className="tester-student-avatar"><GraduationCap size={28}/></div><div><span>STUDENT PROFILE</span><h3>{active.enrollment}</h3><p>{active.programme} · {active.branch}</p></div><div className="tester-semester-pill">SEMESTER {active.semester}</div></div>
     <div className="tester-preview-stats"><article><span>INSTITUTION</span><strong>{active.institutionName}</strong><small>{active.admissionMode} · {active.admissionYear}</small></article><article><span>SCHEME / CURRICULUM</span><strong>{active.scheme}</strong><small>{active.curriculumId?"Matched to configured curriculum":"Curriculum mapping unavailable"}</small></article><article><span>PROGRAMME DURATION</span><strong>{active.totalSemesters} semesters</strong><small>Entry from semester {active.entrySemester}</small></article></div>
-    <div className="tester-preview-panel"><div><GraduationCap size={19}/><h3>Launch the actual student application</h3></div><p>Open the production student interface using this resolved identity. Review navigation, branch-specific subjects, SGPA and CGPA calculators, what-if cases, planners, progress trackers, profile, settings and responsive UI. All academic edits stay inside this scenario's browser namespace.</p>
+    <div className="tester-preview-panel tester-virtual-launch"><div><GraduationCap size={19}/><h3>Virtual student dashboard</h3></div><p>This student experience stays embedded inside Tester Mode. Navigate the real student interface without leaving this test page. All edits remain isolated to this tester scenario.</p>
      <div className="tester-preview-modules"><span>SGPA Analysis</span><span>CGPA Analysis</span><span>What-if & planners</span><span>Progress trackers</span><span>Academics</span><span>Settings</span></div>
-     <button type="button" className="tester-add-button tester-launch-button" onClick={launchStudentWorkspace} disabled={launching}><ExternalLink size={16}/>{launching?"Opening student workspace…":"Launch student workspace"}</button>
-    </div><div className="tester-preview-footer">Tester mode never claims a real student's account, writes student records, submits grievances or deletes accounts. Each scenario is isolated by tester and scenario ID.</div>
+     {!studentFrameUrl||frameScenarioId!==active.id?<button type="button" className="tester-add-button tester-launch-button" onClick={launchStudentWorkspace} disabled={launching}><GraduationCap size={16}/>{launching?"Preparing virtual dashboard…":"Open virtual student dashboard here"}</button>:<div className="tester-virtual-actions"><span><ShieldCheck size={14}/> Running as {active.enrollment}</span><button type="button" onClick={closeStudentWorkspace}>Close dashboard</button></div>}
+    </div>
+    {studentFrameUrl&&frameScenarioId===active.id&&<section className="tester-virtual-frame-wrap"><div className="tester-virtual-frame-bar"><span><span className="tester-live-dot"/> STUDENT APP · {active.enrollment} · SEM {active.semester}</span><button type="button" onClick={closeStudentWorkspace}>Exit virtual dashboard</button></div><iframe key={frameScenarioId} className="tester-virtual-frame" src={studentFrameUrl} title={"Gradly virtual student dashboard for "+active.enrollment} allow="clipboard-read; clipboard-write" referrerPolicy="strict-origin-when-cross-origin"/></section>}
+    <div className="tester-preview-footer">Tester mode never claims a real student's account, writes student records, submits grievances or deletes accounts. Each scenario is isolated by tester and scenario ID.</div>
    </>:<div className="tester-empty-preview"><div><Plus size={25}/></div><h2>Your student QA lab is ready</h2><p>Search for an institution, enter any enrollment number and resolve its academic identity. Save multiple scenarios to test every configured programme, discipline and semester.</p></div>}</section>
   </div>
  </main>;
