@@ -68,6 +68,7 @@ function getOECodeLabel(profile:Profile,code:string):string {
   return isNepSchemeName(profile.scheme)?getNepOpenElectiveDisplayCode(code):code;
 }
 function getOEOptionsForSlot(profile:Profile,semester:number,credits:number):ElectiveOption[] {
+  if(!isNepSchemeName(profile.scheme)) return OE_OPTIONS;
   return getOEOptionsForStudent(profile,semester).filter(option=>!option.credits||!credits||option.credits===credits);
 }
 function electiveKind(code:string, semester:number, name="", courseType="", isNep=false):"OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null {
@@ -700,7 +701,7 @@ export default function StudentPlatform() {
       }
       const options=item.electiveKind==="OE"?getOEOptionsForSlot(profile,selectedSemester,item.credits):item.electiveKind==="HS"?hsOptionsForSemester(selectedSemester):item.electiveKind==="PE6C"?PE6_THIRD_OPTIONS:PE5_OPTIONS;
       const option=options.find(candidate=>candidate.code===code);
-      return {...item,courseCode:option?.code||item.electiveSlotCode,name:option?.name||"",credits:option?.credits||item.credits,courseType:item.electiveKind==="OE"?"Open Elective (OE)":item.courseType};
+      return {...item,courseCode:option?.code||item.electiveSlotCode,name:option?.name||"",credits:option?.credits||item.credits,courseType:isNepSchemeName(profile.scheme)&&item.electiveKind==="OE"?"Open Elective (OE)":item.courseType};
     }));
     setSgpa(null);
   }
@@ -719,13 +720,13 @@ export default function StudentPlatform() {
     const option=options.find(item=>item.code===addCourseCode);
     if(!option) { setNotice("That subject is not available for this semester or programme."); return; }
     if(addCourseType==="UHV" && uhvAlreadyUsed) { setNotice("Universal Human Values can be added only once throughout your degree."); return; }
-    const emptySlot=addCourseType==="OE"?subjects.find(subject=>subject.electiveKind==="OE"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):addCourseType==="HS"?subjects.find(subject=>subject.electiveKind==="HS"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):undefined;
-    const removedSlot=addCourseType==="OE"?droppedElectives.find(subject=>subject.electiveKind==="OE"):addCourseType==="HS"?droppedElectives.find(subject=>subject.electiveKind==="HS"):undefined;
+    const emptySlot=isNepSchemeName(profile.scheme)?(addCourseType==="OE"?subjects.find(subject=>subject.electiveKind==="OE"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):addCourseType==="HS"?subjects.find(subject=>subject.electiveKind==="HS"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):undefined):undefined;
+    const removedSlot=isNepSchemeName(profile.scheme)?(addCourseType==="OE"?droppedElectives.find(subject=>subject.electiveKind==="OE"):addCourseType==="HS"?droppedElectives.find(subject=>subject.electiveKind==="HS"):undefined):undefined;
     const targetSlot=emptySlot||removedSlot;
     const optionCredits=option.credits||targetSlot?.credits||0;
     if(addCourseType!=="UHV"&&optionCredits<=0) { setNotice("The approved elective slot credit value is missing. Configure the semester credit value before selecting this course."); return; }
     if(targetSlot&&option.credits&&targetSlot.credits&&option.credits!==targetSlot.credits) { setNotice("This course does not match the credit requirement of the semester elective slot."); return; }
-    if(addCourseType==="OE"&&!targetSlot&&subjects.some(subject=>subject.electiveKind==="OE"&&subject.courseCode!==subject.electiveSlotCode&&subject.name.trim())) { setNotice("The Open Elective slot for this semester is already selected. Change that selection instead of adding a second OE."); return; }
+    if(isNepSchemeName(profile.scheme)&&addCourseType==="OE"&&!targetSlot&&subjects.some(subject=>subject.electiveKind==="OE"&&subject.courseCode!==subject.electiveSlotCode&&subject.name.trim())) { setNotice("The Open Elective slot for this semester is already selected. Change that selection instead of adding a second OE."); return; }
     if(addCourseType!=="UHV"&&creditsForSemesterLimit+optionCredits>28) { setNotice("Adding this course would exceed the 28-credit semester limit."); return; }
     if(subjects.some(subject=>subject.courseCode===option.code)) { setNotice("This course is already added to the semester."); return; }
     const courseType=addCourseType==="OE"?"Open Elective (OE)":addCourseType==="HS"?"Humanities & Social Sciences (HS)":"Universal Human Values (UHV)";
@@ -778,7 +779,7 @@ export default function StudentPlatform() {
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
     if(creditsForSemesterLimit>28){setNotice("A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance.");return;}
     if(previouslyRegistered+countedCredits>degreeCreditLimit){setNotice(`Your programme credit limit is ${degreeCreditLimit} credits (${isDirectSecondYear?"Direct Second Year":"Regular"} entry).`);return;}
-    if(subjects.some(subject=>subject.electiveKind&&(!subject.name.trim()||((subject.electiveKind==="OE"||subject.electiveKind==="HS")&&subject.courseCode===subject.electiveSlotCode)))){setNotice("Choose a course for every available elective slot before saving.");return;}
+    if(subjects.some(subject=>subject.electiveKind&&(!subject.name.trim()||(isNepSchemeName(profile.scheme)&&(subject.electiveKind==="OE"||subject.electiveKind==="HS")&&subject.courseCode===subject.electiveSlotCode)))){setNotice("Choose a course for every available elective slot before saving.");return;}
     if(!gradedCourses.length||gradedCourses.some(subject=>POINTS[subject.grade]===undefined)) { setNotice("Select a valid grade for every curriculum subject before saving."); return; }
     const row:SemesterResult={id:crypto.randomUUID(),semester:semesterNumber,sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
     if(!isGuest) {
