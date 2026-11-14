@@ -215,7 +215,8 @@ export default function StudentPlatform() {
   const [deletingAccount,setDeletingAccount] = useState(false);
   const [semesterPromotion,setSemesterPromotion] = useState(false);
   const [nextSemester,setNextSemester] = useState("");
-  const [testerStorageReady,setTesterStorageReady] = useState(false);\n  const [subjects,setSubjects] = useState<Subject[]>(() => {
+  const [testerStorageReady,setTesterStorageReady] = useState(false);
+  const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isTester) { try { const saved=JSON.parse(studentStorage.getItem("gradly_tester_subjects")||"null"); if(Array.isArray(saved)&&saved.length) return saved; } catch { /* use editable starter row */ } }
     if (isGuest) {
       try { const saved=JSON.parse(studentStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:({O:"A++",C:"C+",P:"C",F:"D"} as Record<string,string>)[subject.grade] || (POINTS[subject.grade]!==undefined?subject.grade:"A")})); } catch { /* use defaults */ }
