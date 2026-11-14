@@ -189,7 +189,7 @@ function escapeReportHtml(value: unknown): string {
 }
 
 export default function StudentPlatform() {
-  const { user, isGuest, signOut, loginWithGoogle } = useAuth();
+  const { user, isGuest, isTester, signOut, loginWithGoogle } = useAuth();
   const routeNavigate = useNavigate();
   const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(studentStorage.getItem("gradly_guest_session_token")));
   const [section,setSection] = useState<Section>("home");
@@ -273,7 +273,7 @@ export default function StudentPlatform() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isGuest) studentStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
+    if (isGuest) studentStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));\n    if (isTester) studentStorage.setItem("gradly_tester_subjects", JSON.stringify(subjects));
   }, [isGuest, subjects]);
 
   useEffect(() => {
