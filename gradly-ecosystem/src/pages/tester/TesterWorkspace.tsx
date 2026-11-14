@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
-const API = API_BASE_URL.replace(/\\/+$/, "");
+const API = API_BASE_URL.replace(/\/+$/, "");
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = {
   recognized: boolean;
