@@ -15,7 +15,7 @@ function GoogleMark() {
   );
 }
 
-export default function LoginPage({ userLoginOnly = false }: { userLoginOnly?: boolean }) {
+export default function LoginPage() {
   const { loginWithGoogle, continueAsGuest, clearGuestMode } = useAuth();
   const { enterTester } = useTester();
   const navigate = useNavigate();
@@ -69,39 +69,29 @@ export default function LoginPage({ userLoginOnly = false }: { userLoginOnly?: b
       </header>
 
       <section className="entry-center">
-        <div className="entry-eyebrow"><span className="eyebrow-line" /> {userLoginOnly ? "STUDENT ACCESS" : "THE STUDENT PLATFORM"} <span className="eyebrow-line" /></div>
+        <div className="entry-eyebrow"><span className="eyebrow-line" /> THE STUDENT PLATFORM <span className="eyebrow-line" /></div>
         <div className="entry-title-wrap">
-          <p className="entry-kicker">{userLoginOnly ? "WELCOME TO YOUR ACADEMIC SPACE" : "A LITTLE MORE CLARITY. A LOT MORE DIRECTION."}</p>
-          <h1>{userLoginOnly ? <>Your workspace<br /><em>awaits.</em></> : <>Your next chapter<br /><em>starts here.</em></>}</h1>
-          <p className="entry-description">{userLoginOnly ? "Sign in with your Google account to access your Gradly student workspace." : "Your academic world, in one place. Track your progress, make confident plans and keep moving forward."}</p>
+          <p className="entry-kicker">A LITTLE MORE CLARITY. A LOT MORE DIRECTION.</p>
+          <h1><>Your next chapter<br /><em>starts here.</em></></h1>
+          <p className="entry-description">Your academic world, in one place. Track your progress, make confident plans and keep moving forward.</p>
         </div>
 
         <div className="entry-choice">
-          <div className="entry-choice-heading"><span>{userLoginOnly ? "SECURE STUDENT SIGN IN" : "CHOOSE HOW TO CONTINUE"}</span><i /></div>
+          <div className="entry-choice-heading"><span>CHOOSE HOW TO CONTINUE</span><i /></div>
           <div className="entry-actions">
-            {userLoginOnly ? (
-              <button className="user-choice" type="button" onClick={handleUserLogin} disabled={loggingIn}>
-                <span className="choice-icon"><GoogleMark /></span>
-                <span className="choice-copy"><b>{loggingIn ? "Connecting…" : "Sign in with Google"}</b><small>Open your full Gradly student workspace</small></span>
-                <span className="choice-arrow">↗</span>
-              </button>
-            ) : (
-              <>
-                <button className="guest-choice" type="button" onClick={handleGuest}>
-                  <span className="guest-choice-icon"><span>✦</span></span>
-                  <span className="choice-copy"><b>Continue as Guest</b><small>Explore SGPA and CGPA calculators without signing in</small></span>
-                  <span className="choice-arrow">→</span>
-                </button>
-                <button className="guest-choice tester-choice" type="button" onClick={handleTester}>
-                  <span className="guest-choice-icon"><span>⌕</span></span>
-                  <span className="choice-copy"><b>Continue as Tester</b><small>Preview the complete student workspace using an enrollment number</small></span>
-                  <span className="choice-arrow">→</span>
-                </button>
-              </>
-            )}
+            <button className="user-choice" type="button" onClick={handleUserLogin} disabled={loggingIn}>
+              <span className="choice-icon"><GoogleMark /></span>
+              <span className="choice-copy"><b>{loggingIn ? "Connecting…" : "Continue as User"}</b><small>Sign in with Google for your full student workspace</small></span>
+              <span className="choice-arrow">↗</span>
+            </button>
+            <button className="guest-choice" type="button" onClick={handleGuest}>
+              <span className="guest-choice-icon"><span>✦</span></span>
+              <span className="choice-copy"><b>Continue as Guest</b><small>Explore SGPA and CGPA calculators without signing in</small></span>
+              <span className="choice-arrow">→</span>
+            </button>
           </div>
           {error && <p className="entry-error" role="alert">{error}</p>}
-          <p className="entry-assurance"><span>✧</span> {userLoginOnly ? "Your account is protected by Google authentication." : "No pressure. Start as a guest and sign in whenever you're ready."}</p>
+          <p className="entry-assurance"><span>✧</span> No pressure. Start as a guest and sign in whenever you’re ready.</p>
         </div>
 
         <div className="entry-bottom-note">
