@@ -3,6 +3,7 @@ import {
   Monitor,
   Settings,
   Shield,
+  FlaskConical,
 } from "lucide-react";
 
 import "./EcosystemEntry.css";
@@ -209,6 +210,17 @@ function EcosystemEntry() {
 
             </div>
 
+          </a>
+
+          {/* TESTER */}
+          <a href="/tester/login" className="interface-module tester-module">
+            <div className="module-icon"><FlaskConical size={32} strokeWidth={1.8}/></div>
+            <div className="module-content">
+              <span className="module-number">04 / TESTER</span>
+              <h3>Continue as Tester</h3>
+              <p>Enter the isolated Gradly V2 student experience using your assigned tester credentials.</p>
+            </div>
+            <div className="continue-button"><span>CONTINUE AS TESTER</span><ArrowRight size={18}/></div>
           </a>
 
         </div>
