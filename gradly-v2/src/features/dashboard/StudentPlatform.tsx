@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import GuestOnboarding from "./GuestOnboarding";
+import type { TesterAcademicProfile } from "../tester/TesterContext";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
@@ -174,23 +175,27 @@ function escapeReportHtml(value: unknown): string {
   });
 }
 
-export default function StudentPlatform() {
+type StudentPlatformProps = { testerMode?: boolean; testerProfile?: TesterAcademicProfile | null; onExitTester?: () => void };
+
+export default function StudentPlatform({ testerMode = false, testerProfile = null, onExitTester }: StudentPlatformProps) {
   const { user, isGuest, signOut, loginWithGoogle } = useAuth();
+  const isTester = testerMode;
   const routeNavigate = useNavigate();
-  const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(localStorage.getItem("gradly_guest_session_token")));
+  const [guestSessionReady,setGuestSessionReady] = useState(() => isTester || Boolean(localStorage.getItem("gradly_guest_session_token")));
   const [section,setSection] = useState<Section>("home");
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
-  const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
+  const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{if(isTester)return "light";const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
   const [systemDark] = useState(()=>window.matchMedia?.("(prefers-color-scheme: dark)").matches??false);
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
-  const [fontFamily,setFontFamily] = useState(()=>localStorage.getItem("gradly_font_family")||"DM Sans");
-  const [textSize,setTextSize] = useState(()=>Number(localStorage.getItem("gradly_text_size")||"14"));
+  const [fontFamily,setFontFamily] = useState(()=>isTester?"DM Sans":localStorage.getItem("gradly_font_family")||"DM Sans");
+  const [textSize,setTextSize] = useState(()=>isTester?14:Number(localStorage.getItem("gradly_text_size")||"14"));
   const [profile,setProfile] = useState<Profile>(() => {
+    if (isTester && testerProfile) return { ...emptyProfile, ...testerProfile };
     try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem("gradly_student_profile") || "{}") }; }
     catch { return emptyProfile; }
   });
-  const [onboarding,setOnboarding] = useState(() => !isGuest && !profile.institutionId);
+  const [onboarding,setOnboarding] = useState(() => !isGuest && !isTester && !profile.institutionId);
   const [guestSemester] = useState("1");
   
   const [guestCgpaRows,setGuestCgpaRows] = useState([{id:1,semester:"1",sgpa:"",credits:""}]);
@@ -223,10 +228,11 @@ export default function StudentPlatform() {
   const [droppedElectives,setDroppedElectives] = useState<Subject[]>([]);
   const [sgpa,setSgpa] = useState<number|null>(null);
   const [results,setResults] = useState<SemesterResult[]>(() => {
+    if (isTester) return [];
     try { return JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]"); } catch { return []; }
   });
   const [whatIf,setWhatIf] = useState("8.5");
-  const [cgpaWhatIfSgpas,setCgpaWhatIfSgpas] = useState<Record<number,string>>(() => { try { const saved=JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]") as SemesterResult[]; return Object.fromEntries(saved.map(row=>[row.semester,String(row.sgpa)])); } catch { return {}; } });
+  const [cgpaWhatIfSgpas,setCgpaWhatIfSgpas] = useState<Record<number,string>>(() => { if(isTester)return {}; try { const saved=JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]") as SemesterResult[]; return Object.fromEntries(saved.map(row=>[row.semester,String(row.sgpa)])); } catch { return {}; } });
   const [whatIfSemester,setWhatIfSemester] = useState<number>(()=>Math.max(isDseAdmission(profile.admissionMode,profile.enrollment)?3:1,Number(profile.semester)||1));
   const [whatIfSubjects,setWhatIfSubjects] = useState<Subject[]>([]);
   const [whatIfLoading,setWhatIfLoading] = useState(false);
@@ -259,7 +265,7 @@ export default function StudentPlatform() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isGuest) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
+    if (isGuest && !isTester) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
   }, [isGuest, subjects]);
 
   useEffect(() => {
@@ -278,7 +284,7 @@ export default function StudentPlatform() {
   }, [results]);
 
   useEffect(() => {
-    if (isGuest || !user) return;
+    if (isGuest || isTester || !user) return;
     let cancelled=false;
     void (async()=>{
       try {
@@ -313,10 +319,10 @@ export default function StudentPlatform() {
       } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
     })();
     return ()=>{cancelled=true;};
-  }, [isGuest, user]);
+  }, [isGuest, isTester, user]);
 
   useEffect(() => {
-    if (isGuest || !user || !profile.curriculumId || !selectedSemester) return;
+    if (isGuest || (!user && !isTester) || !profile.curriculumId || !selectedSemester) return;
     let cancelled=false;
     setLoadingCurriculum(true);
     setSubjects([]);
@@ -329,7 +335,7 @@ export default function StudentPlatform() {
         if(cancelled) return;
         const saved=savedSubjectsBySemester[selectedSemester]||[];
         let electiveSaved:Subject[]=[];
-        try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
+        if (!isTester) try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
         const savedBySubject=new Map<string,Subject>();
         saved.forEach(subject=>{
           if(subject.curriculumSubjectId) savedBySubject.set("id:"+subject.curriculumSubjectId,subject);
@@ -348,7 +354,7 @@ export default function StudentPlatform() {
         });
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
-        try { const cached=JSON.parse(localStorage.getItem(droppedKey)||"[]"); if(Array.isArray(cached)) dropped=cached; } catch { /* ignore invalid dropped-elective cache */ }
+        if (!isTester) try { const cached=JSON.parse(localStorage.getItem(droppedKey)||"[]"); if(Array.isArray(cached)) dropped=cached; } catch { /* ignore invalid dropped-elective cache */ }
         setDroppedElectives(dropped);
         const droppedSlotCodes=new Set(dropped.map(subject=>subject.electiveSlotCode||""));
         const availableCurriculumSubjects=loadedCurriculumSubjects.filter(subject=>!droppedSlotCodes.has(subject.electiveSlotCode||""));
@@ -364,10 +370,10 @@ export default function StudentPlatform() {
       }
     })();
     return ()=>{cancelled=true;};
-  }, [isGuest, user, profile.curriculumId, selectedSemester, savedSubjectsBySemester]);
+  }, [isGuest, isTester, user, profile.curriculumId, selectedSemester, savedSubjectsBySemester]);
 
   useEffect(() => {
-    if(isGuest || !user || !profile.curriculumId || section!=="sgpaWhatIf") return;
+    if(isGuest || (!user && !isTester) || !profile.curriculumId || section!=="sgpaWhatIf") return;
     let cancelled=false;
     setWhatIfLoading(true);
     setWhatIfNotice("");
@@ -391,7 +397,7 @@ export default function StudentPlatform() {
       } finally {if(!cancelled)setWhatIfLoading(false);}
     })();
     return ()=>{cancelled=true;};
-  },[isGuest,user,profile.curriculumId,whatIfSemester,savedSubjectsBySemester,section]);
+  },[isGuest,isTester,user,profile.curriculumId,whatIfSemester,savedSubjectsBySemester,section]);
 
   useEffect(() => {
     setPlannerSemester(currentSemester);
@@ -533,7 +539,7 @@ export default function StudentPlatform() {
         .some(value => String(value ?? "").toLowerCase().includes(normalizedSubjectSearch)))
     : subjects;
   const institutionLabel = profile.institutionName || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
-  const name = user?.displayName?.split(" ")[0] || "Guest";
+  const name = isTester ? "Tester" : user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
 
   function updatePlannerCardSubject(cardId:number,subjectId:number,patch:Partial<Subject>) {
@@ -720,7 +726,7 @@ export default function StudentPlatform() {
     if(!subject||!(subject.electiveKind==="OE"||subject.electiveKind==="HS")) return;
     const key="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
     const next=[...droppedElectives.filter(item=>item.electiveSlotCode!==subject.electiveSlotCode),subject];
-    localStorage.setItem(key,JSON.stringify(next));
+    if(!isTester) localStorage.setItem(key,JSON.stringify(next));
     setDroppedElectives(next);
     removeSubject(subjectId);
   }
@@ -728,7 +734,7 @@ export default function StudentPlatform() {
     const subject=droppedElectives.find(item=>item.id===subjectId);
     if(!subject) return;
     const next=droppedElectives.filter(item=>item.id!==subjectId);
-    localStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(next));
+    if(!isTester) localStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(next));
     setDroppedElectives(next);
     setSubjects(current=>[...current,subject].sort((a,b)=>a.id-b.id));
     setSgpa(null); setNotice("");
@@ -736,7 +742,7 @@ export default function StudentPlatform() {
   async function saveSemester() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
-    if(!isGuest && semesterNumber>=currentSemester) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
+    if(!isGuest && !isTester && semesterNumber>=currentSemester) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
@@ -745,7 +751,7 @@ export default function StudentPlatform() {
     if(subjects.some(subject=>subject.electiveKind&&!subject.name.trim())){setNotice("Choose a course for every available elective slot before saving.");return;}
     if(!gradedCourses.length||gradedCourses.some(subject=>POINTS[subject.grade]===undefined)) { setNotice("Select a valid grade for every curriculum subject before saving."); return; }
     const row:SemesterResult={id:crypto.randomUUID(),semester:semesterNumber,sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
-    if(!isGuest) {
+    if(!isGuest && !isTester) {
       if(!user || !profile.curriculumId) { setNotice("Save your academic profile and select a curriculum scheme before recording results."); return; }
       setSavingSemester(true);
       try {
@@ -761,8 +767,8 @@ export default function StudentPlatform() {
     }
     const next=[...results.filter(item=>item.semester!==row.semester),row].sort((a,b)=>a.semester-b.semester);
     setResults(next); setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:subjects}));
-    if(!isGuest) localStorage.setItem("gradly_elective_choices_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(subjects));
-    localStorage.setItem(isGuest?"gradly_guest_semester_results":"gradly_semester_results",JSON.stringify(next));
+    if(!isGuest && !isTester) localStorage.setItem("gradly_elective_choices_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(subjects));
+    if(!isTester) localStorage.setItem(isGuest?"gradly_guest_semester_results":"gradly_semester_results",JSON.stringify(next));
     setNotice("");
     setSavedConfirmationSemester(semesterNumber);
   }
@@ -771,7 +777,7 @@ export default function StudentPlatform() {
     if(next==="sgpa") setGradeReminderOpen(true);
     setSection(next); setMobileOpen(false); setProfileMenuOpen(false); setNotice("");
   }
-  function updateSetting(key:string,value:string) { localStorage.setItem(key,value); }
+  function updateSetting(key:string,value:string) { if(!isTester) localStorage.setItem(key,value); }
   async function deleteGuestIdentity() {
     if (!window.confirm("Permanently delete your Guest ID and guest workspace? This cannot be undone.")) return;
     const token=localStorage.getItem("gradly_guest_session_token");
@@ -791,7 +797,7 @@ export default function StudentPlatform() {
     setMessage("");setEditingId(null);
   }
   async function promoteSemester() {
-    if (!user || semesterPromotion) return;
+    if (isTester || !user || semesterPromotion) return;
     const target = Number(nextSemester);
     if (!Number.isInteger(target) || target !== Number(profile.semester) + 1) {
       setNotice("You can select only the next semester.");
@@ -821,7 +827,7 @@ export default function StudentPlatform() {
     }
   }
   async function deleteStudentAccount() {
-    if (isGuest || !user || deletingAccount) return;
+    if (isGuest || isTester || !user || deletingAccount) return;
     const confirmation = window.prompt(
       "Delete your Gradly student account? Your saved academic records are currently retained for administrator review. Type DELETE to confirm."
     );
@@ -860,7 +866,7 @@ export default function StudentPlatform() {
   const whatIfScenarios=buildSgpaScenarios(Number(whatIf),whatIfSubjects);
 
   if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
-  if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
+  if (onboarding && !isGuest && !isTester) return <Navigate to="/academic-setup" replace />;
 
   return <div className={"sp-shell "+(isGuest?"sp-guest-mode":"sp-user-mode")+(theme==="dark"?" sp-dark-theme":"")} style={{fontFamily:`"${fontFamily}", sans-serif`,fontSize:`${textSize}px`}}>
     <aside id="student-workspace-menu" className={"sp-sidebar "+(mobileOpen?"open":"")}>
