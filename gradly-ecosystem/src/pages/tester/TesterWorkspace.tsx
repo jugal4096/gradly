@@ -133,6 +133,12 @@ export default function TesterWorkspace() {
     setError("");
   }
 
+  function changeStudentIdentity() {
+    exitStudentWorkspace();
+    setPreview(null);
+    setError("");
+  }
+
   function exitStudentWorkspace() {
     const prefix = sessionStorage.getItem("gradly_tester_storage_prefix");
     if (prefix) {
@@ -151,7 +157,7 @@ export default function TesterWorkspace() {
     navigate("/tester/login", { replace: true });
   }
 
-  return workspaceOpen ? <TesterStudentPlatform onExit={exitStudentWorkspace} /> : <main className="tester-virtual-shell">
+  return workspaceOpen ? <TesterStudentPlatform onExit={exitStudentWorkspace} onChangeIdentity={changeStudentIdentity} /> : <main className="tester-virtual-shell">
     <header className="tester-virtual-header">
       <a className="tester-virtual-brand" href="/"><span className="tester-virtual-mark">G</span><span>Gradly <small>VIRTUAL STUDENT ENVIRONMENT</small></span></a>
       <div className="tester-virtual-account"><span>TESTER · {testerId}</span><button type="button" onClick={signOutTester}>Sign out</button></div>
