@@ -25,22 +25,42 @@ type TesterContextValue = {
   exitTester: () => void;
 };
 
+export const TESTER_SESSION_KEY = "gradly_tester_session";
+export const TESTER_PROFILE_KEY = "gradly_tester_profile";
+export const TESTER_WORKSPACE_KEY = "gradly_tester_workspace";
+
+function readStoredProfile(): TesterAcademicProfile | null {
+  try {
+    const raw = localStorage.getItem(TESTER_PROFILE_KEY);
+    return raw ? JSON.parse(raw) as TesterAcademicProfile : null;
+  } catch {
+    return null;
+  }
+}
+
 const TesterContext = createContext<TesterContextValue | null>(null);
 
 export function TesterProvider({ children }: { children: ReactNode }) {
-  const [isTester, setIsTester] = useState(false);
-  const [testerProfile, setTesterProfile] = useState<TesterAcademicProfile | null>(null);
+  const [isTester, setIsTester] = useState(() => localStorage.getItem(TESTER_SESSION_KEY) === "active");
+  const [testerProfile, setTesterProfileState] = useState<TesterAcademicProfile | null>(() => readStoredProfile());
 
   const value = useMemo<TesterContextValue>(() => ({
     isTester,
     testerProfile,
     enterTester: () => {
-      setTesterProfile(null);
+      localStorage.setItem(TESTER_SESSION_KEY, "active");
       setIsTester(true);
     },
-    setTesterProfile,
+    setTesterProfile: (profile) => {
+      if (profile) localStorage.setItem(TESTER_PROFILE_KEY, JSON.stringify(profile));
+      else localStorage.removeItem(TESTER_PROFILE_KEY);
+      setTesterProfileState(profile);
+    },
     exitTester: () => {
-      setTesterProfile(null);
+      Object.keys(localStorage)
+        .filter((key) => key === TESTER_SESSION_KEY || key === TESTER_PROFILE_KEY || key === TESTER_WORKSPACE_KEY || key.startsWith("gradly_tester_"))
+        .forEach((key) => localStorage.removeItem(key));
+      setTesterProfileState(null);
       setIsTester(false);
     },
   }), [isTester, testerProfile]);
