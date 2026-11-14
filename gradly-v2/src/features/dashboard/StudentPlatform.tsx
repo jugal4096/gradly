@@ -631,7 +631,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
         <h1>Semester ${record.semester} result</h1>
         <p class="subtitle">Saved on ${escapeReportHtml(reportDate)} · Student-entered manual record</p>
         <div class="identity">
-          <div class="field"><span>Student</span><strong>${escapeReportHtml(user?.displayName || "Student")}</strong></div>
+          <div class="field"><span>Student</span><strong>${escapeReportHtml(isTester ? "Tester preview" : user?.displayName || "Student")}</strong></div>
           <div class="field"><span>Enrollment number</span><strong>${escapeReportHtml(profile.enrollment || "Not provided")}</strong></div>
           <div class="field"><span>Institution</span><strong>${escapeReportHtml(profile.institutionName || "Not provided")}</strong></div>
           <div class="field"><span>Programme / Branch</span><strong>${escapeReportHtml([profile.programName, profile.branchName].filter(Boolean).join(" · ") || "Not provided")}</strong></div>
@@ -793,7 +793,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
   function submitMessage(event:FormEvent) {
     event.preventDefault(); if(!message.trim()) return;
     if(editingId!==null) setMessages(current=>current.map(item=>item.id===editingId?{...item,body:message.trim()}:item));
-    else setMessages(current=>[...current,{id:Date.now(),author:user?.displayName||"You",body:message.trim(),time:"Just now",mine:true}]);
+    else setMessages(current=>[...current,{id:Date.now(),author:isTester?"Tester":user?.displayName||"You",body:message.trim(),time:"Just now",mine:true}]);
     setMessage("");setEditingId(null);
   }
   async function promoteSemester() {
