@@ -71,7 +71,7 @@ export default function TesterAcademicSetupPage() {
       if (!response.ok) throw new Error(body.message || "Unable to identify this enrollment.");
       const data = body.data as Preview;
       setPreview(data);
-      if (!data.recognized) setError(data.message || "The enrollment could not be resolved against this institution's academic configuration.");
+      if (!data.recognized || data.requiresConfirmation) setError(data.message || "The enrollment could not be resolved against this institution's academic configuration.");
       else {
         const first = Number(data.entrySemester || 1);
         const last = Number(data.totalSemesters || 12);
@@ -128,7 +128,7 @@ export default function TesterAcademicSetupPage() {
         <button className="tester-setup-primary" type="submit" disabled={busy || !institution}>{busy ? "IDENTIFYING ACADEMIC PROFILE…" : "IDENTIFY ACADEMIC PROFILE"}</button>
         {error && <p className="tester-setup-error" role="alert">{error}</p>}
       </form>
-      {preview?.recognized && <section className="tester-setup-card tester-setup-confirm">
+      {preview?.recognized && !preview.requiresConfirmation && <section className="tester-setup-card tester-setup-confirm">
         <span className="tester-setup-kicker">PROFILE IDENTIFIED</span>
         <h2>Review your academic details</h2>
         <dl>
