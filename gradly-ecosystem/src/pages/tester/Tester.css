@@ -5,3 +5,32 @@
 @media(max-width:560px){.tester-admin-heading{align-items:flex-start;flex-direction:column}.tester-account-row{flex-wrap:wrap}.tester-account-meta{min-width:calc(100% - 60px)}.tester-credentials{align-items:flex-start;flex-wrap:wrap}.tester-auth-page{padding:16px}.tester-auth-panel{margin-top:55px;padding:25px}.tester-workspace-top{padding:0 15px}.tester-session>span{display:none}.tester-workspace-intro,.tester-workspace-grid{width:calc(100% - 24px)}.tester-workspace-intro{margin-top:25px}.tester-preview{padding:16px}.tester-preview-stats{grid-template-columns:1fr}.tester-student-hero{flex-wrap:wrap}.tester-semester-pill{margin-left:0}.tester-preview-top{align-items:flex-start;flex-direction:column}}
 
 .tester-launch-button{width:100%;min-height:44px;margin-top:16px;font-size:11px;letter-spacing:.35px}.tester-preview-panel .tester-launch-button:disabled{opacity:.6;cursor:wait}
+
+
+.tester-resolve-form{gap:7px}
+.tester-institution-search{height:40px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid #dfe3eb;border-radius:8px;color:#8a91a0}
+.tester-institution-search input{height:36px;border:0;padding:0;outline:none;box-shadow:none!important}
+.tester-institution-results{display:flex;flex-direction:column;max-height:190px;overflow:auto;border:1px solid #e6e9ef;border-radius:9px;background:#fff}
+.tester-institution-results button{display:flex;flex-direction:column;gap:4px;padding:10px;border:0;border-bottom:1px solid #edf0f4;background:#fff;text-align:left;cursor:pointer}
+.tester-institution-results button:hover{background:#f8f7fc}
+.tester-institution-results strong{color:#424a5b;font-size:11px}
+.tester-institution-results small,.tester-help{color:#9299a8;font-size:9px;line-height:1.5}
+.tester-selected-institution{display:flex;align-items:center;gap:7px;padding:9px;border:1px solid #cce8d7;border-radius:8px;background:#f1faf4;color:#26764f;font-size:10px}
+.tester-selected-institution span{flex:1;font-weight:700}
+.tester-selected-institution small{color:#6d9b82;font-size:9px}
+.tester-add-form .tester-enrollment-input{height:44px;font-size:15px;font-weight:750;letter-spacing:1px}
+.tester-add-button:disabled{opacity:.55;cursor:not-allowed}
+.tester-resolution-card{margin-top:14px;padding:14px;border:1px solid #dce8df;border-radius:11px;background:#f8fcf9}
+.tester-resolution-card.is-unresolved{border-color:#f0dfc5;background:#fffaf2}
+.tester-resolution-head{display:flex;align-items:center;gap:8px;color:#23774e;font-size:12px}
+.tester-resolution-card.is-unresolved .tester-resolution-head{color:#9b6928}
+.tester-resolution-card dl{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:14px 0}
+.tester-resolution-card dl div{min-width:0}
+.tester-resolution-card dt{margin-bottom:4px;color:#9299a7;font-size:8px;font-weight:850;letter-spacing:.7px;text-transform:uppercase}
+.tester-resolution-card dd{margin:0;color:#424a5b;font-size:10px;font-weight:750;overflow-wrap:anywhere}
+.tester-resolution-card>p{color:#856b4b;font-size:10px;line-height:1.6}
+.tester-semester-override{display:flex;flex-direction:column;gap:6px;margin-top:12px;color:#747c8c;font-size:9px;font-weight:850;letter-spacing:.8px}
+.tester-semester-override select{height:38px;padding:0 9px;border:1px solid #dfe3eb;border-radius:8px;background:#fff;color:#424a5b;font:inherit;font-size:11px}
+.tester-case-list-heading{display:flex;justify-content:space-between;margin-top:17px;color:#626b7b;font-size:11px}
+.tester-case-list-heading span{color:#9299a7}
+@media(max-width:560px){.tester-resolution-card dl{grid-template-columns:1fr}.tester-selected-institution{align-items:flex-start;flex-wrap:wrap}.tester-selected-institution small{width:100%;padding-left:21px}}
