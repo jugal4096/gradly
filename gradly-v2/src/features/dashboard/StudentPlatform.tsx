@@ -233,7 +233,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
   const isDirectSecondYear = isDseAdmission(profile.admissionMode,profile.enrollment);
   const firstAvailableSemester = isDirectSecondYear ? 3 : 1;
   const currentSemester = Math.max(firstAvailableSemester,Math.min(12,Number(profile.semester)||firstAvailableSemester));
-  const [selectedSemester,setSelectedSemester] = useState<number>(()=>Math.max(isDirectSecondYear?3:1,Number(profile.semester)|| (isDirectSecondYear?3:1)));
+  const [selectedSemester,setSelectedSemester] = useState<number>(()=>isTester&&Number.isInteger(savedTesterState.selectedSemester)?Math.max(isDirectSecondYear?3:1,Number(savedTesterState.selectedSemester)):Math.max(isDirectSecondYear?3:1,Number(profile.semester)|| (isDirectSecondYear?3:1)));
   const [loadingCurriculum,setLoadingCurriculum] = useState(false);
   const [savingSemester,setSavingSemester] = useState(false);
   const [savedConfirmationSemester,setSavedConfirmationSemester] = useState<number|null>(null);
