@@ -4,6 +4,8 @@ import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
+const STUDENT_APP = (import.meta.env.VITE_STUDENT_APP_URL || (window.location.hostname === "localhost" ? "http://localhost:5174" : "https://gradly-peach.vercel.app")).replace(/\/+$/, "");
+
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = {
   recognized: boolean;
@@ -14,11 +16,13 @@ type Preview = {
   branch?: string;
   branchId?: string;
   specialization?: string | null;
+  specializationId?: string | null;
   curriculumId?: string;
   curriculumName?: string;
   scheme?: string;
   admissionYear?: number;
   admissionMode?: string;
+  admissionModeId?: string | null;
   entrySemester?: number;
   totalSemesters?: number;
   expected?: { expectedSemester: number | null; academicYear?: string; semesterType?: string };
@@ -37,6 +41,8 @@ export default function TesterWorkspace() {
   const [busy, setBusy] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
+  const [workspaceUrl, setWorkspaceUrl] = useState("");
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   useEffect(() => {
     const savedToken = sessionStorage.getItem("gradly_tester_access_token") || "";
@@ -50,6 +56,19 @@ export default function TesterWorkspace() {
       .catch(reason => { if (!active) return; sessionStorage.removeItem("gradly_tester_access_token"); setError(reason instanceof Error ? reason.message : "Unable to verify tester access."); });
     return () => { active = false; };
   }, [navigate]);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      let expectedOrigin = "";
+      try { expectedOrigin = new URL(STUDENT_APP).origin; } catch { return; }
+      if (event.origin !== expectedOrigin || event.data?.type !== "GRADLY_TESTER_EXIT") return;
+      setWorkspaceOpen(false);
+      setWorkspaceUrl("");
+      setError("You have exited the virtual student workspace. Your tester session is still active.");
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     const search = query.trim();
@@ -102,6 +121,36 @@ export default function TesterWorkspace() {
     } finally { setBusy(false); }
   }
 
+  function openStudentWorkspace() {
+    if (!preview?.recognized || preview.requiresConfirmation || !institution || !token) return;
+    const profile = {
+      institutionId: institution.id,
+      institutionName: institution.name,
+      programId: preview.programId || "",
+      programName: preview.programme || "",
+      branchId: preview.branchId || "",
+      branchName: preview.branch || "",
+      curriculumId: preview.curriculumId || "",
+      semester: String(semester),
+      enrollment: enrollment.trim().toUpperCase(),
+      admissionYear: String(preview.admissionYear || new Date().getFullYear()),
+      admissionMode: preview.admissionMode || "Regular",
+      admissionNumber: "",
+      scheme: preview.scheme || preview.curriculumName || "",
+      specialization: preview.specialization || "",
+      specializationId: preview.specializationId || "",
+    };
+    const launch = new URLSearchParams({
+      testerToken: token,
+      testerId,
+      testerReturnUrl: window.location.origin + "/tester/workspace",
+      testerProfile: JSON.stringify(profile),
+    });
+    setWorkspaceUrl(STUDENT_APP + "/tester-workspace#" + launch.toString());
+    setWorkspaceOpen(true);
+    setError("");
+  }
+
   function signOutTester() {
     sessionStorage.removeItem("gradly_tester_access_token");
     sessionStorage.removeItem("gradly_tester_login_id");
@@ -111,9 +160,12 @@ export default function TesterWorkspace() {
   return <main className="tester-virtual-shell">
     <header className="tester-virtual-header">
       <a className="tester-virtual-brand" href="/"><span className="tester-virtual-mark">G</span><span>Gradly <small>VIRTUAL STUDENT ENVIRONMENT</small></span></a>
-      <div className="tester-virtual-account"><span>TESTER · {testerId}</span><button type="button" onClick={signOutTester}>Sign out</button></div>
+      <div className="tester-virtual-account"><span>TESTER · {testerId}</span>{workspaceOpen && <button type="button" onClick={() => setWorkspaceOpen(false)}>Back to profile</button>}<button type="button" onClick={signOutTester}>Sign out</button></div>
     </header>
-    <section className="tester-virtual-main">
+    {workspaceOpen && workspaceUrl ? <section className="tester-virtual-embedded">
+      <div className="tester-virtual-embedded-bar"><span>VIRTUAL STUDENT WORKSPACE · {enrollment.trim().toUpperCase()} · SEMESTER {semester}</span><span>ISOLATED TEST SESSION · NO STUDENT ACCOUNT</span></div>
+      <iframe title="Gradly V2 virtual student workspace" src={workspaceUrl} allow="clipboard-read; clipboard-write" />
+    </section> : <section className="tester-virtual-main">
       <div className="tester-virtual-heading"><span className="tester-virtual-eyebrow">ISOLATED TEST WORKSPACE</span><h1>Enter a student enrollment number.</h1><p>Choose the institution and enter an enrollment number to preview the academic profile. This virtual environment does not require a student login and does not create or modify a student account.</p></div>
       <form className="tester-virtual-form" onSubmit={identify}>
         <label htmlFor="virtual-institution">INSTITUTION / UNIVERSITY</label>
@@ -138,9 +190,10 @@ export default function TesterWorkspace() {
         </div>
         <label className="tester-virtual-semester-label" htmlFor="virtual-semester">VIEW AS SEMESTER</label>
         <select id="virtual-semester" value={semester} onChange={event => setSemester(Number(event.target.value))}>{semesterOptions.map(value => <option key={value} value={value}>Semester {value}</option>)}</select>
-        <p className="tester-virtual-note">The enrollment has been identified in the isolated tester session. No real student profile, login, or academic record has been created or changed.</p>
+        <p className="tester-virtual-note">The enrollment has been identified. Open the complete Gradly V2 student interface with this temporary academic profile. All tester data remains isolated from student records.</p>
+        <button className="tester-virtual-submit" type="button" onClick={openStudentWorkspace}>OPEN FULL STUDENT WORKSPACE →</button>
       </section>}
-      <footer className="tester-virtual-footer">Temporary tester session · Read-only academic preview · No student authentication</footer>
-    </section>
+      <footer className="tester-virtual-footer">Temporary tester session · Full student-side feature set · No student authentication</footer>
+    </section>}
   </main>;
 }
