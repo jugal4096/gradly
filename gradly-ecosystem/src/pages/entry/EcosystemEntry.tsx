@@ -9,9 +9,12 @@ import {
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  const mainAppUrl =
-    import.meta.env.VITE_MAIN_APP_URL ||
-    "https://jugalsgpa.netlify.app";
+  // The Student App is deployed separately from the Ecosystem portal.
+  // Keep this URL explicit so Tester never inherits the Ecosystem host or an obsolete Netlify URL.
+  const mainAppUrl = (
+    import.meta.env.VITE_MAIN_APP_URL || "https://gradly-peach.vercel.app"
+  ).replace(/\/+$/, "");
+  const testerUrl = `${mainAppUrl}/tester`;
 
   return (
     <main className="system-page">
@@ -129,7 +132,7 @@ function EcosystemEntry() {
 
           {/* TESTER */}
           <a
-            href={mainAppUrl.replace(/\/+$/, "") + "/tester"}
+            href={testerUrl}
             className="interface-module tester-module"
           >
             <div className="module-icon">
