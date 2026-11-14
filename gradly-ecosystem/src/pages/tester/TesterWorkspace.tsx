@@ -137,24 +137,34 @@ export default function TesterWorkspace(){
  function fresh(){if(!window.confirm("Clear every local test case for this tester on this browser?"))return;setCases([]);setActiveId("");}
  function logout(){localStorage.removeItem("gradly_tester_token");localStorage.removeItem("gradly_tester_login_id");navigate("/tester/login",{replace:true});}
 
- function launchStudentWorkspace(){
-  if(!active||!token)return;
+ function launchStudentWorkspace(scenario:TestCase|null=active){
+  if(!scenario||!token)return;
   setLaunching(true);setError("");
   try{
    const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").replace(/\/+$/, "");
    const target=new URL(base+"/dashboard");
    const params=new URLSearchParams();
-   params.set("testerToken",token);params.set("testerId",loginId);params.set("testerCaseId",active.id);
-   params.set("testerProfile",JSON.stringify(active));params.set("testerReturnUrl",window.location.origin+"/tester/workspace");
+   params.set("testerToken",token);params.set("testerId",loginId);params.set("testerCaseId",scenario.id);
+   params.set("testerProfile",JSON.stringify(scenario));params.set("testerReturnUrl",window.location.origin+"/tester/workspace");
    target.hash=params.toString();
-   setStudentFrameUrl(target.toString());setFrameScenarioId(active.id);
+   setStudentFrameUrl(target.toString());setFrameScenarioId(scenario.id);
   }catch(e){setError(e instanceof Error?e.message:"Could not load the virtual student workspace.");}
   finally{setLaunching(false);}
  }
 
  function closeStudentWorkspace(){setStudentFrameUrl("");setFrameScenarioId("");}
+ const [openedScenarioId,setOpenedScenarioId]=useState("");
+ useEffect(()=>{
+  if(!verified||!active||studentFrameUrl||openedScenarioId===active.id)return;
+  setOpenedScenarioId(active.id);
+  launchStudentWorkspace(active);
+ },[verified,active?.id,studentFrameUrl,openedScenarioId]);
 
  if(!verified&&!error)return <main className="tester-loading">Verifying isolated tester access…</main>;
+ if(studentFrameUrl&&frameScenarioId===active?.id)return <main className="tester-student-shell">
+  <div className="tester-student-shell-bar"><span><ShieldCheck size={15}/> GRADLY STUDENT WORKSPACE <small>ISOLATED TEST SESSION · {active?.enrollment}</small></span><button type="button" onClick={closeStudentWorkspace}>Exit student workspace</button></div>
+  <iframe key={frameScenarioId} className="tester-student-full-frame" src={studentFrameUrl} title={"Gradly student workspace for "+(active?.enrollment||"tester")} allow="clipboard-read; clipboard-write" referrerPolicy="strict-origin-when-cross-origin"/>
+ </main>;
  return <main className="tester-workspace">
   <header className="tester-workspace-top"><a href="/"><span className="tester-brand-mark">G</span><span>GRADLY <small>TEST ENVIRONMENT</small></span></a><div className="tester-session"><span>SIGNED IN AS <strong>{loginId}</strong></span><button onClick={logout}><LogOut size={15}/> Sign out</button></div></header>
   <section className="tester-workspace-intro"><div><span className="tester-workspace-eyebrow"><FlaskConical size={15}/> STUDENT EXPERIENCE QA</span><h1>Test Gradly as any student.</h1><p>Enter an enrollment number and let Gradly's actual academic intelligence resolve the programme, discipline, scheme, admission mode, curriculum and predicted semester. Then inspect the real student experience inside this Tester page, without navigating away.</p></div><div className="tester-local-chip"><ShieldCheck size={15}/> ISOLATED TEST DATA</div></section>
@@ -199,11 +209,20 @@ export default function TesterWorkspace(){
     <div className="tester-preview-stats"><article><span>INSTITUTION</span><strong>{active.institutionName}</strong><small>{active.admissionMode} · {active.admissionYear}</small></article><article><span>SCHEME / CURRICULUM</span><strong>{active.scheme}</strong><small>{active.curriculumId?"Matched to configured curriculum":"Curriculum mapping unavailable"}</small></article><article><span>PROGRAMME DURATION</span><strong>{active.totalSemesters} semesters</strong><small>Entry from semester {active.entrySemester}</small></article></div>
     <div className="tester-preview-panel tester-virtual-launch"><div><GraduationCap size={19}/><h3>Virtual student dashboard</h3></div><p>This student experience stays embedded inside Tester Mode. Navigate the real student interface without leaving this test page. All edits remain isolated to this tester scenario.</p>
      <div className="tester-preview-modules"><span>SGPA Analysis</span><span>CGPA Analysis</span><span>What-if & planners</span><span>Progress trackers</span><span>Academics</span><span>Settings</span></div>
-     {!studentFrameUrl||frameScenarioId!==active.id?<button type="button" className="tester-add-button tester-launch-button" onClick={launchStudentWorkspace} disabled={launching}><GraduationCap size={16}/>{launching?"Preparing virtual dashboard…":"Open virtual student dashboard here"}</button>:<div className="tester-virtual-actions"><span><ShieldCheck size={14}/> Running as {active.enrollment}</span><button type="button" onClick={closeStudentWorkspace}>Close dashboard</button></div>}
+     <div className="tester-virtual-actions"><span><ShieldCheck size={14}/> Opening the full Gradly student workspace…</span><small>Scenario: {active.enrollment}</small></div>
     </div>
-    {studentFrameUrl&&frameScenarioId===active.id&&<section className="tester-virtual-frame-wrap"><div className="tester-virtual-frame-bar"><span><span className="tester-live-dot"/> STUDENT APP · {active.enrollment} · SEM {active.semester}</span><button type="button" onClick={closeStudentWorkspace}>Exit virtual dashboard</button></div><iframe key={frameScenarioId} className="tester-virtual-frame" src={studentFrameUrl} title={"Gradly virtual student dashboard for "+active.enrollment} allow="clipboard-read; clipboard-write" referrerPolicy="strict-origin-when-cross-origin"/></section>}
+
     <div className="tester-preview-footer">Tester mode never claims a real student's account, writes student records, submits grievances or deletes accounts. Each scenario is isolated by tester and scenario ID.</div>
    </>:<div className="tester-empty-preview"><div><Plus size={25}/></div><h2>Your student QA lab is ready</h2><p>Search for an institution, enter any enrollment number and resolve its academic identity. Save multiple scenarios to test every configured programme, discipline and semester.</p></div>}</section>
   </div>
  </main>;
 }
+
+
+/* The tester sees the real Gradly student app as the primary workspace, not an inspection panel. */
+.tester-student-shell{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;background:#fff}
+.tester-student-shell-bar{height:38px;min-height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #e7eaf0;background:#fff;color:#555e70;font-size:10px;font-weight:800;letter-spacing:.5px}
+.tester-student-shell-bar span{display:flex;align-items:center;gap:8px}
+.tester-student-shell-bar small{font-size:9px;color:#9299a7;font-weight:600}
+.tester-student-shell-bar button{border:1px solid #dfe3eb;border-radius:6px;background:#fff;padding:5px 9px;color:#555e70;font-size:10px;font-weight:700;cursor:pointer}
+.tester-student-full-frame{display:block;flex:1;width:100%;height:calc(100vh - 38px);min-height:0;border:0;background:#fff}
