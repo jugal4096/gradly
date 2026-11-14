@@ -9,12 +9,10 @@ import {
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  // The Student App is deployed separately from the Ecosystem portal.
-  // Keep this URL explicit so Tester never inherits the Ecosystem host or an obsolete Netlify URL.
-  const mainAppUrl = (
-    import.meta.env.VITE_MAIN_APP_URL || "https://gradly-peach.vercel.app"
-  ).replace(/\/+$/, "");
-  const testerUrl = `${mainAppUrl}/tester`;
+  // Student and Tester are separate entry modes inside the Student App deployment.
+  // Tester must open its enrollment-number login screen, never the Ecosystem host.
+  const mainAppUrl = "https://gradly-peach.vercel.app";
+  const testerUrl = "https://gradly-peach.vercel.app/tester";
 
   return (
     <main className="system-page">
