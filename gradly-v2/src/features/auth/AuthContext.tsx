@@ -51,6 +51,8 @@ function prepareTesterLaunch() {
       programName: profile.programName || profile.programme || "B.Tech",
       branchId: profile.branchId || "",
       branchName: profile.branchName || profile.branch || "Information Technology",
+      specialization: profile.specialization || "",
+      specializationId: profile.specializationId || "",
       curriculumId: profile.curriculumId || "",
       semester: String(profile.semester || 1),
       enrollment: profile.enrollment || "TEST-ENROLLMENT",
@@ -175,6 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem("gradly_tester_return_url");
       setIsTester(false);
       setUser(null);
+      if (window.parent !== window) {
+        try {
+          const parentOrigin = new URL(returnUrl, window.location.origin).origin;
+          window.parent.postMessage({ type: "GRADLY_TESTER_EXIT" }, parentOrigin);
+          return;
+        } catch { /* fall back to the validated return URL */ }
+      }
       window.location.assign(returnUrl);
       return;
     }

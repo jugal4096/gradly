@@ -4,6 +4,7 @@ import { pool } from "../../config/database";
 import { createTesterToken } from "../../config/jwt";
 import { TesterAuthenticatedRequest } from "./tester-auth.middleware";
 import { SuperAdminAuthenticatedRequest } from "../../middleware/super-admin-auth.middleware";
+import { previewEnrollment } from "../academic/enrollment-intelligence.service";
 
 const safeLoginId = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9._-]{3,80}$/.test(value.trim());
 
@@ -31,6 +32,35 @@ export async function getTesterMe(req: TesterAuthenticatedRequest, res: Response
     return res.json({ tester: { loginId: account.login_id } });
   } catch {
     return res.status(500).json({ message: "Unable to verify tester account." });
+  }
+}
+
+/** Resolves only public academic master data; never reads or claims a real student's account. */
+export async function previewTesterEnrollment(req: TesterAuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const tester = await pool.query("SELECT status FROM tester_accounts WHERE id=$1 LIMIT 1", [req.tester?.testerId]);
+    if (tester.rows[0]?.status !== "ACTIVE") {
+      res.status(401).json({ success: false, message: "This tester account is disabled." });
+      return;
+    }
+    const institutionId = typeof req.body?.institutionId === "string" ? req.body.institutionId : "";
+    const enrollmentNumber = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
+    if (!institutionId || !enrollmentNumber) {
+      res.status(400).json({ success: false, message: "Choose an institution and enter an enrollment number." });
+      return;
+    }
+    const result = await previewEnrollment(institutionId, enrollmentNumber);
+    res.status(200).json({ success: true, data: result, isolated: true });
+  } catch (error) {
+    if (error instanceof Error) {
+      const invalidCodes = new Set(["EMPTY_ENROLLMENT_NUMBER","INVALID_PROGRAMME_PREFIX","INVALID_ENROLLMENT_LENGTH","INVALID_ADMISSION_YEAR","INVALID_ADMISSION_MODE","INVALID_BRANCH_CODE","INVALID_EIGHTH_CHARACTER","INVALID_STUDENT_SERIAL","DSE_ADMISSION_CYCLE_NOT_STARTED","FUTURE_ADMISSION_YEAR","BE_CBCS_DISCONTINUED","BE23_FIRST_YEAR_NOT_ALLOWED","BT_NEP_NOT_STARTED","POSTGRADUATE_REGULAR_ADMISSION_ONLY","ME_CBCS_DISCONTINUED","MT_NEP_NOT_STARTED"]);
+      if (invalidCodes.has(error.message)) {
+        res.status(400).json({ success: false, message: "Invalid enrollment number.", code: error.message });
+        return;
+      }
+    }
+    console.error("Tester enrollment preview failed:", error);
+    res.status(500).json({ success: false, message: "Unable to resolve this test profile right now." });
   }
 }
 
