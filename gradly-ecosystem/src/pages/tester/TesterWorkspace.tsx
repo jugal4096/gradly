@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Check, ChevronRight, CirclePlus, FlaskConical, GraduationCap, LogOut, Plus, RotateCcw, Trash2, ExternalLink, Search, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, CirclePlus, FlaskConical, GraduationCap, LogOut, Plus, RotateCcw, Trash2, Search, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
@@ -157,7 +157,7 @@ export default function TesterWorkspace(){
  if(!verified&&!error)return <main className="tester-loading">Verifying isolated tester access…</main>;
  return <main className="tester-workspace">
   <header className="tester-workspace-top"><a href="/"><span className="tester-brand-mark">G</span><span>GRADLY <small>TEST ENVIRONMENT</small></span></a><div className="tester-session"><span>SIGNED IN AS <strong>{loginId}</strong></span><button onClick={logout}><LogOut size={15}/> Sign out</button></div></header>
-  <section className="tester-workspace-intro"><div><span className="tester-workspace-eyebrow"><FlaskConical size={15}/> STUDENT EXPERIENCE QA</span><h1>Test Gradly as any student.</h1><p>Enter an enrollment number and let Gradly's actual academic intelligence resolve the programme, discipline, scheme, admission mode, curriculum and predicted semester. Then launch the real student application in an isolated test session.</p></div><div className="tester-local-chip"><ShieldCheck size={15}/> ISOLATED TEST DATA</div></section>
+  <section className="tester-workspace-intro"><div><span className="tester-workspace-eyebrow"><FlaskConical size={15}/> STUDENT EXPERIENCE QA</span><h1>Test Gradly as any student.</h1><p>Enter an enrollment number and let Gradly's actual academic intelligence resolve the programme, discipline, scheme, admission mode, curriculum and predicted semester. Then inspect the real student experience inside this Tester page, without navigating away.</p></div><div className="tester-local-chip"><ShieldCheck size={15}/> ISOLATED TEST DATA</div></section>
   {error&&<div className="tester-login-error" role="alert">{error}</div>}
   <div className="tester-workspace-grid">
    <aside className="tester-scenarios">
