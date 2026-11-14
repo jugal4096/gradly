@@ -141,7 +141,7 @@ export default function TesterWorkspace(){
   if(!active||!token)return;
   setLaunching(true);setError("");
   try{
-   const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").replace(/\\/+$/,"");
+   const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").replace(/\/+$/, "");
    const target=new URL(base+"/dashboard");
    const params=new URLSearchParams();
    params.set("testerToken",token);params.set("testerId",loginId);params.set("testerCaseId",active.id);
