@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./TesterAcademicSetupPage.css";
@@ -51,8 +51,6 @@ export default function TesterAcademicSetupPage() {
     }, 250);
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [query]);
-
-  const programs = useMemo(() => institution?.branches || [], [institution]);
 
   async function resolve(event: FormEvent) {
     event.preventDefault();
