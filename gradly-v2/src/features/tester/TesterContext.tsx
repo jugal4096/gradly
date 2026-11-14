@@ -14,6 +14,7 @@ export type TesterAcademicProfile = {
   admissionMode: string;
   admissionNumber: string;
   scheme: string;
+  isDurationEnded?: boolean;
 };
 
 type TesterContextValue = {
