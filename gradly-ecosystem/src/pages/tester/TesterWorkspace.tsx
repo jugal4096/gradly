@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
-const API = API_BASE_URL.replace(/\\/+$/, "");
-const STUDENT_APP = (import.meta.env.VITE_STUDENT_APP_URL || (window.location.hostname === "localhost" ? "http://localhost:5173" : "https://gradly-peach.vercel.app")).replace(/\\/+$/, "");
+const API = API_BASE_URL.replace(/\/+$/, "");
+const STUDENT_APP = (import.meta.env.VITE_STUDENT_APP_URL || (window.location.hostname === "localhost" ? "http://localhost:5173" : "https://gradly-peach.vercel.app")).replace(/\/+$/, "");
 
 export default function TesterWorkspace() {
   const navigate = useNavigate();
