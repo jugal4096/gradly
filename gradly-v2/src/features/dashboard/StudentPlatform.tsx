@@ -8,7 +8,7 @@ import { findNepOpenElective, getNepOpenElectiveDisplayCode, getNepOpenElectives
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
 type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean };
-type ElectiveOption = { code: string; name: string; credits: number };
+type ElectiveOption = { code: string; name: string; credits: number; officialCode?: string; department?: string; semester?: number };
 const OE_OPTIONS: ElectiveOption[] = [
   {code:"CE3008",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
   {code:"ME2022",name:"Total Quality Management",credits:3},{code:"ME4015",name:"Industrial Management",credits:3},{code:"ME4031",name:"Renewable Energy Engineering",credits:3},{code:"ME3027",name:"Quality Management System",credits:3},{code:"MEOE0050",name:"Additive Manufacturing",credits:3},
@@ -55,7 +55,22 @@ function hsOptionsForSemester(semester:number):ElectiveOption[] {
   const oddCodes=["CEHS0020","CEHS0040","MEHS0020","EEHS0001","ITHS0020","ETHS0020","CSHS0011"];
   return HS_OPTIONS.filter(option=>(semester%2===0?evenCodes:oddCodes).includes(option.code));
 }
-function electiveKind(code:string, semester:number, name=""):"OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null {
+function getOEOptionsForStudent(profile:Profile,semester:number):ElectiveOption[] {
+  return isNepSchemeName(profile.scheme)?getNepOpenElectives(profile.branchName,semester):OE_OPTIONS;
+}
+function getAllOEOptionsForStudent(profile:Profile):ElectiveOption[] {
+  return isNepSchemeName(profile.scheme)?NEP_OPEN_ELECTIVES:OE_OPTIONS;
+}
+function isOECodeForStudent(profile:Profile,code:string):boolean {
+  return getAllOEOptionsForStudent(profile).some(option=>option.code.toUpperCase()===String(code||"").toUpperCase());
+}
+function getOECodeLabel(profile:Profile,code:string):string {
+  return isNepSchemeName(profile.scheme)?getNepOpenElectiveDisplayCode(code):code;
+}
+function getOEOptionsForSlot(profile:Profile,semester:number,credits:number):ElectiveOption[] {
+  return getOEOptionsForStudent(profile,semester).filter(option=>!option.credits||!credits||option.credits===credits);
+}
+function electiveKind(code:string, semester:number, name="", courseType="", isNep=false):"OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null {
   const slotName=name.toLowerCase().replace(/[–—]/g,"-").replace(/\s+/g," ").trim();
   if(semester===6 && /professional elective/.test(slotName)) {
     if(/iii|3rd|third/.test(slotName)) return "PE6C";
@@ -69,6 +84,7 @@ function electiveKind(code:string, semester:number, name=""):"OE"|"HS"|"PE4"|"PE
     if(/iv\b|4th|fourth/.test(slotName)) return "PE4";
     if(/v\b|5th|fifth/.test(slotName)) return "PE5";
   }
+  if (isNep && (/^[A-Z]{2}OEC/i.test(code) || /open\s*elective/i.test(name+" "+courseType) || /(^|[^A-Z])OE([^A-Z]|$)/i.test(courseType))) return "OE";
   if (/^ITOE/.test(code)) return "OE";
   if (/^ITHS/.test(code) && semester>=5) return "HS";
   if (semester===7 && /^ITPE400[135]$/.test(code)) return "PE4";
