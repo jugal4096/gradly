@@ -46,15 +46,32 @@ function readTesterLaunch() {
   try {
     const candidate = new URL(params.get("testerReturnUrl") || "");
     const referrerOrigin = document.referrer ? new URL(document.referrer).origin : "";
-    if ((candidate.protocol === "https:" || candidate.protocol === "http:") && candidate.pathname === "/tester/login" && candidate.origin === referrerOrigin) {
+    if (
+      (candidate.protocol === "https:" || candidate.protocol === "http:") &&
+      ["/tester/login", "/tester/workspace"].includes(candidate.pathname) &&
+      candidate.origin === referrerOrigin
+    ) {
       returnUrl = candidate.toString();
     }
   } catch { /* Keep the safe in-app fallback. */ }
+
   sessionStorage.setItem(TESTER_TOKEN_KEY, token);
   sessionStorage.setItem(TESTER_PREFIX_KEY, prefix);
   sessionStorage.setItem("gradly_tester_login_id", testerId);
   sessionStorage.setItem("gradly_tester_return_url", returnUrl);
-  // Remove the bearer token from the address bar immediately after capture.
+
+  const rawProfile = params.get("testerProfile");
+  if (rawProfile) {
+    try {
+      const profile = JSON.parse(rawProfile) as Record<string, unknown>;
+      if (profile && typeof profile === "object" && typeof profile.institutionId === "string" && typeof profile.enrollment === "string") {
+        sessionStorage.setItem(prefix + ":gradly_student_profile", JSON.stringify(profile));
+        sessionStorage.setItem(prefix + ":gradly_tester_profile_ready", "true");
+      }
+    } catch { /* Invalid profile handoffs are ignored; no student data is written. */ }
+  }
+
+  // Remove the bearer token and profile payload from the address bar immediately.
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 }
 
@@ -156,7 +173,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTesterSession();
       setIsTester(false);
       setUser(null);
-      window.location.assign(returnUrl);
+      if (window.parent !== window) {
+        let targetOrigin = "*";
+        try { targetOrigin = new URL(returnUrl, window.location.origin).origin; } catch { /* use wildcard fallback */ }
+        window.parent.postMessage({ type: "GRADLY_TESTER_EXIT" }, targetOrigin);
+      } else {
+        window.location.assign(returnUrl);
+      }
       return;
     }
     sessionStorage.removeItem(GUEST_SESSION_KEY);
