@@ -1,35 +1,131 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Check, ChevronRight, CirclePlus, FlaskConical, GraduationCap, LogOut, Plus, RotateCcw, Trash2, ExternalLink } from "lucide-react";
+import { Check, ChevronRight, CirclePlus, FlaskConical, GraduationCap, LogOut, Plus, RotateCcw, Trash2, ExternalLink, Search, LoaderCircle, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
+type Branch={id:string;name:string;code?:string|null;program_id:string;program_name:string;program_level?:string|null};
+type Institution={id:string;name:string;branches:Branch[]};
+type Preview={
+ recognized:boolean;requiresConfirmation:boolean;unknown?:string;message?:string;
+ programme?:string;programId?:string;branch?:string;branchId?:string;specialization?:string|null;specializationId?:string|null;
+ curriculumId?:string;curriculumName?:string;scheme?:string;admissionYear?:number;admissionMode?:string;admissionModeId?:string|null;entrySemester?:number;
+ totalSemesters?:number;expected?:{expectedSemester:number|null;academicYear:string;semesterType:"ODD"|"EVEN";expectedDurationEnded:boolean;expectedGraduationSession:string;academicYearLabel:string|null};
+ parsed?:{prefix:string;admissionYear:number;admissionModeCode:string;branchCode:string};
+};
 type TestCase={
- id:string;label:string;enrollment:string;programme:string;branch:string;semester:number;
- institutionName:string;curriculumId:string;scheme:string;admissionMode:string;admissionYear:number;createdAt:string
+ id:string;label:string;enrollment:string;programme:string;programId:string;branch:string;branchId:string;semester:number;
+ institutionId:string;institutionName:string;curriculumId:string;scheme:string;admissionMode:string;admissionYear:number;
+ entrySemester:number;totalSemesters:number;specialization?:string|null;createdAt:string
 };
 const STORE="gradly_tester_cases_v1";
 const DEFAULT_INSTITUTION="Government College of Engineering, Chhatrapati Sambhajinagar";
 function readCases(key:string):TestCase[]{try{return JSON.parse(localStorage.getItem(STORE+":"+key)||"[]");}catch{return[];}}
+const API=API_BASE_URL.replace(/\/+$/,"");
+
 export default function TesterWorkspace(){
- const navigate=useNavigate();const token=localStorage.getItem("gradly_tester_token")||"";const loginId=localStorage.getItem("gradly_tester_login_id")||"Tester";
- const [cases,setCases]=useState<TestCase[]>(()=>readCases(loginId));const [activeId,setActiveId]=useState("");const [label,setLabel]=useState("");
- const [enrollment,setEnrollment]=useState("");const [programme,setProgramme]=useState("B.Tech");const [branch,setBranch]=useState("Information Technology");
- const [semester,setSemester]=useState(1);const [institutionName,setInstitutionName]=useState(DEFAULT_INSTITUTION);const [curriculumId,setCurriculumId]=useState("");
- const [scheme,setScheme]=useState("New CBCS");const [admissionMode,setAdmissionMode]=useState("Regular");const [admissionYear,setAdmissionYear]=useState(new Date().getFullYear());
- const [error,setError]=useState("");const [verified,setVerified]=useState(false);const [launching,setLaunching]=useState(false);
- useEffect(()=>{if(!token){navigate("/tester/login",{replace:true});return;}let live=true;fetch(API_BASE_URL+"/api/tester/me",{headers:{Authorization:"Bearer "+token}}).then(async r=>{if(!r.ok)throw new Error("Tester account is no longer active. Please contact your Super Admin.");return r.json();}).then(()=>{if(live)setVerified(true);}).catch(e=>{if(live){setError(e instanceof Error?e.message:"Unable to verify tester access.");localStorage.removeItem("gradly_tester_token");}});return()=>{live=false;};},[token,navigate]);
+ const navigate=useNavigate();
+ const token=localStorage.getItem("gradly_tester_token")||"";
+ const loginId=localStorage.getItem("gradly_tester_login_id")||"Tester";
+ const [cases,setCases]=useState<TestCase[]>(()=>readCases(loginId));
+ const [activeId,setActiveId]=useState("");
+ const [label,setLabel]=useState("");
+ const [enrollment,setEnrollment]=useState("");
+ const [institutionQuery,setInstitutionQuery]=useState(DEFAULT_INSTITUTION);
+ const [institutions,setInstitutions]=useState<Institution[]>([]);
+ const [institution,setInstitution]=useState<Institution|null>(null);
+ const [institutionBusy,setInstitutionBusy]=useState(false);
+ const [preview,setPreview]=useState<Preview|null>(null);
+ const [semester,setSemester]=useState(1);
+ const [error,setError]=useState("");
+ const [verified,setVerified]=useState(false);
+ const [resolving,setResolving]=useState(false);
+ const [launching,setLaunching]=useState(false);
+
+ useEffect(()=>{
+  if(!token){navigate("/tester/login",{replace:true});return;}
+  let live=true;
+  fetch(API+"/api/tester/me",{headers:{Authorization:"Bearer "+token}})
+   .then(async r=>{if(!r.ok)throw new Error("Tester account is no longer active. Please contact your Super Admin.");return r.json();})
+   .then(()=>{if(live)setVerified(true);})
+   .catch(e=>{if(live){setError(e instanceof Error?e.message:"Unable to verify tester access.");localStorage.removeItem("gradly_tester_token");}});
+  return()=>{live=false;};
+ },[token,navigate]);
+
  useEffect(()=>{localStorage.setItem(STORE+":"+loginId,JSON.stringify(cases));},[cases,loginId]);
+
+ useEffect(()=>{
+  if(institutionQuery.trim().length<2){setInstitutions([]);return;}
+  let live=true;
+  const timer=window.setTimeout(async()=>{
+   setInstitutionBusy(true);
+   try{
+    const response=await fetch(API+"/api/academic/institutions/search?q="+encodeURIComponent(institutionQuery.trim()));
+    const body=await response.json();
+    if(!response.ok)throw new Error(body.message||"Institution search failed.");
+    if(live){
+     const rows=Array.isArray(body.data)?body.data as Institution[]:[];
+     setInstitutions(rows);
+     if(!institution&&institutionQuery===DEFAULT_INSTITUTION){
+      const preferred=rows.find(row=>row.name.toLowerCase().includes("government college of engineering"));
+      if(preferred)setInstitution(preferred);
+     }
+    }
+   }catch(e){if(live)setError(e instanceof Error?e.message:"Unable to search institutions.");}
+   finally{if(live)setInstitutionBusy(false);}
+  },250);
+  return()=>{live=false;window.clearTimeout(timer);};
+ },[institutionQuery]);
+
  const active=useMemo(()=>cases.find(c=>c.id===activeId)||cases[0]||null,[cases,activeId]);
- function add(e:FormEvent){e.preventDefault();if(!enrollment.trim())return;const item:TestCase={id:crypto.randomUUID(),label:label.trim()||"Test case "+(cases.length+1),enrollment:enrollment.trim().toUpperCase(),programme,branch,semester,institutionName,curriculumId:curriculumId.trim(),scheme,admissionMode,admissionYear,createdAt:new Date().toISOString()};setCases(old=>[item,...old]);setActiveId(item.id);setLabel("");setEnrollment("");}
+
+ async function resolveEnrollment(e:FormEvent){
+  e.preventDefault();setError("");setPreview(null);
+  if(!institution){setError("Select an institution before resolving this enrollment.");return;}
+  if(!enrollment.trim()){setError("Enter an enrollment number to resolve the student profile.");return;}
+  setResolving(true);
+  try{
+   const response=await fetch(API+"/api/tester/enrollment/preview",{
+    method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},
+    body:JSON.stringify({institutionId:institution.id,enrollmentNumber:enrollment.trim().toUpperCase()})
+   });
+   const body=await response.json();
+   if(!response.ok)throw new Error(body.message||"Unable to resolve this enrollment.");
+   const data=body.data as Preview;
+   setPreview(data);
+   if(data.recognized){
+    const predicted=data.expected?.expectedSemester??data.entrySemester??1;
+    setSemester(Math.max(data.entrySemester||1,Math.min(data.totalSemesters||12,predicted)));
+   }else{
+    setError(data.message||"This enrollment could not be resolved against the selected institution's academic configuration.");
+   }
+  }catch(e){setError(e instanceof Error?e.message:"Unable to resolve this enrollment.");}
+  finally{setResolving(false);}
+ }
+
+ function addResolvedCase(){
+  if(!preview?.recognized||!institution)return;
+  const item:TestCase={
+   id:crypto.randomUUID(),label:label.trim()||institution.name+" · "+preview.branch+" · Sem "+semester,
+   enrollment:enrollment.trim().toUpperCase(),programme:preview.programme||"Unknown programme",programId:preview.programId||"",
+   branch:preview.branch||"Unknown branch",branchId:preview.branchId||"",semester,
+   institutionId:institution.id,institutionName:institution.name,curriculumId:preview.curriculumId||"",
+   scheme:preview.scheme||preview.curriculumName||"Unresolved scheme",admissionMode:preview.admissionMode||"Unknown",
+   admissionYear:preview.admissionYear||new Date().getFullYear(),entrySemester:preview.entrySemester||1,
+   totalSemesters:preview.totalSemesters||8,specialization:preview.specialization,createdAt:new Date().toISOString()
+  };
+  setCases(old=>[item,...old]);setActiveId(item.id);setLabel("");setEnrollment("");setPreview(null);
+ }
+
  function remove(id:string){setCases(old=>old.filter(c=>c.id!==id));if(activeId===id)setActiveId("");}
  function fresh(){if(!window.confirm("Clear every local test case for this tester on this browser?"))return;setCases([]);setActiveId("");}
  function logout(){localStorage.removeItem("gradly_tester_token");localStorage.removeItem("gradly_tester_login_id");navigate("/tester/login",{replace:true});}
+
  function launchStudentWorkspace(){
   if(!active||!token)return;
   setLaunching(true);setError("");
   try{
-   const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-v2.vercel.app").replace(/\/+$/,"");
+   const base=(import.meta.env.VITE_STUDENT_APP_URL||"https://gradly-peach.vercel.app").replace(/\/+$/,"");
    const target=new URL(base+"/dashboard");
    const params=new URLSearchParams();
    params.set("testerToken",token);params.set("testerId",loginId);params.set("testerCaseId",active.id);
@@ -41,29 +137,53 @@ export default function TesterWorkspace(){
   }catch(e){setError(e instanceof Error?e.message:"Could not launch the student workspace.");}
   finally{setLaunching(false);}
  }
+
  if(!verified&&!error)return <main className="tester-loading">Verifying isolated tester access…</main>;
  return <main className="tester-workspace">
   <header className="tester-workspace-top"><a href="/"><span className="tester-brand-mark">G</span><span>GRADLY <small>TEST ENVIRONMENT</small></span></a><div className="tester-session"><span>SIGNED IN AS <strong>{loginId}</strong></span><button onClick={logout}><LogOut size={15}/> Sign out</button></div></header>
-  <section className="tester-workspace-intro"><div><span className="tester-workspace-eyebrow"><FlaskConical size={15}/> ISOLATED STUDENT PREVIEW</span><h1>Test the real student experience.</h1><p>Create independent student scenarios, then launch the actual Gradly student application with the selected simulated profile. Academic changes remain in a separate local workspace for each test case.</p></div><div className="tester-local-chip"><Check size={15}/> LOCAL-ONLY TEST DATA</div></section>
+  <section className="tester-workspace-intro"><div><span className="tester-workspace-eyebrow"><FlaskConical size={15}/> STUDENT EXPERIENCE QA</span><h1>Test Gradly as any student.</h1><p>Enter an enrollment number and let Gradly's actual academic intelligence resolve the programme, discipline, scheme, admission mode, curriculum and predicted semester. Then launch the real student application in an isolated test session.</p></div><div className="tester-local-chip"><ShieldCheck size={15}/> ISOLATED TEST DATA</div></section>
   {error&&<div className="tester-login-error" role="alert">{error}</div>}
   <div className="tester-workspace-grid">
-   <aside className="tester-scenarios"><div className="tester-section-heading"><div><h2>Test cases</h2><span>{cases.length} saved locally</span></div><button type="button" title="Clear local test cases" onClick={fresh}><RotateCcw size={15}/></button></div>
-    <form className="tester-add-form" onSubmit={add}>
-     <label>TEST CASE NAME</label><input value={label} onChange={e=>setLabel(e.target.value)} placeholder="e.g. DSE student — 5th sem"/>
-     <label>ENROLLMENT NUMBER</label><input value={enrollment} onChange={e=>setEnrollment(e.target.value)} placeholder="Enter any test enrollment" required/>
-     <label>INSTITUTION</label><input value={institutionName} onChange={e=>setInstitutionName(e.target.value)} required/>
-     <label>PROGRAMME</label><select value={programme} onChange={e=>setProgramme(e.target.value)}><option>B.Tech</option><option>B.E.</option><option>MCA</option><option>M.Tech</option><option>Other</option></select>
-     <label>BRANCH / DEPARTMENT</label><input value={branch} onChange={e=>setBranch(e.target.value)}/>
-     <label>SCHEME</label><select value={scheme} onChange={e=>setScheme(e.target.value)}><option>New CBCS</option><option>Old CBCS</option><option>NEP</option><option>Other</option></select>
-     <label>ADMISSION MODE</label><select value={admissionMode} onChange={e=>setAdmissionMode(e.target.value)}><option>Regular</option><option>Direct Second Year</option></select>
-     <label>ADMISSION YEAR</label><input type="number" min="2000" max="2100" value={admissionYear} onChange={e=>setAdmissionYear(Number(e.target.value))}/>
-     <label>SEMESTER</label><select value={semester} onChange={e=>setSemester(Number(e.target.value))}>{Array.from({length:8},(_,i)=><option key={i+1} value={i+1}>{i+1}{["st","nd","rd"][i]||"th"} Semester</option>)}</select>
-     <label>CURRICULUM ID <small>(OPTIONAL)</small></label><input value={curriculumId} onChange={e=>setCurriculumId(e.target.value)} placeholder="Paste curriculum ID to load subjects"/>
-     <button className="tester-add-button"><CirclePlus size={16}/> Add test case</button>
+   <aside className="tester-scenarios">
+    <div className="tester-section-heading"><div><h2>Build a student scenario</h2><span>Enrollment-driven profile resolution</span></div><button type="button" title="Clear local test cases" onClick={fresh}><RotateCcw size={15}/></button></div>
+    <form className="tester-add-form tester-resolve-form" onSubmit={resolveEnrollment}>
+     <label>INSTITUTION / UNIVERSITY</label>
+     <div className="tester-institution-search"><Search size={15}/><input value={institutionQuery} onChange={e=>{setInstitutionQuery(e.target.value);setInstitution(null);setPreview(null);}} placeholder="Search institution name"/></div>
+     {institutionBusy&&<small className="tester-help">Searching institution directory…</small>}
+     {institutions.length>0&&institutionQuery!==institution?.name&&<div className="tester-institution-results">{institutions.slice(0,8).map(item=><button type="button" key={item.id} onClick={()=>{setInstitution(item);setInstitutionQuery(item.name);setPreview(null);}}><strong>{item.name}</strong><small>{item.branches.length} configured programme / discipline combinations</small></button>)}</div>}
+     {institution&&<div className="tester-selected-institution"><Check size={14}/><span>{institution.name}</span><small>{institution.branches.length} academic mappings</small></div>}
+     <label>STUDENT ENROLLMENT NUMBER</label>
+     <input className="tester-enrollment-input" value={enrollment} onChange={e=>{setEnrollment(e.target.value.toUpperCase());setPreview(null);}} placeholder="e.g. BE23S06F007" autoComplete="off" spellCheck={false} required/>
+     <small className="tester-help">Use a real-format or randomly generated enrollment number. No real student account is opened or modified.</small>
+     <label>TEST CASE LABEL <small>(OPTIONAL)</small></label>
+     <input value={label} onChange={e=>setLabel(e.target.value)} placeholder="e.g. DSE IT · 5th semester"/>
+     <button className="tester-add-button" type="submit" disabled={resolving||!institution}><Search size={16}/>{resolving?"Resolving academic profile…":"Resolve enrollment number"}</button>
     </form>
-    <div className="tester-case-list">{cases.map(c=><button key={c.id} className={"tester-case-item "+((active?.id===c.id)?"selected":"")} onClick={()=>setActiveId(c.id)}><span className="tester-case-icon"><GraduationCap size={17}/></span><span className="tester-case-copy"><strong>{c.label}</strong><small>{c.enrollment}</small><small>{c.programme} · Sem {c.semester}</small></span><ChevronRight size={16}/><span className="tester-case-remove" role="button" aria-label="Delete test case" onClick={e=>{e.stopPropagation();remove(c.id);}}><Trash2 size={14}/></span></button>)}</div>
+    {preview&&<section className={"tester-resolution-card "+(preview.recognized?"is-resolved":"is-unresolved")}>
+     <div className="tester-resolution-head">{preview.recognized?<Check size={17}/>:<AlertTriangle size={17}/>}<strong>{preview.recognized?"Academic profile resolved":"Profile needs configuration"}</strong></div>
+     {preview.recognized?<><dl>
+      <div><dt>Programme</dt><dd>{preview.programme}</dd></div><div><dt>Discipline / branch</dt><dd>{preview.branch}{preview.specialization?" · "+preview.specialization:""}</dd></div>
+      <div><dt>Scheme / curriculum</dt><dd>{preview.scheme||preview.curriculumName||"—"}</dd></div><div><dt>Admission</dt><dd>{preview.admissionMode} · {preview.admissionYear}</dd></div>
+      <div><dt>Predicted semester</dt><dd>{preview.expected?.expectedSemester??preview.entrySemester??"—"} / {preview.totalSemesters||"—"}</dd></div>
+      <div><dt>Academic session</dt><dd>{preview.expected?.academicYearLabel||preview.expected?.academicYear||"—"}</dd></div>
+     </dl>
+     <label className="tester-semester-override">TEST AS SEMESTER
+      <select value={semester} onChange={e=>setSemester(Number(e.target.value))}>{Array.from({length:Math.max(1,preview.totalSemesters||8)},(_,i)=>i+1).filter(n=>n>=(preview.entrySemester||1)).map(n=><option key={n} value={n}>Semester {n}{n===(preview.expected?.expectedSemester??preview.entrySemester)?" · predicted":""}</option>)}</select>
+     </label>
+     <button type="button" className="tester-add-button" onClick={addResolvedCase}><CirclePlus size={16}/> Save student scenario</button>
+     </>:<p>{preview.message||"The enrollment could not be resolved. Check the selected institution's programme, discipline and enrollment mappings."}</p>}
+    </section>}
+    <div className="tester-case-list-heading"><strong>Saved scenarios</strong><span>{cases.length}</span></div>
+    <div className="tester-case-list">{cases.map(c=><button key={c.id} className={"tester-case-item "+((active?.id===c.id)?"selected":"")} onClick={()=>setActiveId(c.id)}><span className="tester-case-icon"><GraduationCap size={17}/></span><span className="tester-case-copy"><strong>{c.label}</strong><small>{c.enrollment}</small><small>{c.programme} · {c.branch} · Sem {c.semester}</small></span><ChevronRight size={16}/><span className="tester-case-remove" role="button" aria-label="Delete test case" onClick={e=>{e.stopPropagation();remove(c.id);}}><Trash2 size={14}/></span></button>)}</div>
    </aside>
-   <section className="tester-preview">{active?<><div className="tester-preview-top"><div><span>STUDENT WORKSPACE / SELECTED SCENARIO</span><h2>{active.label}</h2></div><span className="tester-preview-badge">SIMULATED PROFILE</span></div><div className="tester-student-hero"><div className="tester-student-avatar"><GraduationCap size={28}/></div><div><span>STUDENT PROFILE</span><h3>{active.enrollment}</h3><p>{active.programme} · {active.branch}</p></div><div className="tester-semester-pill">SEMESTER {active.semester}</div></div><div className="tester-preview-stats"><article><span>INSTITUTION</span><strong>{active.institutionName}</strong><small>Simulated academic home</small></article><article><span>SCHEME / MODE</span><strong>{active.scheme}</strong><small>{active.admissionMode}</small></article><article><span>CURRICULUM</span><strong>{active.curriculumId||"Custom subjects"}</strong><small>{active.curriculumId?"Read-only curriculum lookup":"Add test subjects inside Gradly"}</small></article></div><div className="tester-preview-panel"><div><GraduationCap size={19}/><h3>Launch the complete Gradly student application</h3></div><p>Open the actual student dashboard with this scenario loaded. SGPA and CGPA tools, what-if analysis, planners, progress trackers, academic profile, settings and student-facing navigation use the real Gradly interface. Results and preferences are saved only in this scenario’s browser namespace.</p><div className="tester-preview-modules"><span>SGPA Analysis</span><span>CGPA Analysis</span><span>Academics</span><span>Community</span><span>AI Assistant</span><span>Settings</span></div><button type="button" className="tester-add-button tester-launch-button" onClick={launchStudentWorkspace} disabled={launching}><ExternalLink size={16}/>{launching?"Opening student workspace…":"Launch student workspace"}</button></div><div className="tester-preview-footer">Student database writes and account deletion are disabled in tester mode. Each test case has its own local academic records.</div></>:<div className="tester-empty-preview"><div><Plus size={25}/></div><h2>Your test workspace is ready</h2><p>Add your first enrollment on the left. Create as many test cases as needed, each with its own programme, branch and semester.</p></div>}</section>
+   <section className="tester-preview">{active?<><div className="tester-preview-top"><div><span>STUDENT WORKSPACE / SELECTED SCENARIO</span><h2>{active.label}</h2></div><span className="tester-preview-badge">SIMULATED PROFILE</span></div>
+    <div className="tester-student-hero"><div className="tester-student-avatar"><GraduationCap size={28}/></div><div><span>STUDENT PROFILE</span><h3>{active.enrollment}</h3><p>{active.programme} · {active.branch}</p></div><div className="tester-semester-pill">SEMESTER {active.semester}</div></div>
+    <div className="tester-preview-stats"><article><span>INSTITUTION</span><strong>{active.institutionName}</strong><small>{active.admissionMode} · {active.admissionYear}</small></article><article><span>SCHEME / CURRICULUM</span><strong>{active.scheme}</strong><small>{active.curriculumId?"Matched to configured curriculum":"Curriculum mapping unavailable"}</small></article><article><span>PROGRAMME DURATION</span><strong>{active.totalSemesters} semesters</strong><small>Entry from semester {active.entrySemester}</small></article></div>
+    <div className="tester-preview-panel"><div><GraduationCap size={19}/><h3>Launch the actual student application</h3></div><p>Open the production student interface using this resolved identity. Review navigation, branch-specific subjects, SGPA and CGPA calculators, what-if cases, planners, progress trackers, profile, settings and responsive UI. All academic edits stay inside this scenario's browser namespace.</p>
+     <div className="tester-preview-modules"><span>SGPA Analysis</span><span>CGPA Analysis</span><span>What-if & planners</span><span>Progress trackers</span><span>Academics</span><span>Settings</span></div>
+     <button type="button" className="tester-add-button tester-launch-button" onClick={launchStudentWorkspace} disabled={launching}><ExternalLink size={16}/>{launching?"Opening student workspace…":"Launch student workspace"}</button>
+    </div><div className="tester-preview-footer">Tester mode never claims a real student's account, writes student records, submits grievances or deletes accounts. Each scenario is isolated by tester and scenario ID.</div>
+   </>:<div className="tester-empty-preview"><div><Plus size={25}/></div><h2>Your student QA lab is ready</h2><p>Search for an institution, enter any enrollment number and resolve its academic identity. Save multiple scenarios to test every configured programme, discipline and semester.</p></div>}</section>
   </div>
  </main>;
 }
