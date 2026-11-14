@@ -20,6 +20,7 @@ function NotFoundPage() {
 
 export default function AppRoutes() {
   const navigate = useNavigate();
+  const { isTester } = useAuth();
   useEffect(() => {
     const onPageShow = () => { if (window.location.pathname === "/login") navigate("/", { replace: true }); };
     window.addEventListener("pageshow", onPageShow);
@@ -28,8 +29,8 @@ export default function AppRoutes() {
   return <Routes>
     <Route path="/" element={<HomePage />} />
     <Route path="/login" element={<Navigate to="/" replace />} />
-    <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
-    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
+    <Route path="/academic-setup" element={<ProtectedRoute>{isTester ? <Navigate to="/dashboard" replace /> : <AcademicSetupPage />}</ProtectedRoute>} />
+    <Route path="/exam-profile" element={<ProtectedRoute>{isTester ? <Navigate to="/dashboard" replace /> : <ExamProfileSetupPage />}</ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
