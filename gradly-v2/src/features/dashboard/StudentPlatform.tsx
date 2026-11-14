@@ -759,7 +759,7 @@ export default function StudentPlatform() {
     if(subjects.some(subject=>subject.electiveKind&&!subject.name.trim())){setNotice("Choose a course for every available elective slot before saving.");return;}
     if(!gradedCourses.length||gradedCourses.some(subject=>POINTS[subject.grade]===undefined)) { setNotice("Select a valid grade for every curriculum subject before saving."); return; }
     const row:SemesterResult={id:crypto.randomUUID(),semester:semesterNumber,sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
-    if(!isGuest) {
+    if(!isGuest && !isTester) {
       if(!user || !profile.curriculumId) { setNotice("Save your academic profile and select a curriculum scheme before recording results."); return; }
       setSavingSemester(true);
       try {
