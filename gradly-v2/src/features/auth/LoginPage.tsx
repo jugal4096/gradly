@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { useTester } from "../tester/TesterContext";
 import "../../student-entry.css";
 
 function GoogleMark() {
@@ -16,6 +17,7 @@ function GoogleMark() {
 
 export default function LoginPage() {
   const { loginWithGoogle, continueAsGuest } = useAuth();
+  const { enterTester } = useTester();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
@@ -40,6 +42,11 @@ export default function LoginPage() {
   function handleGuest() {
     continueAsGuest();
     navigate("/dashboard", { replace: true });
+  }
+
+  function handleTester() {
+    enterTester();
+    navigate("/tester", { replace: true });
   }
 
   return (
@@ -79,6 +86,11 @@ export default function LoginPage() {
             <button className="guest-choice" type="button" onClick={handleGuest}>
               <span className="guest-choice-icon"><span>✦</span></span>
               <span className="choice-copy"><b>Continue as Guest</b><small>Explore SGPA and CGPA calculators without signing in</small></span>
+              <span className="choice-arrow">→</span>
+            </button>
+            <button className="guest-choice tester-choice" type="button" onClick={handleTester}>
+              <span className="guest-choice-icon"><span>⌕</span></span>
+              <span className="choice-copy"><b>Continue as Tester</b><small>Preview the complete student workspace using an enrollment number</small></span>
               <span className="choice-arrow">→</span>
             </button>
           </div>
