@@ -208,6 +208,9 @@ export default function StudentPlatform() {
   const [semesterPromotion,setSemesterPromotion] = useState(false);
   const [nextSemester,setNextSemester] = useState("");
   const [subjects,setSubjects] = useState<Subject[]>(() => {
+    if (isTester) {
+      try { const saved=JSON.parse(studentStorage.getItem("gradly_tester_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved; } catch { /* use a clean test workspace */ }
+    }
     if (isGuest) {
       try { const saved=JSON.parse(studentStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:({O:"A++",C:"C+",P:"C",F:"D"} as Record<string,string>)[subject.grade] || (POINTS[subject.grade]!==undefined?subject.grade:"A")})); } catch { /* use defaults */ }
       return Array.from({length:5},(_,i)=>({id:i+1,name:`Subject ${i+1}`,credits:3,grade:"A"}));
@@ -802,14 +805,6 @@ export default function StudentPlatform() {
     const target = Number(nextSemester);
     if (!Number.isInteger(target) || target !== Number(profile.semester) + 1) {
       setNotice("You can select only the next semester.");
-      return;
-    }
-    if (isTester) {
-      const updated = { ...profile, semester: String(target) };
-      setProfile(updated); setSelectedSemester(target);
-      studentStorage.setItem("gradly_student_profile", JSON.stringify(updated));
-      setNotice("Test profile updated in this temporary session. No student record was changed.");
-      setNextSemester("");
       return;
     }
     if (isTester) {
