@@ -59,13 +59,13 @@ function prepareTesterLaunch() {
       admissionNumber: "",
       scheme: profile.scheme || "New CBCS",
     };
-    localStorage.setItem(TESTER_TOKEN_KEY, token);
-    localStorage.setItem(TESTER_PREFIX_KEY, prefix);
+    sessionStorage.setItem(TESTER_TOKEN_KEY, token);
+    sessionStorage.setItem(TESTER_PREFIX_KEY, prefix);
     localStorage.setItem(prefix + ":gradly_student_profile", JSON.stringify(seededProfile));
-    localStorage.setItem("gradly_tester_login_id", testerId);
-    localStorage.setItem("gradly_tester_return_url", params.get("testerReturnUrl") || "");
+    sessionStorage.setItem("gradly_tester_login_id", testerId);
+    sessionStorage.setItem("gradly_tester_return_url", params.get("testerReturnUrl") || "");
   } catch {
-    localStorage.removeItem(TESTER_TOKEN_KEY);
+    sessionStorage.removeItem(TESTER_TOKEN_KEY);
   }
   // The one-time credential and profile payload are removed from the visible URL.
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     prepareTesterLaunch();
-    const testerToken = localStorage.getItem(TESTER_TOKEN_KEY);
+    const testerToken = sessionStorage.getItem(TESTER_TOKEN_KEY);
     if (testerToken) {
       let active = true;
       const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .then(data => {
           if (!active) return;
-          const loginId = data.tester?.loginId || localStorage.getItem("gradly_tester_login_id") || "Tester";
+          const loginId = data.tester?.loginId || sessionStorage.getItem("gradly_tester_login_id") || "Tester";
           const testerUser = {
             uid: "gradly-tester:" + loginId,
             displayName: loginId,
@@ -106,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .catch(() => {
           if (!active) return;
-          localStorage.removeItem(TESTER_TOKEN_KEY);
-          localStorage.removeItem(TESTER_PREFIX_KEY);
+          sessionStorage.removeItem(TESTER_TOKEN_KEY);
+          sessionStorage.removeItem(TESTER_PREFIX_KEY);
           setLoading(false);
         });
       return () => { active = false; };
@@ -166,10 +166,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     if (isTester) {
-      const returnUrl = localStorage.getItem("gradly_tester_return_url") || "/";
-      localStorage.removeItem(TESTER_TOKEN_KEY);
-      localStorage.removeItem(TESTER_PREFIX_KEY);
-      localStorage.removeItem("gradly_tester_return_url");
+      const returnUrl = sessionStorage.getItem("gradly_tester_return_url") || "/";
+      sessionStorage.removeItem(TESTER_TOKEN_KEY);
+      sessionStorage.removeItem(TESTER_PREFIX_KEY);
+      sessionStorage.removeItem("gradly_tester_return_url");
       setIsTester(false);
       setUser(null);
       window.location.assign(returnUrl);
