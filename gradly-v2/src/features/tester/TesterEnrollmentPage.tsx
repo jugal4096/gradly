@@ -110,6 +110,8 @@ function allowedCurricula(prefix: string, curricula: Curriculum[]) {
 export default function TesterEnrollmentPage() {
   const navigate = useNavigate();
   const { isTester, enterTester, setTesterProfile, exitTester } = useTester();
+
+  useEffect(() => { if (!isTester) enterTester(); }, [isTester, enterTester]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institutionId, setInstitutionId] = useState("");
   const [enrollment, setEnrollment] = useState("");
