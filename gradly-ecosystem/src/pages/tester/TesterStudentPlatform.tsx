@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./TesterStudentPlatform.css";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
@@ -79,7 +80,7 @@ type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_sn
 type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; id?: string | number | null };
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
+const API = API_BASE_URL.replace(/\\/+$/, "");
 // Tester state is tab-scoped and namespaced; normal student storage remains unchanged.
 const studentStorage = {
   getItem(key: string) { const prefix = sessionStorage.getItem("gradly_tester_storage_prefix"); return prefix ? sessionStorage.getItem(prefix + ":" + key) : localStorage.getItem(key); },
@@ -328,7 +329,7 @@ export default function TesterStudentPlatform({ onExit }: { onExit: () => void }
   }, [isGuest, isTester, user]);
 
   useEffect(() => {
-    if (isGuest || !user || !profile.curriculumId || !selectedSemester) return;
+    if (isGuest || !profile.curriculumId || !selectedSemester) return;
     let cancelled=false;
     setLoadingCurriculum(true);
     setSubjects([]);
@@ -376,7 +377,7 @@ export default function TesterStudentPlatform({ onExit }: { onExit: () => void }
       }
     })();
     return ()=>{cancelled=true;};
-  }, [isGuest, user, profile.curriculumId, selectedSemester, savedSubjectsBySemester]);
+  }, [isGuest, profile.curriculumId, selectedSemester, savedSubjectsBySemester]);
 
   useEffect(() => {
     if(isGuest || !user || !profile.curriculumId || section!=="sgpaWhatIf") return;
