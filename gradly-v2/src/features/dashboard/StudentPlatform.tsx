@@ -413,7 +413,7 @@ export default function StudentPlatform() {
 
   useEffect(() => {
     if(section!=="sgpaPlanner") return;
-    if(isGuest) { const guestRows=subjects.map(subject=>({...subject})); setPlannerReportCards(buildSgpaScenarios(Number(targetSgpa),guestRows).map((plan,index)=>({id:index+1,label:plan.label,description:plan.description,subjects:guestRows.map(subject=>({...subject,grade:plan.grades[subject.id]||"D"}))}))); setPlannerLoading(false); return; }
+    if(isGuest || isTester) { const guestRows=subjects.map(subject=>({...subject})); setPlannerReportCards(buildSgpaScenarios(Number(targetSgpa),guestRows).map((plan,index)=>({id:index+1,label:plan.label,description:plan.description,subjects:guestRows.map(subject=>({...subject,grade:plan.grades[subject.id]||"D"}))}))); setPlannerLoading(false); return; }
     if(!profile.curriculumId||!plannerSemester) { setPlannerReportCards([]); setPlannerLoading(false); return; }
     let cancelled=false;
     setPlannerLoading(true); setPlannerNotice(""); setPlannerReportCards([]);
@@ -750,7 +750,7 @@ export default function StudentPlatform() {
   async function saveSemester() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
-    if(!isGuest && semesterNumber>=currentSemester) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
+    if(!isGuest && !isTester && semesterNumber>=currentSemester) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
@@ -775,7 +775,7 @@ export default function StudentPlatform() {
     }
     const next=[...results.filter(item=>item.semester!==row.semester),row].sort((a,b)=>a.semester-b.semester);
     setResults(next); setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:subjects}));
-    if(!isGuest) studentStorage.setItem("gradly_elective_choices_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(subjects));
+    if(!isGuest && !isTester) studentStorage.setItem("gradly_elective_choices_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(subjects));
     studentStorage.setItem(isGuest?"gradly_guest_semester_results":"gradly_semester_results",JSON.stringify(next));
     setNotice("");
     setSavedConfirmationSemester(semesterNumber);
