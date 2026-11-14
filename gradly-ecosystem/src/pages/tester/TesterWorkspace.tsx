@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
+import TesterStudentPlatform from "./TesterStudentPlatform";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
 const STUDENT_APP = (import.meta.env.VITE_STUDENT_APP_URL || (window.location.hostname === "localhost" ? "http://localhost:5174" : "https://gradly-peach.vercel.app")).replace(/\/+$/, "");
@@ -41,7 +42,6 @@ export default function TesterWorkspace() {
   const [busy, setBusy] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
-  const [workspaceUrl, setWorkspaceUrl] = useState("");
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
 
   useEffect(() => {
@@ -57,18 +57,6 @@ export default function TesterWorkspace() {
     return () => { active = false; };
   }, [navigate]);
 
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      let expectedOrigin = "";
-      try { expectedOrigin = new URL(STUDENT_APP).origin; } catch { return; }
-      if (event.origin !== expectedOrigin || event.data?.type !== "GRADLY_TESTER_EXIT") return;
-      setWorkspaceOpen(false);
-      setWorkspaceUrl("");
-      setError("You have exited the virtual student workspace. Your tester session is still active.");
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
 
   useEffect(() => {
     const search = query.trim();
@@ -123,6 +111,7 @@ export default function TesterWorkspace() {
 
   function openStudentWorkspace() {
     if (!preview?.recognized || preview.requiresConfirmation || !institution || !token) return;
+    const prefix = "gradly_tester_" + crypto.randomUUID();
     const profile = {
       institutionId: institution.id,
       institutionName: institution.name,
@@ -137,18 +126,24 @@ export default function TesterWorkspace() {
       admissionMode: preview.admissionMode || "Regular",
       admissionNumber: "",
       scheme: preview.scheme || preview.curriculumName || "",
-      specialization: preview.specialization || "",
-      specializationId: preview.specializationId || "",
     };
-    const launch = new URLSearchParams({
-      testerToken: token,
-      testerId,
-      testerReturnUrl: window.location.origin + "/tester/workspace",
-      testerProfile: JSON.stringify(profile),
-    });
-    setWorkspaceUrl(STUDENT_APP + "/tester-workspace#" + launch.toString());
+    sessionStorage.setItem("gradly_tester_storage_prefix", prefix);
+    sessionStorage.setItem(prefix + ":gradly_student_profile", JSON.stringify(profile));
+    sessionStorage.setItem(prefix + ":gradly_tester_profile_ready", "true");
     setWorkspaceOpen(true);
     setError("");
+  }
+
+  function exitStudentWorkspace() {
+    const prefix = sessionStorage.getItem("gradly_tester_storage_prefix");
+    if (prefix) {
+      for (let index = sessionStorage.length - 1; index >= 0; index--) {
+        const key = sessionStorage.key(index);
+        if (key?.startsWith(prefix + ":")) sessionStorage.removeItem(key);
+      }
+    }
+    sessionStorage.removeItem("gradly_tester_storage_prefix");
+    setWorkspaceOpen(false);
   }
 
   function signOutTester() {
@@ -162,10 +157,7 @@ export default function TesterWorkspace() {
       <a className="tester-virtual-brand" href="/"><span className="tester-virtual-mark">G</span><span>Gradly <small>VIRTUAL STUDENT ENVIRONMENT</small></span></a>
       <div className="tester-virtual-account"><span>TESTER · {testerId}</span>{workspaceOpen && <button type="button" onClick={() => setWorkspaceOpen(false)}>Back to profile</button>}<button type="button" onClick={signOutTester}>Sign out</button></div>
     </header>
-    {workspaceOpen && workspaceUrl ? <section className="tester-virtual-embedded">
-      <div className="tester-virtual-embedded-bar"><span>VIRTUAL STUDENT WORKSPACE · {enrollment.trim().toUpperCase()} · SEMESTER {semester}</span><span>ISOLATED TEST SESSION · NO STUDENT ACCOUNT</span></div>
-      <iframe title="Gradly V2 virtual student workspace" src={workspaceUrl} allow="clipboard-read; clipboard-write" />
-    </section> : <section className="tester-virtual-main">
+    {workspaceOpen ? <TesterStudentPlatform onExit={exitStudentWorkspace} /> : <section className="tester-virtual-main">
       <div className="tester-virtual-heading"><span className="tester-virtual-eyebrow">ISOLATED TEST WORKSPACE</span><h1>Enter a student enrollment number.</h1><p>Choose the institution and enter an enrollment number to preview the academic profile. This virtual environment does not require a student login and does not create or modify a student account.</p></div>
       <form className="tester-virtual-form" onSubmit={identify}>
         <label htmlFor="virtual-institution">INSTITUTION / UNIVERSITY</label>
