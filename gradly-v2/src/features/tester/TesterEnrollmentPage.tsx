@@ -276,9 +276,11 @@ export default function TesterEnrollmentPage() {
         <p>Enter an enrollment number to preview the same student workspace with its institution, programme, branch, scheme, semester and curriculum subjects.</p>
         <form onSubmit={resolve}>
           <label>Institution
-            <select value={institutionId} onChange={event => { setInstitutionId(event.target.value); setPreview(null); setCurriculumId(""); setError(""); }} disabled={loadingInstitutions || resolving}>
-              {institutions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
+            {institutions.length > 1
+              ? <select value={institutionId} onChange={event => { setInstitutionId(event.target.value); setPreview(null); setCurriculumId(""); setError(""); }} disabled={loadingInstitutions || resolving}>
+                  {institutions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
+              : <input value={selectedInstitution?.name || (loadingInstitutions ? "Loading institution directory…" : "No institution configured")} readOnly />}
           </label>
           <label>Enrollment number
             <input value={enrollment} onChange={event => clearResolution(event.target.value)} placeholder="Enter 11-character enrollment number" maxLength={11} autoCapitalize="characters" autoComplete="off" spellCheck={false} />
