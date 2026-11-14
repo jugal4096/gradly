@@ -62,7 +62,7 @@ function getAllOEOptionsForStudent(profile:Profile):ElectiveOption[] {
   return isNepSchemeName(profile.scheme)?NEP_OPEN_ELECTIVES:OE_OPTIONS;
 }
 function isOECodeForStudent(profile:Profile,code:string):boolean {
-  return getAllOEOptionsForStudent(profile).some(option=>option.code.toUpperCase()===String(code||"").toUpperCase());
+  return isNepSchemeName(profile.scheme)?Boolean(findNepOpenElective(code)):OE_OPTIONS.some(option=>option.code.toUpperCase()===String(code||"").toUpperCase());
 }
 function getOECodeLabel(profile:Profile,code:string):string {
   return isNepSchemeName(profile.scheme)?getNepOpenElectiveDisplayCode(code):code;
@@ -778,7 +778,7 @@ export default function StudentPlatform() {
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
     if(creditsForSemesterLimit>28){setNotice("A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance.");return;}
     if(previouslyRegistered+countedCredits>degreeCreditLimit){setNotice(`Your programme credit limit is ${degreeCreditLimit} credits (${isDirectSecondYear?"Direct Second Year":"Regular"} entry).`);return;}
-    if(subjects.some(subject=>subject.electiveKind&&!subject.name.trim())){setNotice("Choose a course for every available elective slot before saving.");return;}
+    if(subjects.some(subject=>subject.electiveKind&&(!subject.name.trim()||((subject.electiveKind==="OE"||subject.electiveKind==="HS")&&subject.courseCode===subject.electiveSlotCode)))){setNotice("Choose a course for every available elective slot before saving.");return;}
     if(!gradedCourses.length||gradedCourses.some(subject=>POINTS[subject.grade]===undefined)) { setNotice("Select a valid grade for every curriculum subject before saving."); return; }
     const row:SemesterResult={id:crypto.randomUUID(),semester:semesterNumber,sgpa,credits:countedCredits,savedAt:new Date().toISOString()};
     if(!isGuest) {
