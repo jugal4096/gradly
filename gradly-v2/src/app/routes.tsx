@@ -5,11 +5,13 @@ import ProtectedRoute from "../features/auth/ProtectedRoute";
 import StudentPlatform from "../features/dashboard/StudentPlatform";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
 import ExamProfileSetupPage from "../features/dashboard/ExamProfileSetupPage";
+import TesterAcademicSetupPage from "../features/dashboard/TesterAcademicSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
-  const { user, isGuest, loading } = useAuth();
+  const { user, isGuest, isTester, loading } = useAuth();
   if (loading) return <LoginPage />;
+  if (isTester) return <Navigate to="/academic-setup" replace />;
   if (user || isGuest) return <Navigate to="/dashboard" replace />;
   return <LoginPage />;
 }
@@ -28,8 +30,8 @@ export default function AppRoutes() {
   return <Routes>
     <Route path="/" element={<HomePage />} />
     <Route path="/login" element={<Navigate to="/" replace />} />
-    <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
-    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
+    <Route path="/academic-setup" element={<ProtectedRoute>{isTester ? <TesterAcademicSetupPage /> : <AcademicSetupPage />}</ProtectedRoute>} />
+    <Route path="/exam-profile" element={<ProtectedRoute>{isTester ? <Navigate to="/dashboard" replace /> : <ExamProfileSetupPage />}</ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
