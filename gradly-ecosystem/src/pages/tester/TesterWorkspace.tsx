@@ -162,8 +162,8 @@ export default function TesterWorkspace(){
 
  if(!verified&&!error)return <main className="tester-loading">Verifying isolated tester access…</main>;
  if(studentFrameUrl&&frameScenarioId===active?.id)return <main className="tester-student-shell">
-  <div className="tester-student-shell-bar"><span><ShieldCheck size={15}/> GRADLY STUDENT WORKSPACE <small>ISOLATED TEST SESSION · {active?.enrollment}</small></span><button type="button" onClick={closeStudentWorkspace}>Exit student workspace</button></div>
-  <iframe key={frameScenarioId} className="tester-student-full-frame" src={studentFrameUrl} title={"Gradly student workspace for "+(active?.enrollment||"tester")} allow="clipboard-read; clipboard-write" referrerPolicy="strict-origin-when-cross-origin"/>
+  <button type="button" className="tester-student-exit" onClick={closeStudentWorkspace} aria-label="Exit tester session">Exit tester session</button>
+  <iframe key={frameScenarioId} className="tester-student-full-frame" src={studentFrameUrl} title={"Gradly V2 student workspace for "+(active?.enrollment||"tester")} allow="clipboard-read; clipboard-write" referrerPolicy="strict-origin-when-cross-origin"/>
  </main>;
  return <main className="tester-workspace">
   <header className="tester-workspace-top"><a href="/"><span className="tester-brand-mark">G</span><span>GRADLY <small>TEST ENVIRONMENT</small></span></a><div className="tester-session"><span>SIGNED IN AS <strong>{loginId}</strong></span><button onClick={logout}><LogOut size={15}/> Sign out</button></div></header>
