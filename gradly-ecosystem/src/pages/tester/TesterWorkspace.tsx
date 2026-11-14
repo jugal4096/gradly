@@ -5,7 +5,6 @@ import "./Tester.css";
 import TesterStudentPlatform from "./TesterStudentPlatform";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
-const STUDENT_APP = (import.meta.env.VITE_STUDENT_APP_URL || (window.location.hostname === "localhost" ? "http://localhost:5174" : "https://gradly-peach.vercel.app")).replace(/\/+$/, "");
 
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = {
@@ -155,7 +154,7 @@ export default function TesterWorkspace() {
   return <main className="tester-virtual-shell">
     <header className="tester-virtual-header">
       <a className="tester-virtual-brand" href="/"><span className="tester-virtual-mark">G</span><span>Gradly <small>VIRTUAL STUDENT ENVIRONMENT</small></span></a>
-      <div className="tester-virtual-account"><span>TESTER · {testerId}</span>{workspaceOpen && <button type="button" onClick={() => setWorkspaceOpen(false)}>Back to profile</button>}<button type="button" onClick={signOutTester}>Sign out</button></div>
+      <div className="tester-virtual-account"><span>TESTER · {testerId}</span>{workspaceOpen && <button type="button" onClick={exitStudentWorkspace}>Back to profile</button>}<button type="button" onClick={signOutTester}>Sign out</button></div>
     </header>
     {workspaceOpen ? <TesterStudentPlatform onExit={exitStudentWorkspace} /> : <section className="tester-virtual-main">
       <div className="tester-virtual-heading"><span className="tester-virtual-eyebrow">ISOLATED TEST WORKSPACE</span><h1>Enter a student enrollment number.</h1><p>Choose the institution and enter an enrollment number to preview the academic profile. This virtual environment does not require a student login and does not create or modify a student account.</p></div>
@@ -182,8 +181,8 @@ export default function TesterWorkspace() {
         </div>
         <label className="tester-virtual-semester-label" htmlFor="virtual-semester">VIEW AS SEMESTER</label>
         <select id="virtual-semester" value={semester} onChange={event => setSemester(Number(event.target.value))}>{semesterOptions.map(value => <option key={value} value={value}>Semester {value}</option>)}</select>
-        <p className="tester-virtual-note">The enrollment has been identified. Open the complete Gradly V2 student interface with this temporary academic profile. All tester data remains isolated from student records.</p>
-        <button className="tester-virtual-submit" type="button" onClick={openStudentWorkspace}>OPEN FULL STUDENT WORKSPACE →</button>
+        <p className="tester-virtual-note">The enrollment has been identified. Open the complete virtual student workspace with this temporary academic profile. All tester data remains isolated from student records.</p>
+        <button className="tester-virtual-submit" type="button" onClick={openStudentWorkspace}>OPEN VIRTUAL STUDENT WORKSPACE →</button>
       </section>}
       <footer className="tester-virtual-footer">Temporary tester session · Full student-side feature set · No student authentication</footer>
     </section>}
