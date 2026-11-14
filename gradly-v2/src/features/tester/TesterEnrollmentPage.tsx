@@ -197,11 +197,14 @@ export default function TesterEnrollmentPage() {
         throw new Error("New CBCS is no longer supported for this branch. The supported New CBCS branch is Information Technology.");
       }
 
-      const modeParams = new URLSearchParams({ institutionId: selectedInstitution.id, programmePrefix: parsed.prefix });
-      const modeResponse = await fetch(API + "/api/academic/admission-modes?" + modeParams.toString());
-      const modePayload = await modeResponse.json();
-      if (!modeResponse.ok) throw new Error(modePayload.message || "Unable to resolve admission mode.");
-      const mode = (Array.isArray(modePayload.data) ? modePayload.data : []).find((item: { mode_code?: string }) => String(item.mode_code || "").toUpperCase() === parsed.modeCode);
+      let mode: { mode_name?: string; entry_semester?: number } | undefined;
+      if (parsed.prefix !== "ME") {
+        const modeParams = new URLSearchParams({ institutionId: selectedInstitution.id, programmePrefix: parsed.prefix });
+        const modeResponse = await fetch(API + "/api/academic/admission-modes?" + modeParams.toString());
+        const modePayload = await modeResponse.json();
+        if (!modeResponse.ok) throw new Error(modePayload.message || "Unable to resolve admission mode.");
+        mode = (Array.isArray(modePayload.data) ? modePayload.data : []).find((item: { mode_code?: string }) => String(item.mode_code || "").toUpperCase() === parsed.modeCode);
+      }
       const entrySemester = Number(mode?.entry_semester || (parsed.prefix === "BE" || parsed.prefix === "BT" ? (parsed.modeCode === "S" ? 3 : 1) : 1));
       const admissionMode = String(mode?.mode_name || (parsed.modeCode === "S" ? "Direct Second Year" : "Regular Admission"));
 
@@ -227,11 +230,13 @@ export default function TesterEnrollmentPage() {
     if (!curriculum) { setError("Choose the curriculum to preview."); return; }
     const totalSemesters = Number(curriculum.total_semesters || curriculum.configured_semesters || (preview.program.name.toLowerCase().includes("mca") || /m\.?tech/i.test(preview.program.name) ? 4 : 8));
     if (!Number.isInteger(totalSemesters) || totalSemesters < preview.entrySemester) { setError("The selected curriculum has an invalid semester configuration."); return; }
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const academicYearStart = month >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+    const dateParts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric" }).formatToParts(new Date());
+    const localYear = Number(dateParts.find(part => part.type === "year")?.value);
+    const month = Number(dateParts.find(part => part.type === "month")?.value);
+    const academicYearStart = month >= 7 ? localYear : localYear - 1;
     const semesterOffset = month >= 7 && month <= 12 ? 0 : 1;
     const predicted = preview.entrySemester + (academicYearStart - preview.admissionYear) * 2 + semesterOffset;
+    const isDurationEnded = predicted > totalSemesters;
     const semester = Math.max(preview.entrySemester, Math.min(totalSemesters, predicted));
     const profile: TesterAcademicProfile = {
       institutionId: preview.institution.id,
@@ -247,6 +252,7 @@ export default function TesterEnrollmentPage() {
       admissionMode: preview.admissionMode,
       admissionNumber: "",
       scheme: curriculum.scheme_name,
+      isDurationEnded,
     };
     setTesterProfile(profile);
     navigate("/tester/workspace", { replace: true });
