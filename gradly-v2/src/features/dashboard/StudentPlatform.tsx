@@ -318,7 +318,7 @@ export default function StudentPlatform() {
             const semesterNumber=Number(row.semester_number);
             if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>{
               const code=course.course_code_snapshot||"";
-              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
+              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":isOECodeForStudent(profile,code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
               return {
                 id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
                 courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined,
@@ -357,11 +357,11 @@ export default function StudentPlatform() {
           const subjectId=String(item.id||"");
           const courseCode=String(item.code||"");
           const previous=savedBySubject.get("id:"+subjectId)||savedBySubject.get("code:"+courseCode)||electiveSaved.find(subject=>subject.curriculumSubjectId===subjectId);
-          const kind=electiveKind(courseCode,selectedSemester,String(item.name||""));
+          const kind=electiveKind(courseCode,selectedSemester,String(item.name||""),String(item.courseType||""),isNepSchemeName(profile.scheme));
           const selectedCode=previous?.courseCode||courseCode;
-          const option=kind==="OE"?OE_OPTIONS.find(x=>x.code===selectedCode):kind==="HS"?hsOptionsForSemester(selectedSemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):kind==="PE6C"?PE6_THIRD_OPTIONS.find(x=>x.code===selectedCode):undefined;
+          const option=kind==="OE"?getAllOEOptionsForStudent(profile).find(x=>x.code===selectedCode):kind==="HS"?hsOptionsForSemester(selectedSemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):kind==="PE6C"?PE6_THIRD_OPTIONS.find(x=>x.code===selectedCode):undefined;
           const pe4=kind==="PE4"?PE4_OPTIONS.find(x=>x.code===selectedCode):kind==="PE4LAB"?PE4_OPTIONS.find(x=>x.labCode===selectedCode):undefined;
-          return {id:index+1,name:previous?.name||item.name||"",credits:previous?.credits??Number(item.credits||0),grade:previous?.grade||"",courseCode:selectedCode,courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4, ...((option||pe4)?{}:{})};
+          return {id:index+1,name:previous?.name||option?.name||item.name||"",credits:previous?.credits??(option?.credits||Number(item.credits||0)),grade:previous?.grade||"",courseCode:selectedCode,courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4};
         });
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
