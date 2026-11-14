@@ -66,9 +66,9 @@ export default function TesterWorkspace(){
     if(live){
      const rows=Array.isArray(body.data)?body.data as Institution[]:[];
      setInstitutions(rows);
-     if(!institution&&institutionQuery===DEFAULT_INSTITUTION){
+     if(institutionQuery===DEFAULT_INSTITUTION){
       const preferred=rows.find(row=>row.name.toLowerCase().includes("government college of engineering"));
-      if(preferred)setInstitution(preferred);
+      if(preferred)setInstitution(current=>current||preferred);
      }
     }
    }catch(e){if(live)setError(e instanceof Error?e.message:"Unable to search institutions.");}
@@ -78,6 +78,9 @@ export default function TesterWorkspace(){
  },[institutionQuery]);
 
  const active=useMemo(()=>cases.find(c=>c.id===activeId)||cases[0]||null,[cases,activeId]);
+ const institutionBranches=useMemo(()=>institution?.branches||[],[institution]);
+ const testedBranchKeys=useMemo(()=>new Set(cases.filter(c=>c.institutionId===institution?.id).map(c=>c.programId+":"+c.branchId)),[cases,institution]);
+ const testedBranchCount=institutionBranches.filter(b=>testedBranchKeys.has(b.program_id+":"+b.id)).length;
 
  async function resolveEnrollment(e:FormEvent){
   e.preventDefault();setError("");setPreview(null);
@@ -175,6 +178,7 @@ export default function TesterWorkspace(){
     </section>}
     <div className="tester-case-list-heading"><strong>Saved scenarios</strong><span>{cases.length}</span></div>
     <div className="tester-case-list">{cases.map(c=><button key={c.id} className={"tester-case-item "+((active?.id===c.id)?"selected":"")} onClick={()=>setActiveId(c.id)}><span className="tester-case-icon"><GraduationCap size={17}/></span><span className="tester-case-copy"><strong>{c.label}</strong><small>{c.enrollment}</small><small>{c.programme} · {c.branch} · Sem {c.semester}</small></span><ChevronRight size={16}/><span className="tester-case-remove" role="button" aria-label="Delete test case" onClick={e=>{e.stopPropagation();remove(c.id);}}><Trash2 size={14}/></span></button>)}</div>
+    {institution&&<section className="tester-coverage-card"><div className="tester-coverage-head"><strong>Discipline coverage</strong><span>{testedBranchCount}/{institutionBranches.length} tested</span></div><div className="tester-coverage-track"><i style={{width:(institutionBranches.length?testedBranchCount/institutionBranches.length*100:0)+"%"}}/></div><div className="tester-coverage-list">{institutionBranches.map(branch=><span key={branch.program_id+":"+branch.id} className={testedBranchKeys.has(branch.program_id+":"+branch.id)?"covered":""}>{testedBranchKeys.has(branch.program_id+":"+branch.id)?"✓":"○"} {branch.program_name} · {branch.name}</span>)}</div><small>Coverage is tracked locally for this tester. Add a resolved scenario for each programme and branch to complete the institution sweep.</small></section>}
    </aside>
    <section className="tester-preview">{active?<><div className="tester-preview-top"><div><span>STUDENT WORKSPACE / SELECTED SCENARIO</span><h2>{active.label}</h2></div><span className="tester-preview-badge">SIMULATED PROFILE</span></div>
     <div className="tester-student-hero"><div className="tester-student-avatar"><GraduationCap size={28}/></div><div><span>STUDENT PROFILE</span><h3>{active.enrollment}</h3><p>{active.programme} · {active.branch}</p></div><div className="tester-semester-pill">SEMESTER {active.semester}</div></div>
