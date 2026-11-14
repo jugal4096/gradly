@@ -215,7 +215,7 @@ export default function StudentPlatform() {
   const [deletingAccount,setDeletingAccount] = useState(false);
   const [semesterPromotion,setSemesterPromotion] = useState(false);
   const [nextSemester,setNextSemester] = useState("");
-  const [subjects,setSubjects] = useState<Subject[]>(() => {
+  const [testerStorageReady,setTesterStorageReady] = useState(false);\n  const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isTester) { try { const saved=JSON.parse(studentStorage.getItem("gradly_tester_subjects")||"null"); if(Array.isArray(saved)&&saved.length) return saved; } catch { /* use editable starter row */ } }
     if (isGuest) {
       try { const saved=JSON.parse(studentStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:({O:"A++",C:"C+",P:"C",F:"D"} as Record<string,string>)[subject.grade] || (POINTS[subject.grade]!==undefined?subject.grade:"A")})); } catch { /* use defaults */ }
@@ -274,9 +274,18 @@ export default function StudentPlatform() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!isTester) return;
+    try {
+      const saved=JSON.parse(studentStorage.getItem("gradly_tester_subjects")||"null");
+      if(Array.isArray(saved)&&saved.length) setSubjects(saved);
+    } catch { /* retain the editable starter row */ }
+    setTesterStorageReady(true);
+  }, [isTester]);
+
+  useEffect(() => {
     if (isGuest) studentStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
-    if (isTester) studentStorage.setItem("gradly_tester_subjects", JSON.stringify(subjects));
-  }, [isGuest, isTester, subjects]);
+    if (isTester && testerStorageReady) studentStorage.setItem("gradly_tester_subjects", JSON.stringify(subjects));
+  }, [isGuest, isTester, testerStorageReady, subjects]);
 
   useEffect(() => {
     setCgpaWhatIfSgpas(Object.fromEntries(results.map(row=>[row.semester,String(row.sgpa)])));
