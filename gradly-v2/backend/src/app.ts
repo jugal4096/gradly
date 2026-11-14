@@ -10,6 +10,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import studentRoutes from "./modules/student/student.routes";
 import guestRoutes from "./modules/guest/guest.routes";
 import testerRoutes from "./modules/tester/tester.routes";
+import testerManagementRoutes from "./modules/tester/tester-management.routes";
 
 // Admin application and registration modules
 import adminApplicationRoutes from "./modules/admin-application/admin-application.routes";
@@ -80,6 +81,7 @@ app.use("/api/guest", guestRoutes);
 
 // Tester endpoints are isolated from student, guest and administrator routes.
 app.use("/api/tester", testerRoutes);
+app.use("/api/super-admin/testers", testerManagementRoutes);
 
 /* Guest Mode intentionally exposes generic calculators only; legacy semester-based guest routes are disabled. */
 
