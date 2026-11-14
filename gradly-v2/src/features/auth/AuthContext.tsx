@@ -31,7 +31,7 @@ const GUEST_SESSION_KEY = "gradly_guest_session";
 const GUEST_ID_KEY = "gradly_guest_id";
 const TESTER_TOKEN_KEY = "gradly_tester_access_token";
 const TESTER_PREFIX_KEY = "gradly_tester_storage_prefix";
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\\/+$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function readTesterLaunch() {
