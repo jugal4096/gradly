@@ -1,0 +1,67 @@
+.ecosystem-tester-host {
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f7f7f7;
+  color: #171717;
+}
+.ecosystem-tester-hostbar {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 22px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+  z-index: 2;
+}
+.ecosystem-tester-hostbar button,
+.ecosystem-tester-hostbar a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #262626;
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ecosystem-tester-hostbrand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.ecosystem-tester-hostbrand small {
+  color: #737373;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .08em;
+}
+.ecosystem-tester-frame {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
+}
+.ecosystem-tester-error {
+  margin: auto;
+  max-width: 520px;
+  padding: 32px;
+  text-align: center;
+}
+.ecosystem-tester-error a { color: #171717; }
+@media (max-width: 640px) {
+  .ecosystem-tester-hostbar { padding: 0 12px; }
+  .ecosystem-tester-hostbrand small { display: none; }
+  .ecosystem-tester-hostbar a { font-size: 0; }
+  .ecosystem-tester-hostbar a svg { width: 18px; height: 18px; }
+}

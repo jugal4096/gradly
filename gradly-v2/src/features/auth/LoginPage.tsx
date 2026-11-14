@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { useTester } from "../tester/TesterContext";
 import "../../student-entry.css";
 
 function GoogleMark() {
@@ -15,7 +16,8 @@ function GoogleMark() {
 }
 
 export default function LoginPage() {
-  const { loginWithGoogle, continueAsGuest } = useAuth();
+  const { loginWithGoogle, continueAsGuest, clearGuestMode } = useAuth();
+  const { enterTester } = useTester();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
@@ -42,6 +44,12 @@ export default function LoginPage() {
     navigate("/dashboard", { replace: true });
   }
 
+  function handleTester() {
+    clearGuestMode();
+    enterTester();
+    navigate("/tester", { replace: true });
+  }
+
   return (
     <main className="entry-page">
       <div className="entry-grid" aria-hidden="true" />
@@ -64,7 +72,7 @@ export default function LoginPage() {
         <div className="entry-eyebrow"><span className="eyebrow-line" /> THE STUDENT PLATFORM <span className="eyebrow-line" /></div>
         <div className="entry-title-wrap">
           <p className="entry-kicker">A LITTLE MORE CLARITY. A LOT MORE DIRECTION.</p>
-          <h1>Your next chapter<br /><em>starts here.</em></h1>
+          <h1><>Your next chapter<br /><em>starts here.</em></></h1>
           <p className="entry-description">Your academic world, in one place. Track your progress, make confident plans and keep moving forward.</p>
         </div>
 
@@ -83,7 +91,7 @@ export default function LoginPage() {
             </button>
           </div>
           {error && <p className="entry-error" role="alert">{error}</p>}
-          <p className="entry-assurance"><span>✧</span> No pressure. Start as a guest and sign in whenever you're ready.</p>
+          <p className="entry-assurance"><span>✧</span> No pressure. Start as a guest and sign in whenever you’re ready.</p>
         </div>
 
         <div className="entry-bottom-note">

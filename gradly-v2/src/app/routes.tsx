@@ -6,12 +6,20 @@ import StudentPlatform from "../features/dashboard/StudentPlatform";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
 import ExamProfileSetupPage from "../features/dashboard/ExamProfileSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
+import TesterEnrollmentPage from "../features/tester/TesterEnrollmentPage";
+import { useTester } from "../features/tester/TesterContext";
 
 function HomePage() {
   const { user, isGuest, loading } = useAuth();
   if (loading) return <LoginPage />;
   if (user || isGuest) return <Navigate to="/dashboard" replace />;
   return <LoginPage />;
+}
+
+function TesterWorkspaceRoute() {
+  const { isTester, testerProfile, exitTester } = useTester();
+  if (!isTester || !testerProfile) return <Navigate to="/tester" replace />;
+  return <StudentPlatform testerMode testerProfile={testerProfile} onExitTester={exitTester} />;
 }
 
 function NotFoundPage() {
@@ -28,6 +36,8 @@ export default function AppRoutes() {
   return <Routes>
     <Route path="/" element={<HomePage />} />
     <Route path="/login" element={<Navigate to="/" replace />} />
+    <Route path="/tester" element={<TesterEnrollmentPage />} />
+    <Route path="/tester/workspace" element={<TesterWorkspaceRoute />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
     <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />

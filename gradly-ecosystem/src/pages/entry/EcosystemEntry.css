@@ -885,11 +885,12 @@
 .system-code{font-size:10px;letter-spacing:2.2px;color:#7b87a0}
 .system-divider{margin:0 0 15px}
 .system-divider span{font-size:10px;letter-spacing:1.7px;color:#65728b}
-.interface-grid{gap:18px}
+.interface-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
 .interface-module{min-height:230px;padding:24px;border:1px solid #e0e6f2;border-radius:20px;background:linear-gradient(150deg,#fff,#f7f9ff);box-shadow:0 12px 32px #26365b0c;transition:transform .22s,border-color .22s,box-shadow .22s}
 .interface-module:hover{transform:translateY(-6px);border-color:#cbd5f3;box-shadow:0 20px 44px #26365b18}
 .module-icon{width:54px;height:54px;border-radius:16px;background:#eeefff;color:#6155c6;box-shadow:inset 0 0 0 1px #dedcff}
 .user-module{--accent:#16865d}.user-module .module-icon{background:#e5f8ef;color:#16865d;box-shadow:inset 0 0 0 1px #c8efdc}
+.tester-module{--accent:#b7791f}.tester-module .module-icon{background:#fff7e6;color:#b7791f;box-shadow:inset 0 0 0 1px #f5e2b9}
 .admin-module{--accent:#2868b7}.admin-module .module-icon{background:#eaf2ff;color:#2868b7;box-shadow:inset 0 0 0 1px #d2e3fb}
 .super-module{--accent:#7754c7}.super-module .module-icon{background:#f1ecff;color:#7754c7;box-shadow:inset 0 0 0 1px #e2d8ff}
 .module-number{font-size:9px;letter-spacing:1.6px;color:#7b87a0}
@@ -909,3 +910,6 @@
 .identity-logo img{width:190px!important;height:190px!important;max-width:none!important;object-fit:contain;filter:drop-shadow(0 18px 30px #40518a30)!important}
 .system-identity{gap:8px!important}
 @media(max-width:650px){.identity-logo{width:150px!important;height:130px!important}.identity-logo img{width:155px!important;height:155px!important}}
+
+/* Keep the ecosystem entry order consistent across desktop and mobile. */
+.user-module{order:1}.admin-module{order:2}.super-module{order:3}.tester-module{order:4}

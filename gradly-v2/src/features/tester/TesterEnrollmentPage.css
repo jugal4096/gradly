@@ -1,0 +1,26 @@
+.tester-entry-page{min-height:100vh;background:#f7f7f7;color:#171717;padding:0 22px 48px;font-family:Inter,Arial,sans-serif}
+.tester-entry-header{height:76px;max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.tester-entry-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;font-weight:800;font-size:22px;letter-spacing:-.8px}
+.tester-entry-brand>span{width:36px;height:36px;display:grid;place-items:center;background:#171717;color:#fff;border-radius:10px}
+.tester-exit-link{border:0;background:transparent;color:#555;cursor:pointer;font:600 13px inherit}
+.tester-entry-card{width:min(680px,100%);margin:42px auto 0;background:#fff;border:1px solid #e5e5e5;border-radius:18px;padding:34px;box-shadow:0 14px 44px #00000008}
+.tester-entry-kicker,.tester-preview-heading>div>span{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#777}
+.tester-entry-card h1{font-size:32px;letter-spacing:-1.2px;margin:12px 0 8px}
+.tester-entry-card>p{color:#666;font-size:14px;line-height:1.6;margin:0 0 24px}
+.tester-entry-card form,.tester-preview-details{display:grid;gap:16px}
+.tester-entry-card label,.tester-preview-details label{display:grid;gap:7px;font-size:12px;font-weight:700;color:#333}
+.tester-entry-card input,.tester-entry-card select,.tester-preview-details select{width:100%;height:46px;border:1px solid #d8d8d8;border-radius:9px;background:#fff;padding:0 12px;color:#171717;font:14px inherit;box-sizing:border-box}
+.tester-entry-primary{height:47px;border:0;border-radius:9px;background:#171717;color:#fff;padding:0 18px;font-weight:700;cursor:pointer}
+.tester-entry-primary:disabled{opacity:.45;cursor:not-allowed}
+.tester-entry-error{margin:0;color:#b42318;font-size:13px}
+.tester-preview-details{margin-top:26px;padding-top:24px;border-top:1px solid #eee}
+.tester-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tester-preview-heading h2{font-size:20px;margin:6px 0 0}
+.tester-preview-status{font-size:9px;font-weight:800;letter-spacing:1px;border:1px solid #ddd;border-radius:99px;padding:7px 9px}
+.tester-preview-details dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0}
+.tester-preview-details dl>div{background:#f7f7f7;border-radius:9px;padding:12px;min-width:0}
+.tester-preview-details dt{font-size:10px;color:#777;margin-bottom:5px}
+.tester-preview-details dd{font-size:13px;font-weight:700;margin:0;overflow-wrap:anywhere}
+.tester-entry-hint,.tester-entry-footnote{font-size:11px;color:#777;line-height:1.55;margin:0}
+.tester-entry-footnote{margin-top:24px;padding-top:16px;border-top:1px solid #eee}
+@media(max-width:600px){.tester-entry-page{padding:0 14px 28px}.tester-entry-card{margin-top:22px;padding:22px}.tester-entry-card h1{font-size:27px}.tester-preview-details dl{grid-template-columns:1fr}}

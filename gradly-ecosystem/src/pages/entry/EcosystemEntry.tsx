@@ -3,14 +3,13 @@ import {
   Monitor,
   Settings,
   Shield,
+  FlaskConical,
 } from "lucide-react";
 
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  const mainAppUrl =
-    import.meta.env.VITE_MAIN_APP_URL ||
-    "https://jugalsgpa.netlify.app";
+  const mainAppUrl = "https://gradly-peach.vercel.app";
 
   return (
     <main className="system-page">
@@ -123,6 +122,34 @@ function EcosystemEntry() {
 
             </div>
 
+          </a>
+
+
+          {/* TESTER */}
+          <a
+            href="/tester"
+            className="interface-module tester-module"
+          >
+            <div className="module-icon">
+              <FlaskConical size={32} strokeWidth={1.8} />
+            </div>
+            <div className="module-content">
+              <span className="module-number">
+                04 / TESTER
+              </span>
+              <h3>
+                Continue as Tester
+              </h3>
+              <p>
+                Preview the complete student experience using an enrollment number.
+              </p>
+            </div>
+            <div className="continue-button">
+              <span>
+                CONTINUE AS TESTER
+              </span>
+              <ArrowRight size={18} />
+            </div>
           </a>
 
 

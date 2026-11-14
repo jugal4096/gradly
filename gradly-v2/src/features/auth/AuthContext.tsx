@@ -24,6 +24,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   continueAsGuest: () => void;
+  clearGuestMode: () => void;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -93,6 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGuest(true);
   }
 
+  function clearGuestMode() {
+    sessionStorage.removeItem(GUEST_SESSION_KEY);
+    setIsGuest(false);
+  }
+
   async function logout() {
     sessionStorage.removeItem(GUEST_SESSION_KEY);
     localStorage.removeItem(GUEST_ID_KEY);
@@ -111,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithGoogle,
         loginWithEmail,
         continueAsGuest,
+        clearGuestMode,
         logout,
         signOut: logout,
       }}
