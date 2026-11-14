@@ -35,8 +35,8 @@ export default function TesterWorkspace(){
    params.set("testerToken",token);params.set("testerId",loginId);params.set("testerCaseId",active.id);
    params.set("testerProfile",JSON.stringify(active));params.set("testerReturnUrl",window.location.origin+"/tester/workspace");
    target.hash=params.toString();
-   const opened=window.open(target.toString(),"_blank","noopener,noreferrer");
-   if(!opened)throw new Error("Your browser blocked the new tab. Allow pop-ups for Gradly and try again.");
+   const opened=window.open(target.toString(),"_blank");
+   if(!opened)throw new Error("Your browser blocked the new tab. Allow pop-ups for Gradly and try again.");\n   opened.opener=null;
   }catch(e){setError(e instanceof Error?e.message:"Could not launch the student workspace.");}
   finally{setLaunching(false);}
  }
