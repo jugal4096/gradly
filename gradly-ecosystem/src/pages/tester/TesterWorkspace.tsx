@@ -217,12 +217,3 @@ export default function TesterWorkspace(){
   </div>
  </main>;
 }
-
-
-/* The tester sees the real Gradly student app as the primary workspace, not an inspection panel. */
-.tester-student-shell{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;background:#fff}
-.tester-student-shell-bar{height:38px;min-height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #e7eaf0;background:#fff;color:#555e70;font-size:10px;font-weight:800;letter-spacing:.5px}
-.tester-student-shell-bar span{display:flex;align-items:center;gap:8px}
-.tester-student-shell-bar small{font-size:9px;color:#9299a7;font-weight:600}
-.tester-student-shell-bar button{border:1px solid #dfe3eb;border-radius:6px;background:#fff;padding:5px 9px;color:#555e70;font-size:10px;font-weight:700;cursor:pointer}
-.tester-student-full-frame{display:block;flex:1;width:100%;height:calc(100vh - 38px);min-height:0;border:0;background:#fff}
