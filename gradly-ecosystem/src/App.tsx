@@ -10,6 +10,8 @@ import {
 // =====================================================
 
 import EcosystemEntry from "./pages/entry/EcosystemEntry";
+import TesterLogin from "./pages/tester/TesterLogin";
+import TesterWorkspace from "./pages/tester/TesterWorkspace";
 
 // =====================================================
 // ADMIN
