@@ -45,9 +45,9 @@ export default function TesterLogin() {
         <label htmlFor="tester-login-password">PASSWORD</label>
         <div className="tester-password-wrap"><LockKeyhole size={16}/><input id="tester-login-password" type="password" autoComplete="current-password" value={password} onChange={event=>setPassword(event.target.value)} required/></div>
         {error && <div className="tester-login-error" role="alert">{error}</div>}
-        <button disabled={busy}>{busy ? "VERIFYING…" : "CONTINUE TO GRADLY V2"}</button>
+        <button disabled={busy}>{busy ? "VERIFYING…" : "OPEN VIRTUAL TEST WORKSPACE"}</button>
       </form>
-      <small>This session opens the student-facing Gradly V2 interface. It does not sign in as a real student.</small>
+      <small>After tester sign-in, you will enter an isolated virtual student environment. No Gradly student login is required.</small>
     </section>
   </main>;
 }
