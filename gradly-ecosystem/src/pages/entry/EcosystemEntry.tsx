@@ -86,7 +86,7 @@ function EcosystemEntry() {
 
           {/* USER */}
           <a
-            href={mainAppUrl.replace(/\/+$/, "") + "/user-login"}
+            href={mainAppUrl}
             className="interface-module user-module"
           >
 
@@ -137,7 +137,7 @@ function EcosystemEntry() {
             </div>
             <div className="module-content">
               <span className="module-number">
-                02 / TESTER
+                04 / TESTER
               </span>
               <h3>
                 Continue as Tester
@@ -171,7 +171,7 @@ function EcosystemEntry() {
             <div className="module-content">
 
               <span className="module-number">
-                03 / ADMIN
+                02 / ADMIN
               </span>
 
               <h3>
@@ -214,7 +214,7 @@ function EcosystemEntry() {
             <div className="module-content">
 
               <span className="module-number">
-                04 / SYSTEM
+                03 / SYSTEM
               </span>
 
               <h3>
