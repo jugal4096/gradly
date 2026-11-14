@@ -22,7 +22,7 @@
 .tester-virtual-results small,.tester-virtual-selected small{font-size:11px;color:#888}
 .tester-virtual-selected{display:flex;align-items:center;justify-content:space-between;border:1px solid #e5e5e5;background:#fafafa;border-radius:8px;padding:12px}
 .tester-virtual-selected span{display:grid;gap:4px}
-.tester-virtual-submit{height:48px;margin-top:12px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;letter-spacing:.04em;cursor:pointer}
+.tester-virtual-submit{height:48px;margin-top:12px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;letter-spacing:.04em;cursor:pointer;padding:0 18px}
 .tester-virtual-submit:disabled{opacity:.45;cursor:not-allowed}
 .tester-virtual-error{margin:3px 0;color:#a11;background:#fff1f1;border-radius:7px;padding:10px;font-size:13px}
 .tester-virtual-muted{color:#888;font-size:12px}
@@ -39,4 +39,7 @@
 .tester-virtual-note,.tester-virtual-footer{font-size:12px;line-height:1.6;color:#888}
 .tester-virtual-note{margin:18px 0 0}
 .tester-virtual-footer{padding:24px 0;text-align:center}
-@media(max-width:600px){.tester-virtual-header{padding:0 16px}.tester-virtual-account{gap:8px;font-size:9px}.tester-virtual-main{padding-top:44px}.tester-virtual-form,.tester-virtual-profile{padding:20px}.tester-virtual-grid{grid-template-columns:1fr}.tester-virtual-profile-head{align-items:flex-start}}
+.tester-virtual-embedded{height:calc(100vh - 76px);display:flex;flex-direction:column;background:#f7f7f7}
+.tester-virtual-embedded-bar{height:34px;flex:0 0 34px;padding:0 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f0f0f0;border-bottom:1px solid #ddd;color:#666;font-size:9px;letter-spacing:.1em}
+.tester-virtual-embedded iframe{display:block;width:100%;height:calc(100% - 34px);border:0;background:#fff}
+@media(max-width:600px){.tester-virtual-header{padding:0 16px}.tester-virtual-account{gap:8px;font-size:9px}.tester-virtual-main{padding-top:44px}.tester-virtual-form,.tester-virtual-profile{padding:20px}.tester-virtual-grid{grid-template-columns:1fr}.tester-virtual-profile-head{align-items:flex-start}.tester-virtual-embedded-bar{padding:0 10px;font-size:8px}.tester-virtual-embedded-bar span:last-child{display:none}}
