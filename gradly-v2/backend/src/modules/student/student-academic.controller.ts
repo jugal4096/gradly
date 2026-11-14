@@ -241,12 +241,15 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          FROM curriculum_subjects cs
          JOIN semesters sem ON sem.id = cs.semester_id
          WHERE cs.curriculum_id = $1 AND sem.semester_number = $2
-           AND (UPPER(COALESCE(cs.course_code, '')) LIKE '%OEC%'
-             OR UPPER(COALESCE(cs.course_code, '')) LIKE 'ITOE%'
-             OR UPPER(COALESCE(cs.course_type, '')) LIKE '%OPEN ELECTIVE%'
+           AND (UPPER(COALESCE(cs.course_type, '')) LIKE '%OPEN ELECTIVE%'
              OR UPPER(COALESCE(cs.course_type, '')) = 'OE'
              OR COALESCE(cs.course_name, '') ILIKE '%open elective%')
-           AND cs.active IS TRUE
+           AND (cs.active IS TRUE OR NOT EXISTS (
+             SELECT 1 FROM curriculum_subjects active_cs
+             JOIN semesters active_sem ON active_sem.id = active_cs.semester_id
+             WHERE active_cs.curriculum_id = $1 AND active_sem.semester_number = $2
+               AND active_cs.active IS TRUE
+           ))
          ORDER BY cs.course_code, cs.course_name`,
         [resolved.profile.curriculum_id, semesterNumber],
       );
