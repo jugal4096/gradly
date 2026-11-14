@@ -3,6 +3,7 @@ import {
   Monitor,
   Settings,
   Shield,
+  FlaskConical,
 } from "lucide-react";
 
 import "./EcosystemEntry.css";
@@ -126,6 +127,34 @@ function EcosystemEntry() {
           </a>
 
 
+          {/* TESTER */}
+          <a
+            href={mainAppUrl.replace(/\/+$/, "") + "/tester"}
+            className="interface-module tester-module"
+          >
+            <div className="module-icon">
+              <FlaskConical size={32} strokeWidth={1.8} />
+            </div>
+            <div className="module-content">
+              <span className="module-number">
+                02 / TESTER
+              </span>
+              <h3>
+                Continue as Tester
+              </h3>
+              <p>
+                Preview the complete student experience using an enrollment number.
+              </p>
+            </div>
+            <div className="continue-button">
+              <span>
+                CONTINUE AS TESTER
+              </span>
+              <ArrowRight size={18} />
+            </div>
+          </a>
+
+
           {/* ADMIN */}
           <a
             href="/admin/login"
@@ -142,7 +171,7 @@ function EcosystemEntry() {
             <div className="module-content">
 
               <span className="module-number">
-                02 / ADMIN
+                03 / ADMIN
               </span>
 
               <h3>
@@ -185,7 +214,7 @@ function EcosystemEntry() {
             <div className="module-content">
 
               <span className="module-number">
-                03 / SYSTEM
+                04 / SYSTEM
               </span>
 
               <h3>
