@@ -266,7 +266,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
 
   useEffect(() => {
     if (isGuest && !isTester) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
-  }, [isGuest, subjects]);
+  }, [isGuest, isTester, subjects]);
 
   useEffect(() => {
     setCgpaWhatIfSgpas(Object.fromEntries(results.map(row=>[row.semester,String(row.sgpa)])));
