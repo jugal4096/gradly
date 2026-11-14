@@ -698,9 +698,9 @@ export default function StudentPlatform() {
           ? {...item,courseCode:option.code,name:option.name,credits:3}
           : {...item,courseCode:option.labCode,name:option.labName,credits:1};
       }
-      const options=item.electiveKind==="OE"?OE_OPTIONS:item.electiveKind==="HS"?hsOptionsForSemester(selectedSemester):item.electiveKind==="PE6C"?PE6_THIRD_OPTIONS:PE5_OPTIONS;
+      const options=item.electiveKind==="OE"?getOEOptionsForSlot(profile,selectedSemester,item.credits):item.electiveKind==="HS"?hsOptionsForSemester(selectedSemester):item.electiveKind==="PE6C"?PE6_THIRD_OPTIONS:PE5_OPTIONS;
       const option=options.find(candidate=>candidate.code===code);
-      return {...item,courseCode:option?.code||item.electiveSlotCode,name:option?.name||"",credits:option?.credits||item.credits};
+      return {...item,courseCode:option?.code||item.electiveSlotCode,name:option?.name||"",credits:option?.credits||item.credits,courseType:item.electiveKind==="OE"?"Open Elective (OE)":item.courseType};
     }));
     setSgpa(null);
   }
@@ -715,15 +715,31 @@ export default function StudentPlatform() {
   }
   function confirmAddElectiveCourse() {
     if (!addCourseType || !addCourseCode) { setNotice("Choose a subject before adding it."); return; }
-    const options:ElectiveOption[]=addCourseType==="OE"?OE_OPTIONS:addCourseType==="HS"?hsOptionsForSemester(selectedSemester):[{code:"INHS1020",name:"Universal Human Values",credits:3}];
+    const options:ElectiveOption[]=addCourseType==="OE"?getOEOptionsForStudent(profile,selectedSemester):addCourseType==="HS"?hsOptionsForSemester(selectedSemester):[{code:"INHS1020",name:"Universal Human Values",credits:3}];
     const option=options.find(item=>item.code===addCourseCode);
-    if(!option) { setNotice("That subject is not available."); return; }
+    if(!option) { setNotice("That subject is not available for this semester or programme."); return; }
     if(addCourseType==="UHV" && uhvAlreadyUsed) { setNotice("Universal Human Values can be added only once throughout your degree."); return; }
-    if(addCourseType!=="UHV"&&creditsForSemesterLimit+option.credits>28) { setNotice("Adding this course would exceed the 28-credit semester limit."); return; }
+    const emptySlot=addCourseType==="OE"?subjects.find(subject=>subject.electiveKind==="OE"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):addCourseType==="HS"?subjects.find(subject=>subject.electiveKind==="HS"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):undefined;
+    const removedSlot=addCourseType==="OE"?droppedElectives.find(subject=>subject.electiveKind==="OE"):addCourseType==="HS"?droppedElectives.find(subject=>subject.electiveKind==="HS"):undefined;
+    const targetSlot=emptySlot||removedSlot;
+    const optionCredits=option.credits||targetSlot?.credits||0;
+    if(addCourseType!=="UHV"&&optionCredits<=0) { setNotice("The approved elective slot credit value is missing. Configure the semester credit value before selecting this course."); return; }
+    if(targetSlot&&option.credits&&targetSlot.credits&&option.credits!==targetSlot.credits) { setNotice("This course does not match the credit requirement of the semester elective slot."); return; }
+    if(addCourseType==="OE"&&!targetSlot&&subjects.some(subject=>subject.electiveKind==="OE"&&subject.courseCode!==subject.electiveSlotCode&&subject.name.trim())) { setNotice("The Open Elective slot for this semester is already selected. Change that selection instead of adding a second OE."); return; }
+    if(addCourseType!=="UHV"&&creditsForSemesterLimit+optionCredits>28) { setNotice("Adding this course would exceed the 28-credit semester limit."); return; }
     if(subjects.some(subject=>subject.courseCode===option.code)) { setNotice("This course is already added to the semester."); return; }
     const courseType=addCourseType==="OE"?"Open Elective (OE)":addCourseType==="HS"?"Humanities & Social Sciences (HS)":"Universal Human Values (UHV)";
-    const nextId=Math.max(0,...subjects.map(subject=>subject.id))+1;
-    setSubjects(current=>[...current,{id:nextId,name:option.name,credits:option.credits,grade:"",courseCode:option.code,courseType,isCustom:true}]);
+    if(targetSlot) {
+      setSubjects(current=>[...current.filter(subject=>subject.id!==targetSlot.id),{...targetSlot,name:option.name,credits:optionCredits,grade:"",courseCode:option.code,courseType,isCustom:false}].sort((a,b)=>a.id-b.id));
+      if(removedSlot) {
+        const nextDropped=droppedElectives.filter(subject=>subject.id!==removedSlot.id);
+        setDroppedElectives(nextDropped);
+        localStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(nextDropped));
+      }
+    } else {
+      const nextId=Math.max(0,...subjects.map(subject=>subject.id))+1;
+      setSubjects(current=>[...current,{id:nextId,name:option.name,credits:optionCredits,grade:"",courseCode:option.code,courseType,isCustom:true,electiveKind:addCourseType==="OE"?"OE":addCourseType==="HS"?"HS":null}]);
+    }
     setSgpa(null); setNotice(""); setAddCourseDialogOpen(false); setAddCourseType(null); setAddCourseCode("");
   }
   function removeSubject(subjectId:number) {
