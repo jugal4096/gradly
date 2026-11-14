@@ -50,9 +50,10 @@ function parseEnrollment(value: string) {
   const admissionYear = yy >= 70 ? 1900 + yy : 2000 + yy;
   const modeCode = enrollment[4];
   const branchCode = enrollment.slice(5, 7);
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const academicYearStart = month >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  const dateParts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric" }).formatToParts(new Date());
+  const localYear = Number(dateParts.find(part => part.type === "year")?.value);
+  const month = Number(dateParts.find(part => part.type === "month")?.value);
+  const academicYearStart = month >= 7 ? localYear : localYear - 1;
 
   if (admissionYear > academicYearStart) throw new Error("Invalid enrollment number.");
   if (prefix === "BE" && (admissionYear > 2023 || (admissionYear === 2023 && modeCode !== "S"))) throw new Error("Invalid enrollment number.");
