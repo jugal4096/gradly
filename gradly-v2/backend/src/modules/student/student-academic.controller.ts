@@ -7,6 +7,50 @@ const gradePoints: Record<string, number> = {
   "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0,
 };
 
+// GECA B.Tech NEP Open Elective basket. NEPOE_* values are internal identifiers, not official course codes.
+const nepOpenElectiveCatalog = [
+  { code: "NEPOE_CE_3_RURAL_TECHNOLOGY", department: "CE", semester: 3, credits: 3 },
+  { code: "NEPOE_CE_4_DISASTER_MANAGEMENT", department: "CE", semester: 4, credits: 3 },
+  { code: "NEPOE_CE_5_WATERSHED_MANAGEMENT", department: "CE", semester: 5, credits: 2 },
+  { code: "NEPOE_ME_3_INDUSTRIAL_PSYCHOLOGY", department: "ME", semester: 3, credits: 3 },
+  { code: "NEPOE_ME_3_ENGINEERING_ECONOMICS", department: "ME", semester: 3, credits: 3 },
+  { code: "NEPOE_ME_3_ETHICAL_VALUES", department: "ME", semester: 3, credits: 3 },
+  { code: "NEPOE_ME_3_SMART_MOBILITY_ROAD_SAFETY", department: "ME", semester: 3, credits: 3 },
+  { code: "MEOEC2020", department: "ME", semester: 4, credits: 3 },
+  { code: "MEOEC2021", department: "ME", semester: 4, credits: 3 },
+  { code: "MEOEC2022", department: "ME", semester: 4, credits: 3 },
+  { code: "NEPOE_ME_4_GREEN_HYDROGEN_FINANCING", department: "ME", semester: 4, credits: 3 },
+  { code: "NEPOE_ME_5_ENTREPRENEURSHIP_DEVELOPMENT", department: "ME", semester: 5, credits: 2 },
+  { code: "NEPOE_ME_5_FINANCIAL_MANAGEMENT", department: "ME", semester: 5, credits: 2 },
+  { code: "EEOEC2001", department: "EE", semester: 3, credits: 3 },
+  { code: "EEOEC2010", department: "EE", semester: 4, credits: 2 },
+  { code: "EEOEC3001", department: "EE", semester: 5, credits: 3 },
+  { code: "ETOEC0010", department: "ET", semester: 3, credits: 0 },
+  { code: "ETOEC1020", department: "ET", semester: 4, credits: 0 },
+  { code: "ETOEC0030", department: "ET", semester: 5, credits: 0 },
+  { code: "ETOEC0011", department: "ET", semester: 3, credits: 0 },
+  { code: "ETOEC1021", department: "ET", semester: 4, credits: 0 },
+  { code: "ETOEC0031", department: "ET", semester: 5, credits: 0 },
+  { code: "NEPOE_CS_3_DESIGN_THINKING", department: "CS", semester: 3, credits: 3 },
+  { code: "NEPOE_CS_3_CRITICAL_THINKING", department: "CS", semester: 3, credits: 3 },
+  { code: "NEPOE_CS_4_PECL", department: "CS", semester: 4, credits: 3 },
+  { code: "NEPOE_CS_4_SOFTWARE_DEVELOPMENT_CYCLE", department: "CS", semester: 4, credits: 3 },
+  { code: "NEPOE_CS_5_BEHAVIORAL_SCIENCE_ORGANIZATION", department: "CS", semester: 5, credits: 2 },
+] as const;
+
+function getMajorDepartmentCode(branchCode: string, branchName: string): string | null {
+  const code = String(branchCode || "").trim().toUpperCase();
+  if (["CE", "ME", "EE", "ET", "CS", "IT"].includes(code)) return code;
+  const name = String(branchName || "").toLowerCase();
+  if (/civil/.test(name)) return "CE";
+  if (/mechanical/.test(name)) return "ME";
+  if (/electrical/.test(name)) return "EE";
+  if (/electronics|telecommunication|entc|e\s*&\s*tc/.test(name)) return "ET";
+  if (/computer science|\bcse\b/.test(name)) return "CS";
+  if (/information technology|\bit\b/.test(name)) return "IT";
+  return null;
+}
+
 async function resolveProfile(req: AuthenticatedRequest, res: Response) {
   if (!req.firebaseUser) {
     res.status(401).json({ message: "User is not authenticated." });
@@ -124,7 +168,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027","MEOE0050",
     "EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
   ]);
-  const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code));
+  const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code) || /^NEPOE_|^[A-Z]{2}OEC/.test(code));
   if (new Set(submittedOECodes).size !== submittedOECodes.length) {
     return res.status(409).json({ code: "OE_ALREADY_REGISTERED", message: "An Open Elective can be registered only once throughout your degree. Remove the duplicate subject." });
   }
