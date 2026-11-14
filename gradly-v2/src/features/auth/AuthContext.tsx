@@ -177,6 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem("gradly_tester_return_url");
       setIsTester(false);
       setUser(null);
+      if (window.parent !== window) {
+        try {
+          const parentOrigin = new URL(returnUrl, window.location.origin).origin;
+          window.parent.postMessage({ type: "GRADLY_TESTER_EXIT" }, parentOrigin);
+          return;
+        } catch { /* fall back to the validated return URL */ }
+      }
       window.location.assign(returnUrl);
       return;
     }
