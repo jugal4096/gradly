@@ -425,6 +425,23 @@ export default function StudentPlatform() {
   },[isGuest,user,profile.curriculumId,whatIfSemester,savedSubjectsBySemester,section]);
 
   useEffect(() => {
+    if(section!=="syllabus" || !profile.curriculumId || !user) return;
+    let cancelled=false;
+    setSyllabusLoading(true);setSyllabusError("");
+    const firstSemester=isDseAdmission(profile.admissionMode,profile.enrollment)?3:1;
+    const semesters=Array.from({length:Math.max(0,totalProgrammeSemesters-firstSemester+1)},(_,index)=>firstSemester+index);
+    void Promise.all(semesters.map(async semester=>{
+      const response=await fetch(API+`/api/academic/curricula/${encodeURIComponent(profile.curriculumId)}/semesters/${semester}/subjects`);
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.message||`Unable to load Semester ${semester} syllabus.`);
+      return [semester,(Array.isArray(data.data)?data.data:[]) as CurriculumSubjectApi[]] as const;
+    })).then(entries=>{if(!cancelled)setSyllabusRows(Object.fromEntries(entries));})
+      .catch(error=>{if(!cancelled)setSyllabusError(error instanceof Error?error.message:"Unable to load the configured syllabus.");})
+      .finally(()=>{if(!cancelled)setSyllabusLoading(false);});
+    return()=>{cancelled=true;};
+  },[section,profile.curriculumId,profile.admissionMode,profile.enrollment,user,totalProgrammeSemesters]);
+
+  useEffect(() => {
     setPlannerSemester(currentSemester);
   },[currentSemester]);
 
