@@ -490,7 +490,7 @@ export default function StudentPlatform() {
   const openElectiveSlot = subjects.find(subject=>subject.electiveKind==="OE"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode));
   const droppedOESlot = droppedElectives.find(subject=>subject.electiveKind==="OE");
   const oeSlotCreditRequirement = openElectiveSlot?.credits||droppedOESlot?.credits||0;
-  const availableOEOptions = getOEOptionsForSlot(profile,selectedSemester,oeSlotCreditRequirement).filter(option=>!previouslyOptedOECodes.has(option.code));
+  const availableOEOptions = getOEOptionsForSlot(profile,selectedSemester,oeSlotCreditRequirement).filter(option=>(!isNepSchemeName(profile.scheme)||option.credits>0||oeSlotCreditRequirement>0)&&!previouslyOptedOECodes.has(option.code));
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
   const isCurrentSemesterInProgress = !isGuest && selectedSemester === currentSemester;
   const canCalculateOfficialSgpa = isGuest || selectedSemester < currentSemester;
@@ -570,6 +570,7 @@ export default function StudentPlatform() {
     const options=kind==="OE"?getOEOptionsForStudent(profile,plannerSemester):hsOptionsForSemester(plannerSemester);
     const option=options.find(item=>item.code===code);
     if(!option) return;
+    if(kind==="OE"&&option.credits<=0) { setPlannerNotice("This language elective inherits credits from the approved semester OE slot. Select it in the SGPA curriculum instead."); return; }
     const card=plannerReportCards.find(item=>item.id===cardId);
     if(!card||card.subjects.some(subject=>subject.courseCode===code)) return;
     const previouslyUsedOE=new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==plannerSemester).flatMap(([,rows])=>rows.filter(subject=>isOECodeForStudent(profile,subject.courseCode||"")).map(subject=>subject.courseCode||"")));
