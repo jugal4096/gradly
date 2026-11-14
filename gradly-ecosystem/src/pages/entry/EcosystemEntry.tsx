@@ -86,7 +86,7 @@ function EcosystemEntry() {
 
           {/* USER */}
           <a
-            href={mainAppUrl}
+            href={mainAppUrl.replace(/\/+$/, "") + "/user-login"}
             className="interface-module user-module"
           >
 
