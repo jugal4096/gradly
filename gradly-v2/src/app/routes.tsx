@@ -22,6 +22,7 @@ function NotFoundPage() {
 
 export default function AppRoutes() {
   const navigate = useNavigate();
+  const { isTester } = useAuth();
   useEffect(() => {
     const onPageShow = () => { if (window.location.pathname === "/login") navigate("/", { replace: true }); };
     window.addEventListener("pageshow", onPageShow);
