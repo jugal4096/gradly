@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Check, ChevronRight, CirclePlus, FlaskConical, GraduationCap, LogOut, Plus, RotateCcw, Trash2, ExternalLink, Search, LoaderCircle, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, CirclePlus, FlaskConical, GraduationCap, LogOut, Plus, RotateCcw, Trash2, ExternalLink, Search, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
