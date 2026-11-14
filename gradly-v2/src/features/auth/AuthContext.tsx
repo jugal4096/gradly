@@ -63,7 +63,10 @@ function prepareTesterLaunch() {
     sessionStorage.setItem(TESTER_PREFIX_KEY, prefix);
     localStorage.setItem(prefix + ":gradly_student_profile", JSON.stringify(seededProfile));
     sessionStorage.setItem("gradly_tester_login_id", testerId);
-    sessionStorage.setItem("gradly_tester_return_url", params.get("testerReturnUrl") || "");
+    const returnCandidate=params.get("testerReturnUrl") || "";
+    let safeReturnUrl="/";
+    try { const parsed=new URL(returnCandidate); if(parsed.pathname==="/tester/workspace" && (parsed.protocol==="https:" || (parsed.protocol==="http:" && parsed.hostname==="localhost"))) safeReturnUrl=parsed.toString(); } catch { /* use the local app root */ }
+    sessionStorage.setItem("gradly_tester_return_url", safeReturnUrl);
   } catch {
     sessionStorage.removeItem(TESTER_TOKEN_KEY);
   }
