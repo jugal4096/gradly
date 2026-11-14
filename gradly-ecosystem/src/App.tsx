@@ -62,61 +62,26 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* =============================================
-            ECOSYSTEM ENTRY
-            ============================================= */}
+        {/* ECOSYSTEM ENTRY */}
+        <Route path="/" element={<EcosystemEntry />} />
 
-        <Route
-          path="/"
-          element={<EcosystemEntry />}
-        />
+        {/* TESTER AUTHENTICATION AND HANDOFF */}
+        <Route path="/tester/login" element={<TesterLogin />} />
+        <Route path="/tester/workspace" element={<TesterWorkspace />} />
 
-        {/* =============================================
-            ADMIN PORTAL
-            ============================================= */}
+        {/* ADMIN PORTAL */}
+        <Route path="/admin" element={<AdminPortal />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
 
-        <Route
-          path="/admin"
-          element={<AdminPortal />}
-        />
+        {/* ADMIN APPLICATION */}
+        <Route path="/admin/apply" element={<AdminApply />} />
+        <Route path="/admin/applications" element={<AdminApply />} />
 
-        <Route
-          path="/admin/login"
-          element={<AdminLogin />}
-        />
+        {/* ADMIN REGISTRATION */}
+        <Route path="/admin/register" element={<AdminRegister />} />
 
-        {/* =============================================
-            ADMIN APPLICATION
-            ============================================= */}
-
-        <Route
-          path="/admin/apply"
-          element={<AdminApply />}
-        />
-
-        <Route
-          path="/admin/applications"
-          element={<AdminApply />}
-        />
-
-        {/* =============================================
-            ADMIN REGISTRATION
-            ============================================= */}
-
-        <Route
-          path="/admin/register"
-          element={<AdminRegister />}
-        />
-
-        {/* =============================================
-            ADMIN DASHBOARD
-            ============================================= */}
-
-        <Route
-          path="/admin/dashboard"
-          element={<AdminDashboard />}
-        />
-
+        {/* ADMIN DASHBOARD */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/curriculum" element={<AdminWorkspacePage />} />
         <Route path="/admin/requests" element={<AdminRequestCenter />} />
         <Route path="/admin/notifications" element={<AdminWorkspacePage />} />
@@ -127,130 +92,37 @@ function App() {
         <Route path="/admin/department" element={<AdminWorkspacePage />} />
         <Route path="/admin/profile" element={<AdminWorkspacePage />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/change-password" element={<AdminChangePassword />} />
 
-        <Route
-          path="/admin/change-password"
-          element={<AdminChangePassword />}
-        />
+        {/* SUPER ADMIN LOGIN */}
+        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
 
-        {/* =============================================
-            SUPER ADMIN LOGIN
-            ============================================= */}
-
-        <Route
-          path="/super-admin/login"
-          element={<SuperAdminLogin />}
-        />
-
-        {/* =============================================
-            SUPER ADMIN PORTAL
-            ============================================= */}
-
-        <Route
-          path="/super-admin"
-          element={<RequireSuperAdmin><SuperAdminLayout /></RequireSuperAdmin>}
-        >
-          <Route
-            index
-            element={<SuperAdminDashboard />}
-          />
-
-          <Route
-            path="dashboard"
-            element={<SuperAdminDashboard />}
-          />
-
-          <Route
-            path="users"
-            element={<SuperAdminUsers />}
-          />
-
+        {/* SUPER ADMIN PORTAL */}
+        <Route path="/super-admin" element={<RequireSuperAdmin><SuperAdminLayout /></RequireSuperAdmin>}>
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="dashboard" element={<SuperAdminDashboard />} />
+          <Route path="users" element={<SuperAdminUsers />} />
           <Route path="testers" element={<SuperAdminTesterManagement />} />
-
-          {/* Preserve old bookmarks while keeping blacklist management inside Settings. */}
-          <Route
-            path="blacklist"
-            element={<Navigate to="/super-admin/settings#account-restrictions" replace />}
-          />
-
-          <Route
-            path="admins"
-            element={<SuperAdminAdmins />}
-          />
-
+          <Route path="blacklist" element={<Navigate to="/super-admin/settings#account-restrictions" replace />} />
+          <Route path="admins" element={<SuperAdminAdmins />} />
           <Route path="admins/:adminId/profile" element={<SuperAdminAdminProfile />} />
           <Route path="admins/:adminId/activity" element={<SuperAdminAudit />} />
           <Route path="admins/:adminId/actions" element={<SuperAdminAdminActions />} />
-
-          <Route
-            path="users/:userId"
-            element={<SuperAdminUserDetails />}
-          />
-
-          <Route
-            path="applications"
-            element={<SuperAdminApplications />}
-          />
-
-          <Route
-            path="audit"
-            element={<SuperAdminAudit />}
-          />
-
-          <Route
-            path="feedback"
-            element={<SuperAdminFeedback />}
-          />
-
-          <Route
-            path="curriculum"
-            element={<SuperAdminCurriculum />}
-          />
-
-          <Route
-            path="settings"
-            element={<SuperAdminSettings />}
-          />
-
-          <Route
-            path="requests"
-            element={<SuperAdminRequestCenter />}
-          />
-
-          <Route
-            path="password-requests"
-            element={<SuperAdminPasswordRequests />}
-          />
-
-          <Route
-            path="security-alerts"
-            element={<SuperAdminSecurityAlerts />}
-          />
-
-          <Route
-            path="admin-announcements"
-            element={<SuperAdminAdminMessages />}
-          />
-
-          <Route
-            path="admin-requests"
-            element={<Navigate to="/super-admin/requests" replace />}
-          />
+          <Route path="users/:userId" element={<SuperAdminUserDetails />} />
+          <Route path="applications" element={<SuperAdminApplications />} />
+          <Route path="audit" element={<SuperAdminAudit />} />
+          <Route path="feedback" element={<SuperAdminFeedback />} />
+          <Route path="curriculum" element={<SuperAdminCurriculum />} />
+          <Route path="settings" element={<SuperAdminSettings />} />
+          <Route path="requests" element={<SuperAdminRequestCenter />} />
+          <Route path="password-requests" element={<SuperAdminPasswordRequests />} />
+          <Route path="security-alerts" element={<SuperAdminSecurityAlerts />} />
+          <Route path="admin-announcements" element={<SuperAdminAdminMessages />} />
+          <Route path="admin-requests" element={<Navigate to="/super-admin/requests" replace />} />
         </Route>
 
-        {/* =============================================
-            UNKNOWN ROUTES
-            ============================================= */}
-
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
-        />
+        {/* UNKNOWN ROUTES */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
