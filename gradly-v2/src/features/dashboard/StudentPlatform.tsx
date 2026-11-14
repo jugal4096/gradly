@@ -381,7 +381,8 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
         const customSavedSubjects: Subject[] = saved
           .filter(subject=>!subject.curriculumSubjectId)
           .map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
-        setSubjects([...availableCurriculumSubjects,...customSavedSubjects]);
+        const testerDraft=isTester&&savedTesterState.selectedSemester===selectedSemester&&Array.isArray(savedTesterState.subjects)?savedTesterState.subjects:null;
+        setSubjects(testerDraft?.length?testerDraft:[...availableCurriculumSubjects,...customSavedSubjects]);
         setSgpa(null);
       } catch(error) {
         if(!cancelled) { setSubjects([]); setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
