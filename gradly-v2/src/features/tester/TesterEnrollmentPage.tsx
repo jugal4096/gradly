@@ -23,12 +23,21 @@ function normalize(value: string) {
   return String(value || "").normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
-function programmeMatches(prefix: string, name: string) {
-  const value = normalize(name);
-  if (prefix === "BE" || prefix === "BT") return value === "engineering" || value.includes("bachelorofengineering") || value.includes("bacheloroftechnology") || value === "be" || value === "btech";
-  if (prefix === "MC") return value.includes("masterofcomputerapplications") || value === "mca" || value.includes("mastercomputerapplications");
-  if (prefix === "ME") return value.includes("masterofengineering") || value === "me" || value.includes("masterengineering");
-  return value.includes("masteroftechnology") || value === "mtech" || value.includes("mastertechnology");
+function programmeMatches(prefix: string, rawName: string) {
+  const name = String(rawName || "").normalize("NFKC").toLowerCase()
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\\s+/g, " ").trim();
+  if (!name) return false;
+  const engineeringPatterns = [
+    /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|bachelors engineering|bachelor of engg|bachelor in engg|bachelor engg|b engg|b e|be)(?: |$)/,
+    /(?:^| )(?:bachelor of technology|bachelor in technology|bachelors of technology|bachelors in technology|bachelor technology|bachelors technology|bachelor of tech|b tech|b t e c h|btech|bt)(?: |$)/,
+  ];
+  const postgraduatePatterns: Record<string, RegExp> = {
+    MC: /(?:^| )(?:master of computer applications|master in computer applications|masters of computer applications|master computer applications|m c a|mca|mc)(?: |$)/,
+    ME: /(?:^| )(?:master of engineering|master in engineering|masters of engineering|master engineering|master of engg|m engg|m e|me)(?: |$)/,
+    MT: /(?:^| )(?:master of technology|master in technology|masters of technology|master technology|master of tech|m tech|m t e c h|mtech|mt)(?: |$)/,
+  };
+  if (prefix === "BE" || prefix === "BT") return name === "engineering" || name === "undergraduate engineering" || engineeringPatterns.some(pattern => pattern.test(name));
+  return Boolean(postgraduatePatterns[prefix]?.test(name));
 }
 
 function parseEnrollment(value: string) {
