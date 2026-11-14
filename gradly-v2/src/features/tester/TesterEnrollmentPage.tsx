@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { useTester, type TesterAcademicProfile } from "./TesterContext";
 import "./TesterEnrollmentPage.css";
 
@@ -110,8 +111,9 @@ function allowedCurricula(prefix: string, curricula: Curriculum[]) {
 export default function TesterEnrollmentPage() {
   const navigate = useNavigate();
   const { isTester, enterTester, setTesterProfile, exitTester } = useTester();
+  const { clearGuestMode } = useAuth();
 
-  useEffect(() => { if (!isTester) enterTester(); }, [isTester, enterTester]);
+  useEffect(() => { clearGuestMode(); if (!isTester) enterTester(); }, []);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institutionId, setInstitutionId] = useState("");
   const [enrollment, setEnrollment] = useState("");
