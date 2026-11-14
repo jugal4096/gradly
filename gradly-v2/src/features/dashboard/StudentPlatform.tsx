@@ -485,8 +485,11 @@ export default function StudentPlatform() {
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const creditsForSemesterLimit = subjects.filter(s=>s.name.trim() && s.credits>0 && s.courseCode?.toUpperCase()!=="INHS1020").reduce((sum,s)=>sum+s.credits,0);
   const uhvAlreadyUsed = subjects.some(subject=>subject.courseCode==="INHS1020") || Object.values(savedSubjectsBySemester).some(semesterSubjects=>semesterSubjects.some(subject=>subject.courseCode==="INHS1020"));
-  const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([,semesterSubjects])=>semesterSubjects.filter(subject=>OE_OPTIONS.some(option=>option.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
-  const availableOEOptions = OE_OPTIONS.filter(option=>!previouslyOptedOECodes.has(option.code));
+  const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([,semesterSubjects])=>semesterSubjects.filter(subject=>isOECodeForStudent(profile,subject.courseCode||"")).map(subject=>subject.courseCode||"")));
+  const openElectiveSlot = subjects.find(subject=>subject.electiveKind==="OE"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode));
+  const droppedOESlot = droppedElectives.find(subject=>subject.electiveKind==="OE");
+  const oeSlotCreditRequirement = openElectiveSlot?.credits||droppedOESlot?.credits||0;
+  const availableOEOptions = getOEOptionsForSlot(profile,selectedSemester,oeSlotCreditRequirement).filter(option=>!previouslyOptedOECodes.has(option.code));
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
   const isCurrentSemesterInProgress = !isGuest && selectedSemester === currentSemester;
   const canCalculateOfficialSgpa = isGuest || selectedSemester < currentSemester;
@@ -563,12 +566,12 @@ export default function StudentPlatform() {
     setPlannerReportCards(cards=>cards.map(item=>item.id===cardId?{...item,subjects:item.subjects.map(subject=>({...subject,grade:plan.grades[subject.id]||"D"}))}:item));
   }
   function addPlannerCardElective(cardId:number,kind:"OE"|"HS",code:string) {
-    const options=kind==="OE"?OE_OPTIONS:hsOptionsForSemester(plannerSemester);
+    const options=kind==="OE"?getOEOptionsForStudent(profile,plannerSemester):hsOptionsForSemester(plannerSemester);
     const option=options.find(item=>item.code===code);
     if(!option) return;
     const card=plannerReportCards.find(item=>item.id===cardId);
     if(!card||card.subjects.some(subject=>subject.courseCode===code)) return;
-    const previouslyUsedOE=new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==plannerSemester).flatMap(([,rows])=>rows.filter(subject=>OE_OPTIONS.some(item=>item.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
+    const previouslyUsedOE=new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==plannerSemester).flatMap(([,rows])=>rows.filter(subject=>isOECodeForStudent(profile,subject.courseCode||"")).map(subject=>subject.courseCode||"")));
     if(kind==="OE"&&previouslyUsedOE.has(code)) { setPlannerNotice("This open elective was already selected in another semester."); return; }
     const credits=card.subjects.reduce((sum,subject)=>sum+Math.max(0,subject.credits),0);
     if(credits+option.credits>28) { setPlannerNotice("Adding this elective would exceed the 28-credit semester limit."); return; }
