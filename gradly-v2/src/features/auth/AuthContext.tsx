@@ -45,7 +45,8 @@ function readTesterLaunch() {
   let returnUrl = "/";
   try {
     const candidate = new URL(params.get("testerReturnUrl") || "");
-    if ((candidate.protocol === "https:" || candidate.protocol === "http:") && candidate.pathname === "/tester/login") {
+    const referrerOrigin = document.referrer ? new URL(document.referrer).origin : "";
+    if ((candidate.protocol === "https:" || candidate.protocol === "http:") && candidate.pathname === "/tester/login" && candidate.origin === referrerOrigin) {
       returnUrl = candidate.toString();
     }
   } catch { /* Keep the safe in-app fallback. */ }
