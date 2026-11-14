@@ -35,7 +35,6 @@ export default function AppRoutes() {
   }, [navigate]);
   return <Routes>
     <Route path="/" element={<HomePage />} />
-    <Route path="/user-login" element={<LoginPage userLoginOnly />} />
     <Route path="/login" element={<Navigate to="/" replace />} />
     <Route path="/tester" element={<TesterEnrollmentPage />} />
     <Route path="/tester/workspace" element={<TesterWorkspaceRoute />} />
