@@ -1,1 +1,42 @@
 .tester-auth-page,.tester-loading{min-height:100vh;background:#f7f7f7;color:#171717;font-family:Inter,Arial,sans-serif;padding:28px;box-sizing:border-box}.tester-auth-page>header{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}.tester-auth-page>header a{display:flex;gap:8px;align-items:center;color:inherit;text-decoration:none}.tester-auth-page>header>span{font-size:11px;letter-spacing:.12em;color:#666}.tester-auth-page>header i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#222;margin-right:7px}.tester-auth-panel{width:min(440px,100%);margin:12vh auto 0;background:#fff;border:1px solid #e5e5e5;border-radius:18px;padding:36px;box-sizing:border-box;box-shadow:0 16px 48px #0000000a}.tester-auth-mark{width:52px;height:52px;border:1px solid #ddd;border-radius:14px;display:grid;place-items:center;margin-bottom:22px}.tester-auth-kicker{font-size:10px;letter-spacing:.14em;color:#777}.tester-auth-panel h1{font-size:30px;letter-spacing:-.04em;margin:10px 0}.tester-auth-panel p{color:#666;line-height:1.6;font-size:14px}.tester-auth-panel form{display:grid;gap:10px;margin-top:26px}.tester-auth-panel label{font-size:10px;letter-spacing:.1em;color:#555;margin-top:8px}.tester-auth-panel input{height:44px;border:1px solid #ddd;border-radius:8px;padding:0 12px;font:inherit;box-sizing:border-box;width:100%;background:#fff;color:#111}.tester-password-wrap{display:flex;align-items:center;gap:9px;border:1px solid #ddd;border-radius:8px;padding:0 12px}.tester-password-wrap input{border:0;padding:0;outline:0}.tester-auth-panel form>button,.tester-loading button{height:46px;border:0;border-radius:8px;background:#171717;color:white;font-weight:600;margin-top:14px;cursor:pointer}.tester-auth-panel form>button:disabled{opacity:.6;cursor:wait}.tester-auth-panel>small{display:block;color:#888;line-height:1.5;margin-top:20px}.tester-login-error{background:#fff1f1;color:#a11;padding:10px 12px;border-radius:8px;font-size:13px}.tester-loading{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;text-align:center}.tester-loading button{padding:0 18px}.tester-workspace-top,.tester-workspace,.tester-auth-panel{color:#171717}
+/* Isolated virtual student environment */
+.tester-virtual-shell{min-height:100vh;background:#f7f7f7;color:#171717;font-family:Inter,Arial,sans-serif}
+.tester-virtual-header{height:76px;padding:0 clamp(20px,5vw,72px);border-bottom:1px solid #e8e8e8;background:#fff;display:flex;align-items:center;justify-content:space-between}
+.tester-virtual-brand{display:flex;align-items:center;gap:11px;color:inherit;text-decoration:none;font-weight:700;letter-spacing:-.03em}
+.tester-virtual-brand small{display:block;margin-top:3px;color:#888;font-size:9px;letter-spacing:.14em;font-weight:600}
+.tester-virtual-mark{width:36px;height:36px;border:1px solid #222;border-radius:9px;display:grid;place-items:center;font-size:19px}
+.tester-virtual-account{display:flex;align-items:center;gap:18px;font-size:11px;letter-spacing:.08em;color:#666}
+.tester-virtual-account button,.tester-virtual-selected button{border:0;background:none;text-decoration:underline;color:#333;cursor:pointer;font:inherit}
+.tester-virtual-main{width:min(920px,calc(100% - 40px));margin:0 auto;padding:72px 0 34px}
+.tester-virtual-heading{max-width:650px;margin-bottom:30px}
+.tester-virtual-eyebrow{font-size:10px;letter-spacing:.15em;color:#777;font-weight:700}
+.tester-virtual-heading h1{font-size:clamp(30px,5vw,46px);letter-spacing:-.055em;line-height:1.08;margin:12px 0}
+.tester-virtual-heading p{max-width:630px;color:#666;line-height:1.7;font-size:14px}
+.tester-virtual-form,.tester-virtual-profile{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:28px;max-width:650px}
+.tester-virtual-form{display:grid;gap:11px}
+.tester-virtual-form label,.tester-virtual-semester-label{font-size:10px;letter-spacing:.12em;font-weight:700;color:#555;margin-top:9px}
+.tester-virtual-form input,.tester-virtual-profile select{height:46px;border:1px solid #ddd;border-radius:8px;padding:0 13px;font:inherit;color:#171717;background:#fff;min-width:0;width:100%;box-sizing:border-box}
+.tester-virtual-results{border:1px solid #e5e5e5;border-radius:8px;max-height:220px;overflow:auto}
+.tester-virtual-results button{width:100%;padding:12px 14px;text-align:left;border:0;border-bottom:1px solid #eee;background:#fff;display:flex;flex-direction:column;gap:4px;cursor:pointer;color:#171717}
+.tester-virtual-results button:hover{background:#f7f7f7}
+.tester-virtual-results small,.tester-virtual-selected small{font-size:11px;color:#888}
+.tester-virtual-selected{display:flex;align-items:center;justify-content:space-between;border:1px solid #e5e5e5;background:#fafafa;border-radius:8px;padding:12px}
+.tester-virtual-selected span{display:grid;gap:4px}
+.tester-virtual-submit{height:48px;margin-top:12px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;letter-spacing:.04em;cursor:pointer}
+.tester-virtual-submit:disabled{opacity:.45;cursor:not-allowed}
+.tester-virtual-error{margin:3px 0;color:#a11;background:#fff1f1;border-radius:7px;padding:10px;font-size:13px}
+.tester-virtual-muted{color:#888;font-size:12px}
+.tester-virtual-profile{margin-top:20px}
+.tester-virtual-profile-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:22px}
+.tester-virtual-profile-head h2{font-size:23px;letter-spacing:-.04em;margin:7px 0 0}
+.tester-virtual-readonly{font-size:9px;letter-spacing:.13em;border:1px solid #ddd;border-radius:20px;padding:7px 10px;color:#555}
+.tester-virtual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+.tester-virtual-grid>div{padding:13px 0;border-bottom:1px solid #eee;display:grid;gap:6px;min-width:0}
+.tester-virtual-grid small{font-size:10px;letter-spacing:.08em;color:#888;text-transform:uppercase}
+.tester-virtual-grid strong{font-size:14px;overflow-wrap:anywhere}
+.tester-virtual-semester-label{display:block;margin:22px 0 9px}
+.tester-virtual-profile select{max-width:220px}
+.tester-virtual-note,.tester-virtual-footer{font-size:12px;line-height:1.6;color:#888}
+.tester-virtual-note{margin:18px 0 0}
+.tester-virtual-footer{padding:24px 0;text-align:center}
+@media(max-width:600px){.tester-virtual-header{padding:0 16px}.tester-virtual-account{gap:8px;font-size:9px}.tester-virtual-main{padding-top:44px}.tester-virtual-form,.tester-virtual-profile{padding:20px}.tester-virtual-grid{grid-template-columns:1fr}.tester-virtual-profile-head{align-items:flex-start}}
