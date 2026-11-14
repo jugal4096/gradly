@@ -16,7 +16,7 @@ function GoogleMark() {
 }
 
 export default function LoginPage() {
-  const { loginWithGoogle, continueAsGuest } = useAuth();
+  const { loginWithGoogle, continueAsGuest, clearGuestMode } = useAuth();
   const { enterTester } = useTester();
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -45,6 +45,7 @@ export default function LoginPage() {
   }
 
   function handleTester() {
+    clearGuestMode();
     enterTester();
     navigate("/tester", { replace: true });
   }
