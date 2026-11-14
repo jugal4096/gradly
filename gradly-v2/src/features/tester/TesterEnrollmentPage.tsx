@@ -25,7 +25,7 @@ function normalize(value: string) {
 
 function programmeMatches(prefix: string, rawName: string) {
   const name = String(rawName || "").normalize("NFKC").toLowerCase()
-    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\\s+/g, " ").trim();
+    .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
   if (!name) return false;
   const engineeringPatterns = [
     /(?:^| )(?:bachelor of engineering|bachelor in engineering|bachelors of engineering|bachelors in engineering|bachelor engineering|bachelors engineering|bachelor of engg|bachelor in engg|bachelor engg|b engg|b e|be)(?: |$)/,
