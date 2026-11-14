@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-:root{font-family:'DM Sans',sans-serif;color:#f5f4ff;background:#090817;font-synthesis:none;text-rendering:optimizeLegibility}
+.sp-shell{font-family:'DM Sans',sans-serif;color:#f5f4ff;font-synthesis:none;text-rendering:optimizeLegibility}
 .sp-shell{min-height:100vh;background:#090817;color:#f5f4ff;display:flex}
 .sp-sidebar{width:258px;position:fixed;inset:0 auto 0 0;background:#0d0b1d;border-right:1px solid #25213e;display:flex;flex-direction:column;padding:26px 17px 18px;z-index:20}
 .sp-brand{display:flex;align-items:center;gap:12px;padding:0 9px 25px;color:#fff;text-decoration:none;font:800 22px Manrope,sans-serif;letter-spacing:-.8px}
