@@ -51,6 +51,8 @@ function prepareTesterLaunch() {
       programName: profile.programName || profile.programme || "B.Tech",
       branchId: profile.branchId || "",
       branchName: profile.branchName || profile.branch || "Information Technology",
+      specialization: profile.specialization || "",
+      specializationId: profile.specializationId || "",
       curriculumId: profile.curriculumId || "",
       semester: String(profile.semester || 1),
       enrollment: profile.enrollment || "TEST-ENROLLMENT",
