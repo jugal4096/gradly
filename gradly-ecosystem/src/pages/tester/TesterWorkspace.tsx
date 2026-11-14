@@ -81,6 +81,7 @@ export default function TesterWorkspace(){
  const institutionBranches=useMemo(()=>institution?.branches||[],[institution]);
  const testedBranchKeys=useMemo(()=>new Set(cases.filter(c=>c.institutionId===institution?.id).map(c=>c.programId+":"+c.branchId)),[cases,institution]);
  const testedBranchCount=institutionBranches.filter(b=>testedBranchKeys.has(b.program_id+":"+b.id)).length;
+ const canCreateScenario=Boolean(preview?.programId&&preview?.branchId);
 
  async function resolveEnrollment(e:FormEvent){
   e.preventDefault();setError("");setPreview(null);
@@ -96,10 +97,10 @@ export default function TesterWorkspace(){
    if(!response.ok)throw new Error(body.message||"Unable to resolve this enrollment.");
    const data=body.data as Preview;
    setPreview(data);
-   if(data.recognized){
+   if(data.programId&&data.branchId){
     const predicted=data.expected?.expectedSemester??data.entrySemester??1;
     setSemester(Math.max(data.entrySemester||1,Math.min(data.totalSemesters||12,predicted)));
-   }else{
+   }else if(!data.recognized){
     setError(data.message||"This enrollment could not be resolved against the selected institution's academic configuration.");
    }
   }catch(e){setError(e instanceof Error?e.message:"Unable to resolve this enrollment.");}
@@ -107,7 +108,7 @@ export default function TesterWorkspace(){
  }
 
  function addResolvedCase(){
-  if(!preview?.recognized||!institution)return;
+  if(!preview?.programId||!preview.branchId||!institution)return;
   const item:TestCase={
    id:crypto.randomUUID(),label:label.trim()||institution.name+" · "+preview.branch+" · Sem "+semester,
    enrollment:enrollment.trim().toUpperCase(),programme:preview.programme||"Unknown programme",programId:preview.programId||"",
@@ -163,17 +164,18 @@ export default function TesterWorkspace(){
      <button className="tester-add-button" type="submit" disabled={resolving||!institution}><Search size={16}/>{resolving?"Resolving academic profile…":"Resolve enrollment number"}</button>
     </form>
     {preview&&<section className={"tester-resolution-card "+(preview.recognized?"is-resolved":"is-unresolved")}>
-     <div className="tester-resolution-head">{preview.recognized?<Check size={17}/>:<AlertTriangle size={17}/>}<strong>{preview.recognized?"Academic profile resolved":"Profile needs configuration"}</strong></div>
-     {preview.recognized?<><dl>
+     <div className="tester-resolution-head">{preview.recognized?<Check size={17}/>:<AlertTriangle size={17}/>}<strong>{preview.recognized?"Academic profile resolved":canCreateScenario?"Branch resolved · curriculum needs review":"Profile needs configuration"}</strong></div>
+     {preview.recognized||canCreateScenario?<><dl>
       <div><dt>Programme</dt><dd>{preview.programme}</dd></div><div><dt>Discipline / branch</dt><dd>{preview.branch}{preview.specialization?" · "+preview.specialization:""}</dd></div>
-      <div><dt>Scheme / curriculum</dt><dd>{preview.scheme||preview.curriculumName||"—"}</dd></div><div><dt>Admission</dt><dd>{preview.admissionMode} · {preview.admissionYear}</dd></div>
-      <div><dt>Predicted semester</dt><dd>{preview.expected?.expectedSemester??preview.entrySemester??"—"} / {preview.totalSemesters||"—"}</dd></div>
+      <div><dt>Scheme / curriculum</dt><dd>{preview.scheme||preview.curriculumName||"Not configured"}</dd></div><div><dt>Admission</dt><dd>{preview.admissionMode} · {preview.admissionYear}</dd></div>
+      <div><dt>Predicted semester</dt><dd>{preview.expected?.expectedSemester??preview.entrySemester??"—"} / {preview.totalSemesters||"Not configured"}</dd></div>
       <div><dt>Academic session</dt><dd>{preview.expected?.academicYearLabel||preview.expected?.academicYear||"—"}</dd></div>
      </dl>
+     {!preview.recognized&&<p>{preview.message||"The programme and discipline are resolved, but the curriculum needs configuration. You can still launch a generic UI smoke-test scenario; curriculum-specific subjects will not be available."}</p>}
      <label className="tester-semester-override">TEST AS SEMESTER
       <select value={semester} onChange={e=>setSemester(Number(e.target.value))}>{Array.from({length:Math.max(1,preview.totalSemesters||8)},(_,i)=>i+1).filter(n=>n>=(preview.entrySemester||1)).map(n=><option key={n} value={n}>Semester {n}{n===(preview.expected?.expectedSemester??preview.entrySemester)?" · predicted":""}</option>)}</select>
      </label>
-     <button type="button" className="tester-add-button" onClick={addResolvedCase}><CirclePlus size={16}/> Save student scenario</button>
+     <button type="button" className="tester-add-button" onClick={addResolvedCase}><CirclePlus size={16}/>{preview.recognized?"Save student scenario":"Save fallback UI test scenario"}</button>
      </>:<p>{preview.message||"The enrollment could not be resolved. Check the selected institution's programme, discipline and enrollment mappings."}</p>}
     </section>}
     <div className="tester-case-list-heading"><strong>Saved scenarios</strong><span>{cases.length}</span></div>
