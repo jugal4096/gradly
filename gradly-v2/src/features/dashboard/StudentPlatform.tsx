@@ -497,8 +497,8 @@ export default function StudentPlatform() {
   const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([,semesterSubjects])=>semesterSubjects.filter(subject=>OE_OPTIONS.some(option=>option.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
   const availableOEOptions = OE_OPTIONS.filter(option=>!previouslyOptedOECodes.has(option.code));
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
-  const isCurrentSemesterInProgress = !isGuest && selectedSemester === currentSemester;
-  const canCalculateOfficialSgpa = isGuest || selectedSemester < currentSemester;
+  const isCurrentSemesterInProgress = !isGuest && !isTester && selectedSemester === currentSemester;
+  const canCalculateOfficialSgpa = isGuest || isTester || selectedSemester < currentSemester;
   const hasCompleteGrades = subjects.length > 0 && subjects.every(subject => subject.credits <= 0 || (subject.name.trim() && POINTS[subject.grade] !== undefined)) && subjects.some(subject => subject.name.trim() && subject.credits > 0);
 
   useEffect(() => {
