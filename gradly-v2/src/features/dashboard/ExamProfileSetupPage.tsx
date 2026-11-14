@@ -28,7 +28,7 @@ export default function ExamProfileSetupPage() {
   const family = detectSchemeFamily(academic.scheme || "", academic.programName || "", total);
   const timeline = buildExamTimeline({ totalSemesters: total, currentSemester: current, admissionYear, entrySemester }).filter(item => item.semester <= maximumExamSemester);
   const [backlogs, setBacklogs] = useState("");
-  const [appeared, setAppeared] = useState<string[]>([]);
+  const appeared: string[] = [];
   const [sessionChoices, setSessionChoices] = useState<Record<number,string>>({});
   const [semesterRecords, setSemesterRecords] = useState<Record<number, SemesterRecord>>(() => Object.fromEntries(timeline.map(item => [item.semester, { eseStatus: "NOT_APPEARED", backlogAttempts: [] }])));
   const [busy, setBusy] = useState(false);
@@ -77,14 +77,13 @@ export default function ExamProfileSetupPage() {
       .flatMap(year => [`Re-exam Nov–Dec ${year}`, `Re-exam May–June ${year}`]);
   }
   function updateSemester(semester: number, patch: Partial<SemesterRecord>) {
-    setSemesterRecords(previous => ({ ...previous, [semester]: { eseStatus: "NOT_APPEARED", backlogAttempts: [], ...previous[semester], ...patch } }));
+    setSemesterRecords(previous => ({ ...previous, [semester]: { ...previous[semester], ...patch, eseStatus: patch.eseStatus ?? previous[semester]?.eseStatus ?? "NOT_APPEARED", backlogAttempts: patch.backlogAttempts ?? previous[semester]?.backlogAttempts ?? [] } }));
   }
   function updateAttempt(semester: number, id: string, patch: Partial<BacklogAttempt>) {
     const record = semesterRecords[semester] || { eseStatus: "BACKLOG" as EseStatus, backlogAttempts: [] };
     updateSemester(semester, { backlogAttempts: record.backlogAttempts.map(item => item.id === id ? { ...item, ...patch } : item) });
   }
   const totalAttempts = Object.values(semesterRecords).reduce((sum, record) => sum + record.backlogAttempts.length, 0);
-  const clearedAttempts = Object.values(semesterRecords).reduce((sum, record) => sum + record.backlogAttempts.filter(item => item.status === "CLEARED").length, 0);
   const progress = timeline.length ? Math.round((timeline.filter(item => ["PASSED","BACKLOG","AWAITING_RESULT"].includes(semesterRecords[item.semester]?.eseStatus || "")).length / timeline.length) * 100) : 0;
 
   // A delayed appearance shifts the recommended schedule of later semesters by the same
