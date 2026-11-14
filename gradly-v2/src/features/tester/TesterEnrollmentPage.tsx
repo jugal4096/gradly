@@ -113,8 +113,8 @@ function branchMatches(candidate: Branch, decoded: string | null, code: string) 
 }
 
 function allowedCurricula(prefix: string, curricula: Curriculum[]) {
-  if (prefix === "BE" || prefix === "ME") return curricula.filter(item => /^new cbcs(?:\s|$)/i.test(item.scheme_name.trim()) && !/\b(nep|new education policy|national education policy)\b/i.test(item.scheme_name));
-  if (prefix === "BT" || prefix === "MT") return curricula.filter(item => /\b(nep|new education policy|national education policy)\b/i.test(item.scheme_name) && !/\b(cbcs|legacy)\b/i.test(item.scheme_name));
+  if (prefix === "BE" || prefix === "ME") return curricula.filter(item => /^new cbcs(?:\s|$)/i.test(String(item.scheme_name || "").trim()) && !/\b(nep|new education policy|national education policy)\b/i.test(String(item.scheme_name || "")));
+  if (prefix === "BT" || prefix === "MT") return curricula.filter(item => /\b(nep|new education policy|national education policy)\b/i.test(String(item.scheme_name || "")) && !/\b(cbcs|legacy)\b/i.test(String(item.scheme_name || "")));
   return curricula;
 }
 
