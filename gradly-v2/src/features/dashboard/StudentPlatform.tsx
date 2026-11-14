@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import GuestOnboarding from "./GuestOnboarding";
-import type { TesterAcademicProfile } from "../tester/TesterContext";
+import { TESTER_WORKSPACE_KEY, type TesterAcademicProfile } from "../tester/TesterContext";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
@@ -175,22 +175,38 @@ function escapeReportHtml(value: unknown): string {
   });
 }
 
+type TesterWorkspaceSnapshot = {
+  profile?: Profile; selectedSemester?: number; subjects?: Subject[]; results?: SemesterResult[];
+  savedSubjectsBySemester?: Record<number, Subject[]>; droppedElectives?: Subject[];
+  themeMode?: "light" | "dark" | "system"; fontFamily?: string; textSize?: number;
+  cgpaWhatIfSgpas?: Record<number, string>; whatIfScenariosSaved?: {id:number;name:string;semester:number;sgpa:number;credits:number;subjects:Subject[]}[];
+  cgpaPlannerScenarios?: {id:number;label:string;description:string;sgpas:Record<number,string>}[];
+  messages?: ChatMessage[]; aiMessages?: {role:"assistant"|"user";text:string}[];
+};
+function readTesterWorkspace(): TesterWorkspaceSnapshot {
+  try { const raw = localStorage.getItem(TESTER_WORKSPACE_KEY); return raw ? JSON.parse(raw) as TesterWorkspaceSnapshot : {}; }
+  catch { return {}; }
+}
 type StudentPlatformProps = { testerMode?: boolean; testerProfile?: TesterAcademicProfile | null; onExitTester?: () => void };
 
 export default function StudentPlatform({ testerMode = false, testerProfile = null, onExitTester }: StudentPlatformProps) {
   const { user, isGuest, signOut, loginWithGoogle } = useAuth();
   const isTester = testerMode;
   const routeNavigate = useNavigate();
+  const testerSnapshot = useRef<TesterWorkspaceSnapshot | null>(null);
+  if (isTester && testerSnapshot.current === null) testerSnapshot.current = readTesterWorkspace();
+  const savedTesterState = testerSnapshot.current || {};
   const [guestSessionReady,setGuestSessionReady] = useState(() => isTester || Boolean(localStorage.getItem("gradly_guest_session_token")));
   const [section,setSection] = useState<Section>("home");
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
-  const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{if(isTester)return "light";const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
+  const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{if(isTester)return savedTesterState.themeMode||"light";const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
   const [systemDark] = useState(()=>window.matchMedia?.("(prefers-color-scheme: dark)").matches??false);
   const theme=themeMode==="system"?(systemDark?"dark":"light"):themeMode;
-  const [fontFamily,setFontFamily] = useState(()=>isTester?"DM Sans":localStorage.getItem("gradly_font_family")||"DM Sans");
-  const [textSize,setTextSize] = useState(()=>isTester?14:Number(localStorage.getItem("gradly_text_size")||"14"));
+  const [fontFamily,setFontFamily] = useState(()=>isTester?savedTesterState.fontFamily||"DM Sans":localStorage.getItem("gradly_font_family")||"DM Sans");
+  const [textSize,setTextSize] = useState(()=>isTester?savedTesterState.textSize||14:Number(localStorage.getItem("gradly_text_size")||"14"));
   const [profile,setProfile] = useState<Profile>(() => {
+    if (isTester && savedTesterState.profile) return { ...emptyProfile, ...savedTesterState.profile };
     if (isTester && testerProfile) return { ...emptyProfile, ...testerProfile };
     try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem("gradly_student_profile") || "{}") }; }
     catch { return emptyProfile; }
@@ -207,6 +223,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
   const [semesterPromotion,setSemesterPromotion] = useState(false);
   const [nextSemester,setNextSemester] = useState("");
   const [subjects,setSubjects] = useState<Subject[]>(() => {
+    if (isTester && Array.isArray(savedTesterState.subjects)) return savedTesterState.subjects;
     if (isGuest) {
       try { const saved=JSON.parse(localStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:({O:"A++",C:"C+",P:"C",F:"D"} as Record<string,string>)[subject.grade] || (POINTS[subject.grade]!==undefined?subject.grade:"A")})); } catch { /* use defaults */ }
       return Array.from({length:5},(_,i)=>({id:i+1,name:`Subject ${i+1}`,credits:3,grade:"A"}));
@@ -224,27 +241,27 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
   const [addCourseType,setAddCourseType] = useState<"OE"|"HS"|"UHV"|null>(null);
   const [addCourseCode,setAddCourseCode] = useState("");
   const [subjectSearch,setSubjectSearch] = useState("");
-  const [savedSubjectsBySemester,setSavedSubjectsBySemester] = useState<Record<number,Subject[]>>({});
-  const [droppedElectives,setDroppedElectives] = useState<Subject[]>([]);
+  const [savedSubjectsBySemester,setSavedSubjectsBySemester] = useState<Record<number,Subject[]>>(()=>isTester?savedTesterState.savedSubjectsBySemester||{}:{});
+  const [droppedElectives,setDroppedElectives] = useState<Subject[]>(()=>isTester?savedTesterState.droppedElectives||[]:[]);
   const [sgpa,setSgpa] = useState<number|null>(null);
   const [results,setResults] = useState<SemesterResult[]>(() => {
-    if (isTester) return [];
+    if (isTester) return Array.isArray(savedTesterState.results) ? savedTesterState.results : [];
     try { return JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]"); } catch { return []; }
   });
   const [whatIf,setWhatIf] = useState("8.5");
-  const [cgpaWhatIfSgpas,setCgpaWhatIfSgpas] = useState<Record<number,string>>(() => { if(isTester)return {}; try { const saved=JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]") as SemesterResult[]; return Object.fromEntries(saved.map(row=>[row.semester,String(row.sgpa)])); } catch { return {}; } });
+  const [cgpaWhatIfSgpas,setCgpaWhatIfSgpas] = useState<Record<number,string>>(() => { if(isTester)return savedTesterState.cgpaWhatIfSgpas||{}; try { const saved=JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]") as SemesterResult[]; return Object.fromEntries(saved.map(row=>[row.semester,String(row.sgpa)])); } catch { return {}; } });
   const [whatIfSemester,setWhatIfSemester] = useState<number>(()=>Math.max(isDseAdmission(profile.admissionMode,profile.enrollment)?3:1,Number(profile.semester)||1));
   const [whatIfSubjects,setWhatIfSubjects] = useState<Subject[]>([]);
   const [whatIfLoading,setWhatIfLoading] = useState(false);
   const [whatIfNotice,setWhatIfNotice] = useState("");
-  const [whatIfScenariosSaved,setWhatIfScenariosSaved] = useState<{id:number;name:string;semester:number;sgpa:number;credits:number;subjects:Subject[]}[]>([]);
+  const [whatIfScenariosSaved,setWhatIfScenariosSaved] = useState<{id:number;name:string;semester:number;sgpa:number;credits:number;subjects:Subject[]}[]>(()=>isTester?savedTesterState.whatIfScenariosSaved||[]:[]);
   const [whatIfScenarioName,setWhatIfScenarioName] = useState("");
   const [targetSgpa,setTargetSgpa] = useState("9");
   const [trackerChartType,setTrackerChartType] = useState<"line"|"bar"|"histogram">("line");
   const [trackerSelectedSemester,setTrackerSelectedSemester] = useState(0);
   const [cgpaTrackerChartType,setCgpaTrackerChartType] = useState<"line"|"bar"|"histogram">("line");
   const [cgpaPlannerTarget,setCgpaPlannerTarget] = useState("8.5");
-  const [cgpaPlannerScenarios,setCgpaPlannerScenarios] = useState<{id:number;label:string;description:string;sgpas:Record<number,string>}[]>([]);
+  const [cgpaPlannerScenarios,setCgpaPlannerScenarios] = useState<{id:number;label:string;description:string;sgpas:Record<number,string>}[]>(()=>isTester?savedTesterState.cgpaPlannerScenarios||[]:[]);
   const [plannerSemester,setPlannerSemester] = useState<number>(()=>Math.max(isDseAdmission(profile.admissionMode,profile.enrollment)?3:1,Number(profile.semester)||(isDseAdmission(profile.admissionMode,profile.enrollment)?3:1)));
   const [plannerReportCards,setPlannerReportCards] = useState<{id:number;label:string;description:string;subjects:Subject[]}[]>([]);
   const [plannerCardAddTypes,setPlannerCardAddTypes] = useState<Record<number,"OE"|"HS">>({1:"OE",2:"OE",3:"OE"});
@@ -252,21 +269,24 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
   const [plannerNotice,setPlannerNotice] = useState("");
   const [totalCredits,setTotalCredits] = useState("160");
   const [earnedCredits,setEarnedCredits] = useState("0");
-  const [messages,setMessages] = useState<ChatMessage[]>([
-    {id:1,author:"Gradly Community",body:"Welcome! Share notes, ask questions and help each other prepare.",time:"Today",mine:false},
-  ]);
+  const [messages,setMessages] = useState<ChatMessage[]>(()=>isTester?savedTesterState.messages||[{id:1,author:"Gradly Community",body:"Welcome! Share notes, ask questions and help each other prepare.",time:"Today",mine:false}]:[{id:1,author:"Gradly Community",body:"Welcome! Share notes, ask questions and help each other prepare.",time:"Today",mine:false}]);
   const [message,setMessage] = useState("");
   const [editingId,setEditingId] = useState<number|null>(null);
   const [notes,setNotes] = useState<{name:string;size:string;file:File}[]>([]);
   const [aiInput,setAiInput] = useState("");
-  const [aiMessages,setAiMessages] = useState<{role:"assistant"|"user";text:string}[]>([
-    {role:"assistant",text:"Hi! I’m Gradly AI. I can help explain academic concepts and organise your study questions. Institution-specific answers will become available when your college rules are connected."},
-  ]);
+  const [aiMessages,setAiMessages] = useState<{role:"assistant"|"user";text:string}[]>(()=>isTester?savedTesterState.aiMessages||[{role:"assistant",text:"Hi! I’m Gradly AI. I can help explain academic concepts and organise your study questions. Institution-specific answers will become available when your college rules are connected."}]:[{role:"assistant",text:"Hi! I’m Gradly AI. I can help explain academic concepts and organise your study questions. Institution-specific answers will become available when your college rules are connected."}]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isGuest && !isTester) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
   }, [isGuest, isTester, subjects]);
+
+  useEffect(() => {
+    if (!isTester) return;
+    const snapshot: TesterWorkspaceSnapshot = { profile, selectedSemester, subjects, results, savedSubjectsBySemester, droppedElectives, themeMode, fontFamily, textSize, cgpaWhatIfSgpas, whatIfScenariosSaved, cgpaPlannerScenarios, messages, aiMessages };
+    try { localStorage.setItem(TESTER_WORKSPACE_KEY, JSON.stringify(snapshot)); }
+    catch { setNotice("This browser could not save the full tester workspace. Free some local storage and try again."); }
+  }, [isTester, profile, selectedSemester, subjects, results, savedSubjectsBySemester, droppedElectives, themeMode, fontFamily, textSize, cgpaWhatIfSgpas, whatIfScenariosSaved, cgpaPlannerScenarios, messages, aiMessages]);
 
   useEffect(() => {
     setCgpaWhatIfSgpas(Object.fromEntries(results.map(row=>[row.semester,String(row.sgpa)])));
@@ -335,7 +355,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
         if(cancelled) return;
         const saved=savedSubjectsBySemester[selectedSemester]||[];
         let electiveSaved:Subject[]=[];
-        if (!isTester) try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
+        if (isTester) electiveSaved=savedSubjectsBySemester[selectedSemester]||[]; else try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
         const savedBySubject=new Map<string,Subject>();
         saved.forEach(subject=>{
           if(subject.curriculumSubjectId) savedBySubject.set("id:"+subject.curriculumSubjectId,subject);
@@ -354,7 +374,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
         });
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
-        if (!isTester) try { const cached=JSON.parse(localStorage.getItem(droppedKey)||"[]"); if(Array.isArray(cached)) dropped=cached; } catch { /* ignore invalid dropped-elective cache */ }
+        if (isTester) dropped=droppedElectives; else try { const cached=JSON.parse(localStorage.getItem(droppedKey)||"[]"); if(Array.isArray(cached)) dropped=cached; } catch { /* ignore invalid dropped-elective cache */ }
         setDroppedElectives(dropped);
         const droppedSlotCodes=new Set(dropped.map(subject=>subject.electiveSlotCode||""));
         const availableCurriculumSubjects=loadedCurriculumSubjects.filter(subject=>!droppedSlotCodes.has(subject.electiveSlotCode||""));
@@ -726,7 +746,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
     if(!subject||!(subject.electiveKind==="OE"||subject.electiveKind==="HS")) return;
     const key="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
     const next=[...droppedElectives.filter(item=>item.electiveSlotCode!==subject.electiveSlotCode),subject];
-    if(!isTester) localStorage.setItem(key,JSON.stringify(next));
+    if(isTester) setDroppedElectives(next); else localStorage.setItem(key,JSON.stringify(next));
     setDroppedElectives(next);
     removeSubject(subjectId);
   }
@@ -734,7 +754,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
     const subject=droppedElectives.find(item=>item.id===subjectId);
     if(!subject) return;
     const next=droppedElectives.filter(item=>item.id!==subjectId);
-    if(!isTester) localStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(next));
+    if(isTester) setDroppedElectives(next); else localStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(next));
     setDroppedElectives(next);
     setSubjects(current=>[...current,subject].sort((a,b)=>a.id-b.id));
     setSgpa(null); setNotice("");
@@ -777,7 +797,7 @@ export default function StudentPlatform({ testerMode = false, testerProfile = nu
     if(next==="sgpa") setGradeReminderOpen(true);
     setSection(next); setMobileOpen(false); setProfileMenuOpen(false); setNotice("");
   }
-  function updateSetting(key:string,value:string) { if(!isTester) localStorage.setItem(key,value); }
+  function updateSetting(key:string,value:string) { if(isTester) { if(key==="gradly_theme") setThemeMode(value as "light"|"dark"|"system"); else if(key==="gradly_font_family") setFontFamily(value); else if(key==="gradly_text_size") setTextSize(Number(value)||14); } else localStorage.setItem(key,value); }
   async function deleteGuestIdentity() {
     if (!window.confirm("Permanently delete your Guest ID and guest workspace? This cannot be undone.")) return;
     const token=localStorage.getItem("gradly_guest_session_token");
