@@ -93,9 +93,9 @@ type CurriculumSubjectApi = { name?: string | null; credits?: number | string | 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 // Every student-facing preference and academic record is isolated per tester scenario.
 const studentStorage = {
-  getItem(key: string) { const prefix=window.localStorage.getItem("gradly_tester_storage_prefix"); return window.localStorage.getItem(prefix ? prefix+":"+key : key); },
-  setItem(key: string, value: string) { const prefix=window.localStorage.getItem("gradly_tester_storage_prefix"); window.localStorage.setItem(prefix ? prefix+":"+key : key, value); },
-  removeItem(key: string) { const prefix=window.localStorage.getItem("gradly_tester_storage_prefix"); window.localStorage.removeItem(prefix ? prefix+":"+key : key); },
+  getItem(key: string) { const prefix=window.sessionStorage.getItem("gradly_tester_storage_prefix"); return window.localStorage.getItem(prefix ? prefix+":"+key : key); },
+  setItem(key: string, value: string) { const prefix=window.sessionStorage.getItem("gradly_tester_storage_prefix"); window.localStorage.setItem(prefix ? prefix+":"+key : key, value); },
+  removeItem(key: string) { const prefix=window.sessionStorage.getItem("gradly_tester_storage_prefix"); window.localStorage.removeItem(prefix ? prefix+":"+key : key); },
 };
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
