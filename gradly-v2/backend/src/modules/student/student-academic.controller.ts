@@ -100,16 +100,11 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       !Array.isArray(courses) || courses.length === 0 || courses.length > 100) {
     return res.status(400).json({ message: "Provide a valid semester, attempt number and 1–100 subjects." });
   }
-  const indiaMonth = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", month: "numeric" }).format(new Date()));
-  const promotionWindowOpen = indiaMonth === 1 || indiaMonth === 7;
   const currentSemester = Number(resolved.profile.current_semester_number || 0);
-  const maximumAllowedSemester = currentSemester + (promotionWindowOpen ? 1 : 0);
-  if (semesterNumber > maximumAllowedSemester) {
+  if (!currentSemester || semesterNumber > currentSemester) {
     return res.status(403).json({
-      code: "EXAM_SEMESTER_LOCKED",
-      message: promotionWindowOpen
-        ? "You may add exam details only up to the next semester during the January/July promotion window."
-        : "Higher-semester exam details are locked until January or July, after the December/June examination cycles.",
+      code: "SGPA_SEMESTER_LOCKED",
+      message: "Manual SGPA entry is available only for semesters up to your current semester.",
     });
   }
   const normalized = [];
@@ -125,7 +120,24 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     }
     normalized.push({ code, name, credits, grade, point });
   }
+  const openElectiveCodes = new Set([
+    "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027","MEOE0050",
+    "EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
+  ]);
+  const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code));
+  if (new Set(submittedOECodes).size !== submittedOECodes.length) {
+    return res.status(409).json({ code: "OE_ALREADY_REGISTERED", message: "An Open Elective can be registered only once throughout your degree. Remove the duplicate subject." });
+  }
+  const uhvCourses = normalized.filter(course => course.code.toUpperCase() === "INHS1020");
+  if (uhvCourses.length > 1) {
+    return res.status(400).json({ code: "UHV_DUPLICATE", message: "Universal Human Values can be registered only once throughout your degree." });
+  }
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
+  const creditsWithoutUhv = normalized.filter(course => course.code.toUpperCase() !== "INHS1020")
+    .reduce((sum, course) => sum + course.credits, 0);
+  if (creditsWithoutUhv > 28) {
+    return res.status(400).json({ code: "SEMESTER_CREDIT_LIMIT", message: "A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance." });
+  }
   const sgpa = normalized.reduce((sum, course) => sum + course.credits * course.point, 0) / creditsRegistered;
   const client = await pool.connect();
   try {
@@ -142,19 +154,81 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "No curriculum semester is configured for this semester. Check your academic profile and scheme." });
     }
-    const inserted = await client.query(
-      `INSERT INTO student_semesters
-         (student_profile_id, curriculum_id, semester_id, attempt_number,
-         status, result_publication_status, result_source, verified,
-         credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
-       VALUES ($1, $2, $3, $4, 'COMPLETED', 'DECLARED', 'MANUAL_ENTRY', FALSE,
-               $5, $6, $7, NOW(), NOW())
-       RETURNING id, semester_id, attempt_number`,
-      [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
-       creditsRegistered, normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0),
-       Number(sgpa.toFixed(2))],
+    const existing = await client.query(
+      `SELECT id FROM student_semesters
+       WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
+       ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
+      [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
     );
-    const semesterRecord = inserted.rows[0];
+    if (submittedOECodes.length) {
+      const priorOE = await client.query(
+        `SELECT c.course_code_snapshot, c.course_name_snapshot, sem.semester_number
+         FROM student_semester_courses c
+         JOIN student_semesters ss ON ss.id = c.student_semester_id
+         JOIN semesters sem ON sem.id = ss.semester_id
+         WHERE ss.student_profile_id = $1
+           AND UPPER(COALESCE(c.course_code_snapshot, '')) = ANY($2::text[])
+           AND NOT (ss.semester_id = $3 AND ss.attempt_number = $4)
+         LIMIT 1`,
+        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id, attemptNumber],
+      );
+      if (priorOE.rows.length) {
+        await client.query("ROLLBACK");
+        const prior = priorOE.rows[0];
+        return res.status(409).json({
+          code: "OE_ALREADY_REGISTERED",
+          message: `${prior.course_name_snapshot || prior.course_code_snapshot} has already been opted in Semester ${prior.semester_number}. An Open Elective can be registered only once throughout your degree.`,
+        });
+      }
+    }
+    if (uhvCourses.length) {
+      const priorUhv = await client.query(
+        `SELECT c.id
+         FROM student_semester_courses c
+         JOIN student_semesters ss ON ss.id = c.student_semester_id
+         WHERE ss.student_profile_id = $1
+           AND UPPER(COALESCE(c.course_code_snapshot, '')) = 'INHS1020'
+           AND NOT (ss.semester_id = $2 AND ss.attempt_number = $3)
+         LIMIT 1`,
+        [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
+      );
+      if (priorUhv.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          code: "UHV_ALREADY_REGISTERED",
+          message: "Universal Human Values has already been registered in another semester. It can be added only once throughout your degree.",
+        });
+      }
+    }
+    const earnedCredits = normalized.filter(course => course.point > 0).reduce((sum, course) => sum + course.credits, 0);
+    let semesterRecord: { id: string; semester_id: string; attempt_number: number };
+    if (existing.rows[0]) {
+      const updated = await client.query(
+        `UPDATE student_semesters
+         SET curriculum_id = $2, status = 'COMPLETED', result_publication_status = 'NOT_PUBLISHED',
+             result_source = 'MANUAL_ENTRY', verified = FALSE,
+             credits_registered = $3, credits_earned = $4, sgpa = $5,
+             sgpa_calculated_at = NOW(), result_declared_at = NULL
+         WHERE id = $1
+         RETURNING id, semester_id, attempt_number`,
+        [existing.rows[0].id, resolved.profile.curriculum_id, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
+      );
+      semesterRecord = updated.rows[0];
+      await client.query("DELETE FROM student_semester_courses WHERE student_semester_id = $1", [semesterRecord.id]);
+    } else {
+      const inserted = await client.query(
+        `INSERT INTO student_semesters
+           (student_profile_id, curriculum_id, semester_id, attempt_number,
+           status, result_publication_status, result_source, verified,
+           credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
+         VALUES ($1, $2, $3, $4, 'COMPLETED', 'NOT_PUBLISHED', 'MANUAL_ENTRY', FALSE,
+                 $5, $6, $7, NOW(), NULL)
+         RETURNING id, semester_id, attempt_number`,
+        [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
+         creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
+      );
+      semesterRecord = inserted.rows[0];
+    }
     for (const course of normalized) {
       const curriculumSubject = course.code
         ? await client.query(
@@ -169,7 +243,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
           (student_semester_id, curriculum_subject_id, course_code_snapshot,
            course_name_snapshot, credits, registration_status, grade_symbol,
            grade_point, result_status, result_source, attempt_number)
-         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7, 'DECLARED', 'MANUAL_ENTRY', $8)`,
+         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7::numeric,
+                 CASE WHEN $7::numeric > 0::numeric THEN 'PASS' ELSE 'FAIL' END, 'MANUAL_ENTRY', $8)`,
         [semesterRecord.id, curriculumSubject.rows[0]?.id ?? null, course.code || null,
          course.name, course.credits, course.grade || null, course.point, attemptNumber],
       );
@@ -178,6 +253,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     return res.status(201).json({
       message: "Semester result saved.",
       semester: { id: semesterRecord.id, semesterNumber, attemptNumber, sgpa: Number(sgpa.toFixed(2)), credits: creditsRegistered },
+      updated: Boolean(existing.rows[0]),
     });
   } catch (error) {
     await client.query("ROLLBACK");

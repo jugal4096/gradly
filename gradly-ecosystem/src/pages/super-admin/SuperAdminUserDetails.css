@@ -677,3 +677,26 @@
   .student-information-grid { grid-template-columns: minmax(0, 1fr); }
   .semester-header { flex-wrap: wrap; }
 }
+
+
+/* Keep the per-semester SGPA, running CGPA and earned-credit snapshot readable. */
+.semester-metrics{
+  gap:14px;
+  flex-wrap:wrap;
+}
+.semester-metrics>div{
+  min-width:72px;
+}
+.semester-metrics>div:nth-child(2) strong{
+  color:#4b3b84;
+}
+@media(max-width:600px){
+  .semester-metrics{
+    width:100%;
+    justify-content:flex-start;
+    gap:12px;
+  }
+  .semester-metrics>div{
+    text-align:left;
+  }
+}

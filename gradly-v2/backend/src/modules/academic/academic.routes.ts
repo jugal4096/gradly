@@ -197,8 +197,21 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
               sem.id AS "semesterId", sem.semester_number AS semester
        FROM curriculum_subjects cs
        JOIN semesters sem ON sem.id = cs.semester_id
-       WHERE cs.curriculum_id = $1 AND sem.semester_number = $2
-         AND cs.active = TRUE
+       WHERE cs.curriculum_id = $1
+         AND sem.curriculum_id = $1
+         AND sem.semester_number = $2
+         AND (
+           cs.active IS TRUE
+           OR NOT EXISTS (
+             SELECT 1
+             FROM curriculum_subjects active_cs
+             JOIN semesters active_sem ON active_sem.id = active_cs.semester_id
+             WHERE active_cs.curriculum_id = $1
+               AND active_sem.curriculum_id = $1
+               AND active_sem.semester_number = $2
+               AND active_cs.active IS TRUE
+           )
+         )
        ORDER BY cs.course_code, cs.course_name`,
       [curriculumId, number],
     );

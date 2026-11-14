@@ -47,6 +47,26 @@ import {
           };
         })
       );
+
+    // Match the student's CGPA tracker: cumulative credit-weighted SGPA,
+    // evaluated in semester order and exposed as a snapshot on each result.
+    let cumulativeCredits = 0;
+    let cumulativeWeightedPoints = 0;
+    const semestersWithCumulativeCgpa = semestersWithCourses.map((semester) => {
+      const credits = Number(semester.credits_registered ?? 0);
+      const sgpa = Number(semester.sgpa);
+      if (semester.sgpa !== null && semester.sgpa !== undefined &&
+          credits > 0 && Number.isFinite(credits) && Number.isFinite(sgpa)) {
+        cumulativeCredits += credits;
+        cumulativeWeightedPoints += sgpa * credits;
+      }
+      return {
+        ...semester,
+        cumulative_cgpa: cumulativeCredits > 0
+          ? Number((cumulativeWeightedPoints / cumulativeCredits).toFixed(2))
+          : null,
+      };
+    });
   
     if (auditContext) {
       await createAuditLog({
@@ -67,6 +87,6 @@ import {
   
     return {
       student,
-      semesters: semestersWithCourses,
+      semesters: semestersWithCumulativeCgpa,
     };
   }
