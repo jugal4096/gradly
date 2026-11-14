@@ -235,6 +235,34 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "No curriculum semester is configured for this semester. Check your academic profile and scheme." });
     }
+    if (isNepBtech) {
+      const oeSlots = await client.query(
+        `SELECT cs.credits
+         FROM curriculum_subjects cs
+         JOIN semesters sem ON sem.id = cs.semester_id
+         WHERE cs.curriculum_id = $1 AND sem.semester_number = $2
+           AND (UPPER(COALESCE(cs.course_code, '')) LIKE '%OEC%'
+             OR UPPER(COALESCE(cs.course_code, '')) LIKE 'ITOE%'
+             OR UPPER(COALESCE(cs.course_type, '')) LIKE '%OPEN ELECTIVE%'
+             OR UPPER(COALESCE(cs.course_type, '')) = 'OE'
+             OR COALESCE(cs.course_name, '') ILIKE '%open elective%')
+           AND cs.active IS TRUE
+         ORDER BY cs.course_code, cs.course_name`,
+        [resolved.profile.curriculum_id, semesterNumber],
+      );
+      if (oeSlots.rows.length) {
+        const registeredOECourses = normalized.filter(course => submittedOECodes.includes(course.code.toUpperCase()));
+        const requiredOECredits = oeSlots.rows.reduce((sum: number, row: { credits: string | number }) => sum + Number(row.credits || 0), 0);
+        const registeredOECredits = registeredOECourses.reduce((sum, course) => sum + course.credits, 0);
+        if (registeredOECourses.length !== oeSlots.rows.length || registeredOECredits !== requiredOECredits) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({
+            code: "NEP_OE_CREDIT_REQUIREMENT",
+            message: `Select exactly ${oeSlots.rows.length} Open Elective course(s) carrying ${requiredOECredits} total credits for Semester ${semesterNumber}.`,
+          });
+        }
+      }
+    }
     const existing = await client.query(
       `SELECT id FROM student_semesters
        WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
