@@ -151,12 +151,12 @@ export default function TesterWorkspace() {
     navigate("/tester/login", { replace: true });
   }
 
-  return <main className="tester-virtual-shell">
+  return workspaceOpen ? <TesterStudentPlatform onExit={exitStudentWorkspace} /> : <main className="tester-virtual-shell">
     <header className="tester-virtual-header">
       <a className="tester-virtual-brand" href="/"><span className="tester-virtual-mark">G</span><span>Gradly <small>VIRTUAL STUDENT ENVIRONMENT</small></span></a>
-      <div className="tester-virtual-account"><span>TESTER · {testerId}</span>{workspaceOpen && <button type="button" onClick={exitStudentWorkspace}>Back to profile</button>}<button type="button" onClick={signOutTester}>Sign out</button></div>
+      <div className="tester-virtual-account"><span>TESTER · {testerId}</span><button type="button" onClick={signOutTester}>Sign out</button></div>
     </header>
-    {workspaceOpen ? <TesterStudentPlatform onExit={exitStudentWorkspace} /> : <section className="tester-virtual-main">
+    <section className="tester-virtual-main">
       <div className="tester-virtual-heading"><span className="tester-virtual-eyebrow">ISOLATED TEST WORKSPACE</span><h1>Enter a student enrollment number.</h1><p>Choose the institution and enter an enrollment number to preview the academic profile. This virtual environment does not require a student login and does not create or modify a student account.</p></div>
       <form className="tester-virtual-form" onSubmit={identify}>
         <label htmlFor="virtual-institution">INSTITUTION / UNIVERSITY</label>
@@ -185,6 +185,6 @@ export default function TesterWorkspace() {
         <button className="tester-virtual-submit" type="button" onClick={openStudentWorkspace}>OPEN VIRTUAL STUDENT WORKSPACE →</button>
       </section>}
       <footer className="tester-virtual-footer">Temporary tester session · Full student-side feature set · No student authentication</footer>
-    </section>}
+    </section>
   </main>;
 }
