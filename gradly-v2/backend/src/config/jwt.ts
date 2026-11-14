@@ -21,6 +21,8 @@ export type SuperAdminTokenPayload = {
   role: "SUPER_ADMIN";
 };
 
+export type TesterTokenPayload = { testerId: string; loginId: string; role: "TESTER" };
+
 const JWT_ISSUER = "gradly-api";
 
 export function createAdminToken(payload: AdminTokenPayload) {
@@ -76,4 +78,16 @@ export function verifySuperAdminToken(token: string) {
   }
 
   return decoded as unknown as SuperAdminTokenPayload;
+}
+
+export function createTesterToken(payload: TesterTokenPayload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "12h", issuer: JWT_ISSUER, audience: "gradly-tester" });
+}
+
+export function verifyTesterToken(token: string) {
+  const decoded = jwt.verify(token, JWT_SECRET, { issuer: JWT_ISSUER, audience: "gradly-tester" });
+  if (typeof decoded === "string" || decoded.role !== "TESTER" || typeof decoded.testerId !== "string" || typeof decoded.loginId !== "string") {
+    throw new Error("Invalid Tester token payload.");
+  }
+  return decoded as unknown as TesterTokenPayload;
 }
