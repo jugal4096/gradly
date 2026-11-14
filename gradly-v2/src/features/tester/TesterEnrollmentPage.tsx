@@ -8,7 +8,7 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").repla
 
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
-type Curriculum = { id: string; scheme_name: string; scheme_code?: string | null; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
+type Curriculum = { id: string; scheme_name?: string | null; scheme_code?: string | null; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
 type Preview = {
   institution: Institution;
   program: { id: string; name: string };
@@ -252,7 +252,7 @@ export default function TesterEnrollmentPage() {
       admissionYear: String(preview.admissionYear),
       admissionMode: preview.admissionMode,
       admissionNumber: "",
-      scheme: curriculum.scheme_name,
+      scheme: curriculum.scheme_name || "Scheme not labeled",
       isDurationEnded,
     };
     setTesterProfile(profile);
@@ -298,7 +298,7 @@ export default function TesterEnrollmentPage() {
           <label>Curriculum scheme
             <select value={curriculumId} onChange={event => setCurriculumId(event.target.value)}>
               <option value="">Select scheme</option>
-              {preview.candidates.map(item => <option key={item.id} value={item.id}>{item.scheme_name}{item.version ? " · v" + item.version : ""}</option>)}
+              {preview.candidates.map(item => <option key={item.id} value={item.id}>{item.scheme_name || "Scheme not labeled"}{item.version ? " · v" + item.version : ""}</option>)}
             </select>
           </label>
           {preview.candidates.length > 1 && <p className="tester-entry-hint">More than one eligible curriculum is configured. Select the scheme used for this enrollment.</p>}
