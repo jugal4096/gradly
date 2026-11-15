@@ -299,9 +299,16 @@ export default function StudentPlatform() {
         const recordsData=await recordsResponse.json();
         if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
           const academicRecords=recordsData.records as AcademicRecordApi[];
-          const saved:SemesterResult[]=academicRecords.map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
-          const savedSubjects:Record<number,Subject[]>={};
+          const latestBySemester=new Map<number,AcademicRecordApi>();
           academicRecords.forEach(row=>{
+            const semesterNumber=Number(row.semester_number);
+            const previous=latestBySemester.get(semesterNumber);
+            if(!previous||Number(row.attempt_number||1)>=Number(previous.attempt_number||1)) latestBySemester.set(semesterNumber,row);
+          });
+          const latestRecords=Array.from(latestBySemester.values());
+          const saved:SemesterResult[]=latestRecords.map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
+          const savedSubjects:Record<number,Subject[]>={};
+          latestRecords.forEach(row=>{
             const semesterNumber=Number(row.semester_number);
             if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>{
               const code=course.course_code_snapshot||"";
@@ -313,7 +320,7 @@ export default function StudentPlatform() {
             });
           });
           setResults(saved); setSavedSubjectsBySemester(savedSubjects);
-          setOfficialResultSemesters(Object.fromEntries(academicRecords.filter(row=>String(row.result_source||"").toUpperCase()==="GECA_OFFICIAL").map(row=>[Number(row.semester_number),true])));
+          setOfficialResultSemesters(Object.fromEntries(latestRecords.filter(row=>String(row.result_source||"").toUpperCase()==="GECA_OFFICIAL").map(row=>[Number(row.semester_number),true])));
           localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
         }
       } catch(error) { if(!cancelled) setNotice(error instanceof Error?error.message:"Unable to sync academic profile."); }
