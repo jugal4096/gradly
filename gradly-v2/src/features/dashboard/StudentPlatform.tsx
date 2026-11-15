@@ -56,7 +56,7 @@ function hsOptionsForSemester(semester:number):ElectiveOption[] {
   return HS_OPTIONS.filter(option=>(semester%2===0?evenCodes:oddCodes).includes(option.code));
 }
 function isNepBtechProfile(profile:Profile):boolean {
-  return isNepSchemeName(profile.scheme)&&/bachelor of engineering|bachelor of technology|\bb\.?\s*eng(?:ineering)?\b|\bb\.?\s*tech\b/i.test(profile.programName);
+  return isNepSchemeName(profile.scheme)&&/bachelor of engineering|bachelor of technology|\bb\.?\s*e\.?\b|\bb\.?\s*eng(?:ineering)?\b|\bb\.?\s*tech\b/i.test(profile.programName);
 }
 function isNepProfile(profile:Profile):boolean {
   return isNepSchemeName(profile.scheme);
