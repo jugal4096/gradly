@@ -70,10 +70,8 @@ export default function LoginPage() {
           </div>
           <div className="journey-art" aria-hidden="true">
             <div className="journey-line"><span /><span /><span /><span /></div>
-            <div className="journey-caption">YOUR JOURNEY, ONE STEP AT A TIME</div>
           </div>
         </div>
-        <div className="story-bottom-mark" aria-hidden="true"><span /> LEARN <i /> TRACK <i /> GROW</div>
       </section>
 
       <section className="welcome-auth" aria-label="Sign in or continue as guest">
@@ -98,7 +96,6 @@ export default function LoginPage() {
             By continuing, you agree to our <Link to="/terms">Terms of Service</Link> and acknowledge our <Link to="/privacy">Privacy Policy</Link>.
           </p>
         </div>
-        <div className="auth-bottom">© {new Date().getFullYear()} Gradly</div>
       </section>
     </main>
   );
