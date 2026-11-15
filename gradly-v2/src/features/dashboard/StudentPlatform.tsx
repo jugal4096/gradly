@@ -56,23 +56,32 @@ function hsOptionsForSemester(semester:number):ElectiveOption[] {
   return HS_OPTIONS.filter(option=>(semester%2===0?evenCodes:oddCodes).includes(option.code));
 }
 function isNepBtechProfile(profile:Profile):boolean {
-  return isNepSchemeName(profile.scheme)&&/bachelor of technology|\bb\.?\s*tech\b|\bb\.?\s*e\.?\b/i.test(profile.programName);
+  return isNepSchemeName(profile.scheme)&&/bachelor of engineering|bachelor of technology|\bb\.?\s*eng(?:ineering)?\b|\bb\.?\s*tech\b/i.test(profile.programName);
+}
+function isNepProfile(profile:Profile):boolean {
+  return isNepSchemeName(profile.scheme);
 }
 function getOEOptionsForStudent(profile:Profile,semester:number):ElectiveOption[] {
-  return isNepBtechProfile(profile)?getNepOpenElectives(profile.branchName,semester):OE_OPTIONS;
+  if(isNepProfile(profile)) return isNepBtechProfile(profile)?getNepOpenElectives(profile.branchName,semester):[];
+  return OE_OPTIONS;
 }
 function getAllOEOptionsForStudent(profile:Profile):ElectiveOption[] {
-  return isNepBtechProfile(profile)?NEP_OPEN_ELECTIVES:OE_OPTIONS;
+  if(isNepProfile(profile)) return isNepBtechProfile(profile)?NEP_OPEN_ELECTIVES:[];
+  return OE_OPTIONS;
 }
 function isOECodeForStudent(profile:Profile,code:string):boolean {
-  return isNepBtechProfile(profile)?Boolean(findNepOpenElective(code)):OE_OPTIONS.some(option=>option.code.toUpperCase()===String(code||"").toUpperCase());
+  if(isNepProfile(profile)) return isNepBtechProfile(profile)&&Boolean(findNepOpenElective(code));
+  return OE_OPTIONS.some(option=>option.code.toUpperCase()===String(code||"").toUpperCase());
 }
 function getOECodeLabel(profile:Profile,code:string):string {
-  return isNepBtechProfile(profile)?getNepOpenElectiveDisplayCode(code):code;
+  return isNepProfile(profile)?getNepOpenElectiveDisplayCode(code):code;
 }
 function getOEOptionsForSlot(profile:Profile,semester:number,credits:number):ElectiveOption[] {
-  if(!isNepBtechProfile(profile)) return OE_OPTIONS;
-  return getOEOptionsForStudent(profile,semester).filter(option=>!option.credits||!credits||option.credits===credits);
+  if(isNepProfile(profile)) {
+    if(!isNepBtechProfile(profile)) return [];
+    return getOEOptionsForStudent(profile,semester).filter(option=>!option.credits||!credits||option.credits===credits);
+  }
+  return OE_OPTIONS;
 }
 function electiveKind(code:string, semester:number, name="", courseType="", isNep=false):"OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null {
   const slotName=name.toLowerCase().replace(/[–—]/g,"-").replace(/\s+/g," ").trim();
@@ -88,7 +97,15 @@ function electiveKind(code:string, semester:number, name="", courseType="", isNe
     if(/iv\b|4th|fourth/.test(slotName)) return "PE4";
     if(/v\b|5th|fifth/.test(slotName)) return "PE5";
   }
-  if (isNep && (/^[A-Z]{2}OEC/i.test(code) || /open\s*elective/i.test(name+" "+courseType) || /(^|[^A-Z])OE([^A-Z]|$)/i.test(courseType))) return "OE";
+  const normalizedCourseType=String(courseType||"").trim().toUpperCase().replace(/[\s_-]+/g," ");
+  if (isNep && (
+    /^[A-Z]{2}OEC/i.test(code) ||
+    /^ITOE/i.test(code) ||
+    /^NEPOE_/i.test(code) ||
+    /open\s*elective/i.test(name+" "+courseType) ||
+    /(^|[^A-Z])OE([^A-Z]|$)/i.test(courseType) ||
+    ["OE","OPEN ELECTIVE","OPEN ELECTIVE COURSE","OPEN ELECTIVE SLOT"].includes(normalizedCourseType)
+  )) return "OE";
   if (/^ITOE/.test(code)) return "OE";
   if (/^ITHS/.test(code) && semester>=5) return "HS";
   if (semester===7 && /^ITPE400[135]$/.test(code)) return "PE4";
