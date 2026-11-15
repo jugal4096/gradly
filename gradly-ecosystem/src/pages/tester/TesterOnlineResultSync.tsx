@@ -103,14 +103,13 @@ export default function TesterOnlineResultSync({
       setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
       return;
     }
-    const knownCodes = new Set(subjects.map(subject => String(subject.courseCode || "").trim().toUpperCase()).filter(Boolean));
-    const applicable = document.grades.filter(row => knownCodes.has(row.courseCode.toUpperCase()));
+    const applicable = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (!applicable.length) {
-      setError("The PDF contains grades, but none of its course codes match the subjects loaded for Semester " + selectedSemester + ".");
+      setError("The PDF was detected, but it did not contain any safely recognised course-code and grade pairs. No Tester data was changed.");
       return;
     }
     onApply(document.semester, applicable, sessionTitle, document.title, document.url);
-    setNotice("Applied " + applicable.length + " matched subject grade(s) to the isolated Tester workspace. Review the SGPA completeness status below.");
+    setNotice("Saved " + applicable.length + " official course grades to the isolated Tester SGPA profile, including courses not yet present in Gradly's curriculum database.");
     setError("");
   }
 
