@@ -233,6 +233,7 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
   if (!bytes.length || bytes.length > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large-or-empty" };
 
   const pdf = await getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true }).promise;
+  const allLines: TextLine[] = [];
   let metadataText = "";
   let parsed = { grades: [] as GecaMatchedGrade[], enrollmentFound: false };
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
@@ -245,12 +246,11 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     });
     const lines = groupPdfLines(positioned);
     if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
-    const pageResult = extractMatchingGrades(lines, enrollment);
-    if (pageResult.enrollmentFound) parsed.enrollmentFound = true;
-    if (pageResult.grades.length) parsed.grades = pageResult.grades;
-    // GECA result tables place each student's complete subject row on one page.
-    // Stop reading the remaining pages as soon as this enrollment is parsed.
-    if (pageResult.enrollmentFound && pageResult.grades.length) break;
+    allLines.push(...lines);
+    parsed = extractMatchingGrades(allLines, enrollment);
+    // Stop reading the remaining pages once the matching enrollment row and
+    // its grade columns have been found, while retaining earlier page headers.
+    if (parsed.enrollmentFound && parsed.grades.length) break;
   }
   await pdf.destroy();
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
@@ -269,7 +269,7 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
 
 const BRANCH_NAMES: Record<string, string[]> = {
   "01": ["civil"], "02": ["mechanical"], "03": ["electrical"],
-  "04": ["electronics", "entc"], "05": ["computer science", "cse"],
+  "04": ["electronics", "entc"], "05": ["computer", "cse"],
   "06": ["information technology", "information tech"],
 };
 
@@ -311,7 +311,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     if (branchMatches.length) candidates = branchMatches;
   }
   if (selectedSemester && selectedSemester >= 1 && selectedSemester <= 12) {
-    const semesterMatches = candidates.filter(item => romanSemester(item.title + " " + item.url) === selectedSemester);
+    const semesterMatches = candidates.filter(item => romanSemester(item.title + " " + item.url.replace(/%20/gi, " ")) === selectedSemester);
     if (semesterMatches.length) candidates = semesterMatches;
   }
 
