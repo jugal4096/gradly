@@ -176,7 +176,7 @@ export default function TesterOnlineResultSync({
           const knownCodes = new Set(subjects.map(subject => String(subject.courseCode || "").trim().toUpperCase()).filter(Boolean));
           const matchingSubjects = document.grades.filter(row => knownCodes.has(row.courseCode.toUpperCase()));
           const additionalSubjects = document.grades.filter(row => !knownCodes.has(row.courseCode.toUpperCase()));
-          const canApply = document.semester === selectedSemester && matchingSubjects.length > 0;
+          const canApply = document.semester === selectedSemester && document.grades.length > 0;
           return <article className="sp-online-match" key={document.url}>
             <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingSubjects.length} curriculum matches · {additionalSubjects.length} additional courses</small></div><span>{document.grades.length} grades</span></div>
             <div className="sp-online-grade-section">
@@ -184,7 +184,7 @@ export default function TesterOnlineResultSync({
               <div className="sp-online-grade-list">{matchingSubjects.length ? matchingSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>) : <small>No course codes from this PDF match the currently loaded curriculum.</small>}</div>
             </div>
             {additionalSubjects.length > 0 && <div className="sp-online-unmapped-section">
-              <div><strong>Additional courses found in official PDF</strong><small>These course codes are not present in the currently loaded Gradly curriculum. They are shown for review and will not be applied automatically.</small></div>
+              <div><strong>Additional courses found in official PDF</strong><small>These course codes are not present in the currently loaded Gradly curriculum. They will be added to the Tester SGPA profile when you click Apply. New courses start with 0 credits until you confirm them.</small></div>
               <div className="sp-online-grade-list">{additionalSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>)}</div>
             </div>}
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
