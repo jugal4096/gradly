@@ -86,8 +86,13 @@ export async function matchTesterGecaResult(req: TesterAuthenticatedRequest, res
     if (!(await requireActiveTester(req, res))) return;
     const resultId = String(req.params.resultId || "");
     const enrollmentNumber = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
+    const selectedSemester = Number(req.body?.selectedSemester);
     if (!enrollmentNumber) return res.status(400).json({ success: false, message: "Tester enrollment number is required." });
-    const result = await findGecaEnrollmentResults(resultId, enrollmentNumber);
+    const result = await findGecaEnrollmentResults(
+      resultId,
+      enrollmentNumber,
+      Number.isInteger(selectedSemester) && selectedSemester >= 1 && selectedSemester <= 12 ? selectedSemester : undefined,
+    );
     return res.status(200).json({ success: true, ...result, enrollmentNumber, readOnly: true, isolated: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to inspect the selected examination result.";
