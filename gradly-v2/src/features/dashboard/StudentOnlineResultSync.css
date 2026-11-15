@@ -1,0 +1,61 @@
+.sp-student-online-wrap{display:contents}
+.sp-student-online-panel{grid-column:1/-1;min-width:0;padding:20px;border:1px solid var(--line,#dce4ee);border-radius:16px;background:var(--panel,#fff);box-shadow:0 10px 28px rgba(24,48,71,.06)}
+.sp-student-online-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:15px}
+.sp-student-online-head>div>span{font-size:9px;font-weight:900;letter-spacing:1.4px;color:var(--muted,#7c8b9b)}
+.sp-student-online-head h3{margin:5px 0;font-size:17px;color:var(--ink,#183047)}
+.sp-student-online-head p{margin:0;max-width:760px;color:var(--muted,#718195);font-size:11px;line-height:1.6}
+.sp-student-online-head>button{width:30px;height:30px;border:1px solid var(--line,#dce4ee);border-radius:50%;background:transparent;color:var(--ink,#183047);font-size:19px;cursor:pointer}
+.sp-student-online-options{display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin:13px 0}
+.sp-student-online-options label{display:grid;gap:5px;font-size:9px;font-weight:900;letter-spacing:1px;color:var(--muted,#7c8b9b)}
+.sp-student-online-options select{height:35px;padding:6px 10px;border:1px solid var(--line,#dce4ee);border-radius:8px;background:var(--panel,#fff);color:var(--ink,#183047);font:inherit;font-size:11px}
+.sp-student-online-options>span{font-size:10px;color:var(--muted,#7c8b9b);padding-bottom:9px}
+.sp-student-session-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:330px;overflow:auto;padding-right:3px}
+.sp-student-session{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px 14px;border:1px solid var(--line,#dce4ee);border-radius:11px;background:var(--panel,#fff);color:var(--ink,#183047);cursor:pointer}
+.sp-student-session.active{border-color:#268f83;background:rgba(38,143,131,.06)}
+.sp-student-session span{display:grid;gap:4px;min-width:0}
+.sp-student-session b{font-size:11px;overflow-wrap:anywhere}
+.sp-student-session small,.sp-student-match-top small{font-size:10px;color:var(--muted,#7c8b9b)}
+.sp-student-session strong{font-size:10px;color:#168879;white-space:nowrap}
+.sp-student-session:disabled{opacity:.65;cursor:wait}
+.sp-student-scan-result{display:grid;gap:11px;margin-top:15px;padding-top:14px;border-top:1px solid var(--line,#dce4ee)}
+.sp-student-scan-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px}
+.sp-student-scan-meta span{color:var(--muted,#7c8b9b)}
+.sp-student-match{padding:13px;border:1px solid var(--line,#dce4ee);border-radius:11px;background:var(--surface,#f8fafc)}
+.sp-student-match-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.sp-student-match-top>div{display:grid;gap:5px;min-width:0}
+.sp-student-match-top b{font-size:11px;overflow-wrap:anywhere;color:var(--ink,#183047)}
+.sp-student-match-top>span{font-size:10px;color:var(--muted,#7c8b9b);white-space:nowrap}
+.sp-student-grade-section,.sp-student-additional-section{margin-top:12px}
+.sp-student-grade-section>strong,.sp-student-additional-section strong{font-size:10px;color:var(--ink,#183047)}
+.sp-student-additional-section>div:first-child{display:grid;gap:4px}
+.sp-student-additional-section small{font-size:10px;line-height:1.5;color:var(--muted,#718195)}
+.sp-student-grade-list{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}
+.sp-student-grade-list span{display:flex;gap:7px;align-items:center;padding:5px 8px;border:1px solid var(--line,#dce4ee);border-radius:7px;background:var(--panel,#fff);font-size:10px;color:var(--ink,#183047)}
+.sp-student-grade-list b{font-size:9px;color:var(--muted,#7c8b9b)}
+.sp-student-grade-list>small{align-self:center;color:var(--muted,#7c8b9b);font-size:10px}
+.sp-student-apply{padding:9px 12px;border:0;border-radius:8px;background:#183f49;color:#fff;font-size:10px;font-weight:800;cursor:pointer}
+.sp-student-apply:disabled{background:#e9edf1;color:#7b8793;cursor:not-allowed}
+.sp-student-online-muted{font-size:10px;color:var(--muted,#7c8b9b)}
+.sp-student-online-error{padding:9px 11px;border-radius:8px;background:#fff0f0;color:#a12d2d;font-size:10px}
+.sp-student-online-notice{margin:10px 0;color:#28786f;font-size:10px;line-height:1.5}
+.sp-student-online-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding-top:11px;border-top:1px solid var(--line,#dce4ee);font-size:10px;color:var(--muted,#7c8b9b)}
+.sp-student-online-foot a{color:inherit;text-decoration:underline}
+.sp-student-loading-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px;background:rgba(9,18,28,.6);backdrop-filter:blur(6px)}
+.sp-student-loading-dialog{width:min(420px,100%);padding:28px;border:1px solid rgba(255,255,255,.7);border-radius:18px;background:#fff;box-shadow:0 28px 90px rgba(0,0,0,.28);text-align:center;color:#183047}
+.sp-student-loader{width:44px;height:44px;margin:0 auto 15px;border:3px solid #e4ecee;border-top-color:#167f79;border-radius:50%;animation:sp-student-spin .85s linear infinite}
+.sp-student-loading-dialog>span{font-size:9px;font-weight:900;letter-spacing:1.4px;color:#718195}
+.sp-student-loading-dialog h3{margin:8px 0;font-size:19px}
+.sp-student-loading-dialog>p{font-size:11px;line-height:1.6;color:#718195}
+.sp-student-loader-session{display:grid;gap:4px;padding:10px;margin:12px 0;border-radius:9px;background:#f4f7f8;font-size:11px}
+.sp-student-loader-session small{color:#718195}
+.sp-student-loader-progress{height:4px;margin:16px 0;background:#e8eeee;border-radius:9px;overflow:hidden}
+.sp-student-loader-progress i{display:block;width:35%;height:100%;background:#168879;border-radius:9px;animation:sp-student-progress 1.4s ease-in-out infinite alternate}
+.sp-student-loading-dialog>button,.sp-student-cancel-confirm button{padding:8px 12px;border:1px solid #dce4e8;border-radius:8px;background:#fff;color:#183047;font-size:10px;font-weight:700;cursor:pointer}
+.sp-student-cancel-confirm{padding:12px;border:1px solid #e4c9c9;border-radius:10px;background:#fff8f8;text-align:left}
+.sp-student-cancel-confirm>b{font-size:12px}
+.sp-student-cancel-confirm p{font-size:10px;line-height:1.5;color:#718195}
+.sp-student-cancel-confirm>div{display:flex;justify-content:flex-end;gap:8px}
+.sp-student-cancel-confirm>div button:last-child{background:#a12d2d;color:#fff;border-color:#a12d2d}
+@keyframes sp-student-spin{to{transform:rotate(360deg)}}
+@keyframes sp-student-progress{to{width:88%}}
+@media(max-width:760px){.sp-student-online-panel{padding:14px}.sp-student-session-list{grid-template-columns:1fr}.sp-student-online-foot{flex-direction:column}}
