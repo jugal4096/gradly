@@ -51,7 +51,7 @@ export default function LoginPage() {
     navigate("/dashboard", { replace: true });
   }
   return <main className="welcome-page">
-    <div className="hero-visual" aria-hidden="true"><img src="/gradly-orbit.webp" alt="" /></div>
+    <div className="hero-visual" aria-hidden="true"><img src="/gradly-orbit.png" alt="" /></div>
     <div className="hero-vignette" aria-hidden="true"/>
     <header className="welcome-brand">
       <Link to="/" aria-label="Gradly home"><GradlyMark/><span className="brand-wordmark">gradly<span>.</span></span></Link>
