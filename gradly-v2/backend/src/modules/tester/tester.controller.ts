@@ -4,6 +4,7 @@ import { pool } from "../../config/database";
 import { createTesterToken } from "../../config/jwt";
 import { previewEnrollment } from "../academic/enrollment-intelligence.service";
 import { TesterAuthenticatedRequest } from "./tester-auth.middleware";
+import { findGecaEnrollmentResults, listGecaResultSessions } from "./tester-result-sync.service";
 
 export async function loginTester(req: Request, res: Response) {
   const { loginId, password } = req.body ?? {};
@@ -63,5 +64,35 @@ export async function previewTesterEnrollment(req: TesterAuthenticatedRequest, r
     }
     console.error("Tester enrollment preview failed:", error);
     res.status(500).json({ success: false, message: "Unable to resolve this test profile right now." });
+  }
+}
+
+
+/** Tester-only result archive discovery. This does not touch student accounts or saved records. */
+export async function listTesterGecaResultSessions(req: TesterAuthenticatedRequest, res: Response) {
+  try {
+    if (!(await requireActiveTester(req, res))) return;
+    const sessions = await listGecaResultSessions();
+    return res.status(200).json({ success: true, sessions, source: "GECA_OFFICIAL_RESULT_ARCHIVE", readOnly: true });
+  } catch (error) {
+    console.error("Tester GECA result archive lookup failed:", error);
+    return res.status(502).json({ success: false, message: error instanceof Error ? error.message : "Unable to load GECA examination sessions." });
+  }
+}
+
+/** Search every PDF linked under one selected exam session for the isolated tester enrollment. */
+export async function matchTesterGecaResult(req: TesterAuthenticatedRequest, res: Response) {
+  try {
+    if (!(await requireActiveTester(req, res))) return;
+    const resultId = String(req.params.resultId || "");
+    const enrollmentNumber = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
+    if (!enrollmentNumber) return res.status(400).json({ success: false, message: "Tester enrollment number is required." });
+    const result = await findGecaEnrollmentResults(resultId, enrollmentNumber);
+    return res.status(200).json({ success: true, ...result, enrollmentNumber, readOnly: true, isolated: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to inspect the selected examination result.";
+    const status = /valid enrollment|selected examination session|Invalid GECA result session/i.test(message) ? 400 : 502;
+    console.error("Tester GECA result matching failed:", error);
+    return res.status(status).json({ success: false, message });
   }
 }
