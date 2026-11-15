@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string };
+type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
 type ResultGrade = { courseCode: string; grade: string };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
@@ -111,7 +111,8 @@ export default function TesterOnlineResultSync({
     return sum + Number(subject.credits) * points[subject.nextGrade];
   }, 0);
   const previewSgpa = previewCredits > 0 ? (previewPoints / previewCredits).toFixed(2) : null;
-  const complete = previewRows.length > 0 && gradedRows.length === previewRows.length;
+  const hasUnselectedElective = subjects.some(subject => Boolean(subject.electiveKind) && !subject.name.trim());
+  const complete = previewRows.length > 0 && !hasUnselectedElective && gradedRows.length === previewRows.length;
 
   return <>
     <button type="button" className={"sp-entry-mode " + (open ? "selected" : "")} onClick={() => void openArchive()} aria-expanded={open}>
