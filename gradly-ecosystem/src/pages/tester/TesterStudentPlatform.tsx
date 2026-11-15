@@ -1002,6 +1002,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     setSubjects(updatedSubjects);
     setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:updatedSubjects}));
     studentStorage.setItem("gradly_tester_subjects",JSON.stringify(updatedSubjects));
+    studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString()}));
     const gradedCourses=updatedSubjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const complete=gradedCourses.length>0&&gradedCourses.every(subject=>POINTS[subject.grade]!==undefined);
     if(complete) {
@@ -1017,7 +1018,6 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     } else {
       setNotice("Applied "+applied+" matched grades from "+sessionTitle+" to the Tester profile. SGPA was not replaced because "+gradedCourses.filter(subject=>POINTS[subject.grade]===undefined).length+" subject(s) still need grades. Source: "+documentTitle+".");
     }
-    void sourceUrl;
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
