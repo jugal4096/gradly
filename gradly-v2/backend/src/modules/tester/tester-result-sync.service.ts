@@ -7,7 +7,6 @@ const MAX_RESULT_PDFS = 100;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
 const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
-const GRADE_PATTERN = /^(?:A\+\+|A\+|B\+|C\+|AB|A|B|C|D|F|P|-)$/i;
 
 export type GecaResultSession = { id: string; title: string; url: string };
 export type GecaMatchedGrade = { courseCode: string; grade: string };
@@ -103,9 +102,18 @@ function compactPdfText(value: string): string {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
+function enrollmentEndInLine(line: TextLine, enrollment: string): number {
+  const joined = line.items.map(item => item.text).join(" ");
+  const flexiblePattern = new RegExp(enrollment.toUpperCase().split("").map(character => character.replace(/[.*+?^${}()|[\]\\]/g, "\\function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
   const compact = compactPdfText(line.items.map(item => item.text).join(""));
   return compact.includes(compactPdfText(enrollment));
+}")).join("\\s*"), "i");
+  const match = flexiblePattern.exec(joined);
+  return match ? match.index + match[0].length : -1;
+}
+
+function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
+  return enrollmentEndInLine(line, enrollment) >= 0;
 }
 
 function gradeTokensFromItem(item: PositionedItem): string[] {
@@ -124,10 +132,15 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
     const candidates: CourseColumn[] = [];
     for (let offset = 1; offset <= 12 && index + offset < lines.length; offset++) {
       const line = lines[index + offset];
-      for (const item of line.items) {
-        const token = item.text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
+        const item = line.items[itemIndex];
+        const single = item.text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const next = line.items[itemIndex + 1];
+        const combined = next ? (single + next.text.toUpperCase().replace(/[^A-Z0-9]/g, "")) : "";
+        const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
         if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
           candidates.push({ courseCode: token, x: item.x });
+          if (token === combined) itemIndex++;
         }
       }
       if (/\bGrade\b/i.test(line.text) || candidates.length >= 20) break;
@@ -167,10 +180,9 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
   // conservative sequence fallback, but only after an exact enrollment hit.
   if (!mapped.size) {
     const joined = line.items.map(item => item.text).join(" ");
-    const compact = compactPdfText(joined);
-    const enrollmentAt = compact.indexOf(compactPdfText(enrollment));
-    if (enrollmentAt >= 0) {
-      const rawTail = joined.slice(Math.min(joined.length, joined.toUpperCase().indexOf(enrollment.toUpperCase()) + enrollment.length));
+    const enrollmentEnd = enrollmentEndInLine(line, enrollment);
+    if (enrollmentEnd >= 0) {
+      const rawTail = joined.slice(enrollmentEnd);
       const grades = rawTail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
       columns.forEach((column, index) => {
         const grade = grades[index]?.toUpperCase();
