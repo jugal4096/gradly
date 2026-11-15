@@ -38,6 +38,16 @@ const nepOpenElectiveCatalog = [
   { code: "NEPOE_CS_5_BEHAVIORAL_SCIENCE_ORGANIZATION", department: "CS", semester: 5, credits: 2 },
 ] as const;
 
+function isNepSchemeName(schemeName: string): boolean {
+  const value = String(schemeName || "").trim();
+  return /\b(?:nep|new\s+education\s+policy|national\s+education\s+policy)\b/i.test(value)
+    && !/new\s*cbcs|\blegacy\s*cbcs\b/i.test(value);
+}
+
+function isBtechProgrammeName(programmeName: string): boolean {
+  return /bachelor of engineering|bachelor of technology|\bb\.?\s*eng(?:ineering)?\b|\bb\.?\s*tech\b/i.test(String(programmeName || ""));
+}
+
 function getMajorDepartmentCode(branchCode: string, branchName: string): string | null {
   const code = String(branchCode || "").trim().toUpperCase();
   if (["CE", "ME", "EE", "ET", "CS", "IT"].includes(code)) return code;
@@ -197,9 +207,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       [resolved.profile.curriculum_id],
     );
     const context = curriculumContext.rows[0] || {};
-    const isNepBtech = /\bnep\b/i.test(String(context.scheme_name || "")) &&
-      !/new\s*cbcs/i.test(String(context.scheme_name || "")) &&
-      /bachelor of technology|\bb\.?\s*tech\b|\bb\.?\s*e\.?\b/i.test(String(context.programme_name || ""));
+    const isNepBtech = isNepSchemeName(String(context.scheme_name || "")) &&
+      isBtechProgrammeName(String(context.programme_name || ""));
     if (isNepBtech && submittedOECodes.length) {
       const majorDepartment = getMajorDepartmentCode(String(context.branch_code || ""), String(context.branch_name || ""));
       for (const code of submittedOECodes) {
@@ -241,9 +250,16 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          FROM curriculum_subjects cs
          JOIN semesters sem ON sem.id = cs.semester_id
          WHERE cs.curriculum_id = $1 AND sem.semester_number = $2
-           AND (UPPER(COALESCE(cs.course_type, '')) LIKE '%OPEN ELECTIVE%'
-             OR UPPER(COALESCE(cs.course_type, '')) = 'OE'
-             OR COALESCE(cs.course_name, '') ILIKE '%open elective%')
+           AND (
+             UPPER(BTRIM(COALESCE(cs.course_type, ''))) IN
+               ('OE', 'OPEN ELECTIVE', 'OPEN_ELECTIVE', 'OPEN-ELECTIVE',
+                'OPEN ELECTIVE COURSE', 'OPEN ELECTIVE SLOT')
+             OR UPPER(COALESCE(cs.course_type, '')) LIKE '%OPEN ELECTIVE%'
+             OR COALESCE(cs.course_name, '') ILIKE '%open elective%'
+             OR COALESCE(cs.course_name, '') ILIKE '%OE slot%'
+             OR UPPER(COALESCE(cs.course_code, '')) ~ '^[A-Z]{2}OEC'
+             OR UPPER(COALESCE(cs.course_code, '')) LIKE 'ITOE%'
+           )
            AND (cs.active IS TRUE OR NOT EXISTS (
              SELECT 1 FROM curriculum_subjects active_cs
              JOIN semesters active_sem ON active_sem.id = active_cs.semester_id
