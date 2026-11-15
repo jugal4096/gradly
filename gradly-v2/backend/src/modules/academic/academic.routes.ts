@@ -195,10 +195,12 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
     const result = await pool.query(
       `SELECT cs.id, cs.course_code AS code, cs.course_name AS name,
               cs.credits, cs.course_type AS "courseType", cs.mandatory,
-              sem.id AS "semesterId", sem.semester_number AS semester
+              sem.id AS "semesterId", sem.semester_number AS semester,
+              COALESCE(to_jsonb(source_branch)->>'name', to_jsonb(source_branch)->>'label', to_jsonb(source_branch)->>'code') AS "branchName"
        FROM curriculum_subjects cs
        JOIN semesters sem ON sem.id = cs.semester_id
        JOIN curricula source_curriculum ON source_curriculum.id = cs.curriculum_id
+       LEFT JOIN branches source_branch ON source_branch.id = source_curriculum.branch_id
        JOIN curricula selected_curriculum ON selected_curriculum.id = $1
        WHERE (
            source_curriculum.id = $1
