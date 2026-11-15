@@ -1024,7 +1024,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString()}));
     const gradedCourses=updatedSubjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const hasUnselectedElective=updatedSubjects.some(subject=>Boolean(subject.electiveKind)&&!subject.name.trim());
-    const complete=gradedCourses.length>0&&!hasUnselectedElective&&gradedCourses.every(subject=>POINTS[subject.grade]!==undefined);
+    const hasUncreditedNewCourse=updatedSubjects.some(subject=>subject.courseType==="Official GECA result · new course"&&!(Number(subject.credits)>0));
+    const complete=gradedCourses.length>0&&!hasUnselectedElective&&!hasUncreditedNewCourse&&gradedCourses.every(subject=>POINTS[subject.grade]!==undefined);
     if(complete) {
       const credits=gradedCourses.reduce((sum,subject)=>sum+subject.credits,0);
       const weighted=gradedCourses.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
