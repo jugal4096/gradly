@@ -47,7 +47,9 @@ export const NEP_OPEN_ELECTIVES: NepOpenElectiveOption[] = [
 ];
 
 export function isNepSchemeName(schemeName: string): boolean {
-  return /\bnep\b/i.test(String(schemeName || "")) && !/new\s*cbcs/i.test(String(schemeName || ""));
+  const value = String(schemeName || "").trim();
+  return /\b(?:nep|new\s+education\s+policy|national\s+education\s+policy)\b/i.test(value)
+    && !/new\s*cbcs|\blegacy\s*cbcs\b/i.test(value);
 }
 
 export function getNepDepartmentCode(branchName: string): string | null {
