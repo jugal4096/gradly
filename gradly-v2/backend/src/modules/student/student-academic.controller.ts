@@ -95,6 +95,12 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
   const semesterNumber = Number(req.body?.semesterNumber);
   const courses = req.body?.courses;
   const attemptNumber = Number(req.body?.attemptNumber ?? 1);
+  const officialResult = req.body?.resultSource === "GECA_OFFICIAL";
+  const resultSource = officialResult ? "GECA_OFFICIAL" : "MANUAL_ENTRY";
+  if (officialResult && (!/^https:\/\/geca\.ac\.in\//i.test(String(req.body?.sourceUrl || "")) ||
+      !String(req.body?.sessionTitle || "").trim())) {
+    return res.status(400).json({ message: "A valid official GECA source and examination session are required." });
+  }
   if (!Number.isInteger(semesterNumber) || semesterNumber < 1 || semesterNumber > 12 ||
       !Number.isInteger(attemptNumber) || attemptNumber < 1 ||
       !Array.isArray(courses) || courses.length === 0 || courses.length > 100) {
@@ -206,12 +212,12 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       const updated = await client.query(
         `UPDATE student_semesters
          SET curriculum_id = $2, status = 'COMPLETED', result_publication_status = 'NOT_PUBLISHED',
-             result_source = 'MANUAL_ENTRY', verified = FALSE,
+             result_source = $6, verified = $7,
              credits_registered = $3, credits_earned = $4, sgpa = $5,
-             sgpa_calculated_at = NOW(), result_declared_at = NULL
+             sgpa_calculated_at = NOW(), result_declared_at = CASE WHEN $7 THEN NOW() ELSE NULL END
          WHERE id = $1
          RETURNING id, semester_id, attempt_number`,
-        [existing.rows[0].id, resolved.profile.curriculum_id, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
+        [existing.rows[0].id, resolved.profile.curriculum_id, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2)), resultSource, officialResult],
       );
       semesterRecord = updated.rows[0];
       await client.query("DELETE FROM student_semester_courses WHERE student_semester_id = $1", [semesterRecord.id]);
@@ -221,11 +227,11 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            (student_profile_id, curriculum_id, semester_id, attempt_number,
            status, result_publication_status, result_source, verified,
            credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
-         VALUES ($1, $2, $3, $4, 'COMPLETED', 'NOT_PUBLISHED', 'MANUAL_ENTRY', FALSE,
-                 $5, $6, $7, NOW(), NULL)
+         VALUES ($1, $2, $3, $4, 'COMPLETED', 'NOT_PUBLISHED', $5, $6,
+                 $7, $8, $9, NOW(), CASE WHEN $6 THEN NOW() ELSE NULL END)
          RETURNING id, semester_id, attempt_number`,
         [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
-         creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
+         resultSource, officialResult, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
       );
       semesterRecord = inserted.rows[0];
     }
@@ -244,9 +250,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            course_name_snapshot, credits, registration_status, grade_symbol,
            grade_point, result_status, result_source, attempt_number)
          VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7::numeric,
-                 CASE WHEN $7::numeric > 0::numeric THEN 'PASS' ELSE 'FAIL' END, 'MANUAL_ENTRY', $8)`,
+                 CASE WHEN $7::numeric > 0::numeric THEN 'PASS' ELSE 'FAIL' END, $9, $8)`,
         [semesterRecord.id, curriculumSubject.rows[0]?.id ?? null, course.code || null,
-         course.name, course.credits, course.grade || null, course.point, attemptNumber],
+         course.name, course.credits, course.grade || null, course.point, attemptNumber, resultSource],
       );
     }
     await client.query("COMMIT");
