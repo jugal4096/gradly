@@ -173,14 +173,23 @@ export default function TesterOnlineResultSync({
       {scan && <div className="sp-online-scan-result">
         <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.enrollmentHits} enrollment hits · {scan.matches.length} parsed · {scan.parseFailures} parse issues</span></div>
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
-        {scan.matches.map((document,index) => {
-          const matchingSubjects = document.grades.filter(row => subjects.some(subject => String(subject.courseCode || "").trim().toUpperCase() === row.courseCode.toUpperCase()));
+        {scan.matches.map(document => {
+          const knownCodes = new Set(subjects.map(subject => String(subject.courseCode || "").trim().toUpperCase()).filter(Boolean));
+          const matchingSubjects = document.grades.filter(row => knownCodes.has(row.courseCode.toUpperCase()));
+          const additionalSubjects = document.grades.filter(row => !knownCodes.has(row.courseCode.toUpperCase()));
           const canApply = document.semester === selectedSemester && matchingSubjects.length > 0;
           return <article className="sp-online-match" key={document.url}>
-            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingSubjects.length} curriculum code matches</small></div><span>{document.grades.length} grades</span></div>
-            <div className="sp-online-grade-list">{document.grades.slice(0,12).map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>)}{document.grades.length>12&&<small>+{document.grades.length-12} more</small>}</div>
+            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingSubjects.length} curriculum matches · {additionalSubjects.length} additional courses</small></div><span>{document.grades.length} grades</span></div>
+            <div className="sp-online-grade-section">
+              <strong>Courses matched with Gradly curriculum</strong>
+              <div className="sp-online-grade-list">{matchingSubjects.length ? matchingSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>) : <small>No course codes from this PDF match the currently loaded curriculum.</small>}</div>
+            </div>
+            {additionalSubjects.length > 0 && <div className="sp-online-unmapped-section">
+              <div><strong>Additional courses found in official PDF</strong><small>These course codes are not present in the currently loaded Gradly curriculum. They are shown for review and will not be applied automatically.</small></div>
+              <div className="sp-online-grade-list">{additionalSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>)}</div>
+            </div>}
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
-              {canApply ? "Apply grades to Semester " + selectedSemester : document.semester ? "Switch to Semester " + document.semester + " to apply" : "Cannot apply · semester not detected"}
+              {canApply ? "Apply matched grades to Semester " + selectedSemester : document.semester ? "Switch to Semester " + document.semester + " to apply" : "Cannot apply · semester not detected"}
             </button>
           </article>;
         })}
