@@ -65,7 +65,16 @@ export async function listStudentAcademicRecords(req: AuthenticatedRequest, res:
       ...semester,
       courses: courseMap.get(semester.id) ?? [],
     }));
-    const graded = courses.rows.filter((course) => course.grade_point !== null);
+    const latestAttemptBySemester = new Map<number, number>();
+    for (const semester of semesters.rows) {
+      const semesterNumber = Number(semester.semester_number);
+      const attempt = Number(semester.attempt_number || 1);
+      latestAttemptBySemester.set(semesterNumber, Math.max(latestAttemptBySemester.get(semesterNumber) || 0, attempt));
+    }
+    const latestSemesterIds = new Set(semesters.rows
+      .filter(semester => Number(semester.attempt_number || 1) === latestAttemptBySemester.get(Number(semester.semester_number)))
+      .map(semester => String(semester.id)));
+    const graded = courses.rows.filter((course) => course.grade_point !== null && latestSemesterIds.has(String(course.student_semester_id)));
     const totalCredits = graded.reduce((sum, course) => sum + Number(course.credits || 0), 0);
     const weightedPoints = graded.reduce(
       (sum, course) => sum + Number(course.credits || 0) * Number(course.grade_point || 0), 0,
@@ -174,9 +183,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          JOIN semesters sem ON sem.id = ss.semester_id
          WHERE ss.student_profile_id = $1
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = ANY($2::text[])
-           AND NOT (ss.semester_id = $3 AND ss.attempt_number = $4)
+           AND ss.semester_id <> $3
          LIMIT 1`,
-        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id, attemptNumber],
+        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id],
       );
       if (priorOE.rows.length) {
         await client.query("ROLLBACK");
@@ -194,9 +203,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          JOIN student_semesters ss ON ss.id = c.student_semester_id
          WHERE ss.student_profile_id = $1
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = 'INHS1020'
-           AND NOT (ss.semester_id = $2 AND ss.attempt_number = $3)
+           AND ss.semester_id <> $2
          LIMIT 1`,
-        [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
+        [resolved.profile.id, semesterResult.rows[0].id],
       );
       if (priorUhv.rows.length) {
         await client.query("ROLLBACK");
