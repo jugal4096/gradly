@@ -223,7 +223,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          SET curriculum_id = $2, status = 'COMPLETED', result_publication_status = 'NOT_PUBLISHED',
              result_source = $6, verified = $7,
              credits_registered = $3, credits_earned = $4, sgpa = $5,
-             sgpa_calculated_at = NOW(), result_declared_at = CASE WHEN $7 THEN NOW() ELSE NULL END
+             sgpa_calculated_at = NOW(), result_declared_at = NULL
          WHERE id = $1
          RETURNING id, semester_id, attempt_number`,
         [existing.rows[0].id, resolved.profile.curriculum_id, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2)), resultSource, officialResult],
@@ -237,7 +237,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            status, result_publication_status, result_source, verified,
            credits_registered, credits_earned, sgpa, sgpa_calculated_at, result_declared_at)
          VALUES ($1, $2, $3, $4, 'COMPLETED', 'NOT_PUBLISHED', $5, $6,
-                 $7, $8, $9, NOW(), CASE WHEN $6 THEN NOW() ELSE NULL END)
+                 $7, $8, $9, NOW(), NULL)
          RETURNING id, semester_id, attempt_number`,
         [resolved.profile.id, resolved.profile.curriculum_id, semesterResult.rows[0].id, attemptNumber,
          resultSource, officialResult, creditsRegistered, earnedCredits, Number(sgpa.toFixed(2))],
