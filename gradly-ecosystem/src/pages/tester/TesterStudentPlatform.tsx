@@ -520,7 +520,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const mdmSlot:Subject[]=mdmOptions.length?[{id:loadedCurriculumSubjects.length+defaultHsSlot.length+1,name:savedMdm?.name||"",credits:savedMdm?.credits??mdmOptions[0].credits,grade:savedMdm?.grade||"",courseCode:savedMdm?.courseCode||"",courseType:"Multidisciplinary Minor (MDM)",curriculumSubjectId:savedMdm?.curriculumSubjectId,electiveKind:"MDM",electiveSlotCode:"MDM"}]:[];
         let manualCached:Subject[]=[];
         try { const cached=JSON.parse(studentStorage.getItem("gradly_tester_manual_electives_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) manualCached=cached; } catch { /* ignore invalid manual elective cache */ }
-        const customSource=[...saved,...manualCached].filter(subject=>!subject.curriculumSubjectId&&subject.isCustom&&(subject.courseType==="Open Elective (OE)"||subject.courseType==="Humanities & Social Sciences (HS)"));
+        const customSource=[...saved,...manualCached].filter(subject=>!subject.curriculumSubjectId&&subject.isCustom&&(subject.courseType==="Open Elective (OE)"||subject.courseType==="Humanities & Social Sciences (HS)"||subject.courseType==="Official GECA result · additional course"));
         const customUnique=new Map<string,Subject>();
         customSource.forEach(subject=>customUnique.set(String(subject.courseCode||subject.name).trim().toLowerCase(),subject));
         const customSavedSubjects:Subject[]=Array.from(customUnique.values()).map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+defaultHsSlot.length+mdmSlot.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
@@ -538,7 +538,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
 
   useEffect(()=>{
     if(!isTester||!profile.curriculumId||curriculumReadySemester!==selectedSemester) return;
-    const manualSubjects=subjects.filter(subject=>subject.isCustom&&(subject.courseType==="Open Elective (OE)"||subject.courseType==="Humanities & Social Sciences (HS)"));
+    const manualSubjects=subjects.filter(subject=>subject.isCustom&&(subject.courseType==="Open Elective (OE)"||subject.courseType==="Humanities & Social Sciences (HS)"||subject.courseType==="Official GECA result · additional course"));
     studentStorage.setItem("gradly_tester_manual_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(manualSubjects));
   },[isTester,profile.curriculumId,selectedSemester,curriculumReadySemester,subjects]);
 
@@ -1004,18 +1004,27 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       return {...subject,grade};
     });
     const unmatchedCodes=Array.from(gradeByCode.keys()).filter(code=>!matchedCodes.has(code));
-    if(!applied) {
-      setNotice("No fetched course codes matched the existing Semester "+semesterNumber+" subject rows. No extra rows were created and no grades were changed. Check the course codes in the PDF and curriculum table.");
+    const nextId=Math.max(0,...updatedSubjects.map(subject=>subject.id))+1;
+    const additionalSubjects:Subject[]=unmatchedCodes.map((code,index)=>({
+      id:nextId+index,
+      name:code+" · Confirm subject name",
+      credits:0,
+      grade:gradeByCode.get(code)||"",
+      courseCode:code,
+      courseType:"Official GECA result · additional course",
+      isCustom:true,
+    }));
+    if(!applied&&!additionalSubjects.length) {
+      setNotice("No valid course grades were found to apply.");
       return;
     }
-    // Only update existing curriculum rows. Never append PDF-only courses to the
-    // subject table: that table remains the single source for SGPA calculation.
-    setSubjects(updatedSubjects);
-    setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:updatedSubjects}));
-    studentStorage.setItem("gradly_tester_subjects",JSON.stringify(updatedSubjects));
-    studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString(),appliedCourseCodes:Array.from(matchedCodes)}));
+    const finalSubjects=[...updatedSubjects,...additionalSubjects];
+    setSubjects(finalSubjects);
+    setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:finalSubjects}));
+    studentStorage.setItem("gradly_tester_subjects",JSON.stringify(finalSubjects));
+    studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString(),appliedCourseCodes:[...matchedCodes,...unmatchedCodes]}));
     setSgpa(null);
-    setNotice("Selected "+applied+" fetched grade(s) in the existing Semester "+semesterNumber+" subject rows. "+(unmatchedCodes.length?unmatchedCodes.length+" PDF course(s) did not match an existing row and were intentionally not added. ":"")+"The SGPA panel will calculate from the existing subject table. Review the grades and use Save to tracker when ready. Source: "+documentTitle+".");
+    setNotice("Selected grades for "+(applied+additionalSubjects.length)+" course(s) in the Semester "+semesterNumber+" subject table. "+(additionalSubjects.length?additionalSubjects.length+" additional PDF course(s) were added with their fetched grades. Confirm each subject name and enter its correct credits before calculating SGPA. ":"")+"Review all rows and use Save to tracker when ready. Source: "+documentTitle+".");
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
