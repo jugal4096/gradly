@@ -14,6 +14,15 @@ function GoogleMark() {
   );
 }
 
+function GradlyMark() {
+  return (
+    <svg className="gradly-mark" viewBox="0 0 40 40" role="img" aria-label="Gradly">
+      <path d="M32.1 12.2A15.5 15.5 0 1 0 35.4 22H20.2v-5.3h20v7.1A20.2 20.2 0 1 1 35.4 9.8" />
+      <circle cx="29.5" cy="29.5" r="3.1" />
+    </svg>
+  );
+}
+
 const headlines = [
   "Make your academic journey count.",
   "Every semester is a new opportunity.",
@@ -61,11 +70,14 @@ export default function LoginPage() {
       <section className="welcome-story" aria-label="Welcome to Gradly">
         <div className="welcome-texture" aria-hidden="true" />
         <header className="welcome-brand">
-          <Link to="/" aria-label="Gradly home">gradly<span>.</span></Link>
+          <Link to="/" aria-label="Gradly home">
+            <GradlyMark />
+            <span className="brand-wordmark">gradly<span>.</span></span>
+          </Link>
         </header>
         <div className="story-content">
           <p className="story-intro">A NEW WAY FORWARD</p>
-          <div className="story-headline-frame">
+          <div className="story-headline-frame" aria-live="polite">
             <h1 key={headlineIndex} className="story-headline">{headlines[headlineIndex]}</h1>
           </div>
           <div className="journey-art" aria-hidden="true">
@@ -76,25 +88,31 @@ export default function LoginPage() {
 
       <section className="welcome-auth" aria-label="Sign in or continue as guest">
         <div className="auth-inner">
-          <div className="auth-brand-mobile"><Link to="/">gradly<span>.</span></Link></div>
-          <div className="auth-heading">
-            <h2>Welcome to Gradly</h2>
-            <p>Your journey starts here.</p>
+          <div className="auth-card">
+            <div className="auth-heading">
+              <p className="auth-eyebrow">WELCOME</p>
+              <h2>Welcome to Gradly</h2>
+              <p>Your journey starts here.</p>
+            </div>
+            <div className="auth-actions">
+              <button className="google-signin" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
+                <GoogleMark />
+                <span>{loggingIn ? "Connecting…" : "Continue with Google"}</span>
+              </button>
+              <div className="auth-divider" aria-hidden="true"><span>OR</span></div>
+              <button className="guest-signin" type="button" onClick={handleGuest}>
+                Continue as Guest
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+            {error && <p className="welcome-error" role="alert">{error}</p>}
+            <p className="welcome-legal">
+              By continuing, you agree to our <Link to="/terms">Terms of Service</Link> and acknowledge our <Link to="/privacy">Privacy Policy</Link>.
+            </p>
           </div>
-          <div className="auth-actions">
-            <button className="google-signin" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
-              <GoogleMark />
-              <span>{loggingIn ? "Connecting…" : "Continue with Google"}</span>
-            </button>
-            <button className="guest-signin" type="button" onClick={handleGuest}>
-              Continue as Guest
-              <span aria-hidden="true">→</span>
-            </button>
+          <div className="auth-progress" aria-label="Explore, track, improve and achieve">
+            <span>Explore</span><i /><span>Track</span><i /><span>Improve</span><i /><span>Achieve</span>
           </div>
-          {error && <p className="welcome-error" role="alert">{error}</p>}
-          <p className="welcome-legal">
-            By continuing, you agree to our <Link to="/terms">Terms of Service</Link> and acknowledge our <Link to="/privacy">Privacy Policy</Link>.
-          </p>
         </div>
       </section>
     </main>
