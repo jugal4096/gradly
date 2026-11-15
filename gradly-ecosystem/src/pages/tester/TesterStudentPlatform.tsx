@@ -1022,23 +1022,11 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:updatedSubjects}));
     studentStorage.setItem("gradly_tester_subjects",JSON.stringify(updatedSubjects));
     studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString()}));
-    const gradedCourses=updatedSubjects.filter(subject=>subject.name.trim()&&subject.credits>0);
-    const hasUnselectedElective=updatedSubjects.some(subject=>Boolean(subject.electiveKind)&&!subject.name.trim());
-    const hasUncreditedNewCourse=updatedSubjects.some(subject=>subject.courseType==="Official GECA result · new course"&&!(Number(subject.credits)>0));
-    const complete=gradedCourses.length>0&&!hasUnselectedElective&&!hasUncreditedNewCourse&&gradedCourses.every(subject=>POINTS[subject.grade]!==undefined);
-    if(complete) {
-      const credits=gradedCourses.reduce((sum,subject)=>sum+subject.credits,0);
-      const weighted=gradedCourses.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
-      const calculatedSgpa=Number((weighted/credits).toFixed(2));
-      const next=[...results.filter(item=>item.semester!==semesterNumber),{
-        id:"geca-"+Date.now(),semester:semesterNumber,sgpa:calculatedSgpa,credits,savedAt:new Date().toISOString()
-      }].sort((a,b)=>a.semester-b.semester);
-      setResults(next);
-      studentStorage.setItem("gradly_semester_results",JSON.stringify(next));
-      setNotice("Updated the isolated Tester profile with "+applied+" grades from "+sessionTitle+". Semester "+semesterNumber+" SGPA is now "+calculatedSgpa.toFixed(2)+". Source: "+documentTitle+".");
-    } else {
-      setNotice("Saved "+applied+" official grades to the isolated Tester profile, including "+newlyDiscovered.length+" newly discovered course(s). "+(newlyDiscovered.length?"New courses were added with 0 credits until you confirm their credits. ":"")+(hasUncreditedNewCourse?"SGPA was not recalculated because the new course credits need confirmation. ":"SGPA was not replaced because "+gradedCourses.filter(subject=>POINTS[subject.grade]===undefined).length+" configured subject(s) still need grades. ")+"Source: "+documentTitle+".");
-    }
+    // Applying an online result only selects grades in the existing subject
+    // table. The student must still review the rows and explicitly save the
+    // completed semester using the normal Save to tracker action.
+    setSgpa(null);
+    setNotice("Selected "+applied+" official grades directly in the Semester "+semesterNumber+" subject table. "+(newlyDiscovered.length?newlyDiscovered.length+" new course(s) were added with 0 credits; confirm their credits before calculating SGPA. ":"")+"Review the selected grades and use Save to tracker when ready. Source: "+documentTitle+".");
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
