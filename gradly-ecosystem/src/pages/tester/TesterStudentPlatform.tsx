@@ -215,6 +215,7 @@ const studentStorage = {
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
 const gradeNames = Object.keys(POINTS);
+function normalizeResultCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
 const isDseAdmission = (admissionMode: string, enrollment: string) => /\bDSE\b|DIRECT\s+SECOND\s+YEAR|SECOND\s+YEAR\s+DIRECT/i.test(admissionMode||"") || String(enrollment||"").trim().toUpperCase().replace(/\s+/g,"")[4] === "S";
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
@@ -487,7 +488,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const savedBySubject=new Map<string,Subject>();
         saved.forEach(subject=>{
           if(subject.curriculumSubjectId) savedBySubject.set("id:"+subject.curriculumSubjectId,subject);
-          if(subject.courseCode) savedBySubject.set("code:"+subject.courseCode,subject);
+          if(subject.courseCode) savedBySubject.set("code:"+normalizeResultCourseCode(subject.courseCode),subject);
         });
         const curriculumSubjects=(Array.isArray(data.data)?data.data:[]) as CurriculumSubjectApi[];
         const hssmOptions=isNepScheme(profile)?hssmOptionsFromCurriculum(curriculumSubjects):[];
@@ -497,7 +498,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
           const subjectId=String(item.id||"");
           const courseCode=String(item.code||"");
           const itemCourseType=String(item.courseType||item.course_type||item.subjectType||"");
-          const previous=savedBySubject.get("id:"+subjectId)||savedBySubject.get("code:"+courseCode)||electiveSaved.find(subject=>subject.curriculumSubjectId===subjectId);
+          const previous=savedBySubject.get("id:"+subjectId)||savedBySubject.get("code:"+normalizeResultCourseCode(courseCode))||electiveSaved.find(subject=>subject.curriculumSubjectId===subjectId);
           const kind=electiveKind(courseCode,selectedSemester,String(item.name||""),itemCourseType,isNepScheme(profile));
           const selectedCode=previous?.courseCode||courseCode;
           const option=kind==="OE"?getTesterOEOptions(profile,selectedSemester).find(x=>x.code===selectedCode):kind==="HS"?getTesterHSOptions(profile,selectedSemester,hsOptionsBySemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):kind==="PE6C"?PE6_THIRD_OPTIONS.find(x=>x.code===selectedCode):undefined;
@@ -986,47 +987,35 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       setNotice("Select Semester "+semesterNumber+" in the workspace before applying this result.");
       return;
     }
-    const gradeByCode=new Map(fetchedGrades.map(row=>[row.courseCode.trim().toUpperCase(),row.grade.trim().toUpperCase()]));
+    const gradeByCode=new Map<string,string>();
+    fetchedGrades.forEach(row=>{
+      const code=normalizeResultCourseCode(row.courseCode);
+      const grade=row.grade.trim().toUpperCase();
+      if(code&&POINTS[grade]!==undefined) gradeByCode.set(code,grade);
+    });
     let applied=0;
-    const knownCodes=new Set(subjects.map(subject=>String(subject.courseCode||"").trim().toUpperCase()).filter(Boolean));
+    const matchedCodes=new Set<string>();
     const updatedSubjects=subjects.map(subject=>{
-      const code=String(subject.courseCode||"").trim().toUpperCase();
+      const code=normalizeResultCourseCode(subject.courseCode);
       const grade=code?gradeByCode.get(code):undefined;
-      if(!grade||POINTS[grade]===undefined) return subject;
+      if(!grade) return subject;
       applied++;
+      matchedCodes.add(code);
       return {...subject,grade};
     });
-    const newlyDiscovered=fetchedGrades.filter(row=>{
-      const code=row.courseCode.trim().toUpperCase();
-      return code&&!knownCodes.has(code)&&POINTS[row.grade.trim().toUpperCase()]!==undefined;
-    });
-    const nextId=updatedSubjects.reduce((max,subject)=>Math.max(max,Number(subject.id)||0),0)+1;
-    newlyDiscovered.forEach((row,index)=>{
-      const code=row.courseCode.trim().toUpperCase();
-      updatedSubjects.push({
-        id:nextId+index,
-        name:code+" (course name not in curriculum)",
-        credits:0,
-        grade:row.grade.trim().toUpperCase(),
-        courseCode:code,
-        courseType:"Official GECA result · new course",
-        isCustom:true,
-      });
-      applied++;
-    });
+    const unmatchedCodes=Array.from(gradeByCode.keys()).filter(code=>!matchedCodes.has(code));
     if(!applied) {
-      setNotice("No valid course grades were found in this PDF. No Tester data was changed.");
+      setNotice("No fetched course codes matched the existing Semester "+semesterNumber+" subject rows. No extra rows were created and no grades were changed. Check the course codes in the PDF and curriculum table.");
       return;
     }
+    // Only update existing curriculum rows. Never append PDF-only courses to the
+    // subject table: that table remains the single source for SGPA calculation.
     setSubjects(updatedSubjects);
     setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:updatedSubjects}));
     studentStorage.setItem("gradly_tester_subjects",JSON.stringify(updatedSubjects));
-    studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString()}));
-    // Applying an online result only selects grades in the existing subject
-    // table. The student must still review the rows and explicitly save the
-    // completed semester using the normal Save to tracker action.
+    studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString(),appliedCourseCodes:Array.from(matchedCodes)}));
     setSgpa(null);
-    setNotice("Selected "+applied+" official grades directly in the Semester "+semesterNumber+" subject table. "+(newlyDiscovered.length?newlyDiscovered.length+" new course(s) were added with 0 credits; confirm their credits before calculating SGPA. ":"")+"Review the selected grades and use Save to tracker when ready. Source: "+documentTitle+".");
+    setNotice("Selected "+applied+" fetched grade(s) in the existing Semester "+semesterNumber+" subject rows. "+(unmatchedCodes.length?unmatchedCodes.length+" PDF course(s) did not match an existing row and were intentionally not added. ":"")+"The SGPA panel will calculate from the existing subject table. Review the grades and use Save to tracker when ready. Source: "+documentTitle+".");
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
