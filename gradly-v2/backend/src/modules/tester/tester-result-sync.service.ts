@@ -127,72 +127,91 @@ function gradeTokensFromItem(item: PositionedItem): string[] {
 type CourseColumn = { courseCode: string; x: number };
 
 function findCourseColumns(lines: TextLine[]): CourseColumn[] {
-  const columns: CourseColumn[] = [];
-  for (let index = 0; index < lines.length; index++) {
-    if (!/(?:Exam\s*Seat|Seat\s*No)/i.test(lines[index].text)) continue;
-    const candidates: CourseColumn[] = [];
-    for (let offset = 1; offset <= 12 && index + offset < lines.length; offset++) {
-      const line = lines[index + offset];
+  const candidates: CourseColumn[] = [];
+  // GECA layouts vary: course codes may appear on several lines after the
+  // seat-number heading, so inspect a wider header window and tolerate split
+  // PDF text items without treating enrollment numbers as course codes.
+  const headerIndexes = lines.map((line, index) => /(?:Exam\s*Seat|Seat\s*No)/i.test(line.text) ? index : -1).filter(index => index >= 0);
+  for (const headerIndex of headerIndexes) {
+    for (let offset = 1; offset <= 30 && headerIndex + offset < lines.length; offset++) {
+      const line = lines[headerIndex + offset];
       for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
         const item = line.items[itemIndex];
-        const single = item.text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const single = clean(item.text);
         const next = line.items[itemIndex + 1];
-        const combined = next ? (single + next.text.toUpperCase().replace(/[^A-Z0-9]/g, "")) : "";
+        const combined = next ? single + clean(next.text) : "";
         const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
         if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
           candidates.push({ courseCode: token, x: item.x });
           if (token === combined) itemIndex++;
         }
       }
-      if (/\bGrade\b/i.test(line.text) || candidates.length >= 20) break;
-    }
-    if (candidates.length >= 2) {
-      const unique = new Map<string, CourseColumn>();
-      for (const column of candidates) if (!unique.has(column.courseCode)) unique.set(column.courseCode, column);
-      if (unique.size > columns.length) columns.splice(0, columns.length, ...unique.values());
+      if (/\bGrade\b/i.test(line.text) && candidates.length) break;
+      if (candidates.length >= 30) break;
     }
   }
-  return columns;
+  const unique = new Map<string, CourseColumn>();
+  for (const column of candidates) if (!unique.has(column.courseCode)) unique.set(column.courseCode, column);
+  return Array.from(unique.values()).sort((a, b) => a.x - b.x);
 }
 
 function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
-  if (!lineContainsEnrollment(line, enrollment)) return [];
-  const gradeItems = line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x })));
+  if (!lineContainsEnrollment(line, enrollment) || !columns.length) return [];
   const mapped = new Map<string, string>();
+  const gradeCells = line.items.flatMap(item => {
+    const tokens = item.text.toUpperCase().trim().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+\\-]+|[^A-Z+\\-]+$/g, ""));
+    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x }));
+  });
+  const sortedColumns = [...columns].sort((a, b) => a.x - b.x);
+  const distinctGradeColumns = new Set(gradeCells.map(item => Math.round(item.x)));
 
-  const distinctGradeColumns = new Set(gradeItems.map(item => Math.round(item.x)));
-  if (columns.length && gradeItems.length && distinctGradeColumns.size > 1) {
-    for (const item of gradeItems) {
+  // First choice: map horizontally aligned grade cells to the closest course
+  // header, but only when the PDF provides genuinely distinct x positions.
+  if (gradeCells.length && distinctGradeColumns.size > 1) {
+    for (const cell of gradeCells) {
       let nearest: CourseColumn | null = null;
       let distance = Number.POSITIVE_INFINITY;
-      for (const column of columns) {
-        const nextDistance = Math.abs(column.x - item.x);
-        if (nextDistance < distance) {
-          nearest = column;
-          distance = nextDistance;
-        }
+      for (const column of sortedColumns) {
+        const nextDistance = Math.abs(column.x - cell.x);
+        if (nextDistance < distance) { nearest = column; distance = nextDistance; }
       }
-      if (nearest && distance < 55 && item.grade !== "-" && item.grade !== "AB" && item.grade !== "P") {
-        mapped.set(nearest.courseCode, item.grade);
-      }
+      if (nearest && distance < 80 && !["-", "AB", "P"].includes(cell.grade)) mapped.set(nearest.courseCode, cell.grade);
     }
   }
 
-  // Some GECA PDFs expose an entire row as one positioned text item. Keep a
-  // conservative sequence fallback, but only after an exact enrollment hit.
+  // Fallback for GECA PDFs where the whole result row (including all grades)
+  // is emitted as one text item or where enrollment characters are split
+  // across items. Only accept a complete positional sequence: one grade cell
+  // per discovered course column. This avoids shifting grades onto wrong codes.
   if (!mapped.size) {
-    const joined = line.items.map(item => item.text).join(" ");
-    const enrollmentEnd = enrollmentEndInLine(line, enrollment);
-    if (enrollmentEnd >= 0) {
-      const rawTail = joined.slice(enrollmentEnd);
-      const grades = rawTail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
-      columns.forEach((column, index) => {
-        const grade = grades[index]?.toUpperCase();
-        if (grade && GRADE_TOKEN_PATTERN.test(grade) && !["-", "AB", "P"].includes(grade)) mapped.set(column.courseCode, grade);
+    const orderedText = line.items.map(item => item.text).join(" ");
+    const compactEnrollment = compactPdfText(enrollment);
+    const compactLine = compactPdfText(orderedText);
+    const enrollmentAt = compactLine.indexOf(compactEnrollment);
+    if (enrollmentAt >= 0) {
+      const compactTail = compactLine.slice(enrollmentAt + compactEnrollment.length);
+      const gradeSequence = compactTail.match(/A\\+\\+|A\\+|B\\+|C\\+|AB|[ABCDFP]|-/g) || [];
+      if (gradeSequence.length === sortedColumns.length) {
+        sortedColumns.forEach((column, index) => {
+          const grade = gradeSequence[index];
+          if (grade && !["-", "AB", "P"].includes(grade)) mapped.set(column.courseCode, grade);
+        });
+      }
+    }
+    // A single PDF text item may contain whitespace-separated grade tokens;
+    // use that sequence only when its length exactly matches the header count.
+    if (!mapped.size) {
+      const enrollmentItemIndex = line.items.findIndex(item => compactPdfText(item.text).includes(compactEnrollment));
+      const tailItems = enrollmentItemIndex >= 0 ? line.items.slice(enrollmentItemIndex) : line.items;
+      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+\\-]+|[^A-Z+\\-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
+      const afterEnrollment = enrollmentItemIndex >= 0 ? sequence.slice(1) : sequence;
+      if (afterEnrollment.length === sortedColumns.length) sortedColumns.forEach((column, index) => {
+        const grade = afterEnrollment[index];
+        if (grade && !["-", "AB", "P"].includes(grade)) mapped.set(column.courseCode, grade);
       });
     }
   }
-
   return Array.from(mapped, ([courseCode, grade]) => ({ courseCode, grade }));
 }
 
