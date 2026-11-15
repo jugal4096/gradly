@@ -123,11 +123,25 @@ export default function TesterOnlineResultSync({
       <strong>Fetch official results</strong>
       <small>{loadingSessions ? "Loading GECA archive…" : sessions.length ? sessions.length + " examination sessions available" : "Browse GECA result archive"}</small>
     </button>
-    {open && <section className="sp-online-result-panel">
+    {open && <section className="sp-online-result-panel" aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
         <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>Choose an examination session</h3><p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
         <button type="button" onClick={() => setOpen(false)} aria-label="Close online result archive">×</button>
       </div>
+      {(loadingSessions || Boolean(loadingSessionId)) && <div className="sp-online-loading-backdrop" role="presentation">
+        <div className="sp-online-loading-dialog" role="status" aria-live="polite" aria-label={loadingSessions ? "Loading GECA examination archive" : "Scanning GECA result PDFs"}>
+          <div className="sp-online-loader-art" aria-hidden="true">
+            <span className="sp-online-loader-orbit sp-online-loader-orbit-one" />
+            <span className="sp-online-loader-orbit sp-online-loader-orbit-two" />
+            <span className="sp-online-loader-core"><i /></span>
+          </div>
+          <span className="sp-online-loader-eyebrow">GRADLY · TESTER WORKSPACE</span>
+          <h3>{loadingSessions ? "Connecting to GECA" : "Checking examination results"}</h3>
+          <p>{loadingSessions ? "Fetching the latest examination sessions from the official GECA archive." : "Searching the selected session PDFs for " + enrollmentNumber + ". Your grades will not change until you review and apply a match."}</p>
+          <div className="sp-online-loader-progress" aria-hidden="true"><span /></div>
+          <div className="sp-online-loader-foot"><span className="sp-online-loader-dot" />{loadingSessions ? "Loading examination list" : "Reading and matching result documents"}<span className="sp-online-loader-pulse">Please wait</span></div>
+        </div>
+      </div>}
       {loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
       {error && <p className="sp-online-result-error" role="alert">{error}</p>}
       {sessions.length > 0 && <div className="sp-online-session-list">
