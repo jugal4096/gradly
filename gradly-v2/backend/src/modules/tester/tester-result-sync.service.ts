@@ -7,7 +7,7 @@ const MAX_RESULT_PDFS = 100;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
 const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
-const GRADE_PATTERN = /^(?:A\+\+|A\+|A|B\+|B|C\+|C|D|F|P|AB|-)$/i;
+const GRADE_PATTERN = /^(?:A\+\+|A\+|B\+|C\+|AB|A|B|C|D|F|P|-)$/i;
 
 export type GecaResultSession = { id: string; title: string; url: string };
 export type GecaMatchedGrade = { courseCode: string; grade: string };
@@ -101,7 +101,7 @@ function gradesAfterEnrollment(line: TextLine, enrollment: string): string[] {
   const at = full.indexOf(enrollment.toUpperCase());
   if (at < 0) return [];
   const tail = full.slice(at + enrollment.length);
-  const values = tail.match(/A\+\+|A\+|B\+|C\+|[ABCDFP]|AB|-/g) || [];
+  const values = tail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
   return values.filter(value => GRADE_PATTERN.test(value));
 }
 
@@ -112,7 +112,7 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): GecaMatch
   let pendingCodes: string[] = [];
 
   for (const line of lines) {
-    if (/Exam\s*Seat\s*No/i.test(line.text)) {
+    if (/(?:Exam\s*Seat|Seat\s*No)/i.test(line.text)) {
       collectingCodes = true;
       currentCodes = [];
       pendingCodes = [];
