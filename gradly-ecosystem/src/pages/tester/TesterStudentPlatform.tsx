@@ -424,7 +424,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const droppedSlotCodes=new Set(dropped.map(subject=>subject.electiveSlotCode||""));
         const availableCurriculumSubjects=loadedCurriculumSubjects.filter(subject=>!droppedSlotCodes.has(subject.electiveSlotCode||""));
         const savedHssm=[...saved,...electiveSaved].find(subject=>hssmOptions.some(option=>option.code===subject.courseCode));
-        const defaultHsSlot:Subject[]=hssmOptions.length?[{id:loadedCurriculumSubjects.length+1,name:savedHssm?.name||"",credits:savedHssm?.credits??hssmOptions[0].credits,grade:savedHssm?.grade||"",courseCode:savedHssm?.courseCode||"",courseType:"Humanities & Social Sciences (HS)",curriculumSubjectId:savedHssm?hssmOptions.find(option=>option.code===savedHssm.courseCode)?.curriculumSubjectId:undefined,electiveKind:"HS",electiveSlotCode:"HSSM"}]:[];
+        const defaultHsSlot:Subject[]=hssmOptions.length&&!droppedSlotCodes.has("HSSM")?[{id:loadedCurriculumSubjects.length+1,name:savedHssm?.name||"",credits:savedHssm?.credits??hssmOptions[0].credits,grade:savedHssm?.grade||"",courseCode:savedHssm?.courseCode||"",courseType:"Humanities & Social Sciences (HS)",curriculumSubjectId:savedHssm?hssmOptions.find(option=>option.code===savedHssm.courseCode)?.curriculumSubjectId:undefined,electiveKind:"HS",electiveSlotCode:"HSSM"}]:[];
         const customSavedSubjects: Subject[] = saved
           .filter(subject=>!subject.curriculumSubjectId)
           .map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+defaultHsSlot.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
@@ -636,7 +636,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     const credits=card.subjects.reduce((sum,subject)=>sum+Math.max(0,subject.credits),0);
     if(credits+option.credits>28) { setPlannerNotice("Adding this elective would exceed the 28-credit semester limit."); return; }
     const nextId=Math.max(0,...card.subjects.map(subject=>subject.id))+1;
-    setPlannerReportCards(cards=>cards.map(item=>{if(item.id!==cardId)return item;const nextSubjects=[...item.subjects,{id:nextId,name:option.name,credits:option.credits,grade:"A",courseCode:option.code,courseType:kind==="OE"?"Open Elective (OE)":"Humanities & Social Sciences (HS)",isCustom:true,electiveKind:kind}];const plan=buildSgpaScenarios(Number(targetSgpa),nextSubjects)[(cardId-1)%3];return {...item,subjects:nextSubjects.map(subject=>({...subject,grade:plan.grades[subject.id]||"D"}))};}));
+    setPlannerReportCards(cards=>cards.map(item=>{if(item.id!==cardId)return item;const nextSubjects=[...item.subjects,{id:nextId,name:option.name,credits:option.credits,grade:"A",courseCode:option.code,courseType:kind==="OE"?"Open Elective (OE)":"Humanities & Social Sciences (HS)",curriculumSubjectId:option.curriculumSubjectId,isCustom:true,electiveKind:kind}];const plan=buildSgpaScenarios(Number(targetSgpa),nextSubjects)[(cardId-1)%3];return {...item,subjects:nextSubjects.map(subject=>({...subject,grade:plan.grades[subject.id]||"D"}))};}));
     setPlannerNotice("");
   }
   function removePlannerCardSubject(cardId:number,subjectId:number) {
