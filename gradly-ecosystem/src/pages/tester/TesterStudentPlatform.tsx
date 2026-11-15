@@ -52,8 +52,35 @@ function hsOptionsForSemester(semester:number):ElectiveOption[] {
   const oddCodes=["CEHS0020","CEHS0040","MEHS0020","EEHS0001","ITHS0020","ETHS0020","CSHS0011"];
   return HS_OPTIONS.filter(option=>(semester%2===0?evenCodes:oddCodes).includes(option.code));
 }
-function electiveKind(code:string, semester:number, name=""):"OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null {
-  const slotName=name.toLowerCase().replace(/[–—]/g,"-").replace(/\s+/g," ").trim();
+
+const NEP_OE_CATALOGUE: Record<string, Record<number, ElectiveOption[]>> = {
+ CIVIL:{3:[{code:"NEP-OE-CE-III-01",name:"Rural Technology",credits:3}],4:[{code:"NEP-OE-CE-IV-01",name:"Disaster Management",credits:3}],5:[{code:"NEP-OE-CE-V-01",name:"Watershed Management",credits:2}]},
+ MECHANICAL:{
+  3:["Industrial Psychology","Engineering Economics","Ethical Values","Smart Mobility & Road Safety"].map((name,i)=>({code:`NEP-OE-ME-III-0${i+1}`,name,credits:3})),
+  4:["Total Quality Management","Industrial Management","Manufacturing Management","Fundamentals of Financing for Green Hydrogen Projects"].map((name,i)=>({code:`NEP-OE-ME-IV-0${i+1}`,name,credits:3})),
+  5:["Entrepreneurship Development","Financial Management"].map((name,i)=>({code:`NEP-OE-ME-V-0${i+1}`,name,credits:2}))},
+ ELECTRICAL:{3:[{code:"EEOEC2001",name:"Music Engineering",credits:3}],4:[{code:"EEOEC2010",name:"Basic Engineering Economics",credits:2}],5:[{code:"EEOEC3001",name:"Smart Building Services",credits:3}]},
+ ENTC:{3:[{code:"ETOEC0010",name:"German I",credits:3},{code:"ETOEC0011",name:"Japanese I",credits:3}],4:[{code:"ETOEC1020",name:"German II",credits:3},{code:"ETOEC1021",name:"Japanese II",credits:3}],5:[{code:"ETOEC0030",name:"German III",credits:3},{code:"ETOEC0031",name:"Japanese III",credits:3}]},
+ CSE:{3:[{code:"NEP-OE-CS-III-01",name:"Design Thinking",credits:3},{code:"NEP-OE-CS-III-02",name:"Critical Thinking",credits:3}],4:[{code:"NEP-OE-CS-IV-01",name:"PECL",credits:3},{code:"NEP-OE-CS-IV-02",name:"Software Development Cycle",credits:3}],5:[{code:"NEP-OE-CS-V-01",name:"Behavioral Science & Organization",credits:2}]}
+};
+function isNepScheme(profile:Profile):boolean { return /NEP|national education policy/i.test(String(profile.scheme||"")); }
+function nepBranchKey(profile:Profile):string {
+ const value=(String(profile.branchName||"")+" "+String(profile.programName||"")).toUpperCase();
+ if(/ENTC|ELECTRONICS.*TELECOMMUNICATION|ELECTRONICS.*COMMUNICATION/.test(value)) return "ENTC";
+ if(/CIVIL/.test(value)) return "CIVIL";
+ if(/MECHANICAL|MECH/.test(value)) return "MECHANICAL";
+ if(/ELECTRICAL/.test(value)) return "ELECTRICAL";
+ if(/COMPUTER SCIENCE|CSE/.test(value)) return "CSE";
+ if(/INFORMATION TECHNOLOGY|\bIT\b/.test(value)) return "IT";
+ return "";
+}
+function getTesterOEOptions(profile:Profile,semester:number):ElectiveOption[] {
+ if(!isNepScheme(profile)) return OE_OPTIONS;
+ return NEP_OE_CATALOGUE[nepBranchKey(profile)]?.[semester]||[];
+}
+function electiveKind(code:string, semester:number, name="", courseType="", nep=false):"OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null {
+  const slotName=(name+" "+courseType).toLowerCase().replace(/[–—]/g,"-").replace(/\s+/g," ").trim();
+  if(nep && (/open\\s*elective|\\bOE\\b/.test(slotName) || /^(?:EEOEC|ETOEC|NEP-OE-|[A-Z]{2}OEC|ITOE)/i.test(code))) return "OE";
   if(semester===6 && /professional elective/.test(slotName)) {
     if(/iii|3rd|third/.test(slotName)) return "PE6C";
     if(/lab/.test(slotName) && /ii\b|2nd|second/.test(slotName)) return "PE6BLAB";
@@ -353,11 +380,11 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
           const subjectId=String(item.id||"");
           const courseCode=String(item.code||"");
           const previous=savedBySubject.get("id:"+subjectId)||savedBySubject.get("code:"+courseCode)||electiveSaved.find(subject=>subject.curriculumSubjectId===subjectId);
-          const kind=electiveKind(courseCode,selectedSemester,String(item.name||""));
+          const kind=electiveKind(courseCode,selectedSemester,String(item.name||""),String(item.courseType||""),isNepScheme(profile));
           const selectedCode=previous?.courseCode||courseCode;
-          const option=kind==="OE"?OE_OPTIONS.find(x=>x.code===selectedCode):kind==="HS"?hsOptionsForSemester(selectedSemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):kind==="PE6C"?PE6_THIRD_OPTIONS.find(x=>x.code===selectedCode):undefined;
+          const option=kind==="OE"?getTesterOEOptions(profile,selectedSemester).find(x=>x.code===selectedCode):kind==="HS"?hsOptionsForSemester(selectedSemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):kind==="PE6C"?PE6_THIRD_OPTIONS.find(x=>x.code===selectedCode):undefined;
           const pe4=kind==="PE4"?PE4_OPTIONS.find(x=>x.code===selectedCode):kind==="PE4LAB"?PE4_OPTIONS.find(x=>x.labCode===selectedCode):undefined;
-          return {id:index+1,name:previous?.name||item.name||"",credits:previous?.credits??Number(item.credits||0),grade:previous?.grade||"",courseCode:selectedCode,courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4, ...((option||pe4)?{}:{})};
+          return {id:index+1,name:previous?.name||(kind==="OE"?"":item.name||""),credits:previous?.credits??Number(item.credits||0),grade:previous?.grade||"",courseCode:previous?.courseCode||((kind==="OE"&&isNepScheme(profile))?"":courseCode),courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4, ...((option||pe4)?{}:{})};
         });
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
@@ -481,8 +508,9 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const creditsForSemesterLimit = subjects.filter(s=>s.name.trim() && s.credits>0 && s.courseCode?.toUpperCase()!=="INHS1020").reduce((sum,s)=>sum+s.credits,0);
   const uhvAlreadyUsed = subjects.some(subject=>subject.courseCode==="INHS1020") || Object.values(savedSubjectsBySemester).some(semesterSubjects=>semesterSubjects.some(subject=>subject.courseCode==="INHS1020"));
-  const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([,semesterSubjects])=>semesterSubjects.filter(subject=>OE_OPTIONS.some(option=>option.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
-  const availableOEOptions = OE_OPTIONS.filter(option=>!previouslyOptedOECodes.has(option.code));
+  const testerOEOptions=getTesterOEOptions(profile,selectedSemester);
+  const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([,semesterSubjects])=>semesterSubjects.filter(subject=>getTesterOEOptions(profile,Number(semester)).some(option=>option.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
+  const availableOEOptions = testerOEOptions.filter(option=>!previouslyOptedOECodes.has(option.code));
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
   const isCurrentSemesterInProgress = !isGuest && !isTester && selectedSemester === currentSemester;
   const canCalculateOfficialSgpa = isGuest || isTester || selectedSemester < currentSemester;
@@ -708,7 +736,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   }
   function confirmAddElectiveCourse() {
     if (!addCourseType || !addCourseCode) { setNotice("Choose a subject before adding it."); return; }
-    const options:ElectiveOption[]=addCourseType==="OE"?OE_OPTIONS:addCourseType==="HS"?hsOptionsForSemester(selectedSemester):[{code:"INHS1020",name:"Universal Human Values",credits:3}];
+    const options:ElectiveOption[]=addCourseType==="OE"?getTesterOEOptions(profile,selectedSemester):addCourseType==="HS"?hsOptionsForSemester(selectedSemester):[{code:"INHS1020",name:"Universal Human Values",credits:3}];
     const option=options.find(item=>item.code===addCourseCode);
     if(!option) { setNotice("That subject is not available."); return; }
     if(addCourseType==="UHV" && uhvAlreadyUsed) { setNotice("Universal Human Values can be added only once throughout your degree."); return; }
@@ -716,7 +744,13 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     if(subjects.some(subject=>subject.courseCode===option.code)) { setNotice("This course is already added to the semester."); return; }
     const courseType=addCourseType==="OE"?"Open Elective (OE)":addCourseType==="HS"?"Humanities & Social Sciences (HS)":"Universal Human Values (UHV)";
     const nextId=Math.max(0,...subjects.map(subject=>subject.id))+1;
-    setSubjects(current=>[...current,{id:nextId,name:option.name,credits:option.credits,grade:"",courseCode:option.code,courseType,isCustom:true}]);
+    const emptySlot=addCourseType==="OE"?subjects.find(subject=>subject.electiveKind==="OE"&&(!subject.courseCode||subject.courseCode===subject.electiveSlotCode)):undefined;
+    const droppedSlot=addCourseType==="OE"?droppedElectives.find(subject=>subject.electiveKind==="OE"):undefined;
+    const slot=emptySlot||droppedSlot;
+    if(slot){
+      if(droppedSlot&&!emptySlot){const nextDropped=droppedElectives.filter(subject=>subject.id!==droppedSlot.id);setDroppedElectives(nextDropped);studentStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(nextDropped));}
+      setSubjects(current=>[...current.filter(subject=>subject.id!==slot.id),{...slot,name:option.name,credits:option.credits,grade:"",courseCode:option.code,courseType,electiveKind:"OE",isCustom:false}]);
+    } else setSubjects(current=>[...current,{id:nextId,name:option.name,credits:option.credits,grade:"",courseCode:option.code,courseType,electiveKind:addCourseType==="OE"?"OE":undefined,isCustom:true}]);
     setSgpa(null); setNotice(""); setAddCourseDialogOpen(false); setAddCourseType(null); setAddCourseCode("");
   }
   function removeSubject(subjectId:number) {
