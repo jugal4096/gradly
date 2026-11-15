@@ -96,48 +96,109 @@ function groupPdfLines(items: PositionedItem[]): TextLine[] {
   return lines;
 }
 
-function gradesAfterEnrollment(line: TextLine, enrollment: string): string[] {
-  const full = line.text.toUpperCase();
-  const at = full.indexOf(enrollment.toUpperCase());
-  if (at < 0) return [];
-  const tail = full.slice(at + enrollment.length);
-  const values = tail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
-  return values.filter(value => GRADE_PATTERN.test(value));
+
+const GRADE_TOKEN_PATTERN = /^(?:A\+\+|A\+|B\+|C\+|AB|A|B|C|D|F|P|-)$/i;
+
+function compactPdfText(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-function extractMatchingGrades(lines: TextLine[], enrollment: string): GecaMatchedGrade[] {
+function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
+  const compact = compactPdfText(line.items.map(item => item.text).join(""));
+  return compact.includes(compactPdfText(enrollment));
+}
+
+function gradeTokensFromItem(item: PositionedItem): string[] {
+  return item.text.toUpperCase().trim().split(/\s+/).flatMap(token => {
+    const cleaned = token.replace(/^[^A-Z+]+|[^A-Z+]+$/g, "");
+    return GRADE_TOKEN_PATTERN.test(cleaned) ? [cleaned] : [];
+  });
+}
+
+type CourseColumn = { courseCode: string; x: number };
+
+function findCourseColumns(lines: TextLine[]): CourseColumn[] {
+  const columns: CourseColumn[] = [];
+  for (let index = 0; index < lines.length; index++) {
+    if (!/(?:Exam\s*Seat|Seat\s*No)/i.test(lines[index].text)) continue;
+    const candidates: CourseColumn[] = [];
+    for (let offset = 1; offset <= 12 && index + offset < lines.length; offset++) {
+      const line = lines[index + offset];
+      for (const item of line.items) {
+        const token = item.text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
+          candidates.push({ courseCode: token, x: item.x });
+        }
+      }
+      if (/\bGrade\b/i.test(line.text) || candidates.length >= 20) break;
+    }
+    if (candidates.length >= 2) {
+      const unique = new Map<string, CourseColumn>();
+      for (const column of candidates) if (!unique.has(column.courseCode)) unique.set(column.courseCode, column);
+      if (unique.size > columns.length) columns.splice(0, columns.length, ...unique.values());
+    }
+  }
+  return columns;
+}
+
+function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
+  if (!lineContainsEnrollment(line, enrollment)) return [];
+  const gradeItems = line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x })));
+  const mapped = new Map<string, string>();
+
+  if (columns.length && gradeItems.length) {
+    for (const item of gradeItems) {
+      let nearest: CourseColumn | null = null;
+      let distance = Number.POSITIVE_INFINITY;
+      for (const column of columns) {
+        const nextDistance = Math.abs(column.x - item.x);
+        if (nextDistance < distance) {
+          nearest = column;
+          distance = nextDistance;
+        }
+      }
+      if (nearest && distance < 55 && item.grade !== "-" && item.grade !== "AB" && item.grade !== "P") {
+        mapped.set(nearest.courseCode, item.grade);
+      }
+    }
+  }
+
+  // Some GECA PDFs expose an entire row as one positioned text item. Keep a
+  // conservative sequence fallback, but only after an exact enrollment hit.
+  if (!mapped.size) {
+    const joined = line.items.map(item => item.text).join(" ");
+    const compact = compactPdfText(joined);
+    const enrollmentAt = compact.indexOf(compactPdfText(enrollment));
+    if (enrollmentAt >= 0) {
+      const rawTail = joined.slice(Math.min(joined.length, joined.toUpperCase().indexOf(enrollment.toUpperCase()) + enrollment.length));
+      const grades = rawTail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
+      columns.forEach((column, index) => {
+        const grade = grades[index]?.toUpperCase();
+        if (grade && GRADE_TOKEN_PATTERN.test(grade) && !["-", "AB", "P"].includes(grade)) mapped.set(column.courseCode, grade);
+      });
+    }
+  }
+
+  return Array.from(mapped, ([courseCode, grade]) => ({ courseCode, grade }));
+}
+
+function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
+  const columns = findCourseColumns(lines);
   const matches = new Map<string, string>();
-  let collectingCodes = false;
-  let currentCodes: string[] = [];
-  let pendingCodes: string[] = [];
+  let enrollmentFound = false;
 
   for (const line of lines) {
-    if (/(?:Exam\s*Seat|Seat\s*No)/i.test(line.text)) {
-      collectingCodes = true;
-      currentCodes = [];
-      pendingCodes = [];
-      continue;
+    if (!lineContainsEnrollment(line, enrollment)) continue;
+    enrollmentFound = true;
+    for (const grade of gradesInEnrollmentRow(line, enrollment, columns)) {
+      matches.set(grade.courseCode, grade.grade);
     }
-    if (collectingCodes) {
-      const found = line.items
-        .map(item => item.text.toUpperCase().trim())
-        .filter(token => COURSE_CODE_PATTERN.test(token) && !ENROLLMENT_PATTERN.test(token));
-      pendingCodes.push(...found);
-      if (/\bGrade\b/i.test(line.text) || pendingCodes.length >= 20) {
-        currentCodes = Array.from(new Set(pendingCodes));
-        collectingCodes = false;
-      }
-      continue;
-    }
-
-    if (!line.text.toUpperCase().includes(enrollment.toUpperCase()) || !currentCodes.length) continue;
-    const grades = gradesAfterEnrollment(line, enrollment);
-    currentCodes.forEach((courseCode, index) => {
-      const grade = grades[index];
-      if (grade && grade !== "-" && grade !== "AB" && grade !== "P") matches.set(courseCode, grade);
-    });
   }
-  return Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade }));
+
+  return {
+    grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade })),
+    enrollmentFound,
+  };
 }
 
 function romanSemester(text: string): number | null {
@@ -147,15 +208,19 @@ function romanSemester(text: string): number | null {
   return values[match[1].toUpperCase()] ?? null;
 }
 
-async function readResultPdf(url: string, title: string, enrollment: string): Promise<GecaMatchedDocument | null> {
+async function readResultPdf(url: string, title: string, enrollment: string): Promise<{
+  document: GecaMatchedDocument | null;
+  enrollmentFound: boolean;
+  error?: string;
+}> {
   const safeUrl = safeGecaUrl(url);
-  if (!safeUrl) return null;
+  if (!safeUrl) return { document: null, enrollmentFound: false, error: "untrusted-url" };
   const response = await fetch(safeUrl, { signal: AbortSignal.timeout(35000), headers: { "User-Agent": "Gradly-Result-Sync/1.0" } });
-  if (!response.ok) return null;
+  if (!response.ok) return { document: null, enrollmentFound: false, error: "http-" + response.status };
   const declaredLength = Number(response.headers.get("content-length") || 0);
-  if (declaredLength > MAX_PDF_BYTES) return null;
+  if (declaredLength > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large" };
   const bytes = new Uint8Array(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > MAX_PDF_BYTES) return null;
+  if (!bytes.length || bytes.length > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large-or-empty" };
 
   const pdf = await getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true }).promise;
   const allLines: TextLine[] = [];
@@ -174,23 +239,26 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
   }
   await pdf.destroy();
 
-  const grades = extractMatchingGrades(allLines, enrollment);
-  if (!grades.length) return null;
+  const parsed = extractMatchingGrades(allLines, enrollment);
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
-  return {
+  const semester = romanSemester(title + " " + metadataText);
+  const document = parsed.grades.length ? {
     title,
     url: safeUrl,
     programme: programmeMatch?.[1]?.trim() || null,
     scheme: schemeMatch?.[1]?.toUpperCase() || null,
-    semester: romanSemester(title + " " + metadataText),
-    grades,
-  };
+    semester,
+    grades: parsed.grades,
+  } : null;
+  return { document, enrollmentFound: parsed.enrollmentFound };
 }
 
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
+  enrollmentHits: number;
+  parseFailures: number;
   matches: GecaMatchedDocument[];
 }> {
   if (!/^\d{1,10}$/.test(resultId)) throw new Error("Invalid GECA result session.");
@@ -211,19 +279,24 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   if (!unique.length) throw new Error("No result PDFs were linked to this GECA examination session.");
 
   const matches: GecaMatchedDocument[] = [];
+  let enrollmentHits = 0;
+  let parseFailures = 0;
   let cursor = 0;
   const workers = Array.from({ length: Math.min(4, unique.length) }, async () => {
     while (cursor < unique.length) {
       const index = cursor++;
       const document = unique[index];
       try {
-        const match = await readResultPdf(document.url, document.title, enrollment);
-        if (match) matches.push(match);
+        const parsed = await readResultPdf(document.url, document.title, enrollment);
+        if (parsed.enrollmentFound) enrollmentHits++;
+        if (parsed.document) matches.push(parsed.document);
+        else if (parsed.enrollmentFound) parseFailures++;
       } catch (error) {
+        parseFailures++;
         console.warn("Unable to inspect one GECA result PDF:", document.title, error);
       }
     }
   });
   await Promise.all(workers);
-  return { session, documentsScanned: unique.length, matches };
+  return { session, documentsScanned: unique.length, enrollmentHits, parseFailures, matches };
 }
