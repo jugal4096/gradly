@@ -19,6 +19,8 @@ type MatchResponse = {
   parseFailures: number;
   matches: ResultDocument[];
 };
+function normalizeCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+
 type Props = {
   apiBase: string;
   testerToken: string;
@@ -109,16 +111,16 @@ export default function TesterOnlineResultSync({
       return;
     }
     onApply(document.semester, applicable, sessionTitle, document.title, document.url);
-    setNotice("Saved " + applicable.length + " official course grades to the isolated Tester SGPA profile, including courses not yet present in Gradly's curriculum database.");
+    setNotice("Applied " + applicable.length + " official course grades to the existing Tester semester table. PDF-only courses are not added as extra rows.");
     setError("");
   }
 
   const gradeMap = new Map<string, string>();
-  scan?.matches.filter(document => document.semester === selectedSemester).forEach(document => document.grades.forEach(row => gradeMap.set(row.courseCode.toUpperCase(), row.grade)));
+  scan?.matches.filter(document => document.semester === selectedSemester).forEach(document => document.grades.forEach(row => gradeMap.set(normalizeCourseCode(row.courseCode), row.grade.toUpperCase())));
   const previewSubjects = subjects.filter(subject => subject.name.trim() && Number(subject.credits) > 0);
   const previewRows = previewSubjects.map(subject => ({
     ...subject,
-    nextGrade: gradeMap.get(String(subject.courseCode || "").trim().toUpperCase()) || subject.grade,
+    nextGrade: gradeMap.get(normalizeCourseCode(subject.courseCode)) || subject.grade,
   }));
   const gradedRows = previewRows.filter(subject => ["A++", "A+", "A", "B+", "B", "C+", "C", "D"].includes(subject.nextGrade));
   const previewCredits = gradedRows.reduce((sum, subject) => sum + Number(subject.credits), 0);
@@ -173,9 +175,9 @@ export default function TesterOnlineResultSync({
         <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.enrollmentHits} enrollment hits · {scan.matches.length} parsed · {scan.parseFailures} parse issues</span></div>
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
-          const knownCodes = new Set(subjects.map(subject => String(subject.courseCode || "").trim().toUpperCase()).filter(Boolean));
-          const matchingSubjects = document.grades.filter(row => knownCodes.has(row.courseCode.toUpperCase()));
-          const additionalSubjects = document.grades.filter(row => !knownCodes.has(row.courseCode.toUpperCase()));
+          const knownCodes = new Set(subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean));
+          const matchingSubjects = document.grades.filter(row => knownCodes.has(normalizeCourseCode(row.courseCode)));
+          const additionalSubjects = document.grades.filter(row => !knownCodes.has(normalizeCourseCode(row.courseCode)));
           const canApply = document.semester === selectedSemester && document.grades.length > 0;
           return <article className="sp-online-match" key={document.url}>
             <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingSubjects.length} curriculum matches · {additionalSubjects.length} additional courses</small></div><span>{document.grades.length} grades</span></div>
@@ -184,11 +186,11 @@ export default function TesterOnlineResultSync({
               <div className="sp-online-grade-list">{matchingSubjects.length ? matchingSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>) : <small>No course codes from this PDF match the currently loaded curriculum.</small>}</div>
             </div>
             {additionalSubjects.length > 0 && <div className="sp-online-unmapped-section">
-              <div><strong>Additional courses found in official PDF</strong><small>These course codes are not present in the currently loaded Gradly curriculum. They will be added to the Tester SGPA profile when you click Apply. New courses start with 0 credits until you confirm them.</small></div>
+              <div><strong>Additional courses found in official PDF</strong><small>These course codes do not have an existing row in the loaded semester table. They will be skipped; Gradly will not create extra subject rows or include them in SGPA.</small></div>
               <div className="sp-online-grade-list">{additionalSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>)}</div>
             </div>}
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
-              {canApply ? "Apply matched grades to Semester " + selectedSemester : document.semester ? "Switch to Semester " + document.semester + " to apply" : "Cannot apply · semester not detected"}
+              {canApply ? "Fill matching grades in Semester " + selectedSemester + " table" : document.semester ? "Switch to Semester " + document.semester + " to apply" : "Cannot apply · semester not detected"}
             </button>
           </article>;
         })}
