@@ -510,7 +510,10 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const availableCurriculumSubjects=loadedCurriculumSubjects.filter(subject=>!droppedSlotCodes.has(subject.electiveSlotCode||""));
         const savedHssm=[...saved,...electiveSaved].find(subject=>hssmOptions.some(option=>option.code===subject.courseCode));
         const defaultHsSlot:Subject[]=hssmOptions.length&&!droppedSlotCodes.has("HSSM")?[{id:loadedCurriculumSubjects.length+1,name:savedHssm?.name||"",credits:savedHssm?.credits??hssmOptions[0].credits,grade:savedHssm?.grade||"",courseCode:savedHssm?.courseCode||"",courseType:"Humanities & Social Sciences (HS)",curriculumSubjectId:savedHssm?hssmOptions.find(option=>option.code===savedHssm.courseCode)?.curriculumSubjectId:undefined,electiveKind:"HS",electiveSlotCode:"HSSM"}]:[];
-        const savedMdm=[...saved,...electiveSaved].find(subject=>(!!subject.curriculumSubjectId&&mdmOptions.some(option=>option.curriculumSubjectId===subject.curriculumSubjectId))||mdmOptions.some(option=>option.code===subject.courseCode)||subject.electiveKind==="MDM"||isMdmCatalogueRow({courseType:subject.courseType}));
+        const allSavedMdm=[...saved,...electiveSaved];
+        const savedMdm=allSavedMdm.find(subject=>!!subject.curriculumSubjectId&&mdmOptions.some(option=>option.curriculumSubjectId===subject.curriculumSubjectId))
+          ||allSavedMdm.find(subject=>mdmOptions.some(option=>option.code===subject.courseCode))
+          ||allSavedMdm.find(subject=>subject.electiveKind==="MDM"||isMdmCatalogueRow({courseType:subject.courseType}));
         const mdmSlot:Subject[]=mdmOptions.length?[{id:loadedCurriculumSubjects.length+defaultHsSlot.length+1,name:savedMdm?.name||"",credits:savedMdm?.credits??mdmOptions[0].credits,grade:savedMdm?.grade||"",courseCode:savedMdm?.courseCode||"",courseType:"Multidisciplinary Minor (MDM)",curriculumSubjectId:savedMdm?.curriculumSubjectId,electiveKind:"MDM",electiveSlotCode:"MDM"}]:[];
         let manualCached:Subject[]=[];
         try { const cached=JSON.parse(studentStorage.getItem("gradly_tester_manual_electives_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) manualCached=cached; } catch { /* ignore invalid manual elective cache */ }
