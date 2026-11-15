@@ -196,7 +196,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
       `SELECT cs.id, cs.course_code AS code, cs.course_name AS name,
               cs.credits, cs.course_type AS "courseType", cs.mandatory,
               sem.id AS "semesterId", sem.semester_number AS semester,
-              COALESCE(to_jsonb(source_branch)->>'name', to_jsonb(source_branch)->>'label', to_jsonb(source_branch)->>'code') AS "branchName"
+              COALESCE(to_jsonb(source_branch)->>'name', to_jsonb(source_branch)->>'label', to_jsonb(source_branch)->>'code', to_jsonb(source_branch)->>'branch_name') AS "branchName"
        FROM curriculum_subjects cs
        JOIN semesters sem ON sem.id = cs.semester_id
        JOIN curricula source_curriculum ON source_curriculum.id = cs.curriculum_id
