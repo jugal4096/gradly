@@ -38,6 +38,7 @@ export default function TesterOnlineResultSync({
   const [scan, setScan] = useState<MatchResponse | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const loadingSession = sessions.find(session => session.id === loadingSessionId);
 
   async function openArchive() {
     setOpen(value => !value);
@@ -136,10 +137,15 @@ export default function TesterOnlineResultSync({
             <span className="sp-online-loader-core"><i /></span>
           </div>
           <span className="sp-online-loader-eyebrow">GRADLY · TESTER WORKSPACE</span>
-          <h3>{loadingSessions ? "Connecting to GECA" : "Checking examination results"}</h3>
-          <p>{loadingSessions ? "Fetching the latest examination sessions from the official GECA archive." : "Searching the selected session PDFs for " + enrollmentNumber + ". Your grades will not change until you review and apply a match."}</p>
+          <h3>{loadingSessions ? "Connecting to GECA" : "Scanning selected examination"}</h3>
+          {!loadingSessions && loadingSession && <div className="sp-online-loader-session">
+            <span>SELECTED EXAMINATION</span>
+            <strong>{loadingSession.title}</strong>
+            <small>Semester {selectedSemester} · Enrollment {enrollmentNumber}</small>
+          </div>}
+          <p>{loadingSessions ? "Retrieving the latest examination sessions from the official GECA archive." : "Gradly is checking the relevant department result PDFs and reading the matching result row. Your grades will remain unchanged until you review and apply them."}</p>
           <div className="sp-online-loader-progress" aria-hidden="true"><span /></div>
-          <div className="sp-online-loader-foot"><span className="sp-online-loader-dot" />{loadingSessions ? "Loading examination list" : "Reading and matching result documents"}<span className="sp-online-loader-pulse">Please wait</span></div>
+          <div className="sp-online-loader-foot"><span className="sp-online-loader-dot" />{loadingSessions ? "Loading examination list" : "Downloading and analysing result PDFs"}<span className="sp-online-loader-pulse">Please wait</span></div>
         </div>
       </div>}
       {loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
