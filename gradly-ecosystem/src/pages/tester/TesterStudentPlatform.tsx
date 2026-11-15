@@ -67,7 +67,7 @@ function isNepScheme(profile:Profile):boolean {
  // The selected curriculum scheme is authoritative. Enrollment prefixes are only
  // a fallback for older tester profiles that do not carry a scheme label.
  const scheme=String(profile.scheme||"").trim().toUpperCase();
- if(/\\bNEP\\b|NATIONAL EDUCATION POLICY|NEW EDUCATION POLICY/.test(scheme)) return true;
+ if(/\bNEP\b|NATIONAL EDUCATION POLICY|NEW EDUCATION POLICY/.test(scheme)) return true;
  if(/NEW CBCS|CBCS/.test(scheme)) return false;
  const prefix=String(profile.enrollment||"").trim().toUpperCase().slice(0,2);
  if(prefix==="BT"||prefix==="MT") return true;
@@ -79,7 +79,7 @@ function nepBranchKey(profile:Profile):string {
  if(/ENTC|ELECTRONICS.*TELECOMMUNICATION|ELECTRONICS.*COMMUNICATION/.test(value)) return "ENTC";
  if(/CIVIL/.test(value)) return "CIVIL";
  if(/MECHANICAL|MECH/.test(value)) return "MECHANICAL";
- if(/ELECTRICAL|\\bELECT\\b/.test(value)) return "ELECTRICAL";
+ if(/ELECTRICAL|\bELECT\b/.test(value)) return "ELECTRICAL";
  if(/COMPUTER SCIENCE|CSE/.test(value)) return "CSE";
  if(/INFORMATION TECHNOLOGY|\bIT\b/.test(value)) return "IT";
  return "";
