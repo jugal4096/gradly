@@ -995,13 +995,15 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     });
     let applied=0;
     const matchedCodes=new Set<string>();
-    const updatedSubjects=subjects.map(subject=>{
+    // Treat the official result as the authoritative subject list for this
+    // semester: keep only curriculum rows actually present in the PDF.
+    const updatedSubjects:Subject[]=subjects.flatMap(subject=>{
       const code=normalizeResultCourseCode(subject.courseCode);
       const grade=code?gradeByCode.get(code):undefined;
-      if(!grade) return subject;
+      if(!grade) return [];
       applied++;
       matchedCodes.add(code);
-      return {...subject,grade};
+      return [{...subject,grade}];
     });
     const unmatchedCodes=Array.from(gradeByCode.keys()).filter(code=>!matchedCodes.has(code));
     const nextId=Math.max(0,...updatedSubjects.map(subject=>subject.id))+1;
@@ -1024,7 +1026,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     studentStorage.setItem("gradly_tester_subjects",JSON.stringify(finalSubjects));
     studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString(),appliedCourseCodes:[...matchedCodes,...unmatchedCodes]}));
     setSgpa(null);
-    setNotice("Selected grades for "+(applied+additionalSubjects.length)+" course(s) in the Semester "+semesterNumber+" subject table. "+(additionalSubjects.length?additionalSubjects.length+" additional PDF course(s) were added with their fetched grades. Confirm each subject name and enter its correct credits before calculating SGPA. ":"")+"Review all rows and use Save to tracker when ready. Source: "+documentTitle+".");
+    setNotice("Updated the Semester "+semesterNumber+" table using the official result: "+applied+" curriculum course(s) matched, "+additionalSubjects.length+" additional PDF course(s) added, and "+(subjects.length-applied)+" default course(s) absent from the result removed. Confirm additional course names and credits before calculating SGPA. Review the rows and use Save to tracker when ready. Source: "+documentTitle+".");
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
