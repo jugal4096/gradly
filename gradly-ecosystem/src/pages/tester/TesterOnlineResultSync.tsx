@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
 type ResultGrade = { courseCode: string; grade: string };
@@ -129,7 +130,7 @@ export default function TesterOnlineResultSync({
         <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>Choose an examination session</h3><p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
         <button type="button" onClick={() => setOpen(false)} aria-label="Close online result archive">×</button>
       </div>
-      {(loadingSessions || Boolean(loadingSessionId)) && <div className="sp-online-loading-backdrop" role="presentation">
+      {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
         <div className="sp-online-loading-dialog" role="status" aria-live="polite" aria-label={loadingSessions ? "Loading GECA examination archive" : "Scanning GECA result PDFs"}>
           <div className="sp-online-loader-art" aria-hidden="true">
             <span className="sp-online-loader-orbit sp-online-loader-orbit-one" />
@@ -137,7 +138,7 @@ export default function TesterOnlineResultSync({
             <span className="sp-online-loader-core"><i /></span>
           </div>
           <span className="sp-online-loader-eyebrow">GRADLY · TESTER WORKSPACE</span>
-          <h3>{loadingSessions ? "Connecting to GECA" : "Scanning selected examination"}</h3>
+          <h3>{loadingSessions ? "Loading GECA examinations" : "Fetching your grades"}</h3>
           {!loadingSessions && loadingSession && <div className="sp-online-loader-session">
             <span>SELECTED EXAMINATION</span>
             <strong>{loadingSession.title}</strong>
@@ -145,10 +146,10 @@ export default function TesterOnlineResultSync({
           </div>}
           <p>{loadingSessions ? "Retrieving the latest examination sessions from the official GECA archive." : "Gradly is checking the relevant department result PDFs and reading the matching result row. Your grades will remain unchanged until you review and apply them."}</p>
           <div className="sp-online-loader-progress" aria-hidden="true"><span /></div>
-          <div className="sp-online-loader-foot"><span className="sp-online-loader-dot" />{loadingSessions ? "Loading examination list" : "Downloading and analysing result PDFs"}<span className="sp-online-loader-pulse">Please wait</span></div>
+          <div className="sp-online-loader-foot"><span className="sp-online-loader-dot" />{loadingSessions ? "Loading examination list" : "Fetching and analysing your result PDFs"}<span className="sp-online-loader-pulse">Please wait</span></div>
         </div>
-      </div>}
-      {loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
+      </div>, document.body)}
+{loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
       {error && <p className="sp-online-result-error" role="alert">{error}</p>}
       {sessions.length > 0 && <div className="sp-online-session-list">
         {sessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId)}>
