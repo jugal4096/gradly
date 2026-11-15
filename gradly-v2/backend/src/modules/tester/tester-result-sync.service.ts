@@ -256,7 +256,13 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     // its grade columns have been found, while retaining earlier page headers.
     if (parsed.enrollmentFound && parsed.grades.length) break;
   }
-  await pdf.destroy();
+  // Some installed PDF.js builds expose cleanup() but not destroy() on the
+  // resolved document proxy. Release resources only when the method exists;
+  // cleanup must never turn a successfully parsed PDF into a scan failure.
+  const cleanup = (pdf as unknown as { cleanup?: () => Promise<void> }).cleanup;
+  if (typeof cleanup === "function") {
+    try { await cleanup.call(pdf); } catch { /* parsing result remains valid */ }
+  }
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
   const semester = romanSemester(title + " " + metadataText);
