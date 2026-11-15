@@ -64,19 +64,22 @@ const NEP_OE_CATALOGUE: Record<string, Record<number, ElectiveOption[]>> = {
  CSE:{3:[{code:"NEP-OE-CS-III-01",name:"Design Thinking",credits:3},{code:"NEP-OE-CS-III-02",name:"Critical Thinking",credits:3}],4:[{code:"NEP-OE-CS-IV-01",name:"PECL",credits:3},{code:"NEP-OE-CS-IV-02",name:"Software Development Cycle",credits:3}],5:[{code:"NEP-OE-CS-V-01",name:"Behavioral Science & Organization",credits:2}]}
 };
 function isNepScheme(profile:Profile):boolean {
+ // The selected curriculum scheme is authoritative. Enrollment prefixes are only
+ // a fallback for older tester profiles that do not carry a scheme label.
+ const scheme=String(profile.scheme||"").trim().toUpperCase();
+ if(/\\bNEP\\b|NATIONAL EDUCATION POLICY|NEW EDUCATION POLICY/.test(scheme)) return true;
+ if(/NEW CBCS|CBCS/.test(scheme)) return false;
  const prefix=String(profile.enrollment||"").trim().toUpperCase().slice(0,2);
- // Enrollment prefixes are authoritative in the academic enrollment rules:
- // BT/MT are NEP; BE/ME are legacy New CBCS. Use the scheme label only for other programmes.
  if(prefix==="BT"||prefix==="MT") return true;
  if(prefix==="BE"||prefix==="ME") return false;
- return /NEP|national education policy|new education policy/i.test(String(profile.scheme||""));
+ return false;
 }
 function nepBranchKey(profile:Profile):string {
  const value=(String(profile.branchName||"")+" "+String(profile.programName||"")).toUpperCase();
  if(/ENTC|ELECTRONICS.*TELECOMMUNICATION|ELECTRONICS.*COMMUNICATION/.test(value)) return "ENTC";
  if(/CIVIL/.test(value)) return "CIVIL";
  if(/MECHANICAL|MECH/.test(value)) return "MECHANICAL";
- if(/ELECTRICAL/.test(value)) return "ELECTRICAL";
+ if(/ELECTRICAL|\\bELECT\\b/.test(value)) return "ELECTRICAL";
  if(/COMPUTER SCIENCE|CSE/.test(value)) return "CSE";
  if(/INFORMATION TECHNOLOGY|\bIT\b/.test(value)) return "IT";
  return "";
