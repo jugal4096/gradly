@@ -988,6 +988,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     }
     const gradeByCode=new Map(fetchedGrades.map(row=>[row.courseCode.trim().toUpperCase(),row.grade.trim().toUpperCase()]));
     let applied=0;
+    const knownCodes=new Set(subjects.map(subject=>String(subject.courseCode||"").trim().toUpperCase()).filter(Boolean));
     const updatedSubjects=subjects.map(subject=>{
       const code=String(subject.courseCode||"").trim().toUpperCase();
       const grade=code?gradeByCode.get(code):undefined;
@@ -995,8 +996,26 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       applied++;
       return {...subject,grade};
     });
+    const newlyDiscovered=fetchedGrades.filter(row=>{
+      const code=row.courseCode.trim().toUpperCase();
+      return code&&!knownCodes.has(code)&&POINTS[row.grade.trim().toUpperCase()]!==undefined;
+    });
+    const nextId=updatedSubjects.reduce((max,subject)=>Math.max(max,Number(subject.id)||0),0)+1;
+    newlyDiscovered.forEach((row,index)=>{
+      const code=row.courseCode.trim().toUpperCase();
+      updatedSubjects.push({
+        id:nextId+index,
+        name:code+" (course name not in curriculum)",
+        credits:0,
+        grade:row.grade.trim().toUpperCase(),
+        courseCode:code,
+        courseType:"Official GECA result · new course",
+        isCustom:true,
+      });
+      applied++;
+    });
     if(!applied) {
-      setNotice("No course codes from this PDF matched the loaded semester subjects. No Tester data was changed.");
+      setNotice("No valid course grades were found in this PDF. No Tester data was changed.");
       return;
     }
     setSubjects(updatedSubjects);
@@ -1017,7 +1036,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       studentStorage.setItem("gradly_semester_results",JSON.stringify(next));
       setNotice("Updated the isolated Tester profile with "+applied+" grades from "+sessionTitle+". Semester "+semesterNumber+" SGPA is now "+calculatedSgpa.toFixed(2)+". Source: "+documentTitle+".");
     } else {
-      setNotice("Applied "+applied+" matched grades from "+sessionTitle+" to the Tester profile. SGPA was not replaced because "+gradedCourses.filter(subject=>POINTS[subject.grade]===undefined).length+" subject(s) still need grades. Source: "+documentTitle+".");
+      setNotice("Saved "+applied+" official grades to the isolated Tester profile, including "+newlyDiscovered.length+" newly discovered course(s). "+(newlyDiscovered.length?"New courses were added with 0 credits until you confirm their credits. ":"")+"SGPA was not replaced because "+gradedCourses.filter(subject=>POINTS[subject.grade]===undefined).length+" configured subject(s) still need grades. Source: "+documentTitle+".");
     }
   }
   function navigate(next:Section) {
