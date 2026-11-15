@@ -81,3 +81,11 @@
 .sp-online-cancel-confirm button{padding:8px 11px;border:1px solid #d8e0e1;border-radius:8px;background:#fff;color:#43565b;font-size:10px;font-weight:800;cursor:pointer}
 .sp-online-cancel-confirm button:last-child{border-color:#a7463e;background:#a7463e;color:#fff}
 .sp-online-cancel-confirm button:last-child:hover{background:#87352f}
+
+.sp-online-grade-section,.sp-online-unmapped-section{display:grid;gap:7px;margin-top:11px}
+.sp-online-grade-section>strong,.sp-online-unmapped-section>div>strong{font-size:10px;font-weight:850;color:#40545b}
+.sp-online-grade-section .sp-online-grade-list,.sp-online-unmapped-section .sp-online-grade-list{margin:0}
+.sp-online-grade-section .sp-online-grade-list>small{font-size:10px;color:#849197}
+.sp-online-unmapped-section{padding:11px;border:1px solid #e6dcc7;border-radius:10px;background:#fffdf8}
+.sp-online-unmapped-section>div:first-child{display:grid;gap:4px}
+.sp-online-unmapped-section>div>small{font-size:10px;line-height:1.5;color:#81765f}
