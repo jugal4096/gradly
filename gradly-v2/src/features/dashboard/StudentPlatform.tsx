@@ -754,7 +754,8 @@ export default function StudentPlatform() {
       matchedCodes.add(code);
       return [{...subject,grade}];
     });
-    const unmatchedCodes=Array.from(gradeByCode.keys()).filter(code=>!matchedCodes.has(code));
+    const existingCodes=new Set(subjects.map(subject=>normalizeResultCourseCode(subject.courseCode)).filter(Boolean));
+    const unmatchedCodes=Array.from(gradeByCode.keys()).filter(code=>!matchedCodes.has(code)&&!existingCodes.has(code));
     const nextId=Math.max(0,...updatedSubjects.map(subject=>subject.id))+1;
     const additionalSubjects:Subject[]=unmatchedCodes.map((code,index)=>({
       id:nextId+index,name:code+" · Confirm subject name",credits:0,grade:gradeByCode.get(code)||"",
