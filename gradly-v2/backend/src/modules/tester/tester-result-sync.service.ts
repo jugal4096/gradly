@@ -110,7 +110,11 @@ function enrollmentEndInLine(line: TextLine, enrollment: string): number {
 }
 
 function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
-  return enrollmentEndInLine(line, enrollment) >= 0;
+  const joined = line.items.map(item => item.text).join(" ");
+  // PDF text layers sometimes insert punctuation or unusual spacing between
+  // enrollment characters. Compare a compact form as a second reliable path.
+  return enrollmentEndInLine(line, enrollment) >= 0 ||
+    compactPdfText(joined).includes(compactPdfText(enrollment));
 }
 
 function gradeTokensFromItem(item: PositionedItem): string[] {
@@ -318,22 +322,37 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const matches: GecaMatchedDocument[] = [];
   let enrollmentHits = 0;
   let parseFailures = 0;
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(4, candidates.length) }, async () => {
-    while (cursor < candidates.length) {
-      const index = cursor++;
-      const document = candidates[index];
-      try {
-        const parsed = await readResultPdf(document.url, document.title, enrollment);
-        if (parsed.enrollmentFound) enrollmentHits++;
-        if (parsed.document) matches.push(parsed.document);
-        else if (parsed.enrollmentFound) parseFailures++;
-      } catch (error) {
-        parseFailures++;
-        console.warn("Unable to inspect one GECA result PDF:", document.title, error);
+  const scannedUrls = new Set<string>();
+
+  const scanDocuments = async (batch: Array<{ title: string; url: string }>) => {
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(4, batch.length) }, async () => {
+      while (cursor < batch.length) {
+        const document = batch[cursor++];
+        if (scannedUrls.has(document.url)) continue;
+        scannedUrls.add(document.url);
+        try {
+          const parsed = await readResultPdf(document.url, document.title, enrollment);
+          if (parsed.enrollmentFound) enrollmentHits++;
+          if (parsed.document) matches.push(parsed.document);
+          else if (parsed.enrollmentFound) parseFailures++;
+        } catch (error) {
+          parseFailures++;
+          console.warn("Unable to inspect one GECA result PDF:", document.title, error);
+        }
       }
-    }
-  });
-  await Promise.all(workers);
-  return { session, documentsScanned: candidates.length, enrollmentHits, parseFailures, matches };
+    });
+    await Promise.all(workers);
+  };
+
+  await scanDocuments(candidates);
+
+  // Filtering is only an optimisation. If it yields no enrollment hit,
+  // inspect every remaining PDF in the selected exam before reporting absent.
+  if (enrollmentHits === 0 && candidates.length < unique.length) {
+    const remaining = unique.filter(item => !scannedUrls.has(item.url));
+    await scanDocuments(remaining);
+  }
+
+  return { session, documentsScanned: scannedUrls.size, enrollmentHits, parseFailures, matches };
 }
