@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "../../student-entry.css";
@@ -17,21 +17,20 @@ function GradlyMark() {
     <circle cx="29.5" cy="29.5" r="3.1"/>
   </svg>;
 }
-const headlines = [
-  "Make your academic journey count.",
-  "Every semester is a new opportunity.",
-  "Dream bigger. Track your progress. Keep moving forward.",
-];
+function JourneyIcon({ type }: { type: "explore" | "track" | "improve" | "achieve" }) {
+  const paths = {
+    explore: <><path d="m4 9 8-4 8 4-8 4-8-4Z"/><path d="M7 11v5c3 2 7 2 10 0v-5M20 9v6"/></>,
+    track: <><path d="M5 19V11h4v8H5ZM11 19V6h4v13h-4ZM17 19V3h4v16h-4Z"/></>,
+    improve: <path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/>,
+    achieve: <><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4-1v6m-4 4h8m-10 0h12"/></>
+  };
+  return <svg viewBox="0 0 24 24" aria-hidden="true" className="journey-icon">{paths[type]}</svg>;
+}
 export default function LoginPage() {
   const { loginWithGoogle, continueAsGuest } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
-  const [headlineIndex, setHeadlineIndex] = useState(0);
-  useEffect(() => {
-    const interval = window.setInterval(() => setHeadlineIndex((current) => (current + 1) % headlines.length), 3900);
-    return () => window.clearInterval(interval);
-  }, []);
   async function handleGoogleLogin() {
     try {
       setError("");
@@ -50,31 +49,36 @@ export default function LoginPage() {
     continueAsGuest();
     navigate("/dashboard", { replace: true });
   }
-  return <main className="welcome-page">
+  return <main className="welcome-page welcome-reference-layout">
     <div className="hero-visual" aria-hidden="true"><img src="/gradly-orbit.png" alt="" /></div>
     <div className="hero-vignette" aria-hidden="true"/>
     <header className="welcome-brand">
       <Link to="/" aria-label="Gradly home"><GradlyMark/><span className="brand-wordmark">gradly<span>.</span></span></Link>
     </header>
     <section className="hero-copy" aria-label="Welcome to Gradly">
-      <p className="story-intro">A NEW WAY FORWARD</p>
-      <div className="story-headline-frame" aria-live="polite">
-        <h1 key={headlineIndex} className="story-headline">{headlines[headlineIndex]}</h1>
-      </div>
-      <p className="hero-description">One place to understand your academics, follow your progress, and plan what comes next. Make every semester count with Gradly.</p>
+      <p className="story-intro"><span className="intro-dot"/> YOUR ACADEMIC COMPANION</p>
+      <h1 className="welcome-title">Welcome to <span>Gradly</span></h1>
+      <p className="welcome-subtitle">Your journey starts here.</p>
       <div className="auth-actions">
         <button className="google-signin" type="button" onClick={handleGoogleLogin} disabled={loggingIn}>
           <GoogleMark/><span>{loggingIn ? "Connecting…" : "Continue with Google"}</span>
         </button>
-        <button className="guest-signin" type="button" onClick={handleGuest}>Continue as Guest <span aria-hidden="true">→</span></button>
+        <button className="guest-signin" type="button" onClick={handleGuest}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm0 2c-4.2 0-7.5 2.1-7.5 4.8V21h15v-2.2c0-2.7-3.3-4.8-7.5-4.8Z"/></svg>
+          <span>Continue as Guest</span>
+        </button>
       </div>
       {error && <p className="welcome-error" role="alert">{error}</p>}
       <p className="welcome-legal">By continuing, you agree to our <Link to="/terms">Terms of Service</Link> and acknowledge our <Link to="/privacy">Privacy Policy</Link>.</p>
     </section>
-    <section className="hero-features" aria-label="Gradly features">
-      <div><strong>SGPA &amp; CGPA</strong><span>Understand your performance</span></div>
-      <div><strong>Academic progress</strong><span>Track every semester</span></div>
-      <div><strong>Smarter planning</strong><span>Know what comes next</span></div>
+    <section className="hero-features" aria-label="Your academic journey">
+      <div className="journey-step"><span className="journey-icon-wrap"><JourneyIcon type="explore"/></span><strong>Explore</strong></div>
+      <span className="journey-connector"/>
+      <div className="journey-step"><span className="journey-icon-wrap"><JourneyIcon type="track"/></span><strong>Track</strong></div>
+      <span className="journey-connector"/>
+      <div className="journey-step"><span className="journey-icon-wrap"><JourneyIcon type="improve"/></span><strong>Improve</strong></div>
+      <span className="journey-connector"/>
+      <div className="journey-step"><span className="journey-icon-wrap"><JourneyIcon type="achieve"/></span><strong>Achieve</strong></div>
     </section>
     <div className="hero-bottom-curve" aria-hidden="true"/>
   </main>;
