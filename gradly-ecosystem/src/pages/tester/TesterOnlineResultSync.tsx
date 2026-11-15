@@ -14,6 +14,8 @@ type ResultDocument = {
 type MatchResponse = {
   session: ResultSession;
   documentsScanned: number;
+  enrollmentHits: number;
+  parseFailures: number;
   matches: ResultDocument[];
 };
 type Props = {
@@ -67,13 +69,14 @@ export default function TesterOnlineResultSync({
       const response = await fetch(apiBase + "/api/tester/results/sessions/" + encodeURIComponent(session.id) + "/match", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + testerToken },
-        body: JSON.stringify({ enrollmentNumber }),
+        body: JSON.stringify({ enrollmentNumber, selectedSemester }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
       setScan(body as MatchResponse);
-      if (!body.matches?.length) setNotice("This enrollment number was not found in any PDF linked to this examination session.");
-      else setNotice("Found " + body.matches.length + " matching result PDF(s). Select the PDF for the semester you want to update.");
+      if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("The enrollment number appears in " + body.enrollmentHits + " PDF(s), but the grade columns could not be read reliably. The parser diagnostics are shown below; no grades were applied.");
+      else if (!body.matches?.length) setNotice("Enrollment not found in the scanned PDFs. " + body.documentsScanned + " PDFs were checked.");
+      else setNotice("Found " + body.matches.length + " result PDF(s). Enrollment text was detected in " + body.enrollmentHits + " PDF(s). Select the matching semester PDF to preview and apply.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to inspect this examination session.");
     } finally {
@@ -134,8 +137,8 @@ export default function TesterOnlineResultSync({
         </button>)}
       </div>}
       {scan && <div className="sp-online-scan-result">
-        <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.matches.length} matches</span></div>
-        {!scan.matches.length && <p className="sp-online-result-muted">No exact enrollment match was found in this examination session.</p>}
+        <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.enrollmentHits} enrollment hits · {scan.matches.length} parsed · {scan.parseFailures} parse issues</span></div>
+        {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map((document,index) => {
           const matchingSubjects = document.grades.filter(row => subjects.some(subject => String(subject.courseCode || "").trim().toUpperCase() === row.courseCode.toUpperCase()));
           const canApply = document.semester === selectedSemester && matchingSubjects.length > 0;
