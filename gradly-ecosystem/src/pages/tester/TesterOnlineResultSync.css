@@ -66,3 +66,8 @@
 @keyframes sp-online-dialog-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){.sp-online-loading-backdrop,.sp-online-loading-dialog,.sp-online-loader-orbit-one,.sp-online-loader-orbit-two,.sp-online-loader-progress span,.sp-online-loader-dot,.sp-online-loader-pulse:after{animation:none!important}}
 @media(max-width:520px){.sp-online-loading-backdrop{padding:16px}.sp-online-loading-dialog{padding:25px 20px 21px;border-radius:18px}.sp-online-loading-dialog h3{font-size:19px}.sp-online-loader-foot{flex-wrap:wrap}}
+
+.sp-online-loader-session{display:grid;gap:5px;margin:17px auto 13px;padding:11px 13px;max-width:340px;border:1px solid #dce8e8;border-radius:12px;background:#f4f8f8;text-align:left}
+.sp-online-loader-session>span{font-size:8px;font-weight:900;letter-spacing:1.25px;color:#648087}
+.sp-online-loader-session strong{font-size:12px;line-height:1.45;color:#183b43}
+.sp-online-loader-session small{font-size:10px;color:#74858b}
