@@ -45,7 +45,7 @@ function isNepSchemeName(schemeName: string): boolean {
 }
 
 function isBtechProgrammeName(programmeName: string): boolean {
-  return /bachelor of engineering|bachelor of technology|\bb\.?\s*eng(?:ineering)?\b|\bb\.?\s*tech\b/i.test(String(programmeName || ""));
+  return /bachelor of engineering|bachelor of technology|\bb\.?\s*e\.?\b|\bb\.?\s*eng(?:ineering)?\b|\bb\.?\s*tech\b/i.test(String(programmeName || ""));
 }
 
 function getMajorDepartmentCode(branchCode: string, branchName: string): string | null {
