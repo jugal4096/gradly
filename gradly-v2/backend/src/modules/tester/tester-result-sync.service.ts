@@ -233,7 +233,6 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
   if (!bytes.length || bytes.length > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large-or-empty" };
 
   const pdf = await getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true }).promise;
-  const allLines: TextLine[] = [];
   let metadataText = "";
   let parsed = { grades: [] as GecaMatchedGrade[], enrollmentFound: false };
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
@@ -246,11 +245,12 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     });
     const lines = groupPdfLines(positioned);
     if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
-    allLines.push(...lines);
-    parsed = extractMatchingGrades(lines, enrollment);
+    const pageResult = extractMatchingGrades(lines, enrollment);
+    if (pageResult.enrollmentFound) parsed.enrollmentFound = true;
+    if (pageResult.grades.length) parsed.grades = pageResult.grades;
     // GECA result tables place each student's complete subject row on one page.
     // Stop reading the remaining pages as soon as this enrollment is parsed.
-    if (parsed.enrollmentFound && parsed.grades.length) break;
+    if (pageResult.enrollmentFound && pageResult.grades.length) break;
   }
   await pdf.destroy();
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
