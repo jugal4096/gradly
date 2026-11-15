@@ -20,7 +20,8 @@
     "firebase-admin": "^14.5.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.0.15",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "pdfjs-dist": "^6.5.438"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
