@@ -1037,7 +1037,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       studentStorage.setItem("gradly_semester_results",JSON.stringify(next));
       setNotice("Updated the isolated Tester profile with "+applied+" grades from "+sessionTitle+". Semester "+semesterNumber+" SGPA is now "+calculatedSgpa.toFixed(2)+". Source: "+documentTitle+".");
     } else {
-      setNotice("Saved "+applied+" official grades to the isolated Tester profile, including "+newlyDiscovered.length+" newly discovered course(s). "+(newlyDiscovered.length?"New courses were added with 0 credits until you confirm their credits. ":"")+"SGPA was not replaced because "+gradedCourses.filter(subject=>POINTS[subject.grade]===undefined).length+" configured subject(s) still need grades. Source: "+documentTitle+".");
+      setNotice("Saved "+applied+" official grades to the isolated Tester profile, including "+newlyDiscovered.length+" newly discovered course(s). "+(newlyDiscovered.length?"New courses were added with 0 credits until you confirm their credits. ":"")+(hasUncreditedNewCourse?"SGPA was not recalculated because the new course credits need confirmation. ":"SGPA was not replaced because "+gradedCourses.filter(subject=>POINTS[subject.grade]===undefined).length+" configured subject(s) still need grades. ")+"Source: "+documentTitle+".");
     }
   }
   function navigate(next:Section) {
