@@ -36,3 +36,33 @@
 .sp-online-result-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:15px;padding-top:12px;border-top:1px solid var(--line,#dce4ee);font-size:10px;color:var(--muted,#7c8b9b)}
 .sp-online-result-foot a{color:inherit;text-decoration:underline}
 @media(max-width:760px){.sp-online-result-panel{padding:14px}.sp-online-session-list{grid-template-columns:1fr}.sp-online-preview{align-items:flex-start;flex-direction:column}.sp-online-result-foot{flex-direction:column}}
+
+/* Focused loading dialog for the GECA archive and PDF scan */
+.sp-online-result-panel{position:relative}
+.sp-online-loading-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:22px;background:rgba(9,18,28,.58);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:sp-online-backdrop-in .2s ease-out}
+.sp-online-loading-dialog{width:min(430px,100%);padding:30px 30px 24px;border:1px solid rgba(255,255,255,.72);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#f7fafb 100%);box-shadow:0 28px 90px rgba(0,0,0,.28);text-align:center;animation:sp-online-dialog-in .28s cubic-bezier(.2,.8,.2,1)}
+.sp-online-loader-art{position:relative;width:92px;height:92px;margin:0 auto 19px;display:grid;place-items:center}
+.sp-online-loader-orbit{position:absolute;inset:5px;border:1px solid rgba(32,112,119,.2);border-radius:50%}
+.sp-online-loader-orbit-one{border-top:2px solid #167f79;border-right:2px solid transparent;animation:sp-online-spin 1.25s linear infinite}
+.sp-online-loader-orbit-two{inset:15px;border-bottom:2px solid #6d9da1;border-left:2px solid transparent;animation:sp-online-spin-reverse 1.8s linear infinite}
+.sp-online-loader-core{width:43px;height:43px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#153d49,#267e7c);box-shadow:0 8px 20px rgba(25,103,105,.25);transform:rotate(-8deg)}
+.sp-online-loader-core i{width:13px;height:17px;display:block;border:2px solid rgba(255,255,255,.95);border-top-width:5px;border-radius:2px;position:relative}
+.sp-online-loader-core i:after{content:"";position:absolute;left:2px;right:2px;top:5px;border-top:1px solid rgba(255,255,255,.8)}
+.sp-online-loader-eyebrow{font-size:9px;font-weight:900;letter-spacing:1.8px;color:#66818a}
+.sp-online-loading-dialog h3{margin:8px 0 7px;font-size:21px;letter-spacing:-.45px;color:#172f3a}
+.sp-online-loading-dialog p{max-width:330px;margin:0 auto;color:#71818b;font-size:12px;line-height:1.65}
+.sp-online-loader-progress{height:5px;margin:23px 0 13px;overflow:hidden;border-radius:20px;background:#e6edef}
+.sp-online-loader-progress span{display:block;width:38%;height:100%;border-radius:20px;background:linear-gradient(90deg,#286e76,#4db0a3,#286e76);animation:sp-online-progress 1.45s ease-in-out infinite}
+.sp-online-loader-foot{display:flex;align-items:center;justify-content:center;gap:8px;color:#667b83;font-size:10px;font-weight:700}
+.sp-online-loader-dot{width:7px;height:7px;border-radius:50%;background:#25a18e;box-shadow:0 0 0 4px rgba(37,161,142,.12);animation:sp-online-dot 1.2s ease-in-out infinite}
+.sp-online-loader-pulse{margin-left:4px;color:#9aa8ad;font-weight:500}
+.sp-online-loader-pulse:after{content:"";display:inline-block;width:15px;text-align:left;animation:sp-online-ellipsis 1.2s steps(4,end) infinite}
+@keyframes sp-online-spin{to{transform:rotate(360deg)}}
+@keyframes sp-online-spin-reverse{to{transform:rotate(-360deg)}}
+@keyframes sp-online-progress{0%{transform:translateX(-110%)}100%{transform:translateX(290%)}}
+@keyframes sp-online-dot{50%{box-shadow:0 0 0 7px rgba(37,161,142,.04);opacity:.65}}
+@keyframes sp-online-ellipsis{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
+@keyframes sp-online-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes sp-online-dialog-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.sp-online-loading-backdrop,.sp-online-loading-dialog,.sp-online-loader-orbit-one,.sp-online-loader-orbit-two,.sp-online-loader-progress span,.sp-online-loader-dot,.sp-online-loader-pulse:after{animation:none!important}}
+@media(max-width:520px){.sp-online-loading-backdrop{padding:16px}.sp-online-loading-dialog{padding:25px 20px 21px;border-radius:18px}.sp-online-loading-dialog h3{font-size:19px}.sp-online-loader-foot{flex-wrap:wrap}}
