@@ -58,7 +58,7 @@ const NEP_OE_CATALOGUE: Record<string, Record<number, ElectiveOption[]>> = {
  MECHANICAL:{
   3:["Industrial Psychology","Engineering Economics","Ethical Values","Smart Mobility & Road Safety"].map((name,i)=>({code:`NEP-OE-ME-III-0${i+1}`,name,credits:3})),
   4:["Total Quality Management","Industrial Management","Manufacturing Management","Fundamentals of Financing for Green Hydrogen Projects"].map((name,i)=>({code:`NEP-OE-ME-IV-0${i+1}`,name,credits:3})),
-  5:["Entrepreneurship Development","Financial Management"].map((name,i)=>({code:`NEP-OE-ME-V-0${i+1}`,name,credits:2}))},
+  5:[{code:"NEP-OE-ME-V-01",name:"Entrepreneurship Development / Financial Management",credits:2}]},
  ELECTRICAL:{3:[{code:"EEOEC2001",name:"Music Engineering",credits:3}],4:[{code:"EEOEC2010",name:"Basic Engineering Economics",credits:2}],5:[{code:"EEOEC3001",name:"Smart Building Services",credits:3}]},
  ENTC:{3:[{code:"ETOEC0010",name:"German I",credits:3},{code:"ETOEC0011",name:"Japanese I",credits:3}],4:[{code:"ETOEC1020",name:"German II",credits:3},{code:"ETOEC1021",name:"Japanese II",credits:3}],5:[{code:"ETOEC0030",name:"German III",credits:3},{code:"ETOEC0031",name:"Japanese III",credits:3}]},
  CSE:{3:[{code:"NEP-OE-CS-III-01",name:"Design Thinking",credits:3},{code:"NEP-OE-CS-III-02",name:"Critical Thinking",credits:3}],4:[{code:"NEP-OE-CS-IV-01",name:"PECL",credits:3},{code:"NEP-OE-CS-IV-02",name:"Software Development Cycle",credits:3}],5:[{code:"NEP-OE-CS-V-01",name:"Behavioral Science & Organization",credits:2}]}
