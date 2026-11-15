@@ -160,7 +160,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
   if (!lineContainsEnrollment(line, enrollment) || !columns.length) return [];
   const mapped = new Map<string, string>();
   const gradeCells = line.items.flatMap(item => {
-    const tokens = item.text.toUpperCase().trim().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+\\-]+|[^A-Z+\\-]+$/g, ""));
+    const tokens = item.text.toUpperCase().trim().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+\-]+|[^A-Z+\-]+$/g, ""));
     return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x }));
   });
   const sortedColumns = [...columns].sort((a, b) => a.x - b.x);
@@ -191,7 +191,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
     const enrollmentAt = compactLine.indexOf(compactEnrollment);
     if (enrollmentAt >= 0) {
       const compactTail = compactLine.slice(enrollmentAt + compactEnrollment.length);
-      const gradeSequence = compactTail.match(/A\\+\\+|A\\+|B\\+|C\\+|AB|[ABCDFP]|-/g) || [];
+      const gradeSequence = compactTail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
       if (gradeSequence.length === sortedColumns.length) {
         sortedColumns.forEach((column, index) => {
           const grade = gradeSequence[index];
@@ -204,7 +204,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
     if (!mapped.size) {
       const enrollmentItemIndex = line.items.findIndex(item => compactPdfText(item.text).includes(compactEnrollment));
       const tailItems = enrollmentItemIndex >= 0 ? line.items.slice(enrollmentItemIndex) : line.items;
-      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+\\-]+|[^A-Z+\\-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
+      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+\-]+|[^A-Z+\-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
       const afterEnrollment = enrollmentItemIndex >= 0 ? sequence.slice(1) : sequence;
       if (afterEnrollment.length === sortedColumns.length) sortedColumns.forEach((column, index) => {
         const grade = afterEnrollment[index];
