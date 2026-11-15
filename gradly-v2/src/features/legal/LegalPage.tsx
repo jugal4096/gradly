@@ -14,7 +14,7 @@ export default function LegalPage({ type }: LegalPageProps) {
       <article className="legal-document">
         <p className="legal-eyebrow">GRADLY · LEGAL</p>
         <h1>{isTerms ? "Terms of Service" : "Privacy Policy"}</h1>
-        <p className="legal-updated">Effective date: 15 November 2026</p>
+        <p className="legal-updated">Draft for review · 15 November 2026</p>
         {isTerms ? <TermsContent /> : <PrivacyContent />}
         <nav className="legal-switch" aria-label="Other legal document">
           <Link to={isTerms ? "/privacy" : "/terms"}>{isTerms ? "Read our Privacy Policy →" : "Read our Terms of Service →"}</Link>
