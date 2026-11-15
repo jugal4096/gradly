@@ -93,8 +93,6 @@ export default function StudentOnlineResultSync({apiBase,getIdToken,enrollmentNu
     setError("");
   }
 
-  const gradeMap=new Map<string,string>();
-  scan?.matches.filter(document=>document.semester===selectedSemester).forEach(document=>document.grades.forEach(row=>gradeMap.set(normalizeCode(row.courseCode),row.grade.toUpperCase())));
   const knownCodes=new Set(subjects.map(subject=>normalizeCode(subject.courseCode)).filter(Boolean));
 
   return <div className="sp-student-online-wrap">
