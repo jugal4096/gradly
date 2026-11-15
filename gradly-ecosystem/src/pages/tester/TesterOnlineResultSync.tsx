@@ -98,7 +98,7 @@ export default function TesterOnlineResultSync({
   }
 
   const gradeMap = new Map<string, string>();
-  scan?.matches.forEach(document => document.grades.forEach(row => gradeMap.set(row.courseCode.toUpperCase(), row.grade)));
+  scan?.matches.filter(document => document.semester === selectedSemester).forEach(document => document.grades.forEach(row => gradeMap.set(row.courseCode.toUpperCase(), row.grade)));
   const previewSubjects = subjects.filter(subject => subject.name.trim() && Number(subject.credits) > 0);
   const previewRows = previewSubjects.map(subject => ({
     ...subject,
