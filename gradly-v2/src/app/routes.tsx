@@ -32,8 +32,8 @@ export default function AppRoutes() {
     <Route path="/terms" element={<LegalPage type="terms" />} />
     <Route path="/privacy" element={<LegalPage type="privacy" />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
-    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></Route>} />
-    <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></Route>} />
+    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
 }
