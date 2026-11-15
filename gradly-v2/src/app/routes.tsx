@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import LoginPage from "../features/auth/LoginPage";
+import LegalPage from "../features/legal/LegalPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import StudentPlatform from "../features/dashboard/StudentPlatform";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
@@ -28,9 +29,11 @@ export default function AppRoutes() {
   return <Routes>
     <Route path="/" element={<HomePage />} />
     <Route path="/login" element={<Navigate to="/" replace />} />
+    <Route path="/terms" element={<LegalPage type="terms" />} />
+    <Route path="/privacy" element={<LegalPage type="privacy" />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
-    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
-    <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
+    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></Route>} />
+    <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></Route>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;
 }
