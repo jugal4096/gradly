@@ -2,7 +2,7 @@ import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const RESULT_MASTER_URL = "https://geca.ac.in/result-master.aspx";
 const GECA_ORIGIN = "https://geca.ac.in";
-const SESSION_CACHE_MS = 5 * 60 * 1000;
+const SESSION_CACHE_MS = 30 * 60 * 1000;
 const MAX_RESULT_PDFS = 100;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
@@ -235,6 +235,7 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
   const pdf = await getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true }).promise;
   const allLines: TextLine[] = [];
   let metadataText = "";
+  let parsed = { grades: [] as GecaMatchedGrade[], enrollmentFound: false };
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
@@ -246,10 +247,12 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     const lines = groupPdfLines(positioned);
     if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
     allLines.push(...lines);
+    parsed = extractMatchingGrades(lines, enrollment);
+    // GECA result tables place each student's complete subject row on one page.
+    // Stop reading the remaining pages as soon as this enrollment is parsed.
+    if (parsed.enrollmentFound && parsed.grades.length) break;
   }
   await pdf.destroy();
-
-  const parsed = extractMatchingGrades(allLines, enrollment);
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
   const semester = romanSemester(title + " " + metadataText);
@@ -264,7 +267,13 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
   return { document, enrollmentFound: parsed.enrollmentFound };
 }
 
-export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string): Promise<{
+const BRANCH_NAMES: Record<string, string[]> = {
+  "01": ["civil"], "02": ["mechanical"], "03": ["electrical"],
+  "04": ["electronics", "entc"], "05": ["computer science", "cse"],
+  "06": ["information technology", "information tech"],
+};
+
+export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
   enrollmentHits: number;
@@ -288,14 +297,32 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const unique = Array.from(new Map(documents.map(item => [item.url, item])).values()).slice(0, MAX_RESULT_PDFS);
   if (!unique.length) throw new Error("No result PDFs were linked to this GECA examination session.");
 
+  // Narrow the scan to the enrollment's department and selected semester when
+  // the official link titles expose those details. Fall back to all PDFs if
+  // portal naming is ambiguous, so filtering never hides a possible result.
+  let candidates = unique;
+  const branchCode = enrollment.slice(5, 7);
+  const branchTerms = BRANCH_NAMES[branchCode] || [];
+  if (branchTerms.length) {
+    const branchMatches = unique.filter(item => {
+      const label = (item.title + " " + item.url).toLowerCase();
+      return branchTerms.some(term => label.includes(term));
+    });
+    if (branchMatches.length) candidates = branchMatches;
+  }
+  if (selectedSemester && selectedSemester >= 1 && selectedSemester <= 12) {
+    const semesterMatches = candidates.filter(item => romanSemester(item.title + " " + item.url) === selectedSemester);
+    if (semesterMatches.length) candidates = semesterMatches;
+  }
+
   const matches: GecaMatchedDocument[] = [];
   let enrollmentHits = 0;
   let parseFailures = 0;
   let cursor = 0;
-  const workers = Array.from({ length: Math.min(4, unique.length) }, async () => {
-    while (cursor < unique.length) {
+  const workers = Array.from({ length: Math.min(4, candidates.length) }, async () => {
+    while (cursor < candidates.length) {
       const index = cursor++;
-      const document = unique[index];
+      const document = candidates[index];
       try {
         const parsed = await readResultPdf(document.url, document.title, enrollment);
         if (parsed.enrollmentFound) enrollmentHits++;
@@ -308,5 +335,5 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     }
   });
   await Promise.all(workers);
-  return { session, documentsScanned: unique.length, enrollmentHits, parseFailures, matches };
+  return { session, documentsScanned: candidates.length, enrollmentHits, parseFailures, matches };
 }
