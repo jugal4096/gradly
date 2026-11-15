@@ -156,7 +156,8 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
   const gradeItems = line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x })));
   const mapped = new Map<string, string>();
 
-  if (columns.length && gradeItems.length) {
+  const distinctGradeColumns = new Set(gradeItems.map(item => Math.round(item.x)));
+  if (columns.length && gradeItems.length && distinctGradeColumns.size > 1) {
     for (const item of gradeItems) {
       let nearest: CourseColumn | null = null;
       let distance = Number.POSITIVE_INFINITY;
