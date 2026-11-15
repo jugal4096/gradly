@@ -282,6 +282,21 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
   if (typeof cleanup === "function") {
     try { await cleanup.call(pdf); } catch { /* parsing result remains valid */ }
   }
+  if (parsed.enrollmentFound && !parsed.grades.length) {
+    const columns = findCourseColumns(allLines);
+    const enrollmentRows = allLines.filter(line => lineContainsEnrollment(line, enrollment)).map(line => ({
+      text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
+      items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
+      gradeTokens: line.items.flatMap(item => gradeTokensFromItem(item)),
+    }));
+    console.warn("GECA result table parse diagnostic:", JSON.stringify({
+      title,
+      pageCount: pdf.numPages,
+      courseColumnCount: columns.length,
+      courseColumns: columns.map(column => ({ courseCode: column.courseCode, x: Math.round(column.x) })),
+      enrollmentRows,
+    }));
+  }
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
   const semester = romanSemester(title + " " + metadataText);
