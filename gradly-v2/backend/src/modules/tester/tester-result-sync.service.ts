@@ -104,10 +104,7 @@ function compactPdfText(value: string): string {
 
 function enrollmentEndInLine(line: TextLine, enrollment: string): number {
   const joined = line.items.map(item => item.text).join(" ");
-  const flexiblePattern = new RegExp(enrollment.toUpperCase().split("").map(character => character.replace(/[.*+?^${}()|[\]\\]/g, "\\function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
-  const compact = compactPdfText(line.items.map(item => item.text).join(""));
-  return compact.includes(compactPdfText(enrollment));
-}")).join("\\s*"), "i");
+  const flexiblePattern = new RegExp(enrollment.toUpperCase().split("").join("\\s*"), "i");
   const match = flexiblePattern.exec(joined);
   return match ? match.index + match[0].length : -1;
 }
