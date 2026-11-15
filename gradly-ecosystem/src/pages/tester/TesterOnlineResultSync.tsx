@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
@@ -39,29 +39,39 @@ export default function TesterOnlineResultSync({
   const [scan, setScan] = useState<MatchResponse | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
 
   async function openArchive() {
     setOpen(value => !value);
     if (open || sessions.length) return;
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setShowCancelConfirm(false);
     setLoadingSessions(true);
     setError("");
     try {
       const response = await fetch(apiBase + "/api/tester/results/sessions", {
         headers: { Authorization: "Bearer " + testerToken },
+        signal: controller.signal,
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "Unable to load GECA examination sessions.");
       setSessions(Array.isArray(body.sessions) ? body.sessions : []);
       if (!Array.isArray(body.sessions) || !body.sessions.length) setError("No examination sessions were listed by the GECA portal.");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to load GECA examination sessions.");
+      if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(reason instanceof Error ? reason.message : "Unable to load GECA examination sessions.");
     } finally {
+      if (activeRequest.current === controller) activeRequest.current = null;
       setLoadingSessions(false);
     }
   }
 
   async function inspectSession(session: ResultSession) {
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setShowCancelConfirm(false);
     setSelectedSessionId(session.id);
     setLoadingSessionId(session.id);
     setScan(null);
@@ -72,6 +82,7 @@ export default function TesterOnlineResultSync({
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + testerToken },
         body: JSON.stringify({ enrollmentNumber, selectedSemester }),
+        signal: controller.signal,
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
@@ -80,8 +91,9 @@ export default function TesterOnlineResultSync({
       else if (!body.matches?.length) setNotice("Enrollment not found in the scanned PDFs. " + body.documentsScanned + " PDFs were checked.");
       else setNotice("Found " + body.matches.length + " result PDF(s). Enrollment text was detected in " + body.enrollmentHits + " PDF(s). Select the matching semester PDF to preview and apply.");
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to inspect this examination session.");
+      if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(reason instanceof Error ? reason.message : "Unable to inspect this examination session.");
     } finally {
+      if (activeRequest.current === controller) activeRequest.current = null;
       setLoadingSessionId("");
     }
   }
@@ -147,6 +159,7 @@ export default function TesterOnlineResultSync({
           <p>{loadingSessions ? "Retrieving the latest examination sessions from the official GECA archive." : "Gradly is checking the relevant department result PDFs and reading the matching result row. Your grades will remain unchanged until you review and apply them."}</p>
           <div className="sp-online-loader-progress" aria-hidden="true"><span /></div>
           <div className="sp-online-loader-foot"><span className="sp-online-loader-dot" />{loadingSessions ? "Loading examination list" : "Fetching and analysing your result PDFs"}<span className="sp-online-loader-pulse">Please wait</span></div>
+          {!showCancelConfirm ? <button type="button" className="sp-online-cancel-fetch" onClick={() => setShowCancelConfirm(true)}>Cancel fetching</button> : <div className="sp-online-cancel-confirm" role="alertdialog" aria-modal="true" aria-labelledby="sp-online-cancel-title"><strong id="sp-online-cancel-title">Stop fetching?</strong><p>The current request will be cancelled. Any results already loaded will remain unchanged.</p><div><button type="button" onClick={() => setShowCancelConfirm(false)}>Continue fetching</button><button type="button" onClick={() => { activeRequest.current?.abort(); activeRequest.current = null; setShowCancelConfirm(false); setLoadingSessions(false); setLoadingSessionId(""); setNotice("Fetching was cancelled. No grades were applied."); }}>Stop fetching</button></div></div>}
         </div>
       </div>, document.body)}
 {loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
