@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "../../student-entry.css";
+
+const rotatingMessages = [
+  "Make your academic journey count.",
+  "Every semester is a new opportunity.",
+  "Dream bigger. Track your progress. Keep moving forward.",
+];
 
 function GoogleMark() {
   return <svg viewBox="0 0 48 48" aria-hidden="true" className="google-mark">
@@ -31,6 +37,13 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setMessageIndex((current) => (current + 1) % rotatingMessages.length);
+    }, 3900);
+    return () => window.clearInterval(interval);
+  }, []);
   async function handleGoogleLogin() {
     try {
       setError("");
@@ -57,6 +70,7 @@ export default function LoginPage() {
     </header>
     <section className="hero-copy" aria-label="Welcome to Gradly">
       <p className="story-intro"><span className="intro-dot"/> YOUR ACADEMIC COMPANION</p>
+      <div className="welcome-rotating-frame" aria-live="polite"><p key={messageIndex} className="welcome-rotating-line">{rotatingMessages[messageIndex]}</p></div>
       <h1 className="welcome-title">Welcome to <span>Gradly</span></h1>
       <p className="welcome-subtitle">Your journey starts here.</p>
       <div className="auth-actions">
