@@ -5,7 +5,6 @@ import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admi
 import { pool } from "../../config/database";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 import { isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber } from "../academic/enrollment-progression";
-import { buildEnrollmentGrievanceAuditQuery } from "../academic/enrollment-grievance-audit-query";
 
 const categories = new Set(["INVALID_ENROLLMENT", "ALREADY_REGISTERED", "WRONG_PROGRAMME", "WRONG_SCHEME", "WRONG_BRANCH", "WRONG_ADMISSION_MODE", "WRONG_SEMESTER", "OTHER"]);
 const reviewStatuses = new Set(["IN_REVIEW", "NEEDS_INFO", "RESOLVED", "REJECTED"]);
@@ -337,7 +336,6 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
   }
 
   const client = await pool.connect();
-  let mappingBefore: Record<string, unknown> | null = null;
   try {
     await client.query("BEGIN");
     const existing = await client.query(
@@ -368,7 +366,6 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
            WHERE institution_id = $1 AND branch_code = $2 AND programme_prefix = $3 LIMIT 1`,
           [grievance.institution_id, parsed.branchCode, parsed.prefix],
         );
-        mappingBefore = before.rows[0] || null;
         const branch = await client.query(
           `SELECT b.name, p.name AS program_name
            FROM public.branches b JOIN public.programs p ON p.id = b.program_id
@@ -399,7 +396,6 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
            ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
           [parsed.prefix, grievance.institution_id],
         );
-        mappingBefore = before.rows[0] || null;
         const scheme = await client.query("SELECT name FROM public.schemes WHERE LOWER(name) = LOWER($1) LIMIT 1", [correctionValue]);
         if (!scheme.rowCount || !isAllowedSchemeForEnrollmentPrefix(parsed.prefix, scheme.rows[0].name)) {
           throw new MappingCorrectionError(parsed.prefix === "BE" ? "BE enrollment mappings must resolve to New CBCS." : parsed.prefix === "BT" ? "BT enrollment mappings must resolve to NEP." : "Choose a valid scheme configured for this programme.");
@@ -424,7 +420,6 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
            WHERE institution_id = $1 AND mode_code = $2 AND programme_prefix = $3 LIMIT 1`,
           [grievance.institution_id, parsed.admissionModeCode, parsed.prefix],
         );
-        mappingBefore = before.rows[0] || null;
         const entrySemester = Number.isInteger(requestedEntrySemester) && requestedEntrySemester >= 1 && requestedEntrySemester <= 20
           ? requestedEntrySemester : parsed.admissionModeCode === "S" ? 3 : 1;
         await client.query(
@@ -445,7 +440,6 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
            ORDER BY (institution_id = $2) DESC NULLS LAST LIMIT 1`,
           [parsed.prefix, grievance.institution_id],
         );
-        mappingBefore = before.rows[0] || null;
         const program = await client.query(
           "SELECT name FROM public.programs WHERE institution_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1",
           [grievance.institution_id, correctionValue],
