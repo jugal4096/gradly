@@ -77,7 +77,10 @@ export default function ExamProfileSetupPage() {
       .flatMap(year => [`Re-exam Nov–Dec ${year}`, `Re-exam May–June ${year}`]);
   }
   function updateSemester(semester: number, patch: Partial<SemesterRecord>) {
-    setSemesterRecords(previous => ({ ...previous, [semester]: { ...(previous[semester] || { eseStatus: "NOT_APPEARED" as EseStatus, backlogAttempts: [] }), ...patch } }));
+    setSemesterRecords(previous => {
+      const current = previous[semester] ?? { eseStatus: "NOT_APPEARED" as EseStatus, backlogAttempts: [] };
+      return { ...previous, [semester]: { ...current, ...patch } };
+    });
   }
   function updateAttempt(semester: number, id: string, patch: Partial<BacklogAttempt>) {
     const record = semesterRecords[semester] || { eseStatus: "BACKLOG" as EseStatus, backlogAttempts: [] };
