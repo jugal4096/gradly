@@ -186,6 +186,7 @@ router.get("/admission-modes", async (req: Request, res: Response): Promise<void
 router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async (req: Request, res: Response): Promise<void> => {
   const { curriculumId, semesterNumber } = req.params;
   const number = Number(semesterNumber);
+  const includeAllBranches = req.query.includeAllBranches === "true";
   if (!Number.isInteger(number) || number < 1 || number > 12) {
     res.status(400).json({ success: false, message: "Invalid semester number." });
     return;
@@ -197,8 +198,18 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
               sem.id AS "semesterId", sem.semester_number AS semester
        FROM curriculum_subjects cs
        JOIN semesters sem ON sem.id = cs.semester_id
-       WHERE cs.curriculum_id = $1
-         AND sem.curriculum_id = $1
+       JOIN curricula source_curriculum ON source_curriculum.id = cs.curriculum_id
+       JOIN curricula selected_curriculum ON selected_curriculum.id = $1
+       WHERE (
+           source_curriculum.id = $1
+           OR (
+             $3::boolean IS TRUE
+             AND source_curriculum.institution_id = selected_curriculum.institution_id
+             AND source_curriculum.program_id = selected_curriculum.program_id
+             AND source_curriculum.scheme_id = selected_curriculum.scheme_id
+           )
+         )
+         AND sem.curriculum_id = source_curriculum.id
          AND sem.semester_number = $2
          AND (
            cs.active IS TRUE
@@ -206,14 +217,14 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
              SELECT 1
              FROM curriculum_subjects active_cs
              JOIN semesters active_sem ON active_sem.id = active_cs.semester_id
-             WHERE active_cs.curriculum_id = $1
-               AND active_sem.curriculum_id = $1
+             WHERE active_cs.curriculum_id = source_curriculum.id
+               AND active_sem.curriculum_id = source_curriculum.id
                AND active_sem.semester_number = $2
                AND active_cs.active IS TRUE
            )
          )
        ORDER BY cs.course_code, cs.course_name`,
-      [curriculumId, number],
+      [curriculumId, number, includeAllBranches],
     );
     res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
