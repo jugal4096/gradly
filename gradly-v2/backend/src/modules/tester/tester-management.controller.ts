@@ -26,8 +26,8 @@ export async function createTesterAccount(req: SuperAdminAuthenticatedRequest, r
       [loginId.trim(), passwordHash, String(req.superAdmin?.adminCode || req.superAdmin?.superAdminId || "SUPER_ADMIN").slice(0,120)],
     );
     return res.status(201).json({ tester: result.rows[0], message: "Tester account created." });
-  } catch (error: any) {
-    if (error?.code === "23505") return res.status(409).json({ message: "That tester ID is already in use." });
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "23505") return res.status(409).json({ message: "That tester ID is already in use." });
     console.error("Create tester account failed:", error);
     return res.status(500).json({ message: "Unable to create tester account." });
   }
