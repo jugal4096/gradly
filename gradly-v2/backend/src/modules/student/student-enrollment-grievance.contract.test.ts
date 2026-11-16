@@ -68,3 +68,16 @@ test("student routes require Firebase authentication before onboarding and griev
   assert.match(studentRoutes, /router\.post\("\/institution-requests", requestStudentInstitution\)/);
   assert.match(studentRoutes, /router\.post\("\/enrollment-grievances", submitEnrollmentGrievance\)/);
 });
+
+test("Admin grievance actions write the immutable reviewer audit schema", () => {
+  assert.match(controller, /reviewer_id, reviewer_role, institution_id, event_type, previous_status, new_status, decision_reason/);
+  assert.match(controller, /reviewer_id,reviewer_role,institution_id,event_type,new_status,decision_reason/);
+  assert.doesNotMatch(controller, /INSERT INTO public\\.student_enrollment_grievance_events[^\\n]*(actor_type|actor_user_id|from_status|to_status|\\bnote\\b)/);
+});
+
+test("Super Admin account access records a durable audit log and does not couple notification delivery to the transaction", () => {
+  assert.match(controller, /GRIEVANCE_STUDENT_REACTIVATED/);
+  assert.match(controller, /GRIEVANCE_STUDENT_DISABLED/);
+  assert.match(controller, /notificationSent/);
+  assert.match(controller, /account change was saved/);
+});
