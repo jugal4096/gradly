@@ -246,8 +246,6 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
   }
 
   const client = await pool.connect();
-  let institutionId = "";
-  let studentUserId = "";
   try {
     await client.query("BEGIN");
     const grievance = await client.query(
@@ -258,8 +256,8 @@ export async function setEnrollmentGrievanceStudentAccessForSuperAdmin(req: Supe
       await client.query("ROLLBACK");
       return res.status(404).json({ success:false, message:"Student request not found." });
     }
-    institutionId = grievance.rows[0].institution_id;
-    studentUserId = grievance.rows[0].student_user_id;
+    const institutionId = grievance.rows[0].institution_id;
+    const studentUserId = grievance.rows[0].student_user_id;
     const changed = await client.query(
       "UPDATE public.users SET active=$2, updated_at=NOW() WHERE id=$1 AND role='STUDENT' AND deleted_at IS NULL RETURNING id,active",
       [studentUserId, active],
