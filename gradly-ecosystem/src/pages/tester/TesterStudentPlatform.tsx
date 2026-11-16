@@ -74,16 +74,6 @@ function isNepScheme(profile:Profile):boolean {
  if(prefix==="BE"||prefix==="ME") return false;
  return false;
 }
-function nepBranchKey(profile:Profile):string {
- const value=(String(profile.branchName||"")+" "+String(profile.programName||"")).toUpperCase();
- if(/ENTC|ELECTRONICS.*TELECOMMUNICATION|ELECTRONICS.*COMMUNICATION/.test(value)) return "ENTC";
- if(/CIVIL/.test(value)) return "CIVIL";
- if(/MECHANICAL|MECH/.test(value)) return "MECHANICAL";
- if(/ELECTRICAL|\bELECT\b/.test(value)) return "ELECTRICAL";
- if(/COMPUTER SCIENCE|CSE/.test(value)) return "CSE";
- if(/INFORMATION TECHNOLOGY|\bIT\b/.test(value)) return "IT";
- return "";
-}
 function getTesterOEOptions(profile:Profile,semester:number):ElectiveOption[] {
  if(!isNepScheme(profile)) return OE_OPTIONS;
  // NEP OE choices are shared across branches in the Tester. If a semester has
@@ -246,7 +236,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const isTester = true;
   const signOut = async () => onExit();
   const loginWithGoogle = async () => {};
-  const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(studentStorage.getItem("gradly_guest_session_token")));
+
   const [section,setSection] = useState<Section>("home");
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
@@ -554,7 +544,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const creditsForSemesterLimit = subjects.filter(s=>s.name.trim() && s.credits>0 && s.courseCode?.toUpperCase()!=="INHS1020").reduce((sum,s)=>sum+s.credits,0);
   const uhvAlreadyUsed = subjects.some(subject=>subject.courseCode==="INHS1020") || Object.values(savedSubjectsBySemester).some(semesterSubjects=>semesterSubjects.some(subject=>subject.courseCode==="INHS1020"));
   const testerOEOptions=getTesterOEOptions(profile,selectedSemester);
-  const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([,semesterSubjects])=>semesterSubjects.filter(subject=>getTesterOEOptions(profile,Number(semester)).some(option=>option.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
+  const previouslyOptedOECodes = new Set(Object.entries(savedSubjectsBySemester).filter(([semester])=>Number(semester)!==selectedSemester).flatMap(([semester,semesterSubjects])=>semesterSubjects.filter(subject=>getTesterOEOptions(profile,Number(semester)).some(option=>option.code===subject.courseCode)).map(subject=>subject.courseCode||"")));
   const availableOEOptions = testerOEOptions.filter(option=>!previouslyOptedOECodes.has(option.code));
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
   const isCurrentSemesterInProgress = !isGuest && !isTester && selectedSemester === currentSemester;
