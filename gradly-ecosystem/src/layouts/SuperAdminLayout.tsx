@@ -14,6 +14,7 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  FlaskConical,
 
 } from "lucide-react";
 
@@ -80,6 +81,11 @@ const controlNavigation = [
     label: "Curriculum",
     path: "/super-admin/curriculum",
     icon: BookOpen,
+  },
+  {
+    label: "Tester Management",
+    path: "/super-admin/testers",
+    icon: FlaskConical,
   },
   {
     label: "Audit Logs",
