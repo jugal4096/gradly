@@ -74,16 +74,6 @@ function isNepScheme(profile:Profile):boolean {
  if(prefix==="BE"||prefix==="ME") return false;
  return false;
 }
-function nepBranchKey(profile:Profile):string {
- const value=(String(profile.branchName||"")+" "+String(profile.programName||"")).toUpperCase();
- if(/ENTC|ELECTRONICS.*TELECOMMUNICATION|ELECTRONICS.*COMMUNICATION/.test(value)) return "ENTC";
- if(/CIVIL/.test(value)) return "CIVIL";
- if(/MECHANICAL|MECH/.test(value)) return "MECHANICAL";
- if(/ELECTRICAL|\bELECT\b/.test(value)) return "ELECTRICAL";
- if(/COMPUTER SCIENCE|CSE/.test(value)) return "CSE";
- if(/INFORMATION TECHNOLOGY|\bIT\b/.test(value)) return "IT";
- return "";
-}
 function getTesterOEOptions(profile:Profile,semester:number):ElectiveOption[] {
  if(!isNepScheme(profile)) return OE_OPTIONS;
  const allBranchOptions=Object.values(NEP_OE_CATALOGUE).flatMap(branch=>branch[semester]||[]);
@@ -224,7 +214,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const isTester = true;
   const signOut = async () => onExit();
   const loginWithGoogle = async () => {};
-  const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(studentStorage.getItem("gradly_guest_session_token")));
+
   const [section,setSection] = useState<Section>("home");
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
