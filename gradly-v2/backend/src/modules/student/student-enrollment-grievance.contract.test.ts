@@ -56,7 +56,10 @@ test("institution Admin grievance access is restricted to the assigned instituti
   assert.match(controller, /WHERE g\.institution_id = \$1/);
   const adminRoutes = read("../admin/admin.routes.ts");
   assert.match(adminRoutes, /router\.get\("\/enrollment-grievances", authenticateAdminToken, listEnrollmentGrievancesForAdmin\)/);
-  assert.doesNotMatch(adminRoutes, /router\.patch\("\/enrollment-grievances/);
+  assert.match(adminRoutes, /router\.patch\("\/enrollment-grievances\/:grievanceId\/review", authenticateAdminToken, reviewEnrollmentGrievanceForAdmin\)/);
+  assert.match(adminRoutes, /router\.patch\("\/enrollment-grievances\/:grievanceId\/student-access", authenticateAdminToken, setEnrollmentGrievanceStudentAccess\)/);
+  assert.match(controller, /WHERE id = \$1 AND institution_id = \$2 AND status IN/);
+  assert.match(controller, /WHERE g\.id=\$1 AND g\.institution_id=\$2 FOR UPDATE/);
 });
 
 test("student routes require Firebase authentication before onboarding and grievance handlers", () => {
