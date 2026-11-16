@@ -5,7 +5,6 @@ import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admi
 import { pool } from "../../config/database";
 import { getGradlyUserByFirebaseUid } from "../auth/auth.service";
 import { isAllowedSchemeForEnrollmentPrefix, parseEnrollmentNumber } from "../academic/enrollment-progression";
-import { buildEnrollmentGrievanceAuditQuery } from "../academic/enrollment-grievance-audit-query";
 
 const categories = new Set(["INVALID_ENROLLMENT", "ALREADY_REGISTERED", "WRONG_PROGRAMME", "WRONG_SCHEME", "WRONG_BRANCH", "WRONG_ADMISSION_MODE", "WRONG_SEMESTER", "OTHER"]);
 const reviewStatuses = new Set(["IN_REVIEW", "NEEDS_INFO", "RESOLVED", "REJECTED"]);
@@ -501,7 +500,7 @@ export async function reviewEnrollmentGrievance(req: SuperAdminAuthenticatedRequ
           previous_status, new_status, old_values, new_values, decision_reason)
          VALUES ($1,$2,'SUPER_ADMIN',$3,'STATUS_CHANGED',$4,$5,$6::jsonb,$7::jsonb,$8)`,
         [req.params.grievanceId, superAdminId, previous.institution_id, previous.status, status,
-         JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null }),
+         JSON.stringify({ status: previous.status, adminNote: previous.admin_note || null, mapping: mappingBefore }),
          JSON.stringify({ status, adminNote: note, mappingCorrection: mappingSnapshot }), note],
       );
     } else {
