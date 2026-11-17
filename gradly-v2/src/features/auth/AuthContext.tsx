@@ -30,13 +30,25 @@ interface AuthContextType {
 
 const GUEST_SESSION_KEY = "gradly_guest_session";
 const GUEST_ID_KEY = "gradly_guest_id";
+const GUEST_TOKEN_KEY = "gradly_guest_session_token";
+const GUEST_INSTITUTE_KEY = "gradly_guest_institute";
+const GUEST_REMEMBER_KEY = "gradly_guest_remembered_session";
+
+function hasRememberedGuestSession() {
+  return Boolean(
+    localStorage.getItem(GUEST_REMEMBER_KEY) === "true" &&
+    localStorage.getItem(GUEST_ID_KEY) &&
+    localStorage.getItem(GUEST_TOKEN_KEY) &&
+    localStorage.getItem(GUEST_INSTITUTE_KEY),
+  );
+}
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(
-    () => sessionStorage.getItem(GUEST_SESSION_KEY) === "true",
+    () => sessionStorage.getItem(GUEST_SESSION_KEY) === "true" || hasRememberedGuestSession(),
   );
 
   useEffect(() => {
@@ -44,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       if (firebaseUser) {
         sessionStorage.removeItem(GUEST_SESSION_KEY);
+        localStorage.removeItem(GUEST_REMEMBER_KEY);
         setIsGuest(false);
       }
       setLoading(false);
@@ -90,6 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function continueAsGuest() {
     sessionStorage.setItem(GUEST_SESSION_KEY, "true");
+    // Reuse a completed guest workspace on this browser instead of asking for its ID again.
+    if (hasRememberedGuestSession()) localStorage.setItem(GUEST_REMEMBER_KEY, "true");
     setIsGuest(true);
   }
 
@@ -98,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(GUEST_ID_KEY);
     localStorage.removeItem("gradly_guest_session_token");
     localStorage.removeItem("gradly_guest_institute");
+    localStorage.removeItem(GUEST_REMEMBER_KEY);
     setIsGuest(false);
     await signOut(auth);
   }
