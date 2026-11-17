@@ -975,20 +975,20 @@ export default function StudentPlatform() {
             <div className="sp-guest-home-section sp-guest-unlock-section">
               <div className="sp-guest-home-section-title"><div><span>THE FULL GRADLY TOOLKIT</span><h2>More ways to move forward</h2></div><button onClick={()=>void loginWithGoogle()}>Unlock all <i>→</i></button></div>
               <div className="sp-guest-quick-grid">
-                <button onClick={()=>navigate("sgpaWhatIf")}><span>⌁</span><strong>SGPA what-if</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("sgpaPlanner")}><span>✧</span><strong>SGPA planner</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("tracker")}><span>▤</span><strong>Progress tracker</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("cgpaWhatIf")}><span>◈</span><strong>CGPA what-if</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("planner")}><span>◇</span><strong>CGPA planner</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("cgpaTracker")}><span>▥</span><strong>CGPA tracker</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("community")}><span>☷</span><strong>Community</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("events")}><span>◷</span><strong>Events & holidays</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("assistant")}><span>✳</span><strong>AI assistant</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("aiStudyPlanner")}><span>⌘</span><strong>AI study planner</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("academicManagement")}><span>▧</span><strong>Academic records</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("credits")}><span>◩</span><strong>Credit analyser</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("profile")}><span>◎</span><strong>Academic profile</strong><i>↗</i><small>LOCKED</small></button>
-                <button onClick={()=>navigate("settings")}><span>⚙</span><strong>Personal settings</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("sgpaWhatIf")}><span>⌁</span><strong>SGPA what-if</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("sgpaPlanner")}><span>✧</span><strong>SGPA planner</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("tracker")}><span>▤</span><strong>Progress tracker</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("cgpaWhatIf")}><span>◈</span><strong>CGPA what-if</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("planner")}><span>◇</span><strong>CGPA planner</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("cgpaTracker")}><span>▥</span><strong>CGPA tracker</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("community")}><span>☷</span><strong>Community</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("events")}><span>◷</span><strong>Events & holidays</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("assistant")}><span>✳</span><strong>AI assistant</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("aiStudyPlanner")}><span>⌘</span><strong>AI study planner</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("academicManagement")}><span>▧</span><strong>Academic records</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("credits")}><span>◩</span><strong>Credit analyser</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("profile")}><span>◎</span><strong>Academic profile</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
+                <button onClick={()=>navigate("settings")}><span>⚙</span><strong>Personal settings</strong><i>↗</i><small className="sp-home-lock-badge"><span className="sp-home-lock-icon" aria-hidden="true"/><em>LOCKED</em></small></button>
               </div>
             </div>
             <div className="sp-guest-home-footer"><span>KEEP YOUR MOMENTUM GOING</span><strong>Create a free account to unlock your complete workspace.</strong><button onClick={()=>void loginWithGoogle()}>Continue with Google <i>→</i></button></div>
