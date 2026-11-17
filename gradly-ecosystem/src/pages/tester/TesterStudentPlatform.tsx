@@ -976,7 +976,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       setNotice("Select Semester "+semesterNumber+" in the workspace before applying this result.");
       return;
     }
-    const existingByCode=new Map(subjects.map(subject=>[normalizeResultCourseCode(subject.courseCode),subject]));
+    const existingByCode=new Map<string,Subject>(subjects.map(subject=>[normalizeResultCourseCode(subject.courseCode),subject] as const));
     const finalSubjects:Subject[]=fetchedGrades.flatMap((row,index)=>{
       const code=normalizeResultCourseCode(row.courseCode);
       const grade=row.grade.trim().toUpperCase();
