@@ -737,7 +737,7 @@ export default function StudentPlatform() {
   }
   function applyOnlineResultToStudent(
     semesterNumber: number,
-    fetchedGrades: { courseCode: string; grade: string; courseName?: string; credits?: number }[],
+    fetchedGrades: { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean }[],
     sessionTitle: string,
     documentTitle: string,
     sourceUrl: string
