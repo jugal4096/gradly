@@ -164,7 +164,7 @@ export default function StudentOnlineResultSync({
     </button>
     {open && <section className="sp-online-result-panel" aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
-        <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>{reExamMode ? "Choose a re-examination session" : "Choose an examination session"}</h3><p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. Review the official GECA result before applying grades to your student workspace.</p></div>
+        <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Choose an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>★ Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. Review the official GECA result before applying grades to your student workspace.</p></div>
         <button type="button" onClick={() => setOpen(false)} aria-label="Close online result archive">×</button>
       </div>
       {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
