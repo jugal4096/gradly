@@ -2096,3 +2096,122 @@
 @media(prefers-reduced-motion:reduce){
   .sp-guest-mode .sp-nav-items button{transition:none}
 }
+
+
+/* Guest student-space menu — lightweight, complete navigation redesign. */
+.sp-guest-mode .sp-sidebar{
+  width:304px; padding:0; gap:0; overflow:hidden;
+  background:#f8fafc; border-right:1px solid #e3e9f0;
+  box-shadow:8px 0 24px rgba(25,45,70,.10);
+}
+.sp-guest-mode .sp-brand{
+  min-height:76px; flex:0 0 76px; padding:14px 20px;
+  gap:12px; background:#fff; border-bottom:1px solid #e8edf2;
+}
+.sp-guest-mode .sp-brand-mark{
+  width:42px;height:42px;border-radius:13px;
+  background:#174f50;box-shadow:none;color:#fff;
+}
+.sp-guest-mode .sp-brand>span:last-child{color:#1e293b;font-size:21px;letter-spacing:-.7px}
+.sp-guest-mode .sp-brand>span:last-child small{color:#82909c;font-size:8px;letter-spacing:1.65px}
+.sp-guest-mode .sp-nav-scroll{
+  flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:15px 13px 18px; background:#f8fafc;
+  scrollbar-width:thin; scrollbar-color:#d7e0e7 transparent;
+}
+.sp-guest-mode .sp-nav-group{
+  margin:0 0 12px; padding:10px 9px 9px;
+  border:1px solid #e5ebef; border-radius:13px;
+  background:#fff; box-shadow:0 1px 2px rgba(25,45,70,.035);
+}
+.sp-guest-mode .sp-nav-group:last-child{margin-bottom:0}
+.sp-guest-mode .sp-nav-label-row{padding:1px 5px 8px;display:flex;align-items:center;justify-content:space-between}
+.sp-guest-mode .sp-nav-label{padding:0;color:#7a8994;font-size:9px;font-weight:850;letter-spacing:1.15px}
+.sp-guest-mode .sp-nav-count{
+  min-width:23px;padding:3px 5px;text-align:center;border:0;border-radius:6px;
+  background:#f0f4f6;color:#84929b;font-size:8px;font-weight:800;
+}
+.sp-guest-mode .sp-nav-items{display:grid;gap:4px}
+.sp-guest-mode .sp-nav-items button{
+  min-height:43px;margin:0;padding:6px 8px;gap:10px;
+  border:1px solid transparent;border-radius:9px;background:transparent;
+  color:#40515c;font-size:12px;font-weight:650;
+  transition:none; transform:none; box-shadow:none;
+}
+.sp-guest-mode .sp-nav-items button>i{
+  width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;
+  border-radius:9px;background:#edf4f3;color:#26766e;font-size:14px;
+  box-shadow:none;
+}
+.sp-guest-mode .sp-nav-items button>span{flex:1;min-width:0;color:inherit;font-size:12px;font-weight:700}
+.sp-guest-mode .sp-nav-items button:hover{
+  transform:none;background:#f3f7f8;border-color:#e8eef0;color:#1d4e4b;box-shadow:none;
+}
+.sp-guest-mode .sp-nav-items button.active{
+  background:#174f50;border-color:#174f50;color:#fff;box-shadow:none;
+}
+.sp-guest-mode .sp-nav-items button.active>i{background:#286a67;color:#fff;box-shadow:none}
+.sp-guest-mode .sp-nav-items button.active>span{color:#fff}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked{
+  background:#fffaf8;border-color:#f3e8e3;color:#6d625e;
+}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked>i{background:#fff0e9;color:#b65b43;box-shadow:none}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked>span{color:#6d625e}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked:hover{
+  background:#fff4ef;border-color:#f0d8ce;color:#874832;box-shadow:none;transform:none;
+}
+.sp-guest-mode .sp-nav-lock{
+  width:26px;height:26px;min-width:26px;flex:0 0 26px;margin-left:auto;padding:0;
+  display:grid;place-items:center;border:1px solid #f0c8b9!important;border-radius:8px!important;
+  background:#fff0e9!important;color:#a64d36!important;box-shadow:none!important;
+}
+.sp-guest-mode .sp-nav-lock em{display:none}
+.sp-guest-mode .sp-nav-lock-icon{
+  width:10px;height:9px;margin-top:5px;border:2px solid #b6533c!important;
+  border-radius:2px;background:#f4a58c!important;box-shadow:none!important;
+}
+.sp-guest-mode .sp-nav-lock-icon:before{border-color:#b6533c!important}
+.sp-guest-mode .sp-nav-lock-icon:after{background:#963d2b!important}
+.sp-guest-mode .sp-sidebar-bottom{
+  flex:0 0 auto;padding:12px 13px 14px;background:#fff;
+  border-top:1px solid #e5ebef;
+}
+.sp-guest-mode .sp-guest-unlock{
+  padding:13px;border:1px solid #dcebe5;border-radius:11px;
+  background:#f0f8f4;box-shadow:none;
+}
+.sp-guest-mode .sp-guest-unlock>span{
+  display:inline-flex;padding:4px 6px;border-radius:5px;
+  background:#dcefe6;color:#276c57;font-size:8px;font-weight:850;letter-spacing:1px;
+}
+.sp-guest-mode .sp-guest-unlock strong{display:block;margin-top:8px;color:#203d34;font:800 13px/1.35 Manrope}
+.sp-guest-mode .sp-guest-unlock p{margin:5px 0 10px;color:#667c72;font-size:10px;line-height:1.45}
+.sp-guest-mode .sp-guest-unlock button{
+  width:100%;padding:10px 11px;border:0;border-radius:8px;
+  background:#174f50;color:#fff;font-size:10px;font-weight:800;
+  box-shadow:none;transition:none;
+}
+.sp-guest-mode .sp-guest-unlock button:hover{background:#216663;box-shadow:none;transform:none}
+.sp-guest-mode .sp-signout{
+  width:100%;margin-top:8px;padding:9px 10px;border:1px solid #e8edf0;
+  border-radius:8px;background:#fff;color:#71808a;text-align:left;
+}
+.sp-guest-mode .sp-signout:hover{background:#fff5f2;border-color:#f0d8ce;color:#a64d36}
+/* Avoid costly motion, blur and animated lock effects in guest navigation. */
+.sp-guest-mode .sp-sidebar,
+.sp-guest-mode .sp-nav-items button,
+.sp-guest-mode .sp-nav-lock,
+.sp-guest-mode .sp-guest-unlock button{animation:none!important;transition:none!important}
+.sp-guest-mode .sp-nav-locked:hover .sp-nav-lock,
+.sp-guest-mode .sp-nav-locked:hover .sp-nav-lock-icon,
+.sp-guest-mode .sp-guest-quick-grid>button:hover .sp-home-lock-icon{animation:none!important}
+.sp-guest-mode .sp-backdrop{backdrop-filter:none!important}
+@media(max-width:760px){
+  .sp-guest-mode .sp-sidebar{width:min(310px,88vw);box-shadow:8px 0 22px rgba(25,45,70,.12)}
+  .sp-guest-mode .sp-nav-scroll{padding:12px 11px 15px}
+  .sp-guest-mode .sp-nav-group{margin-bottom:10px}
+  .sp-guest-mode .sp-nav-items button{min-height:45px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sp-guest-mode .sp-sidebar,.sp-guest-mode .sp-nav-items button{transition:none!important;animation:none!important}
+}
