@@ -2002,3 +2002,97 @@
 @media(max-width:760px){
   .sp-guest-mode .sp-sidebar{box-shadow:18px 0 45px #164b4526}
 }
+
+
+/* Guest hamburger feature list: complete coordinated menu-row colour system. */
+.sp-guest-mode .sp-nav-scroll{background:transparent}
+.sp-guest-mode .sp-nav-group{
+  padding:8px 7px 12px;margin:0 0 10px;
+  border:1px solid #dcebe8;border-radius:14px;
+  background:linear-gradient(145deg,#ffffffd9,#f0f8f6d9);
+  box-shadow:0 3px 10px #174f4b08;
+}
+.sp-guest-mode .sp-nav-group:last-child{margin-bottom:0}
+.sp-guest-mode .sp-nav-label-row{padding:4px 7px 9px}
+.sp-guest-mode .sp-nav-label{
+  color:#64847f;font-size:9px;font-weight:850;
+  letter-spacing:1.25px;
+}
+.sp-guest-mode .sp-nav-count{
+  min-width:23px;text-align:center;border:1px solid #cfe5df;
+  border-radius:7px;background:#e7f4f0;color:#39756c;
+}
+.sp-guest-mode .sp-nav-items{gap:5px}
+.sp-guest-mode .sp-nav-items button{
+  position:relative;min-height:46px;padding:7px 9px;
+  border:1px solid transparent;border-radius:10px;
+  background:transparent;color:#365a57;
+  font-size:12px;font-weight:700;
+}
+.sp-guest-mode .sp-nav-items button>i{
+  width:32px;height:32px;flex:0 0 32px;
+  display:grid;place-items:center;border-radius:10px;
+  background:#e2f2ee;color:#24776c;
+  box-shadow:inset 0 0 0 1px #d2e9e3;
+}
+/* Soft, distinct icon accents keep the feature list easy to scan. */
+.sp-guest-mode .sp-nav-group-0 .sp-nav-items button:nth-child(1)>i{background:#e1f2ed;color:#247568}
+.sp-guest-mode .sp-nav-group-1 .sp-nav-items button:nth-child(1)>i{background:#e4efff;color:#376fae}
+.sp-guest-mode .sp-nav-group-1 .sp-nav-items button:nth-child(2)>i{background:#e9e7ff;color:#655db0}
+.sp-guest-mode .sp-nav-group-2 .sp-nav-items button:nth-child(1)>i{background:#e4efff;color:#376fae}
+.sp-guest-mode .sp-nav-group-2 .sp-nav-items button:nth-child(2)>i{background:#e9e7ff;color:#655db0}
+.sp-guest-mode .sp-nav-group-3 .sp-nav-items button>i{background:#fff0e9;color:#bd684c}
+.sp-guest-mode .sp-nav-group-4 .sp-nav-items button>i{background:#f0eaff;color:#7958a8}
+.sp-guest-mode .sp-nav-group-5 .sp-nav-items button>i{background:#e6f3e9;color:#4d815b}
+.sp-guest-mode .sp-nav-group-6 .sp-nav-items button>i{background:#fff3df;color:#a8782d}
+.sp-guest-mode .sp-nav-items button>span{color:inherit;font-size:12px;font-weight:720}
+.sp-guest-mode .sp-nav-items button:not(.active):not(.sp-nav-locked):hover{
+  background:#e6f4f0;border-color:#c8e4dc;color:#174f4b;
+  transform:translateX(2px);box-shadow:0 4px 11px #1a6a5c12;
+}
+.sp-guest-mode .sp-nav-items button.active{
+  background:linear-gradient(105deg,#124f50,#197b78);
+  border-color:#176966;color:#fff;
+  box-shadow:0 5px 13px #14615b2b;
+}
+.sp-guest-mode .sp-nav-items button.active>i{
+  background:#ffffff20;color:#c5f4e5;box-shadow:inset 0 0 0 1px #ffffff24;
+}
+.sp-guest-mode .sp-nav-items button.active>span{color:#fff}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked{
+  background:#fffaf8;border-color:#f0e1dc;color:#6d625e;
+}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked>i{
+  background:#f8eae5;color:#a65c48;box-shadow:inset 0 0 0 1px #efd8cf;
+}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked>span{color:#6d625e}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked:hover{
+  background:#fff0e9;border-color:#efc6b7;color:#874832;
+}
+.sp-guest-mode .sp-nav-lock{
+  min-width:48px;width:auto;padding:3px 5px;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  border-radius:8px!important;background:#ffede6!important;
+  border-color:#efc0ae!important;color:#a44c34!important;
+}
+.sp-guest-mode .sp-nav-lock em{
+  color:#a44c34!important;font-size:8px;font-style:normal;
+  font-weight:850;letter-spacing:.1px;
+}
+.sp-guest-mode .sp-nav-lock-icon{
+  flex:0 0 10px;border-color:#b94d34!important;
+  background:linear-gradient(180deg,#ffd2bd,#f28c6b)!important;
+}
+.sp-guest-mode .sp-nav-lock-icon:before{border-color:#b94d34!important}
+.sp-guest-mode .sp-nav-lock-icon:after{background:#87351f!important}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked:hover .sp-nav-lock{
+  background:#ffe0d3!important;border-color:#eaa58d!important;
+  box-shadow:0 0 0 3px #f28c6b20!important;
+}
+@media(max-width:760px){
+  .sp-guest-mode .sp-nav-group{padding:7px 6px 10px}
+  .sp-guest-mode .sp-nav-items button{min-height:48px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sp-guest-mode .sp-nav-items button{transition:none}
+}
