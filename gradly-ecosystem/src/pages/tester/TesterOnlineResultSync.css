@@ -150,3 +150,23 @@
 }
 .sp-online-reexam-launch{animation:none!important;transition:none!important;transform:none!important}
 .sp-online-reexam-launch:hover{animation:none!important;transform:none!important}
+
+
+.sp-online-modal-backdrop{
+ position:fixed;inset:0;z-index:12000;display:grid;place-items:center;
+ padding:20px;background:rgba(8,17,31,.62);backdrop-filter:blur(7px);
+}
+.sp-online-result-modal{
+ width:min(760px,calc(100vw - 32px));max-height:min(86vh,900px);overflow:auto;
+ margin:0!important;border:1px solid rgba(255,255,255,.45)!important;
+ border-radius:20px!important;box-shadow:0 24px 90px rgba(0,0,0,.3)!important;
+ background:var(--surface,#fff)!important;
+}
+.sp-online-result-modal .sp-online-result-head{position:sticky;top:0;z-index:2;background:inherit}
+.sp-online-result-modal .sp-online-session-list{max-height:48vh;overflow:auto;padding:4px}
+.sp-online-result-modal .sp-online-session{border-radius:12px;margin:5px 0}
+.sp-online-result-modal .sp-online-session:hover{border-color:#b83a48;background:#fff5f5}
+@media(max-width:600px){
+ .sp-online-modal-backdrop{padding:10px;align-items:end}
+ .sp-online-result-modal{width:100%;max-height:90vh;border-radius:18px 18px 10px 10px!important}
+}
