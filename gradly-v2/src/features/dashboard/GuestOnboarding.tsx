@@ -46,7 +46,7 @@ export default function GuestOnboarding({onComplete}:{onComplete:()=>void}){
      .catch(e=>{if(active)setError(e instanceof Error?e.message:"Could not load institutions.");})
      .finally(()=>{if(active){setInstitutionsLoading(false);setInstitutionsLoaded(true);}});
    return()=>{active=false;};
- },[step,institutionsLoaded,institutionsLoading]);
+ },[step,institutionsLoaded]);
 
  useEffect(()=>{
    const trimmed=query.trim();
