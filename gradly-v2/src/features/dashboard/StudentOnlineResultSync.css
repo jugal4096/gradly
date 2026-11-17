@@ -98,10 +98,10 @@
 .sp-online-course-code{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .sp-online-course-code>b{font-size:10px;color:var(--ink,#183047)}
 .sp-online-course-code>span{padding:3px 6px;border-radius:5px;font-size:9px;font-weight:800}
-.sp-online-course-code .is-matched{background:#e8f5ef;color:#236b4a}
-.sp-online-course-code .is-mismatched{background:#fff2e3;color:#8b5a18}
+.sp-online-course-code .is-matched{background:#f0f0f0;color:#222}
+.sp-online-course-code .is-mismatched{background:#e7e7e7;color:#555}
 .sp-online-course-details>strong{font-size:11px;color:var(--ink,#183047);overflow-wrap:anywhere}
 .sp-online-course-details>small{font-size:10px;color:var(--muted,#7c8b9b)}
 .sp-online-course-row>button{flex:0 0 auto;padding:7px 10px;border:1px solid var(--line,#dce4ee);border-radius:7px;background:transparent;color:var(--ink,#183047);font-size:10px;font-weight:800;cursor:pointer}
-.sp-online-course-row>button.is-selected{border-color:#267d70;background:#edf7f4;color:#21695f}
+.sp-online-course-row>button.is-selected{border-color:#333;background:#f3f3f3;color:#222}
 @media(max-width:520px){.sp-online-course-row{align-items:flex-start;flex-direction:column}.sp-online-course-row>button{width:100%}}
