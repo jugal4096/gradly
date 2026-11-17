@@ -80,7 +80,7 @@ function electiveKind(code:string, semester:number, name=""):"OE"|"HS"|"PE4"|"PE
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
 type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_snapshot?: string | null; course_name_snapshot?: string | null; credits?: number | string | null; grade_symbol?: string | null; grade_point?: number | string | null };
-type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
+type AcademicRecordApi = { id: string | number; semester_number: number | string; attempt_number?: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; id?: string | number | null };
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
@@ -296,7 +296,14 @@ export default function StudentPlatform() {
         const recordsResponse=await fetch(API+"/api/student/academic/records",{headers});
         const recordsData=await recordsResponse.json();
         if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
-          const academicRecords=recordsData.records as AcademicRecordApi[];
+          const allAcademicRecords=recordsData.records as AcademicRecordApi[];
+          const latestBySemester=new Map<number,AcademicRecordApi>();
+          allAcademicRecords.forEach(row=>{
+            const semesterNumber=Number(row.semester_number);
+            const previous=latestBySemester.get(semesterNumber);
+            if(!previous||Number(row.attempt_number||1)>=Number(previous.attempt_number||1)) latestBySemester.set(semesterNumber,row);
+          });
+          const academicRecords=[...latestBySemester.values()].sort((a,b)=>Number(a.semester_number)-Number(b.semester_number));
           const saved:SemesterResult[]=academicRecords.map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
           const savedSubjects:Record<number,Subject[]>={};
           academicRecords.forEach(row=>{
