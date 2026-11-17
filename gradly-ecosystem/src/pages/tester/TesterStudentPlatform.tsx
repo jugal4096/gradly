@@ -967,7 +967,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   }
   function applyOnlineResultToTester(
     semesterNumber:number,
-    fetchedGrades:{courseCode:string;grade:string;courseName?:string;credits?:number}[],
+    fetchedGrades:{courseCode:string;grade:string;courseName?:string;credits?:number;useDefault?:boolean}[],
     sessionTitle:string,
     documentTitle:string,
     sourceUrl:string
