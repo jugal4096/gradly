@@ -939,63 +939,59 @@ export default function StudentPlatform() {
         {!isGuest&&addCourseDialogOpen&&<div className="sp-save-success-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget){setAddCourseDialogOpen(false);setAddCourseType(null);setAddCourseCode("");}}}><section className="sp-add-elective-modal" role="dialog" aria-modal="true" aria-labelledby="sp-add-elective-title"><span className="sp-save-success-kicker">GRADLY · COURSE SELECTION</span><h2 id="sp-add-elective-title">Add an elective course</h2><p>Choose the course category, then select one of the existing subjects available for Semester {selectedSemester}.</p><div className="sp-add-elective-types"><button type="button" className={addCourseType==="OE"?"selected":""} onClick={()=>{setAddCourseType("OE");setAddCourseCode("");setNotice("");}}>Open Elective <strong>OE</strong></button><button type="button" className={addCourseType==="HS"?"selected":""} onClick={()=>{setAddCourseType("HS");setAddCourseCode("");setNotice("");}}>Humanities &amp; Social Sciences <strong>HS</strong></button><button type="button" className={addCourseType==="UHV"?"selected":""} disabled={uhvAlreadyUsed} onClick={()=>{setAddCourseType("UHV");setAddCourseCode("INHS1020");setNotice("");}}>Universal Human Values <strong>UHV · 3 credits</strong></button></div>{addCourseType?<label className="sp-add-elective-select">AVAILABLE {addCourseType==="OE"?"OPEN ELECTIVES":addCourseType==="HS"?"HUMANITIES & SOCIAL SCIENCES":"UNIVERSAL HUMAN VALUES"}<select value={addCourseCode} onChange={event=>setAddCourseCode(event.target.value)}><option value="">Select an existing subject</option>{(addCourseType==="OE"?availableOEOptions:addCourseType==="HS"?hsOptionsForSemester(selectedSemester):[{code:"INHS1020",name:"Universal Human Values",credits:3}]).map(option=><option key={option.code} value={option.code} disabled={addCourseType!=="UHV"&&(creditsForSemesterLimit+option.credits>28||subjects.some(subject=>subject.courseCode===option.code))}>{option.code} · {option.name} ({option.credits} credits)</option>)}</select></label>:<p className="sp-add-elective-credit-note">Choose OE, HS, or the one-time UHV subject. Professional Electives are already included in the semester curriculum. UHV can be added only once throughout your degree.</p>}{addCourseType==="UHV"?<p className="sp-add-elective-credit-note">UHV is exempt from the 28-credit semester limit. It may take your semester total above 28 credits.</p>:<p className="sp-add-elective-credit-note">Available semester capacity: {(28-countedCredits).toFixed(1)} credits. Subjects that exceed the limit cannot be selected.</p>}{uhvAlreadyUsed&&<p className="sp-add-elective-credit-note">UHV has already been added in another semester or is already present in this semester.</p>}<div className="sp-save-success-actions"><button type="button" className="sp-secondary" onClick={()=>{setAddCourseDialogOpen(false);setAddCourseType(null);setAddCourseCode("");}}>Cancel</button><button type="button" className="sp-primary" onClick={confirmAddElectiveCourse} disabled={!addCourseCode||!addCourseType||(addCourseType==="UHV"?uhvAlreadyUsed:!(addCourseType==="OE"?availableOEOptions:hsOptionsForSemester(selectedSemester)).some(option=>option.code===addCourseCode&&creditsForSemesterLimit+option.credits<=28&&!subjects.some(subject=>subject.courseCode===option.code)))}>{addCourseType==="UHV"?"Add UHV":"Add selected course"}</button></div></section></div>}
         {savedConfirmationSemester!==null&&<div className="sp-save-success-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setSavedConfirmationSemester(null);}}><section className="sp-save-success-modal" role="dialog" aria-modal="true" aria-labelledby="sp-save-success-title"><div className="sp-save-success-mark" aria-hidden="true">✓</div><span className="sp-save-success-kicker">GRADLY · ACADEMIC RECORD</span><h2 id="sp-save-success-title">Semester {savedConfirmationSemester} grades saved</h2><p>{isGuest?"Your semester result has been saved on this device.":"Semester subject grades saved to your Gradly academic record."} You can return to this semester anytime to review or edit the grades.</p><div className="sp-save-success-actions"><button type="button" className="sp-secondary" onClick={()=>{if(!isGuest)setSelectedSemester(savedConfirmationSemester);setSavedConfirmationSemester(null);setSection("sgpa");}}>Edit saved grades</button><button type="button" className="sp-primary" onClick={()=>setSavedConfirmationSemester(null)}>Done</button></div></section></div>}
         {section==="home"&&isGuest&&<>
-          <section className="sp-guest-hero-v2">
-            <div className="sp-guest-hero-copy">
-              <span className="sp-guest-kicker"><i/> GUEST WORKSPACE <b>·</b> PREVIEW MODE</span>
-              <h1>Meet the space<br/>that moves you <em>forward.</em></h1>
-              <p>Explore the tools students use to calculate, plan, track and stay ahead. Start with the free calculators — sign in whenever you’re ready for the complete experience.</p>
-              <div className="sp-guest-hero-actions">
-                <button className="sp-primary" onClick={()=>navigate("sgpa")}>Try SGPA calculator <span>→</span></button>
-                <button className="sp-guest-login-link" onClick={()=>void loginWithGoogle()}>Create your free account <span>↗</span></button>
+          <section className="sp-guest-home">
+            <div className="sp-guest-home-head">
+              <div>
+                <span className="sp-guest-kicker"><i/> GUEST WORKSPACE</span>
+                <h1>Your academic<br/><em>journey starts here.</em></h1>
+                <p>Pick a calculator and get moving. Your work stays on this device.</p>
               </div>
-              <div className="sp-guest-identity-v2"><span>YOUR GUEST ID</span><strong>@{localStorage.getItem("gradly_guest_id")||"GUEST"}</strong><i><b/> SESSION ACTIVE</i></div>
+              <div className="sp-guest-home-id"><small>GUEST ID</small><strong>@{localStorage.getItem("gradly_guest_id")||"GUEST"}</strong><span><i/> SESSION ACTIVE</span></div>
             </div>
-            <div className="sp-guest-hero-art-v2" aria-hidden="true">
-              <div className="sp-guest-art-orbit orbit-a"/><div className="sp-guest-art-orbit orbit-b"/>
-              <div className="sp-guest-art-core">G<span>✳</span></div>
-              <div className="sp-guest-art-card art-card-a"><small>ACADEMIC CLARITY</small><strong>Calculate. Plan.<br/>Move forward.</strong></div>
-              <div className="sp-guest-art-card art-card-b"><small>YOUR TOOLKIT</small><strong>12+ features</strong><span>One student workspace</span></div>
+
+            <div className="sp-guest-momentum">
+              <div className="sp-guest-momentum-mark">✦</div>
+              <div className="sp-guest-momentum-copy">
+                <span>YOUR MOMENTUM</span>
+                <strong>{results.length===0?"Ready for your first win":results.length===1?"First milestone unlocked":"You're building a habit"}</strong>
+                <small>{results.length} {results.length===1?"calculation":"calculations"} saved on this device</small>
+              </div>
+              <div className="sp-guest-xp"><strong>{results.length*100}</strong><span>POINTS</span></div>
+              <div className="sp-guest-level"><div><span>LEVEL {Math.floor(results.length/3)+1}</span><b>{results.length%3}/3 to next level</b></div><i><b style={{width:((results.length%3)/3*100)+"%"}}/></i></div>
             </div>
-          </section>
 
-          <section className="sp-guest-metrics-v2">
-            <article><span>YOUR INSTITUTION</span><strong>{institutionLabel}</strong><small>Selected academic home</small></article>
-            <article><span>CALCULATIONS SAVED</span><strong>{results.length.toString().padStart(2,"0")}</strong><small>Stored on this device</small></article>
-            <article><span>CURRENT CGPA</span><strong>{results.length?cgpaValue.toFixed(2):"—"}</strong><small>{results.length?"From your saved semester results":"Ready when you are"}</small></article>
-            <article className="sp-guest-metric-unlock"><span>FULL WORKSPACE</span><strong>12+ tools</strong><small>Available with a free account</small><button onClick={()=>void loginWithGoogle()}>Unlock <b>→</b></button></article>
-          </section>
-
-          <section className="sp-guest-tools-v2">
-            <div className="sp-guest-section-heading-v2"><div><span>START HERE · FREE TO USE</span><h2>Your calculators. No sign-in needed.</h2><p>Try the core calculations right now. Your guest results stay on this device.</p></div><span className="sp-guest-availability">02 AVAILABLE</span></div>
-            <div className="sp-guest-free-grid">
-              <button className="sp-guest-free-card" onClick={()=>navigate("sgpa")}><span className="sp-guest-card-index">01 / SEMESTER PERFORMANCE</span><i>∑</i><strong>SGPA calculator</strong><p>Enter subject grades and credits, calculate your semester score and save the result locally.</p><b>Open calculator <span>↗</span></b></button>
-              <button className="sp-guest-free-card" onClick={()=>navigate("cgpa")}><span className="sp-guest-card-index">02 / CUMULATIVE PERFORMANCE</span><i>◈</i><strong>CGPA calculator</strong><p>Combine semester scores with their credits and understand your cumulative performance.</p><b>Open calculator <span>↗</span></b></button>
+            <div className="sp-guest-home-section">
+              <div className="sp-guest-home-section-title"><div><span>AVAILABLE NOW</span><h2>Choose your calculator</h2></div><small>2 FREE TOOLS</small></div>
+              <div className="sp-guest-home-tools">
+                <button className="sp-guest-home-tool" onClick={()=>navigate("sgpa")}>
+                  <span className="sp-guest-tool-symbol">∑</span><span className="sp-guest-tool-tag">SEMESTER SCORE</span><strong>SGPA calculator</strong><small>Calculate your semester result</small><b>Open calculator <i>↗</i></b>
+                </button>
+                <button className="sp-guest-home-tool" onClick={()=>navigate("cgpa")}>
+                  <span className="sp-guest-tool-symbol">◈</span><span className="sp-guest-tool-tag">OVERALL SCORE</span><strong>CGPA calculator</strong><small>Combine your semester results</small><b>Open calculator <i>↗</i></b>
+                </button>
+              </div>
             </div>
-          </section>
 
-          <section className="sp-guest-discover-v2">
-            <div className="sp-guest-section-heading-v2"><div><span>EXPLORE THE COMPLETE PLATFORM</span><h2>There’s a tool for every next step.</h2><p>Every feature is visible in Guest Mode. Sign in to unlock the full service when you want to use it.</p></div><button onClick={()=>void loginWithGoogle()}>Unlock Gradly <span>→</span></button></div>
-            <div className="sp-guest-feature-grid-v2">
-              <button onClick={()=>navigate("sgpaWhatIf")}><span className="sp-guest-feature-icon">⌁</span><small>SGPA ANALYSIS</small><strong>What-if analysis</strong><p>Test grade combinations before results arrive.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("sgpaPlanner")}><span className="sp-guest-feature-icon">✧</span><small>SGPA ANALYSIS</small><strong>SGPA planner</strong><p>Build a path towards your target semester score.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("tracker")}><span className="sp-guest-feature-icon">▤</span><small>SGPA ANALYSIS</small><strong>Progress tracker</strong><p>See your semester performance over time.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("cgpaWhatIf")}><span className="sp-guest-feature-icon">◈</span><small>CGPA ANALYSIS</small><strong>CGPA what-if</strong><p>Understand how future results change your CGPA.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("planner")}><span className="sp-guest-feature-icon">◇</span><small>CGPA ANALYSIS</small><strong>CGPA planner</strong><p>Plan the semester scores needed for your goal.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("cgpaTracker")}><span className="sp-guest-feature-icon">▥</span><small>CGPA ANALYSIS</small><strong>CGPA tracker</strong><p>Follow cumulative progress across semesters.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("community")}><span className="sp-guest-feature-icon">☷</span><small>COMMUNITY</small><strong>Student group chat</strong><p>Connect, discuss and learn with other students.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("events")}><span className="sp-guest-feature-icon">◷</span><small>COMMUNITY</small><strong>Events & holidays</strong><p>Keep track of important campus dates.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("assistant")}><span className="sp-guest-feature-icon">✳</span><small>AI ASSISTANT</small><strong>AI chatbot</strong><p>Get help with academic questions and concepts.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("aiStudyPlanner")}><span className="sp-guest-feature-icon">⌘</span><small>AI ASSISTANT</small><strong>AI study planner</strong><p>Organise your learning around your goals.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("academicManagement")}><span className="sp-guest-feature-icon">▧</span><small>ACADEMICS</small><strong>Academic management</strong><p>Keep your academic records organised.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("credits")}><span className="sp-guest-feature-icon">◩</span><small>ACADEMICS</small><strong>Credit analyser</strong><p>Understand earned credits and programme progress.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("profile")}><span className="sp-guest-feature-icon">◎</span><small>ACADEMICS</small><strong>Academic profile</strong><p>Connect your programme, branch and semester.</p><i>🔒</i></button>
-              <button onClick={()=>navigate("settings")}><span className="sp-guest-feature-icon">⚙</span><small>YOUR SPACE</small><strong>Personal settings</strong><p>Customise your Gradly workspace.</p><i>🔒</i></button>
+            <div className="sp-guest-home-section sp-guest-unlock-section">
+              <div className="sp-guest-home-section-title"><div><span>THE FULL GRADLY TOOLKIT</span><h2>More ways to move forward</h2></div><button onClick={()=>void loginWithGoogle()}>Unlock all <i>→</i></button></div>
+              <div className="sp-guest-quick-grid">
+                <button onClick={()=>navigate("sgpaWhatIf")}><span>⌁</span><strong>SGPA what-if</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("sgpaPlanner")}><span>✧</span><strong>SGPA planner</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("tracker")}><span>▤</span><strong>Progress tracker</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("cgpaWhatIf")}><span>◈</span><strong>CGPA what-if</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("planner")}><span>◇</span><strong>CGPA planner</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("cgpaTracker")}><span>▥</span><strong>CGPA tracker</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("community")}><span>☷</span><strong>Community</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("events")}><span>◷</span><strong>Events & holidays</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("assistant")}><span>✳</span><strong>AI assistant</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("aiStudyPlanner")}><span>⌘</span><strong>AI study planner</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("academicManagement")}><span>▧</span><strong>Academic records</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("credits")}><span>◩</span><strong>Credit analyser</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("profile")}><span>◎</span><strong>Academic profile</strong><i>↗</i><small>LOCKED</small></button>
+                <button onClick={()=>navigate("settings")}><span>⚙</span><strong>Personal settings</strong><i>↗</i><small>LOCKED</small></button>
+              </div>
             </div>
-          </section>
-
-          <section className="sp-guest-conversion-v2">
-            <div><span>YOUR ACADEMIC JOURNEY DESERVES THE FULL TOOLKIT</span><h2>Ready to make Gradly yours?</h2><p>Create your free student account to unlock every calculator, planner, tracker, community feature and AI tool — and build a connected academic profile.</p><div className="sp-guest-conversion-points"><span>✓ Save your academic profile</span><span>✓ Unlock every student service</span><span>✓ Keep your progress connected</span></div></div>
-            <button onClick={()=>void loginWithGoogle()}>Continue with Google <span>→</span></button>
+            <div className="sp-guest-home-footer"><span>KEEP YOUR MOMENTUM GOING</span><strong>Create a free account to unlock your complete workspace.</strong><button onClick={()=>void loginWithGoogle()}>Continue with Google <i>→</i></button></div>
           </section>
         </>}
         {section==="home"&&!isGuest&&<><div className="sp-hero"><div><span className="sp-kicker">YOUR ACADEMIC WORKSPACE</span><h1>Your academic journey.<br/><em>Beautifully in balance.</em></h1><p>Welcome back, {name}. A smarter space to track progress, plan ahead and stay in control.</p><button className="sp-primary" onClick={()=>navigate("sgpa")}>Explore academic tools <span>→</span></button></div><div className="sp-hero-art"><div className="sp-orbit orbit-a"/><div className="sp-orbit orbit-b"/><div className="sp-orbit-core">G<span>✦</span></div><small>LEARN · PLAN · GROW</small></div></div>
