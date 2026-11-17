@@ -746,7 +746,7 @@ export default function StudentPlatform() {
       setNotice("Select Semester " + semesterNumber + " in the workspace before applying this result.");
       return;
     }
-    const existingByCode = new Map(subjects.map(subject => [normalizeResultCourseCode(subject.courseCode), subject]));
+    const existingByCode = new Map<string, Subject>(subjects.map(subject => [normalizeResultCourseCode(subject.courseCode), subject] as const));
     const updatedSubjects: Subject[] = fetchedGrades.flatMap((row, index) => {
       const code = normalizeResultCourseCode(row.courseCode);
       const grade = row.grade.trim().toUpperCase();
