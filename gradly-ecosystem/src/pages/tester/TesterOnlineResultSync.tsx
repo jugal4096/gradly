@@ -139,22 +139,7 @@ export default function TesterOnlineResultSync({
     setError("");
   }
 
-  const gradeMap = new Map<string, string>();
-  scan?.matches.filter(document => document.semester === selectedSemester).forEach(document => document.grades.forEach(row => gradeMap.set(normalizeCourseCode(row.courseCode), row.grade.toUpperCase())));
-  const previewSubjects = subjects.filter(subject => subject.name.trim() && Number(subject.credits) > 0);
-  const previewRows = previewSubjects.map(subject => ({
-    ...subject,
-    nextGrade: gradeMap.get(normalizeCourseCode(subject.courseCode)) || subject.grade,
-  }));
-  const gradedRows = previewRows.filter(subject => ["A++", "A+", "A", "B+", "B", "C+", "C", "D"].includes(subject.nextGrade));
-  const previewCredits = gradedRows.reduce((sum, subject) => sum + Number(subject.credits), 0);
-  const previewPoints = gradedRows.reduce((sum, subject) => {
-    const points: Record<string, number> = { "A++":10, "A+":9, A:8, "B+":7, B:6, "C+":5, C:4, D:0 };
-    return sum + Number(subject.credits) * points[subject.nextGrade];
-  }, 0);
-  const previewSgpa = previewCredits > 0 ? (previewPoints / previewCredits).toFixed(2) : null;
-  const hasUnselectedElective = subjects.some(subject => Boolean(subject.electiveKind) && !subject.name.trim());
-  const complete = previewRows.length > 0 && !hasUnselectedElective && gradedRows.length === previewRows.length;
+
 
   return <>
     <button type="button" className={"sp-entry-mode " + (open ? "selected" : "")} onClick={() => void openArchive()} aria-expanded={open}>
@@ -222,10 +207,7 @@ export default function TesterOnlineResultSync({
             {reExamMode && <p className="sp-online-reexam-mode">Re-examination mode · fetched grades will update the existing backlog attempt without replacing unrelated subjects.</p>}
           </article>;
         })}
-        {scan.matches.some(document => document.semester === selectedSemester) && <div className="sp-online-preview">
-          <div><span>PREVIEW · EXISTING GRADES + MATCHED PDF</span><strong>{previewSgpa ? previewSgpa + " SGPA" : "SGPA not calculable yet"}</strong></div>
-          <p>{gradedRows.length} of {previewRows.length} subjects have recognised grades. {complete ? "All loaded subjects are graded; the SGPA preview is complete." : "Missing grades will be retained from existing tester data where available. SGPA is not final until every loaded subject has a recognised grade."}</p>
-        </div>}
+
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved to this isolated browser session</span></div>
