@@ -2215,3 +2215,26 @@
 @media(prefers-reduced-motion:reduce){
   .sp-guest-mode .sp-sidebar,.sp-guest-mode .sp-nav-items button{transition:none!important;animation:none!important}
 }
+
+
+/* Guest hamburger: make every locked feature use a clearly visible yellow lock. */
+.sp-guest-mode .sp-nav-items button.sp-nav-locked .sp-nav-lock{
+  background:transparent!important;
+  border:0!important;
+  color:#d99a00!important;
+  box-shadow:none!important;
+}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked .sp-nav-lock-icon{
+  width:11px;height:10px;margin-top:5px;
+  border:2px solid #b77a00!important;
+  border-radius:2px;
+  background:linear-gradient(180deg,#ffe27a,#f5b91e)!important;
+  box-shadow:0 1px 2px #8f610033!important;
+}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked .sp-nav-lock-icon:before{
+  border:2px solid #b77a00!important;
+  border-bottom:0!important;
+}
+.sp-guest-mode .sp-nav-items button.sp-nav-locked .sp-nav-lock-icon:after{
+  background:#805400!important;
+}
