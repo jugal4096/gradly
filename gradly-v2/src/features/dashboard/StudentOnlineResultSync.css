@@ -129,3 +129,24 @@
 .sp-subject-backlog .sp-grade-options button.selected{border-color:#cf3838!important;background:#ffe0e0!important;color:#a51f1f!important}
 .sp-subject-backlog .sp-grade-options button.selected strong{color:#a51f1f!important}
 @media(max-width:520px){.sp-online-result-summary{gap:5px}.sp-online-result-summary>div{padding:9px 7px}.sp-online-result-summary strong{font-size:17px}}
+
+
+/* Backlog actions are deliberately static: visible, clickable, and never pulsing. */
+.sp-backlog-fetch{
+  display:inline-grid!important;place-items:center!important;align-self:center!important;
+  width:27px!important;height:27px!important;min-width:27px!important;padding:0!important;
+  border:1px solid #b91c1c!important;border-radius:50%!important;
+  background:#dc2626!important;color:#fff!important;font-size:15px!important;font-weight:900!important;
+  line-height:1!important;cursor:pointer!important;box-shadow:0 1px 3px rgba(127,29,29,.18)!important;
+  animation:none!important;transition:none!important;transform:none!important;
+}
+.sp-backlog-fetch:hover,.sp-backlog-fetch:focus-visible{
+  background:#b91c1c!important;color:#fff!important;animation:none!important;transform:none!important;
+}
+.sp-sgpa-backlog-flag{
+  display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 9px;
+  border:1px solid #f0b5b5;border-radius:7px;background:#fff1f1;color:#a51f1f;
+  font-size:10px;font-weight:800;line-height:1.3
+}
+.sp-online-reexam-launch{animation:none!important;transition:none!important;transform:none!important}
+.sp-online-reexam-launch:hover{animation:none!important;transform:none!important}
