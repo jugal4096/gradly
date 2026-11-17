@@ -463,6 +463,13 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
         if(cancelled) return;
         const saved=savedSubjectsBySemester[selectedSemester]||[];
+        const officialResultKey="gradly_tester_online_result_subjects_"+profile.curriculumId+"_"+selectedSemester;
+        if(studentStorage.getItem("gradly_tester_online_result_source_"+selectedSemester)) {
+          let authoritative:Subject[]=[];
+          try { const cached=JSON.parse(studentStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid Tester result cache */ }
+          if(!authoritative.length) authoritative=saved;
+          if(authoritative.length) { setSubjects(authoritative); setCurriculumReadySemester(selectedSemester); return; }
+        }
         let electiveSaved:Subject[]=[];
         let mdmOptions:ElectiveOption[]=[];
         if(isNepScheme(profile)) {
@@ -645,7 +652,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const availableMdmOptions = mdmOptionsBySemester[selectedSemester]||[];
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
   const isCurrentSemesterInProgress = !isGuest && !isTester && selectedSemester === currentSemester;
-  const canCalculateOfficialSgpa = isGuest || isTester || selectedSemester < currentSemester;
+  const hasOfficialFetchedResult = Boolean(studentStorage.getItem("gradly_tester_online_result_source_"+selectedSemester));
+  const canCalculateOfficialSgpa = isGuest || isTester || selectedSemester < currentSemester || hasOfficialFetchedResult;
   const hasCompleteGrades = subjects.length > 0 && subjects.every(subject => subject.credits <= 0 || (subject.name.trim() && POINTS[subject.grade] !== undefined)) && subjects.some(subject => subject.name.trim() && subject.credits > 0);
 
   useEffect(() => {
@@ -935,7 +943,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   async function saveSemester() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
-    if(!isGuest && !isTester && semesterNumber>=currentSemester) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
+    const hasOfficialFetchedResult = Boolean(studentStorage.getItem("gradly_tester_online_result_source_"+semesterNumber));
+    if(!isGuest && !isTester && semesterNumber>=currentSemester && !hasOfficialFetchedResult) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
@@ -1004,12 +1013,15 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     setSubjects(finalSubjects);
     setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:finalSubjects}));
     studentStorage.setItem("gradly_tester_subjects",JSON.stringify(finalSubjects));
+    studentStorage.setItem("gradly_tester_online_result_subjects_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(finalSubjects));
     studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({
       sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString(),
       appliedCourseCodes:finalSubjects.map(subject=>subject.courseCode),
       removedDefaultCourseCount:Math.max(0,subjects.length-finalSubjects.filter(subject=>existingByCode.has(normalizeResultCourseCode(subject.courseCode))).length),
     }));
-    setSgpa(null);
+    const totalCredits=finalSubjects.reduce((sum,subject)=>sum+(subject.name.trim()&&subject.credits>0?subject.credits:0),0);
+    const weightedPoints=finalSubjects.reduce((sum,subject)=>sum+(subject.name.trim()&&subject.credits>0?subject.credits*(POINTS[subject.grade]??0):0),0);
+    setSgpa(totalCredits>0&&finalSubjects.every(subject=>subject.name.trim()&&subject.credits>0&&POINTS[subject.grade]!==undefined)?Number((weightedPoints/totalCredits).toFixed(3)):null);
     setNotice("Updated the isolated Tester semester using "+finalSubjects.length+" selected official result courses. Default subjects absent from the result were removed. Confirm any missing course names or credits, then review and save to the Tester tracker. Source: "+documentTitle+".");
   }
   function navigate(next:Section) {
