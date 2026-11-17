@@ -182,7 +182,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          JOIN semesters sem ON sem.id = ss.semester_id
          WHERE ss.student_profile_id = $1
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = ANY($2::text[])
-           AND NOT (ss.semester_id = $3 AND ss.attempt_number = $4)
+           AND ss.semester_id <> $3
          LIMIT 1`,
         [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id, attemptNumber],
       );
@@ -202,7 +202,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          JOIN student_semesters ss ON ss.id = c.student_semester_id
          WHERE ss.student_profile_id = $1
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = 'INHS1020'
-           AND NOT (ss.semester_id = $2 AND ss.attempt_number = $3)
+           AND ss.semester_id <> $2
          LIMIT 1`,
         [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
       );
