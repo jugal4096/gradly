@@ -218,7 +218,7 @@ export default function TesterOnlineResultSync({
                   <strong>{row.courseName}</strong>
                   <small>Grade {row.grade}{row.credits > 0 ? " · " + row.credits + " credits" : " · Credits need confirmation"}</small>
                 </div>
-                <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === false }))}>{row.selected ? "Set as per Result" : "Excluded"}</button>
+                <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === false }))}>{row.selected ? "Use default course" : "Set as per Result"}</button>
               </div>)}
             </div>
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
