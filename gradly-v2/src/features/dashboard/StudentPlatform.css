@@ -2378,3 +2378,80 @@
 @media(max-width:820px){.sp-user-mode .sp-user-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-user-mode .sp-user-tools-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-user-mode .sp-user-bottom-grid{grid-template-columns:1fr}.sp-user-mode .sp-content{padding:23px 20px 40px}}
 @media(max-width:560px){.sp-user-mode .sp-user-welcome{display:block;min-height:0;padding:24px 20px 58px}.sp-user-mode .sp-user-welcome-art{position:absolute;right:-47px;top:18px;transform:scale(.62);opacity:.48}.sp-user-mode .sp-user-welcome h1{font-size:33px;max-width:250px}.sp-user-mode .sp-user-welcome p{max-width:280px}.sp-user-mode .sp-user-welcome-actions{align-items:flex-start;flex-direction:column;gap:8px}.sp-user-mode .sp-user-welcome-foot{left:20px;right:20px;gap:6px;flex-wrap:wrap}.sp-user-mode .sp-user-stats{gap:9px;margin-bottom:27px}.sp-user-mode .sp-user-stat{min-height:120px;padding:14px}.sp-user-mode .sp-user-stat strong{font-size:24px}.sp-user-mode .sp-user-stat-icon{width:29px;height:29px;right:11px;top:11px}.sp-user-mode .sp-user-tools-grid{grid-template-columns:1fr;gap:9px}.sp-user-mode .sp-user-tool{min-height:150px}.sp-user-mode .sp-user-section-heading{align-items:flex-start}.sp-user-mode .sp-user-section-mark{display:none}.sp-user-mode .sp-user-bottom-heading{align-items:flex-start}.sp-user-mode .sp-user-empty-results{align-items:flex-start;flex-wrap:wrap}.sp-user-mode .sp-user-empty-results>div{min-width:180px}}
 @media(prefers-reduced-motion:reduce){.sp-user-mode .sp-user-tool{transition:none}.sp-user-mode .sp-user-tool:hover{transform:none}}
+
+
+/* Logged-in Student Space navigation — coordinated with the refreshed dashboard. */
+.sp-user-mode .sp-sidebar{
+  background:
+    radial-gradient(ellipse at 0% 0%,rgba(112,126,229,.22),transparent 36%),
+    radial-gradient(ellipse at 100% 78%,rgba(61,190,163,.16),transparent 34%),
+    linear-gradient(165deg,#202a49 0%,#202b45 54%,#263653 100%);
+  border-right:1px solid rgba(255,255,255,.1);
+  color:#f8faff;
+  box-shadow:8px 0 30px rgba(34,47,79,.08);
+}
+.sp-user-mode .sp-brand{padding:5px 10px 23px;color:#fff}
+.sp-user-mode .sp-brand-mark{
+  background:linear-gradient(145deg,#8b80e9 0%,#6c75d6 48%,#43b99f 100%);
+  box-shadow:0 8px 20px rgba(99,112,210,.32),inset 0 1px 1px rgba(255,255,255,.5);
+}
+.sp-user-mode .sp-brand>span:last-child{font-family:'Manrope','DM Sans',sans-serif;font-weight:850;letter-spacing:-.6px}
+.sp-user-mode .sp-brand>span:last-child small{color:#b5c4df;letter-spacing:1.8px}
+.sp-user-mode .sp-nav-group{margin:13px 0 18px}
+.sp-user-mode .sp-nav-label-row{padding:0 11px 9px}
+.sp-user-mode .sp-nav-label{color:#9eacc8;font-size:9px;font-weight:850;letter-spacing:1.55px}
+.sp-user-mode .sp-nav-count{color:#8192b1}
+.sp-user-mode .sp-nav-items{border:0;background:transparent}
+.sp-user-mode .sp-nav-group button{
+  min-height:44px;margin:4px 0;padding:0 10px;gap:11px;
+  border:1px solid transparent;border-radius:12px;
+  color:#d0d9eb;background:transparent;
+  font-family:'DM Sans','Manrope',sans-serif;font-size:12px;font-weight:650;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+.sp-user-mode .sp-nav-group button i{
+  width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;
+  border-radius:10px;background:rgba(255,255,255,.09);color:#a9b8f5;
+  font-size:16px;transition:background .16s ease,color .16s ease;
+}
+.sp-user-mode .sp-nav-group button:hover{
+  color:#fff;background:rgba(255,255,255,.085);
+  border-color:rgba(255,255,255,.09);transform:none;
+}
+.sp-user-mode .sp-nav-group button:hover i{background:rgba(115,130,226,.24);color:#d5d8ff;transform:none}
+.sp-user-mode .sp-nav-group button.active{
+  color:#fff;background:linear-gradient(100deg,rgba(116,111,222,.34),rgba(55,178,158,.2));
+  border-color:rgba(168,174,255,.3);
+  box-shadow:inset 3px 0 0 #9a91ff,0 7px 16px rgba(8,15,39,.16);
+}
+.sp-user-mode .sp-nav-group button.active i{
+  color:#fff;background:linear-gradient(145deg,#887ce7,#5b91c9);
+  box-shadow:0 5px 12px rgba(104,112,213,.25);
+}
+.sp-user-mode .sp-nav-group button.active b{right:7px;width:5px;height:5px;border-radius:50%;background:#77e0c5;box-shadow:0 0 0 4px rgba(119,224,197,.13)}
+.sp-user-mode .sp-nav-group button:focus-visible{outline:2px solid #a9a2ff;outline-offset:2px}
+.sp-user-mode .sp-sidebar-bottom{border-top:1px solid rgba(221,230,255,.13);padding-top:15px}
+.sp-user-mode .sp-sidebar-tip{
+  border:1px solid rgba(174,184,255,.2);border-radius:15px;
+  background:linear-gradient(140deg,rgba(129,119,223,.2),rgba(65,180,164,.1));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.sp-user-mode .sp-sidebar-tip span{color:#9ce4d4}
+.sp-user-mode .sp-sidebar-tip b{color:#fff}
+.sp-user-mode .sp-sidebar-tip small{color:#b9c7df}
+.sp-user-mode .sp-signout{color:#c1cbe0;border-radius:10px}
+.sp-user-mode .sp-signout:hover{background:rgba(255,255,255,.08);color:#fff}
+.sp-user-mode .sp-menu{
+  border:1px solid #dedff5;
+  background:linear-gradient(145deg,#fff,#f0efff);
+  color:#6558c7;
+  box-shadow:0 5px 14px rgba(72,70,139,.1);
+}
+.sp-user-mode .sp-menu:hover{background:#eae8ff;color:#5143b4}
+@media(max-width:760px){
+  .sp-user-mode .sp-sidebar{box-shadow:16px 0 42px rgba(19,29,54,.28)}
+  .sp-user-mode .sp-nav-group button{min-height:46px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sp-user-mode .sp-nav-group button,.sp-user-mode .sp-nav-group button i{transition:none}
+}
