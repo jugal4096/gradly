@@ -296,3 +296,62 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .academic-setup-file-selected small{color:#777!important;font:600 9px Manrope,sans-serif!important}
 .academic-setup-file-selected button{padding:5px 8px!important;border:1px solid #ccc!important;border-radius:7px!important;background:#fff!important;color:#444!important;font:700 9px Manrope,sans-serif!important;cursor:pointer!important}
 @media(max-width:520px){.academic-setup-support-context{grid-template-columns:1fr!important}}
+
+
+/* Gradly V2 — restore the coloured logged-in workspace navigation.
+   These selectors intentionally come after the monochrome layer, which used
+   !important declarations and grayscale filtering that erased the sidebar theme. */
+.sp-shell.sp-user-mode .sp-sidebar{
+  background:
+    radial-gradient(ellipse at 0% 0%,rgba(112,126,229,.22),transparent 36%),
+    radial-gradient(ellipse at 100% 78%,rgba(61,190,163,.16),transparent 34%),
+    linear-gradient(165deg,#202a49 0%,#202b45 54%,#263653 100%)!important;
+  border-right:1px solid rgba(255,255,255,.1)!important;
+  color:#f8faff!important;
+  filter:none!important;
+  box-shadow:8px 0 30px rgba(34,47,79,.08)!important;
+}
+.sp-shell.sp-user-mode .sp-brand{color:#fff!important}
+.sp-shell.sp-user-mode .sp-brand-mark{
+  background:linear-gradient(145deg,#8b80e9 0%,#6c75d6 48%,#43b99f 100%)!important;
+  color:#fff!important;box-shadow:0 8px 20px rgba(99,112,210,.32),inset 0 1px 1px rgba(255,255,255,.5)!important
+}
+.sp-shell.sp-user-mode .sp-brand-mark small{color:#fff!important}
+.sp-shell.sp-user-mode .sp-brand>span:last-child small{color:#b5c4df!important}
+.sp-shell.sp-user-mode .sp-nav-label{color:#9eacc8!important}
+.sp-shell.sp-user-mode .sp-nav-group button{
+  color:#d0d9eb!important;background:transparent!important;border:1px solid transparent!important;
+  font-family:'DM Sans','Manrope',sans-serif!important
+}
+.sp-shell.sp-user-mode .sp-nav-group button i{
+  color:#a9b8f5!important;background:rgba(255,255,255,.09)!important
+}
+.sp-shell.sp-user-mode .sp-nav-group button:hover{
+  color:#fff!important;background:rgba(255,255,255,.085)!important;border-color:rgba(255,255,255,.09)!important
+}
+.sp-shell.sp-user-mode .sp-nav-group button.active{
+  color:#fff!important;background:linear-gradient(100deg,rgba(116,111,222,.34),rgba(55,178,158,.2))!important;
+  border-color:rgba(168,174,255,.3)!important;box-shadow:inset 3px 0 0 #9a91ff,0 7px 16px rgba(8,15,39,.16)!important
+}
+.sp-shell.sp-user-mode .sp-nav-group button.active i{
+  color:#fff!important;background:linear-gradient(145deg,#887ce7,#5b91c9)!important
+}
+.sp-shell.sp-user-mode .sp-nav-group button.active b{
+  background:#77e0c5!important;color:#fff!important
+}
+.sp-shell.sp-user-mode .sp-sidebar-bottom{border-color:rgba(221,230,255,.13)!important}
+.sp-shell.sp-user-mode .sp-sidebar-tip{
+  background:linear-gradient(140deg,rgba(129,119,223,.2),rgba(65,180,164,.1))!important;
+  border:1px solid rgba(174,184,255,.2)!important
+}
+.sp-shell.sp-user-mode .sp-sidebar-tip span{color:#9ce4d4!important}
+.sp-shell.sp-user-mode .sp-sidebar-tip b{color:#fff!important}
+.sp-shell.sp-user-mode .sp-sidebar-tip small{color:#b9c7df!important}
+.sp-shell.sp-user-mode .sp-signout{color:#c1cbe0!important}
+.sp-shell.sp-user-mode .sp-signout:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
+.sp-shell.sp-user-mode .sp-menu{
+  background:linear-gradient(145deg,#fff,#f0efff)!important;border:1px solid #dedff5!important;
+  color:#6558c7!important;box-shadow:0 5px 14px rgba(72,70,139,.1)!important;filter:none!important
+}
+.sp-shell.sp-user-mode .sp-menu span{background:#6558c7!important}
+.sp-shell.sp-user-mode .sp-menu:hover{background:#eae8ff!important;color:#5143b4!important}
