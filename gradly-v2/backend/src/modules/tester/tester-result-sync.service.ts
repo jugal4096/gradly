@@ -135,9 +135,12 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
   // Some GECA re-examination PDFs place course-code headers before the
   // candidate/seat-number heading. Keep a second bounded header window for
   // those layouts instead of declaring an enrollment hit unparsable.
-  const windows = headerIndexes.length
-    ? headerIndexes.map(index => ({ start: index + 1, end: Math.min(lines.length, index + 41) }))
-    : [{ start: 0, end: Math.min(lines.length, 80) }];
+  const windows = [
+    // GECA re-exam PDFs sometimes put subject-code headings before the
+    // Exam Seat No heading; inspect the opening table header in either case.
+    { start: 0, end: Math.min(lines.length, headerIndexes.length ? headerIndexes[0] + 1 : 80) },
+    ...headerIndexes.map(index => ({ start: index + 1, end: Math.min(lines.length, index + 41) })),
+  ];
   for (const window of windows) {
     for (let lineIndex = window.start; lineIndex < window.end; lineIndex++) {
       const line = lines[lineIndex];
