@@ -29,11 +29,12 @@ type Props = {
   enrollmentNumber: string;
   selectedSemester: number;
   subjects: StudentSubject[];
+  reExamTargetCourseCode?: string;
   onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string, attemptNumber: number) => void | Promise<void>;
 };
 
 export default function StudentOnlineResultSync({
-  apiBase, curriculumId, getIdToken, enrollmentNumber, selectedSemester, subjects, onApply,
+  apiBase, curriculumId, getIdToken, enrollmentNumber, selectedSemester, subjects, reExamTargetCourseCode, onApply,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<ResultSession[]>([]);
@@ -64,7 +65,7 @@ export default function StudentOnlineResultSync({
   }, [apiBase, curriculumId, selectedSemester]);
 
   async function openArchive() {
-    setOpen(value => !value);
+    setOpen(true);
     if (open || sessions.length) return;
     const controller = new AbortController();
     activeRequest.current = controller;
@@ -88,6 +89,15 @@ export default function StudentOnlineResultSync({
       setLoadingSessions(false);
     }
   }
+
+  useEffect(() => {
+    if (!reExamTargetCourseCode) return;
+    setReExamMode(true);
+    setOpen(true);
+    setScan(null);
+    setSelectedSessionId("");
+    if (!sessions.length && !loadingSessions) void openArchive();
+  }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
     const controller = new AbortController();
@@ -125,8 +135,10 @@ export default function StudentOnlineResultSync({
       setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
       return;
     }
+    const targetCode = normalizeCourseCode(reExamTargetCourseCode);
     const applicable = document.grades
       .filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
+      .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode)
       .map(row => {
         const code = normalizeCourseCode(row.courseCode);
         const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
@@ -134,7 +146,7 @@ export default function StudentOnlineResultSync({
         return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 0) };
       });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
-      setError("The official PDF did not provide enough course details to save this result. No academic data was changed.");
+      setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "The official PDF did not provide enough course details to save this result. No academic data was changed.");
       return;
     }
     void onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
