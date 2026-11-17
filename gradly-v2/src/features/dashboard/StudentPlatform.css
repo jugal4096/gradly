@@ -2238,3 +2238,35 @@
 .sp-guest-mode .sp-nav-items button.sp-nav-locked .sp-nav-lock-icon:after{
   background:#805400!important;
 }
+
+
+/* Final guest-menu lock override: solid yellow badge and gold lock glyph. */
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock,
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock[aria-hidden="true"]{
+  display:grid!important;place-items:center!important;
+  width:29px!important;height:29px!important;min-width:29px!important;
+  flex:0 0 29px!important;margin-left:auto!important;padding:0!important;
+  border:1px solid #e4aa16!important;border-radius:8px!important;
+  background:#fff0b8!important;color:#805400!important;
+  box-shadow:0 1px 3px rgba(125,83,0,.16)!important;
+}
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock > .sp-nav-lock-icon{
+  display:block!important;position:relative!important;
+  box-sizing:border-box!important;width:11px!important;height:9px!important;
+  margin:5px 0 0!important;padding:0!important;
+  border:2px solid #9a6500!important;border-radius:2px!important;
+  background:#f4bd32!important;opacity:1!important;
+}
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock > .sp-nav-lock-icon:before{
+  content:""!important;position:absolute!important;
+  left:1px!important;top:-8px!important;width:5px!important;height:7px!important;
+  box-sizing:border-box!important;border:2px solid #9a6500!important;
+  border-bottom:0!important;border-radius:5px 5px 0 0!important;
+  background:transparent!important;
+}
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock > .sp-nav-lock-icon:after{
+  content:""!important;position:absolute!important;
+  left:2px!important;top:1px!important;width:3px!important;height:3px!important;
+  border:0!important;border-radius:50%!important;background:#805400!important;
+}
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock > em{display:none!important}
