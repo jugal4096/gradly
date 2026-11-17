@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./StudentOnlineResultSync.css";
 
-type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
+type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
 type ResultGrade = { courseCode: string; grade: string };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
@@ -27,11 +27,11 @@ type Props = {
   getIdToken: () => Promise<string>;
   enrollmentNumber: string;
   selectedSemester: number;
-  subjects: TesterSubject[];
+  subjects: StudentSubject[];
   onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string) => void;
 };
 
-export default function TesterOnlineResultSync({
+export default function StudentOnlineResultSync({
   apiBase, getIdToken, enrollmentNumber, selectedSemester, subjects, onApply,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -110,7 +110,7 @@ export default function TesterOnlineResultSync({
     }
     const applicable = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (!applicable.length) {
-      setError("The PDF was detected, but it did not contain any safely recognised course-code and grade pairs. No Tester data was changed.");
+      setError("The PDF was detected, but it did not contain any safely recognised course-code and grade pairs. No student grades were changed.");
       return;
     }
     onApply(document.semester, applicable, sessionTitle, document.title, document.url);
@@ -199,7 +199,7 @@ export default function TesterOnlineResultSync({
         })}
         {scan.matches.some(document => document.semester === selectedSemester) && <div className="sp-online-preview">
           <div><span>PREVIEW · EXISTING GRADES + MATCHED PDF</span><strong>{previewSgpa ? previewSgpa + " SGPA" : "SGPA not calculable yet"}</strong></div>
-          <p>{gradedRows.length} of {previewRows.length} subjects have recognised grades. {complete ? "All loaded subjects are graded; the SGPA preview is complete." : "Missing grades will be retained from existing tester data where available. SGPA is not final until every loaded subject has a recognised grade."}</p>
+          <p>{gradedRows.length} of {previewRows.length} subjects have recognised grades. {complete ? "All loaded subjects are graded; the SGPA preview is complete." : "Missing grades will be retained from existing student grades where available. SGPA is not final until every loaded subject has a recognised grade."}</p>
         </div>}
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
