@@ -945,8 +945,9 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
     let officialResultAttempt = 1;
-    try { officialResultAttempt = Number(JSON.parse(studentStorage.getItem("gradly_tester_online_result_source_"+semesterNumber)||"{}").attemptNumber||1); } catch { /* default to first attempt */ }
-    if(!isGuest && !isTester && semesterNumber>=currentSemester && true) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
+    const officialResultSource = studentStorage.getItem("gradly_tester_online_result_source_"+semesterNumber);
+    try { officialResultAttempt = Number(JSON.parse(officialResultSource||"{}").attemptNumber||1); } catch { /* default to first attempt */ }
+    if(!isGuest && !isTester && semesterNumber>=currentSemester && !officialResultSource) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
@@ -1032,6 +1033,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     const nextResults=[...results.filter(item=>item.semester!==semesterNumber),{id:"tester-result-"+semesterNumber,semester:semesterNumber,sgpa:nextSgpa,credits:totalCredits,savedAt:new Date().toISOString()}].sort((x,y)=>x.semester-y.semester);
     setResults(nextResults);
     studentStorage.setItem("gradly_semester_results",JSON.stringify(nextResults));
+    if(attemptNumber>1) setReExamTargetCourseCode("");
     const backlogCount=finalSubjects.filter(subject=>subject.grade==="D").length;
     setNotice(attemptNumber>1
       ?"Re-examination result applied to the isolated Tester profile. "+backlogCount+" active backlog(s) remain."
