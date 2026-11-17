@@ -131,10 +131,16 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
   // GECA layouts vary: course codes may appear on several lines after the
   // seat-number heading, so inspect a wider header window and tolerate split
   // PDF text items without treating enrollment numbers as course codes.
-  const headerIndexes = lines.map((line, index) => /(?:Exam\s*Seat|Seat\s*No)/i.test(line.text) ? index : -1).filter(index => index >= 0);
-  for (const headerIndex of headerIndexes) {
-    for (let offset = 1; offset <= 30 && headerIndex + offset < lines.length; offset++) {
-      const line = lines[headerIndex + offset];
+  const headerIndexes = lines.map((line, index) => /(?:Exam\s*Seat|Seat\s*No|Enrollment\s*No|Roll\s*No)/i.test(line.text) ? index : -1).filter(index => index >= 0);
+  // Some GECA re-examination PDFs place course-code headers before the
+  // candidate/seat-number heading. Keep a second bounded header window for
+  // those layouts instead of declaring an enrollment hit unparsable.
+  const windows = headerIndexes.length
+    ? headerIndexes.map(index => ({ start: index + 1, end: Math.min(lines.length, index + 41) }))
+    : [{ start: 0, end: Math.min(lines.length, 80) }];
+  for (const window of windows) {
+    for (let lineIndex = window.start; lineIndex < window.end; lineIndex++) {
+      const line = lines[lineIndex];
       for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
         const item = line.items[itemIndex];
         const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -148,7 +154,7 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
         }
       }
       if (/\bGrade\b/i.test(line.text) && candidates.length) break;
-      if (candidates.length >= 30) break;
+      if (candidates.length >= 40) break;
     }
   }
   const unique = new Map<string, CourseColumn>();
