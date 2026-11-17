@@ -979,50 +979,61 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     fetchedGrades:{courseCode:string;grade:string;courseName?:string;credits?:number;useDefault?:boolean}[],
     sessionTitle:string,
     documentTitle:string,
-    sourceUrl:string
+    sourceUrl:string,
+    attemptNumber=1
   ) {
     if(semesterNumber!==selectedSemester) {
       setNotice("Select Semester "+semesterNumber+" in the workspace before applying this result.");
       return;
     }
     const existingByCode=new Map<string,Subject>(subjects.map(subject=>[normalizeResultCourseCode(subject.courseCode),subject] as const));
-    const finalSubjects:Subject[]=fetchedGrades.flatMap((row,index)=>{
-      const code=normalizeResultCourseCode(row.courseCode);
-      const grade=row.grade.trim().toUpperCase();
-      if(!code||POINTS[grade]===undefined) return [];
-      const existing=existingByCode.get(code);
-      if(row.useDefault&&existing) return [{...existing,id:index+1,grade}];
-      const name=String(row.courseName||existing?.name||"").trim();
-      const credits=Number(row.credits||existing?.credits||0);
-      return [{
-        ...(existing||{}),
-        id:index+1,
-        name:name||code+" · Confirm course name",
-        credits,
-        grade,
-        courseCode:row.courseCode.trim().toUpperCase(),
-        courseType:existing?.courseType||"Official GECA result · additional course",
-        curriculumSubjectId:existing?.curriculumSubjectId,
-        isCustom:!existing,
-      }];
-    });
-    if(!finalSubjects.length) {
-      setNotice("No valid official result courses were selected. Tester subjects were not changed.");
+    let finalSubjects:Subject[];
+    if(attemptNumber>1) {
+      const reExamGrades=new Map(fetchedGrades.map(row=>[normalizeResultCourseCode(row.courseCode),row.grade.trim().toUpperCase()]));
+      finalSubjects=subjects.map(subject=>{
+        const code=normalizeResultCourseCode(subject.courseCode);
+        const nextGrade=reExamGrades.get(code);
+        return nextGrade&&subject.grade.toUpperCase()==="D"&&POINTS[nextGrade]!==undefined?{...subject,grade:nextGrade}:subject;
+      });
+      if(!finalSubjects.some((subject,index)=>subject.grade!==subjects[index]?.grade)) {
+        setNotice("No matching active D-grade subject was found in this re-examination result. Tester profile was not changed.");
+        return;
+      }
+    } else {
+      finalSubjects=fetchedGrades.flatMap((row,index)=>{
+        const code=normalizeResultCourseCode(row.courseCode);
+        const grade=row.grade.trim().toUpperCase();
+        if(!code||POINTS[grade]===undefined) return [];
+        const existing=existingByCode.get(code);
+        const name=String(row.courseName||existing?.name||"").trim();
+        const credits=Number(row.credits||existing?.credits||0);
+        if(!name||credits<=0) return [];
+        return [{...(existing||{}),id:index+1,name,credits,grade,courseCode:row.courseCode.trim().toUpperCase(),courseType:existing?.courseType||"Official GECA result",curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing}];
+      });
+    }
+    if(!finalSubjects.length||finalSubjects.some(subject=>!subject.name.trim()||subject.credits<=0||POINTS[subject.grade]===undefined)) {
+      setNotice("The result is missing a valid subject name, credit value or grade. Tester profile was not changed.");
       return;
     }
+    const totalCredits=finalSubjects.reduce((sum,subject)=>sum+subject.credits,0);
+    const weightedPoints=finalSubjects.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
+    const nextSgpa=Number((weightedPoints/totalCredits).toFixed(3));
     setSubjects(finalSubjects);
     setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:finalSubjects}));
     studentStorage.setItem("gradly_tester_subjects",JSON.stringify(finalSubjects));
     studentStorage.setItem("gradly_tester_online_result_subjects_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(finalSubjects));
     studentStorage.setItem("gradly_tester_online_result_source_"+semesterNumber,JSON.stringify({
-      sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,fetchedAt:new Date().toISOString(),
+      sessionTitle,documentTitle,sourceUrl,enrollmentNumber:profile.enrollment,attemptNumber,fetchedAt:new Date().toISOString(),
       appliedCourseCodes:finalSubjects.map(subject=>subject.courseCode),
-      removedDefaultCourseCount:Math.max(0,subjects.length-finalSubjects.filter(subject=>existingByCode.has(normalizeResultCourseCode(subject.courseCode))).length),
     }));
-    const totalCredits=finalSubjects.reduce((sum,subject)=>sum+(subject.name.trim()&&subject.credits>0?subject.credits:0),0);
-    const weightedPoints=finalSubjects.reduce((sum,subject)=>sum+(subject.name.trim()&&subject.credits>0?subject.credits*(POINTS[subject.grade]??0):0),0);
-    setSgpa(totalCredits>0&&finalSubjects.every(subject=>subject.name.trim()&&subject.credits>0&&POINTS[subject.grade]!==undefined)?Number((weightedPoints/totalCredits).toFixed(3)):null);
-    setNotice("Updated the isolated Tester semester using "+finalSubjects.length+" selected official result courses. Default subjects absent from the result were removed. Confirm any missing course names or credits, then review and save to the Tester tracker. Source: "+documentTitle+".");
+    setSgpa(nextSgpa);
+    const nextResults=[...results.filter(item=>item.semester!==semesterNumber),{id:"tester-result-"+semesterNumber,semester:semesterNumber,sgpa:nextSgpa,credits:totalCredits,savedAt:new Date().toISOString()}].sort((x,y)=>x.semester-y.semester);
+    setResults(nextResults);
+    studentStorage.setItem("gradly_semester_results",JSON.stringify(nextResults));
+    const backlogCount=finalSubjects.filter(subject=>subject.grade==="D").length;
+    setNotice(attemptNumber>1
+      ?"Re-examination result applied to the isolated Tester profile. "+backlogCount+" active backlog(s) remain."
+      :"Official result reflected immediately in the isolated Tester profile. "+backlogCount+" active backlog(s) remain.");
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
