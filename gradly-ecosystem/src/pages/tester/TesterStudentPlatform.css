@@ -1482,3 +1482,95 @@
 /* CGPA SVG uses its own namespaced gradients so the SGPA chart styles cannot shadow them */
 .sp-cgpa-tracker-chart-wrap .sp-tracker-area{fill:url(#cgpaTrackerAreaGradient)}
 .sp-cgpa-tracker-chart-wrap .sp-tracker-line{stroke:url(#cgpaTrackerLineGradient)}
+
+
+/* Stable backlog styling: the red state is tied to grade D, not hover/focus. */
+.sp-curriculum-row.sp-subject-backlog,
+.sp-curriculum-row.sp-subject-backlog:hover,
+.sp-curriculum-row.sp-subject-backlog:focus-within{
+  background:#fff0f0!important;
+  border:1px solid #efb0b0!important;
+  border-left:4px solid #d52d36!important;
+  border-radius:10px!important;
+  padding-left:10px!important;
+  padding-right:8px!important;
+  box-shadow:none!important;
+}
+.sp-curriculum-row.sp-subject-backlog .sp-subject-identity,
+.sp-curriculum-row.sp-subject-backlog .sp-course-code-cell,
+.sp-curriculum-row.sp-subject-backlog .sp-course-type-cell{color:#9f202b!important}
+.sp-curriculum-row.sp-subject-backlog input,
+.sp-curriculum-row.sp-subject-backlog input:focus,
+.sp-curriculum-row.sp-subject-backlog select,
+.sp-curriculum-row.sp-subject-backlog select:focus{
+  border-color:#e6a2a6!important;
+  background:#fff!important;
+  color:#81202a!important;
+  box-shadow:none!important;
+  outline-color:#d52d36!important;
+}
+.sp-curriculum-row.sp-subject-backlog .sp-grade-options button.selected,
+.sp-curriculum-row.sp-subject-backlog .sp-grade-options button.selected:hover,
+.sp-curriculum-row.sp-subject-backlog .sp-grade-options button.selected:focus{
+  background:#c92d38!important;border-color:#a91f2a!important;color:#fff!important;
+}
+.sp-curriculum-row.sp-subject-backlog .sp-grade-options button.selected strong,
+.sp-curriculum-row.sp-subject-backlog .sp-grade-options button.selected small{color:#fff!important}
+.sp-backlog-fetch{
+  width:34px!important;height:34px!important;min-width:34px!important;
+  border:1px solid #a91f2a!important;border-radius:11px!important;
+  background:#c92d38!important;color:#fff!important;font-size:18px!important;
+  box-shadow:0 3px 8px rgba(169,31,42,.2)!important;
+  animation:none!important;transform:none!important;transition:none!important;
+}
+.sp-backlog-fetch:hover,.sp-backlog-fetch:focus-visible{
+  background:#a91f2a!important;color:#fff!important;outline:2px solid #f4b5ba!important;
+  outline-offset:2px;animation:none!important;transform:none!important;
+}
+.sp-sgpa-backlog-flag{
+  display:flex!important;align-items:center!important;gap:11px!important;
+  width:fit-content;max-width:100%;margin:14px 0 16px!important;padding:12px 16px!important;
+  border:1px solid #ef9da3!important;border-left:5px solid #c92d38!important;
+  border-radius:12px!important;background:linear-gradient(110deg,#fff0f1,#fff8f8)!important;
+  color:#9e1f2b!important;font-size:14px!important;font-weight:850!important;
+  box-shadow:0 5px 16px rgba(169,31,42,.09)!important;
+}
+.sp-sgpa-backlog-flag>b{
+  display:grid;place-items:center;width:28px;height:28px;flex:0 0 28px;
+  border-radius:9px;background:#c92d38;color:#fff;font-size:18px;font-weight:900
+}
+.sp-sgpa-backlog-flag>span{font-size:14px!important;letter-spacing:.1px}
+.sp-save-result-actions{margin-top:17px!important}
+.sp-save-result-button{
+  min-height:50px!important;padding:13px 23px!important;border:0!important;
+  border-radius:11px!important;background:linear-gradient(105deg,#172f4b,#285c78)!important;
+  color:#fff!important;font:800 13px 'DM Sans',sans-serif!important;letter-spacing:.15px;
+  box-shadow:0 5px 14px rgba(23,47,75,.18)!important;cursor:pointer!important;
+}
+.sp-save-result-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.sp-save-result-button:disabled{opacity:.48;cursor:not-allowed;transform:none}
+.sp-reexam-subject-callout{
+  display:grid;gap:5px;margin:13px 0;padding:13px 15px;
+  border:1px solid #efb0b0;border-left:4px solid #c92d38;border-radius:11px;
+  background:#fff3f3;color:#79232a
+}
+.sp-reexam-subject-callout>b{font-size:9px;letter-spacing:.9px;text-transform:uppercase;color:#ae3039}
+.sp-reexam-subject-callout>strong{font-size:15px;color:#7f1d25}
+.sp-reexam-subject-callout>span{font-size:11px;line-height:1.55;color:#91474c}
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog,
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog:hover,
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog:focus-within{
+  background:#351d25!important;border-color:#8e3c49!important;border-left-color:#f05260!important;
+}
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog .sp-subject-identity,
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog .sp-course-code-cell,
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog .sp-course-type-cell{color:#ffc4c8!important}
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog input,
+.sp-dark-theme .sp-curriculum-row.sp-subject-backlog select{background:#291a21!important;color:#ffe8e9!important;border-color:#81404a!important}
+.sp-dark-theme .sp-sgpa-backlog-flag{background:#351d25!important;color:#ffc4c8!important;border-color:#8e3c49!important}
+.sp-dark-theme .sp-reexam-subject-callout{background:#351d25;color:#ffc4c8;border-color:#8e3c49}
+@media(max-width:600px){
+ .sp-sgpa-backlog-flag{font-size:12px!important;padding:10px 12px!important}
+ .sp-sgpa-backlog-flag>span{font-size:12px!important}
+ .sp-save-result-button{width:100%;min-height:49px!important}
+}
