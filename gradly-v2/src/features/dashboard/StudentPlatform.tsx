@@ -330,6 +330,13 @@ export default function StudentPlatform() {
         if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
         if(cancelled) return;
         const saved=savedSubjectsBySemester[selectedSemester]||[];
+        const officialResultKey="gradly_online_result_subjects_"+profile.curriculumId+"_"+selectedSemester;
+        if(localStorage.getItem("gradly_online_result_source_"+selectedSemester)) {
+          let authoritative:Subject[]=[];
+          try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
+          if(!authoritative.length) authoritative=saved;
+          if(authoritative.length) { setSubjects(authoritative); return; }
+        }
         let electiveSaved:Subject[]=[];
         try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
         const savedBySubject=new Map<string,Subject>();
@@ -474,7 +481,8 @@ export default function StudentPlatform() {
   const availableOEOptions = OE_OPTIONS.filter(option=>!previouslyOptedOECodes.has(option.code));
   const computedSgpa = countedCredits ? Number((weighted/countedCredits).toFixed(3)) : 0;
   const isCurrentSemesterInProgress = !isGuest && selectedSemester === currentSemester;
-  const canCalculateOfficialSgpa = isGuest || selectedSemester < currentSemester;
+  const hasOfficialFetchedResult = Boolean(localStorage.getItem("gradly_online_result_source_"+selectedSemester));
+  const canCalculateOfficialSgpa = isGuest || selectedSemester < currentSemester || hasOfficialFetchedResult;
   const hasCompleteGrades = subjects.length > 0 && subjects.every(subject => subject.credits <= 0 || (subject.name.trim() && POINTS[subject.grade] !== undefined)) && subjects.some(subject => subject.name.trim() && subject.credits > 0);
 
   useEffect(() => {
@@ -773,6 +781,7 @@ export default function StudentPlatform() {
     }
     setSubjects(updatedSubjects);
     setSavedSubjectsBySemester(current => ({ ...current, [semesterNumber]: updatedSubjects }));
+    localStorage.setItem("gradly_online_result_subjects_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(updatedSubjects));
     const graded = updatedSubjects.filter(subject => subject.name.trim() && subject.credits > 0);
     const allGraded = graded.length === updatedSubjects.length && graded.every(subject => POINTS[subject.grade] !== undefined);
     const totalCredits = graded.reduce((sum, subject) => sum + subject.credits, 0);
@@ -789,7 +798,8 @@ export default function StudentPlatform() {
   async function saveSemester() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
-    if(!isGuest && semesterNumber>=currentSemester) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
+    const hasOfficialFetchedResult = Boolean(localStorage.getItem("gradly_online_result_source_"+semesterNumber));
+    if(!isGuest && semesterNumber>=currentSemester && !hasOfficialFetchedResult) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);

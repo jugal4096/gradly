@@ -222,7 +222,7 @@ export default function StudentOnlineResultSync({
                   <strong>{row.courseName}</strong>
                   <small>Grade {row.grade}{row.credits > 0 ? " · " + row.credits + " credits" : " · Credits need confirmation"} · {row.selected ? "Official result selected" : row.matched ? "Default curriculum retained" : "Not selected"}</small>
                 </div>
-                <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === false }))}>{row.selected ? "Use default course" : "Set as per Result"}</button>
+                <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === undefined ? false : !current[row.code] }))}>{row.selected ? (row.matched ? "Use default course" : "Remove course") : "Set as per Result"}</button>
               </div>)}
             </div>
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
