@@ -65,7 +65,21 @@ export async function listStudentAcademicRecords(req: AuthenticatedRequest, res:
       ...semester,
       courses: courseMap.get(semester.id) ?? [],
     }));
-    const graded = courses.rows.filter((course) => course.grade_point !== null);
+    const latestCourses = await pool.query(
+      `SELECT c.grade_symbol, c.grade_point, c.credits
+       FROM student_semester_courses c
+       JOIN student_semesters ss ON ss.id = c.student_semester_id
+       JOIN semesters sem ON sem.id = ss.semester_id
+       WHERE ss.student_profile_id = $1
+         AND ss.attempt_number = (
+           SELECT MAX(latest.attempt_number)
+           FROM student_semesters latest
+           WHERE latest.student_profile_id = ss.student_profile_id
+             AND latest.semester_id = ss.semester_id
+         )`,
+      [resolved.profile.id],
+    );
+    const graded = latestCourses.rows.filter((course) => course.grade_point !== null);
     const totalCredits = graded.reduce((sum, course) => sum + Number(course.credits || 0), 0);
     const weightedPoints = graded.reduce(
       (sum, course) => sum + Number(course.credits || 0) * Number(course.grade_point || 0), 0,
