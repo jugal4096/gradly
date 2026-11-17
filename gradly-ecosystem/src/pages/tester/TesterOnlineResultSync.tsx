@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
-type ResultGrade = { courseCode: string; grade: string };
+type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
   title: string;
@@ -23,6 +23,7 @@ function normalizeCourseCode(value:unknown):string { return String(value||"").to
 
 type Props = {
   apiBase: string;
+  curriculumId: string;
   testerToken: string;
   enrollmentNumber: string;
   selectedSemester: number;
@@ -31,7 +32,7 @@ type Props = {
 };
 
 export default function TesterOnlineResultSync({
-  apiBase, testerToken, enrollmentNumber, selectedSemester, subjects, onApply,
+  apiBase, curriculumId, testerToken, enrollmentNumber, selectedSemester, subjects, onApply,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<ResultSession[]>([]);
@@ -44,6 +45,21 @@ export default function TesterOnlineResultSync({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
+  const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
+  const [selectedResultCourses, setSelectedResultCourses] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!curriculumId || !selectedSemester) { setCatalogue([]); return; }
+    let cancelled = false;
+    void fetch(apiBase + "/api/academic/curricula/" + encodeURIComponent(curriculumId) + "/semesters/" + selectedSemester + "/subjects?includeAllBranches=true")
+      .then(response => response.json().then(body => ({ response, body })))
+      .then(({ response, body }) => {
+        if (!cancelled && response.ok && Array.isArray(body.data)) {
+          setCatalogue(body.data.map((item: any) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0) })));
+        }
+      }).catch(() => { if (!cancelled) setCatalogue([]); });
+    return () => { cancelled = true; };
+  }, [apiBase, curriculumId, selectedSemester]);
 
   async function openArchive() {
     setOpen(value => !value);
@@ -105,13 +121,21 @@ export default function TesterOnlineResultSync({
       setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
       return;
     }
-    const applicable = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    const applicable = document.grades
+      .filter(row => row.courseCode.trim() && (selectedResultCourses[normalizeCourseCode(row.courseCode)] !== false || subjects.some(subject => normalizeCourseCode(subject.courseCode) === normalizeCourseCode(row.courseCode))) && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
+      .map(row => {
+        const code = normalizeCourseCode(row.courseCode);
+        const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
+        const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
+        const useDefault = selectedResultCourses[code] === false && Boolean(existing);
+        return { ...row, courseName: useDefault ? existing!.name : existing?.name || catalog?.name || row.courseName || "", credits: useDefault ? existing!.credits : Number(existing?.credits || catalog?.credits || row.credits || 0), useDefault };
+      });
     if (!applicable.length) {
-      setError("The PDF was detected, but it did not contain any safely recognised course-code and grade pairs. No Tester data was changed.");
+      setError("Select at least one valid course from the official result. No Tester data was changed.");
       return;
     }
     onApply(document.semester, applicable, sessionTitle, document.title, document.url);
-    setNotice("Applied " + applicable.length + " official course grades to the existing Tester semester table. PDF-only courses are not added as extra rows.");
+    setNotice("Prepared " + applicable.length + " selected official result courses. The result course list will replace default subjects absent from the PDF.");
     setError("");
   }
 
@@ -176,21 +200,30 @@ export default function TesterOnlineResultSync({
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
           const knownCodes = new Set(subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean));
-          const matchingSubjects = document.grades.filter(row => knownCodes.has(normalizeCourseCode(row.courseCode)));
-          const additionalSubjects = document.grades.filter(row => !knownCodes.has(normalizeCourseCode(row.courseCode)));
-          const canApply = document.semester === selectedSemester && document.grades.length > 0;
+          const resultRows = document.grades.map(row => {
+            const code = normalizeCourseCode(row.courseCode);
+            const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
+            const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
+            return { ...row, code, courseName: existing?.name || catalog?.name || row.courseName || "Course name not found in the curriculum catalogue", credits: Number(existing?.credits || catalog?.credits || row.credits || 0), matched: knownCodes.has(code), selected: selectedResultCourses[code] !== false };
+          });
+          const matchingCount = resultRows.filter(row => row.matched).length;
+          const selectedCount = resultRows.filter(row => row.selected).length;
+          const canApply = document.semester === selectedSemester && resultRows.some(row => row.selected || row.matched);
           return <article className="sp-online-match" key={document.url}>
-            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingSubjects.length} curriculum matches · {additionalSubjects.length} additional courses</small></div><span>{document.grades.length} grades</span></div>
-            <div className="sp-online-grade-section">
-              <strong>Courses matched with Gradly curriculum</strong>
-              <div className="sp-online-grade-list">{matchingSubjects.length ? matchingSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>) : <small>No course codes from this PDF match the currently loaded curriculum.</small>}</div>
+            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingCount} curriculum matches · {resultRows.length - matchingCount} mismatches</small></div><span>{document.grades.length} courses</span></div>
+            <div className="sp-online-result-courses">
+              <strong>Official result courses · {selectedCount} selected</strong>
+              {resultRows.map(row => <div className="sp-online-course-row" key={row.courseCode}>
+                <div className="sp-online-course-details">
+                  <div className="sp-online-course-code"><b>{row.courseCode}</b><span className={row.matched ? "is-matched" : "is-mismatched"}>{row.matched ? "Curriculum match" : "Curriculum mismatch"}</span></div>
+                  <strong>{row.courseName}</strong>
+                  <small>Grade {row.grade}{row.credits > 0 ? " · " + row.credits + " credits" : " · Credits need confirmation"} · {row.selected ? "Official result selected" : row.matched ? "Default curriculum retained" : "Not selected"}</small>
+                </div>
+                <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === false }))}>{row.selected ? "Use default course" : "Set as per Result"}</button>
+              </div>)}
             </div>
-            {additionalSubjects.length > 0 && <div className="sp-online-unmapped-section">
-              <div><strong>Additional courses found in official PDF</strong><small>These course codes do not have an existing row in the loaded semester table. They will be skipped; Gradly will not create extra subject rows or include them in SGPA.</small></div>
-              <div className="sp-online-grade-list">{additionalSubjects.map(row=><span key={row.courseCode}><b>{row.courseCode}</b>{row.grade}</span>)}</div>
-            </div>}
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
-              {canApply ? "Fill matching grades in Semester " + selectedSemester + " table" : document.semester ? "Switch to Semester " + document.semester + " to apply" : "Cannot apply · semester not detected"}
+              {canApply ? "Apply selected result courses to Semester " + selectedSemester : document.semester ? "Select at least one course" : "Cannot apply · semester not detected"}
             </button>
           </article>;
         })}
