@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "./StudentOnlineResultSync.css";
 
 type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
-type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number };
+type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
   title: string;
@@ -125,12 +125,13 @@ export default function StudentOnlineResultSync({
       return;
     }
     const applicable = document.grades
-      .filter(row => row.courseCode.trim() && selectedResultCourses[normalizeCourseCode(row.courseCode)] !== false && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
+      .filter(row => row.courseCode.trim() && (selectedResultCourses[normalizeCourseCode(row.courseCode)] !== false || subjects.some(subject => normalizeCourseCode(subject.courseCode) === normalizeCourseCode(row.courseCode))) && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
       .map(row => {
         const code = normalizeCourseCode(row.courseCode);
         const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
         const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-        return { ...row, courseName: existing?.name || catalog?.name || row.courseName || "", credits: Number(existing?.credits || catalog?.credits || row.credits || 0) };
+        const useDefault = selectedResultCourses[code] === false && Boolean(existing);
+        return { ...row, courseName: useDefault ? existing!.name : existing?.name || catalog?.name || row.courseName || "", credits: useDefault ? existing!.credits : Number(existing?.credits || catalog?.credits || row.credits || 0), useDefault };
       });
     if (!applicable.length) {
       setError("Select at least one valid course from the official result. No subjects were changed.");
@@ -210,7 +211,7 @@ export default function StudentOnlineResultSync({
           });
           const matchingCount = resultRows.filter(row => row.matched).length;
           const selectedCount = resultRows.filter(row => row.selected).length;
-          const canApply = document.semester === selectedSemester && selectedCount > 0;
+          const canApply = document.semester === selectedSemester && resultRows.some(row => row.selected || row.matched);
           return <article className="sp-online-match" key={document.url}>
             <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingCount} curriculum matches · {resultRows.length - matchingCount} mismatches</small></div><span>{document.grades.length} courses</span></div>
             <div className="sp-online-result-courses">
@@ -219,7 +220,7 @@ export default function StudentOnlineResultSync({
                 <div className="sp-online-course-details">
                   <div className="sp-online-course-code"><b>{row.courseCode}</b><span className={row.matched ? "is-matched" : "is-mismatched"}>{row.matched ? "Curriculum match" : "Curriculum mismatch"}</span></div>
                   <strong>{row.courseName}</strong>
-                  <small>Grade {row.grade}{row.credits > 0 ? " · " + row.credits + " credits" : " · Credits need confirmation"}</small>
+                  <small>Grade {row.grade}{row.credits > 0 ? " · " + row.credits + " credits" : " · Credits need confirmation"} · {row.selected ? "Official result selected" : row.matched ? "Default curriculum retained" : "Not selected"}</small>
                 </div>
                 <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === false }))}>{row.selected ? "Use default course" : "Set as per Result"}</button>
               </div>)}
