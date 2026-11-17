@@ -85,6 +85,8 @@ function EcosystemEntry() {
           {/* USER */}
           <a
             href={mainAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="interface-module user-module"
           >
 
