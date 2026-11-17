@@ -105,3 +105,27 @@
 .sp-online-course-row>button{flex:0 0 auto;padding:7px 10px;border:1px solid var(--line,#dce4ee);border-radius:7px;background:transparent;color:var(--ink,#183047);font-size:10px;font-weight:800;cursor:pointer}
 .sp-online-course-row>button.is-selected{border-color:#267d70;background:#edf7f4;color:#21695f}
 @media(max-width:520px){.sp-online-course-row{align-items:flex-start;flex-direction:column}.sp-online-course-row>button{width:100%}}
+
+
+/* Compact official-result summary and active-backlog treatment */
+.sp-online-result-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:13px 0}
+.sp-online-result-summary>div{display:grid;gap:3px;padding:11px 12px;border:1px solid var(--line,#dce4ee);border-radius:10px;background:var(--panel,#fff)}
+.sp-online-result-summary strong{font-size:19px;line-height:1;color:var(--ink,#183047)}
+.sp-online-result-summary span{font-size:9px;color:var(--muted,#718195)}
+.sp-online-result-summary .has-backlog{border-color:#f0b8b8;background:#fff1f1}
+.sp-online-result-summary .has-backlog strong{color:#bd2929}
+.sp-online-backlog-alert,.sp-active-backlog-notice{display:grid;gap:4px;margin:10px 0;padding:11px 13px;border:1px solid #efb6b6;border-left:4px solid #d73737;border-radius:10px;background:#fff2f2;color:#922727}
+.sp-online-backlog-alert b,.sp-active-backlog-notice b{font-size:11px}
+.sp-online-backlog-alert span,.sp-active-backlog-notice span{font-size:10px;line-height:1.45}
+.sp-active-backlog-notice small{font-size:9px;color:#9a5555}
+.sp-online-reexam-prompt{display:grid;gap:8px;margin-top:12px;padding:12px;border:1px solid #e8c6c6;border-radius:10px;background:#fffafa}
+.sp-online-reexam-prompt>strong{font-size:11px;color:#753535}
+.sp-online-reexam-prompt>div{display:flex;gap:7px;flex-wrap:wrap}
+.sp-online-reexam-prompt button,.sp-online-reexam-launch{padding:8px 11px;border:1px solid #e0caca;border-radius:8px;background:#fff;color:#754444;font-size:10px;font-weight:800;cursor:pointer}
+.sp-online-reexam-prompt button.selected,.sp-online-reexam-launch{border-color:#c43c3c;background:#c43c3c;color:#fff}
+.sp-online-reexam-prompt small,.sp-online-reexam-mode{font-size:10px;line-height:1.5;color:#8d5555}
+.sp-subject-backlog{background:#fff1f1!important;border:1px solid #e8aaaa!important;box-shadow:inset 3px 0 0 #d73737!important}
+.sp-subject-backlog .sp-subject-identity input,.sp-subject-backlog .sp-course-code-cell,.sp-subject-backlog .sp-course-type-cell{color:#9f2929!important}
+.sp-subject-backlog .sp-grade-options button.selected{border-color:#cf3838!important;background:#ffe0e0!important;color:#a51f1f!important}
+.sp-subject-backlog .sp-grade-options button.selected strong{color:#a51f1f!important}
+@media(max-width:520px){.sp-online-result-summary{gap:5px}.sp-online-result-summary>div{padding:9px 7px}.sp-online-result-summary strong{font-size:17px}}
