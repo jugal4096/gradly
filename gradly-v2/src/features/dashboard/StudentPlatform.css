@@ -2270,3 +2270,19 @@
   border:0!important;border-radius:50%!important;background:#805400!important;
 }
 .sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock > em{display:none!important}
+
+
+/* Critical contrast fix: an old guest rule dimmed the entire locked row,
+   including its yellow lock. Keep the row and lock fully opaque. */
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked{
+  opacity:1!important;
+  filter:none!important;
+}
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock{
+  opacity:1!important;filter:none!important;
+  background:#ffdf55!important;border-color:#d99a00!important;
+}
+.sp-guest-mode .sp-sidebar .sp-nav-items button.sp-nav-locked > .sp-nav-lock > .sp-nav-lock-icon{
+  opacity:1!important;filter:none!important;
+  border-color:#805000!important;background:#f5b91e!important;
+}
