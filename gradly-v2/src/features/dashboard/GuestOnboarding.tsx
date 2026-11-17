@@ -95,6 +95,7 @@ export default function GuestOnboarding({onComplete}:{onComplete:()=>void}){
      localStorage.setItem(ID_KEY,d.guest.guestId);
      localStorage.setItem("gradly_guest_session_token",d.guest.sessionToken);
      localStorage.setItem("gradly_guest_institute",d.guest.institutionId);
+     localStorage.setItem("gradly_guest_remembered_session","true");
      if(institution)localStorage.setItem("gradly_guest_institute_name",institution.name);
      localStorage.removeItem(REQUEST_KEY);onComplete();
    }catch(e){setError(e instanceof Error?e.message:"Unable to create your guest workspace.");}
