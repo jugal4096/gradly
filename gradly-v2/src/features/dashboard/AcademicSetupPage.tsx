@@ -372,7 +372,7 @@ export default function AcademicSetupPage() {
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
-      setExamSetupChoice(true);
+      navigate("/dashboard", { replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
     finally { setSaving(false); }
   }
