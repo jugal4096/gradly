@@ -34,3 +34,228 @@ button:focus-visible,a:focus-visible{outline:3px solid #a6e9ce;outline-offset:4p
 @media(max-width:900px){.welcome-page{padding-left:7vw;padding-right:7vw}.hero-visual{left:36%;opacity:.9}.hero-vignette{background:linear-gradient(90deg,#030a1b 0%,rgba(3,10,27,.98) 34%,rgba(3,10,27,.65) 62%,rgba(3,10,27,.12) 100%),linear-gradient(0deg,#030a1b 0%,transparent 25%)}.hero-copy{width:min(560px,58vw)}.welcome-title{font-size:clamp(42px,6vw,62px)}.hero-features{width:100%;gap:18px}.journey-connector{width:4vw}.journey-step{gap:8px}.journey-step strong{font-size:14px}}
 @media(max-width:620px){.welcome-page{min-height:100svh;padding:23px 22px 0}.hero-visual{inset:70px -22% auto 0;height:410px;opacity:.68}.hero-visual img{width:100%;height:100%;object-fit:contain;object-position:top right}.hero-vignette{background:linear-gradient(180deg,rgba(3,10,27,.05) 0%,rgba(3,10,27,.45) 35%,#030a1b 78%),linear-gradient(90deg,#030a1b 0%,rgba(3,10,27,.08) 100%)}.welcome-brand{min-height:42px}.gradly-mark{width:34px;height:34px}.brand-wordmark{font-size:26px}.hero-copy{width:100%;margin:0;padding:285px 0 35px}.story-intro{font-size:9px;margin-bottom:17px;padding:8px 12px}.welcome-rotating-frame{min-height:42px;margin-bottom:7px}.welcome-rotating-line{font-size:15px}.welcome-title{font-size:clamp(39px,10vw,53px)}.welcome-subtitle{font-size:21px;margin:11px 0 25px}.auth-actions{width:100%;gap:11px}.google-signin,.guest-signin{height:56px;border-radius:10px;font-size:15px}.welcome-legal{font-size:11px;margin-top:18px}.hero-features{width:100%;justify-content:space-between;gap:5px;padding:19px 0 43px}.journey-step{flex-direction:column;gap:7px}.journey-icon-wrap{width:39px;height:39px}.journey-icon{width:19px;height:19px}.journey-step strong{font-size:11px}.journey-connector{width:5vw;margin-bottom:18px}.hero-bottom-curve{bottom:-51px;height:62px}}
 @media(max-width:370px){.welcome-page{padding-left:18px;padding-right:18px}.hero-copy{padding-top:260px}.welcome-title{font-size:37px}.journey-step strong{font-size:10px}.journey-icon-wrap{width:35px;height:35px}}
+
+
+/* GRADLY LOGIN CENTERED REDESIGN */
+/* Keep the existing orbit artwork, but let it frame a centered welcome experience. */
+.welcome-page {
+  align-items: center;
+  text-align: center;
+  padding-left: clamp(22px, 7vw, 110px);
+  padding-right: clamp(22px, 7vw, 110px);
+}
+
+.hero-visual {
+  inset: 0;
+  opacity: .62;
+}
+
+.hero-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.hero-vignette {
+  background:
+    radial-gradient(ellipse at 50% 43%, rgba(3,10,27,.35) 0%, rgba(3,10,27,.72) 48%, rgba(3,10,27,.92) 100%),
+    linear-gradient(180deg, rgba(3,10,27,.38), rgba(3,10,27,.18) 45%, #030a1b 100%);
+}
+
+.welcome-brand {
+  width: 100%;
+  justify-content: center;
+}
+
+.hero-copy {
+  width: min(620px, 100%);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 48px;
+  padding-bottom: 44px;
+}
+
+.story-intro {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome-rotating-frame {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  min-height: 34px;
+}
+
+.welcome-rotating-line {
+  text-align: center;
+}
+
+.welcome-title,
+.welcome-subtitle {
+  width: 100%;
+  text-align: center;
+}
+
+.welcome-title {
+  text-wrap: balance;
+  text-shadow: 0 5px 35px rgba(0,0,0,.2);
+}
+
+.welcome-subtitle {
+  margin-top: 13px;
+  margin-bottom: 30px;
+}
+
+.auth-actions {
+  width: min(440px, 100%);
+  align-items: stretch;
+}
+
+.google-signin,
+.guest-signin {
+  border-radius: 14px;
+  min-height: 60px;
+}
+
+.google-signin {
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+}
+
+.guest-signin {
+  background: rgba(8,16,32,.68);
+  backdrop-filter: blur(14px);
+}
+
+.welcome-legal,
+.welcome-error {
+  width: min(440px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.hero-features {
+  width: min(900px, 100%);
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 24px;
+  border-top-color: rgba(205,220,235,.28);
+}
+
+.journey-step {
+  min-width: 105px;
+}
+
+.journey-icon-wrap {
+  background: rgba(255,255,255,.045);
+  backdrop-filter: blur(8px);
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.journey-step:hover .journey-icon-wrap {
+  transform: translateY(-3px);
+  border-color: rgba(181,239,206,.9);
+  background: rgba(181,239,206,.1);
+}
+
+@media (min-width: 621px) {
+  .welcome-page {
+    min-height: 100svh;
+  }
+
+  .hero-copy {
+    flex: 1 0 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 620px) {
+  .welcome-page {
+    padding-left: 22px;
+    padding-right: 22px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-visual {
+    inset: 52px -18% auto;
+    height: 390px;
+    opacity: .55;
+  }
+
+  .hero-visual img {
+    object-fit: contain;
+    object-position: top center;
+  }
+
+  .hero-vignette {
+    background:
+      linear-gradient(180deg, rgba(3,10,27,.12) 0%, rgba(3,10,27,.3) 30%, #030a1b 82%),
+      linear-gradient(90deg, #030a1b 0%, rgba(3,10,27,.05) 50%, #030a1b 100%);
+  }
+
+  .welcome-brand {
+    justify-content: center;
+  }
+
+  .hero-copy {
+    width: 100%;
+    margin: 0 auto;
+    padding: 245px 0 28px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .story-intro {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .welcome-title,
+  .welcome-subtitle,
+  .welcome-rotating-frame,
+  .welcome-rotating-line {
+    text-align: center;
+  }
+
+  .auth-actions {
+    width: 100%;
+  }
+
+  .welcome-legal,
+  .welcome-error {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .hero-features {
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+    padding-top: 18px;
+  }
+
+  .journey-step {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .journey-connector {
+    width: 4vw;
+    flex: 0 1 4vw;
+  }
+}
+
+@media (max-width: 370px) {
+  .hero-copy {
+    padding-top: 225px;
+  }
+}
