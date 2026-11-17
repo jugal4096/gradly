@@ -46,6 +46,7 @@ export default function TesterOnlineResultSync({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
+  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
   const [reExamChoice, setReExamChoice] = useState<boolean | null>(null);
   const [reExamMode, setReExamMode] = useState(false);
@@ -91,6 +92,7 @@ export default function TesterOnlineResultSync({
   useEffect(() => {
     if (!reExamTargetCourseCode) return;
     setReExamMode(true);
+    setReExamChoice(null);
     setOpen(true);
     setScan(null);
     setSelectedSessionId("");
@@ -159,7 +161,7 @@ export default function TesterOnlineResultSync({
       <strong>Fetch official results</strong>
       <small>{loadingSessions ? "Loading GECA archive…" : sessions.length ? sessions.length + " examination sessions available" : "Browse GECA result archive"}</small>
     </button>
-    {open && <section className="sp-online-result-panel" aria-busy={loadingSessions || Boolean(loadingSessionId)}>
+    {open && createPortal(<div className="sp-online-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}><section className="sp-online-result-panel sp-online-result-modal" role="dialog" aria-modal="true" aria-label={reExamMode?"Choose re-examination session":"Choose examination session"} aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
         <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Choose an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>★ Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
         <button type="button" onClick={() => setOpen(false)} aria-label="Close online result archive">×</button>
@@ -185,9 +187,10 @@ export default function TesterOnlineResultSync({
         </div>
       </div>, document.body)}
 {loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
+      {!loadingSessions && reExamMode && sessions.length>0 && visibleSessions.length===0 && <p className="sp-online-result-muted">No re-examination sessions are currently listed in the GECA archive. Regular examination sessions are hidden in this view.</p>}
       {error && <p className="sp-online-result-error" role="alert">{error}</p>}
-      {sessions.length > 0 && <div className="sp-online-session-list">
-        {sessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId)}>
+      {visibleSessions.length > 0 && <div className="sp-online-session-list">
+        {visibleSessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId)}>
           <span><b>{session.title}</b><small>GECA examination result</small></span>
           <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Scan →"}</strong>
         </button>)}
@@ -223,6 +226,6 @@ export default function TesterOnlineResultSync({
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved to this isolated browser session</span></div>
-    </section>}
+    </section></div>, document.body)}
   </>;
 }
