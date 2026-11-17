@@ -47,10 +47,10 @@ export default function StudentOnlineResultSync({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
-  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
   const [reExamChoice, setReExamChoice] = useState<boolean | null>(null);
   const [reExamMode, setReExamMode] = useState(false);
+  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
 
   useEffect(() => {
     if (!curriculumId || !selectedSemester) { setCatalogue([]); return; }
