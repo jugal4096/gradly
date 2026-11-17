@@ -28,7 +28,7 @@ type Props = {
   enrollmentNumber: string;
   selectedSemester: number;
   subjects: TesterSubject[];
-  onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string) => void;
+  onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string, attemptNumber: number) => void | Promise<void>;
 };
 
 export default function TesterOnlineResultSync({
@@ -46,7 +46,8 @@ export default function TesterOnlineResultSync({
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
-  const [selectedResultCourses, setSelectedResultCourses] = useState<Record<string, boolean>>({});
+  const [reExamChoice, setReExamChoice] = useState<boolean | null>(null);
+  const [reExamMode, setReExamMode] = useState(false);
 
   useEffect(() => {
     if (!curriculumId || !selectedSemester) { setCatalogue([]); return; }
@@ -122,20 +123,19 @@ export default function TesterOnlineResultSync({
       return;
     }
     const applicable = document.grades
-      .filter(row => row.courseCode.trim() && (selectedResultCourses[normalizeCourseCode(row.courseCode)] !== false || subjects.some(subject => normalizeCourseCode(subject.courseCode) === normalizeCourseCode(row.courseCode))) && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
+      .filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
       .map(row => {
         const code = normalizeCourseCode(row.courseCode);
         const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
         const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-        const useDefault = selectedResultCourses[code] === false && Boolean(existing);
-        return { ...row, courseName: useDefault ? existing!.name : existing?.name || catalog?.name || row.courseName || "", credits: useDefault ? existing!.credits : Number(existing?.credits || catalog?.credits || row.credits || 0), useDefault };
+        return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 0) };
       });
-    if (!applicable.length) {
-      setError("Select at least one valid course from the official result. No Tester data was changed.");
+    if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
+      setError("The official PDF did not provide enough course details to save this result. No academic data was changed.");
       return;
     }
-    onApply(document.semester, applicable, sessionTitle, document.title, document.url);
-    setNotice("Prepared " + applicable.length + " selected official result courses. The result course list will replace default subjects absent from the PDF.");
+    void onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
+    setNotice(reExamMode ? "Re-examination result is being applied to your active backlog subjects…" : "Official result is being saved directly to your academic profile…");
     setError("");
   }
 
@@ -164,7 +164,7 @@ export default function TesterOnlineResultSync({
     </button>
     {open && <section className="sp-online-result-panel" aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
-        <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>Choose an examination session</h3><p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
+        <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>{reExamMode ? "Choose a re-examination session" : "Choose an examination session"}</h3><p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
         <button type="button" onClick={() => setOpen(false)} aria-label="Close online result archive">×</button>
       </div>
       {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
@@ -196,35 +196,30 @@ export default function TesterOnlineResultSync({
         </button>)}
       </div>}
       {scan && <div className="sp-online-scan-result">
-        <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.enrollmentHits} enrollment hits · {scan.matches.length} parsed · {scan.parseFailures} parse issues</span></div>
+        <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.enrollmentHits} enrollment hits · {scan.matches.length} result found · {scan.parseFailures} parse issues</span></div>
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
-          const knownCodes = new Set(subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean));
-          const resultRows = document.grades.map(row => {
-            const code = normalizeCourseCode(row.courseCode);
-            const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
-            const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-            return { ...row, code, courseName: existing?.name || catalog?.name || row.courseName || "Course name not found in the curriculum catalogue", credits: Number(existing?.credits || catalog?.credits || row.credits || 0), matched: knownCodes.has(code), selected: selectedResultCourses[code] !== false };
-          });
-          const matchingCount = resultRows.filter(row => row.matched).length;
-          const selectedCount = resultRows.filter(row => row.selected).length;
-          const canApply = document.semester === selectedSemester && resultRows.some(row => row.selected || row.matched);
+          const validRows = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+          const backlogRows = validRows.filter(row => row.grade.toUpperCase() === "D");
+          const canApply = document.semester === selectedSemester && validRows.length > 0;
           return <article className="sp-online-match" key={document.url}>
-            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"} · {matchingCount} curriculum matches · {resultRows.length - matchingCount} mismatches</small></div><span>{document.grades.length} courses</span></div>
-            <div className="sp-online-result-courses">
-              <strong>Official result courses · {selectedCount} selected</strong>
-              {resultRows.map(row => <div className="sp-online-course-row" key={row.courseCode}>
-                <div className="sp-online-course-details">
-                  <div className="sp-online-course-code"><b>{row.courseCode}</b><span className={row.matched ? "is-matched" : "is-mismatched"}>{row.matched ? "Curriculum match" : "Curriculum mismatch"}</span></div>
-                  <strong>{row.courseName}</strong>
-                  <small>Grade {row.grade}{row.credits > 0 ? " · " + row.credits + " credits" : " · Credits need confirmation"} · {row.selected ? "Official result selected" : row.matched ? "Default curriculum retained" : "Not selected"}</small>
-                </div>
-                <button type="button" className={row.selected ? "is-selected" : ""} onClick={() => setSelectedResultCourses(current => ({ ...current, [row.code]: current[row.code] === undefined ? false : !current[row.code] }))}>{row.selected ? (row.matched ? "Use default course" : "Remove course") : "Set as per Result"}</button>
-              </div>)}
+            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"}</small></div><span>{validRows.length} subjects</span></div>
+            <div className="sp-online-result-summary">
+              <div><strong>{validRows.length}</strong><span>Official subjects</span></div>
+              <div><strong>{validRows.length - backlogRows.length}</strong><span>Cleared</span></div>
+              <div className={backlogRows.length ? "has-backlog" : ""}><strong>{backlogRows.length}</strong><span>Active backlogs</span></div>
             </div>
+            {backlogRows.length > 0 && !reExamMode && <div className="sp-online-backlog-alert"><b>！ {backlogRows.length} active backlog{backlogRows.length===1?"":"s"}</b><span>{backlogRows.map(row=>row.courseName || row.courseCode).slice(0,3).join(" · ")}{backlogRows.length>3?" · +"+(backlogRows.length-3)+" more":""}</span></div>}
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
-              {canApply ? "Apply selected result courses to Semester " + selectedSemester : document.semester ? "Select at least one course" : "Cannot apply · semester not detected"}
+              {canApply ? (reExamMode ? "Apply re-exam result to profile" : "Update academic profile") : "Semester does not match"}
             </button>
+            {backlogRows.length > 0 && !reExamMode && <div className="sp-online-reexam-prompt">
+              <strong>Have you applied for a re-examination?</strong>
+              <div><button type="button" className={reExamChoice===true?"selected":""} onClick={()=>setReExamChoice(true)}>Yes, I have</button><button type="button" className={reExamChoice===false?"selected":""} onClick={()=>setReExamChoice(false)}>Not yet</button></div>
+              {reExamChoice===true && <button type="button" className="sp-online-reexam-launch" onClick={()=>{setReExamMode(true);setScan(null);setSelectedSessionId("");setNotice("Choose the GECA re-examination session and scan your enrollment again.");setError("");}}>Fetch re-examination result →</button>}
+              {reExamChoice===false && <small>We’ll keep the D grade marked as an active backlog. You can fetch the re-examination result whenever it is declared.</small>}
+            </div>}
+            {reExamMode && <p className="sp-online-reexam-mode">Re-examination mode · fetched grades will update the existing backlog attempt without replacing unrelated subjects.</p>}
           </article>;
         })}
         {scan.matches.some(document => document.semester === selectedSemester) && <div className="sp-online-preview">
@@ -233,7 +228,7 @@ export default function TesterOnlineResultSync({
         </div>}
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
-      <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Read-only portal scan · local Tester profile update only</span></div>
+      <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved to this isolated browser session</span></div>
     </section>}
   </>;
 }
