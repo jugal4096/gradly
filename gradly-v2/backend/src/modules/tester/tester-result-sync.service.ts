@@ -49,14 +49,37 @@ function safeGecaUrl(href: string): string | null {
 async function fetchGecaText(url: string): Promise<string> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) throw new Error("The GECA result link is not a trusted college URL.");
-  const response = await fetch(safeUrl, { signal: AbortSignal.timeout(25000), headers: { "User-Agent": "Gradly-Result-Sync/1.0" } });
-  if (!response.ok) throw new Error("GECA result portal returned HTTP " + response.status + ".");
-  return response.text();
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await fetch(safeUrl, {
+        signal: AbortSignal.timeout(20000),
+        headers: { "User-Agent": "Gradly-Result-Sync/1.0", "Accept": "text/html,application/xhtml+xml" },
+      });
+      if (!response.ok) throw new Error("GECA result portal returned HTTP " + response.status + ".");
+      return await response.text();
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+  }
+
+  const detail = lastError instanceof Error ? lastError.message : "unknown network error";
+  throw new Error("Unable to connect to the GECA result portal after 2 attempts. Check that this backend can reach https://geca.ac.in, then retry. (" + detail + ")");
 }
 
 export async function listGecaResultSessions(): Promise<GecaResultSession[]> {
   if (sessionCache && sessionCache.expiresAt > Date.now()) return sessionCache.sessions;
-  const html = await fetchGecaText(RESULT_MASTER_URL);
+  let html: string;
+  try {
+    html = await fetchGecaText(RESULT_MASTER_URL);
+  } catch (error) {
+    // If GECA is temporarily unreachable, preserve the last known archive list
+    // rather than making the result-fetch feature completely unavailable.
+    if (sessionCache?.sessions.length) return sessionCache.sessions;
+    throw error;
+  }
   const sessions: GecaResultSession[] = [];
   for (const row of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
     const cells = [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)];
