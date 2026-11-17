@@ -9,7 +9,7 @@ import {
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  const mainAppUrl = "https://gradly-peach.vercel.app";
+  const mainAppUrl = "https://gradly-v2.vercel.app";
 
   return (
     <main className="system-page">
