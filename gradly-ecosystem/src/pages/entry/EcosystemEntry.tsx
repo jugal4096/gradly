@@ -9,9 +9,7 @@ import {
 import "./EcosystemEntry.css";
 
 function EcosystemEntry() {
-  const mainAppUrl =
-    import.meta.env.VITE_MAIN_APP_URL ||
-    "https://jugalsgpa.netlify.app";
+  const mainAppUrl = "https://gradly-peach.vercel.app";
 
   return (
     <main className="system-page">
