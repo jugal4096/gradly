@@ -743,56 +743,93 @@ export default function StudentPlatform() {
     setSubjects(current=>[...current,subject].sort((a,b)=>a.id-b.id));
     setSgpa(null); setNotice("");
   }
-  function applyOnlineResultToStudent(
+  async function applyOnlineResultToStudent(
     semesterNumber: number,
     fetchedGrades: { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean }[],
     sessionTitle: string,
     documentTitle: string,
-    sourceUrl: string
+    sourceUrl: string,
+    attemptNumber = 1
   ) {
-    if (semesterNumber !== selectedSemester) {
-      setNotice("Select Semester " + semesterNumber + " in the workspace before applying this result.");
+    if (semesterNumber !== selectedSemester || !user) {
+      setNotice("Select Semester " + semesterNumber + " and sign in before applying this result.");
       return;
     }
     const existingByCode = new Map<string, Subject>(subjects.map(subject => [normalizeResultCourseCode(subject.courseCode), subject] as const));
-    const updatedSubjects: Subject[] = fetchedGrades.flatMap((row, index) => {
-      const code = normalizeResultCourseCode(row.courseCode);
-      const grade = row.grade.trim().toUpperCase();
-      if (!code || POINTS[grade] === undefined) return [];
-      const existing = existingByCode.get(code);
-      if (row.useDefault && existing) return [{ ...existing, id: index + 1, grade }];
-      const name = String(row.courseName || existing?.name || "").trim();
-      const credits = Number(row.credits || existing?.credits || 0);
-      return [{
-        ...(existing || {}),
-        id: index + 1,
-        name: name || code + " · Confirm course name",
-        credits,
-        grade,
-        courseCode: row.courseCode.trim().toUpperCase(),
-        courseType: existing?.courseType || "Official GECA result · additional course",
-        curriculumSubjectId: existing?.curriculumSubjectId,
-        isCustom: !existing,
-      }];
-    });
-    if (!updatedSubjects.length) {
-      setNotice("No valid official result courses were selected. Your semester subjects were not changed.");
+    let updatedSubjects: Subject[];
+    if (attemptNumber > 1) {
+      const reExamGrades = new Map(fetchedGrades.map(row => [normalizeResultCourseCode(row.courseCode), row.grade.trim().toUpperCase()]));
+      updatedSubjects = subjects.map(subject => {
+        const code = normalizeResultCourseCode(subject.courseCode);
+        const nextGrade = reExamGrades.get(code);
+        return nextGrade && subject.grade.toUpperCase() === "D" && POINTS[nextGrade] !== undefined ? { ...subject, grade: nextGrade } : subject;
+      });
+    } else {
+      updatedSubjects = fetchedGrades.flatMap((row, index) => {
+        const code = normalizeResultCourseCode(row.courseCode);
+        const grade = row.grade.trim().toUpperCase();
+        if (!code || POINTS[grade] === undefined) return [];
+        const existing = existingByCode.get(code);
+        const name = String(row.courseName || existing?.name || "").trim();
+        const credits = Number(row.credits || existing?.credits || 0);
+        if (!name || credits <= 0) return [];
+        return [{
+          ...(existing || {}), id: index + 1, name, credits, grade,
+          courseCode: row.courseCode.trim().toUpperCase(),
+          courseType: existing?.courseType || "Official GECA result",
+          curriculumSubjectId: existing?.curriculumSubjectId, isCustom: !existing,
+        }];
+      });
+    }
+    if (!updatedSubjects.length || updatedSubjects.some(subject => !subject.name.trim() || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
+      setNotice("The result is missing a valid subject name, credit value or grade. No academic data was changed.");
       return;
     }
-    setSubjects(updatedSubjects);
-    setSavedSubjectsBySemester(current => ({ ...current, [semesterNumber]: updatedSubjects }));
-    localStorage.setItem("gradly_online_result_subjects_"+profile.curriculumId+"_"+semesterNumber,JSON.stringify(updatedSubjects));
-    const graded = updatedSubjects.filter(subject => subject.name.trim() && subject.credits > 0);
-    const allGraded = graded.length === updatedSubjects.length && graded.every(subject => POINTS[subject.grade] !== undefined);
-    const totalCredits = graded.reduce((sum, subject) => sum + subject.credits, 0);
-    const weightedPoints = graded.reduce((sum, subject) => sum + subject.credits * (POINTS[subject.grade] ?? 0), 0);
-    setSgpa(allGraded && totalCredits > 0 ? weightedPoints / totalCredits : null);
-    localStorage.setItem("gradly_online_result_source_" + semesterNumber, JSON.stringify({
-      sessionTitle, documentTitle, sourceUrl, enrollmentNumber: profile.enrollment, fetchedAt: new Date().toISOString(),
-      appliedCourseCodes: updatedSubjects.map(subject => subject.courseCode),
-      removedDefaultCourseCount: Math.max(0, subjects.length - updatedSubjects.filter(subject => existingByCode.has(normalizeResultCourseCode(subject.courseCode))).length),
-    }));
-    setNotice("Replaced the semester subject list with " + updatedSubjects.length + " selected official result courses. Default subjects absent from the result were removed. " + (allGraded ? "Review the SGPA and save it to your tracker." : "Confirm missing course names or credits before saving to the tracker."));
+    if (attemptNumber > 1 && !updatedSubjects.some((subject,index) => subject.grade !== subjects[index]?.grade)) {
+      setNotice("No matching active D-grade subject was found in this re-examination result. Your profile was not changed.");
+      return;
+    }
+    const totalCredits = updatedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
+    const weightedPoints = updatedSubjects.reduce((sum, subject) => sum + subject.credits * POINTS[subject.grade], 0);
+    const nextSgpa = Number((weightedPoints / totalCredits).toFixed(3));
+    setSavingSemester(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(API + "/api/student/academic/semesters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({
+          semesterNumber, attemptNumber,
+          courses: updatedSubjects.map(subject => ({
+            courseCode: subject.courseCode || "", courseName: subject.name, credits: subject.credits,
+            gradeSymbol: subject.grade, gradePoint: POINTS[subject.grade],
+          })),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to update your academic profile.");
+      setSubjects(updatedSubjects);
+      setSavedSubjectsBySemester(current => ({ ...current, [semesterNumber]: updatedSubjects }));
+      localStorage.setItem("gradly_online_result_subjects_" + profile.curriculumId + "_" + semesterNumber, JSON.stringify(updatedSubjects));
+      const nextResults = [...results.filter(item => item.semester !== semesterNumber), {
+        id: data.semester.id, semester: semesterNumber, sgpa: nextSgpa, credits: totalCredits, savedAt: new Date().toISOString(),
+      }].sort((x,y) => x.semester-y.semester);
+      setResults(nextResults);
+      localStorage.setItem("gradly_semester_results", JSON.stringify(nextResults));
+      setSgpa(nextSgpa);
+      localStorage.setItem("gradly_online_result_source_" + semesterNumber, JSON.stringify({
+        sessionTitle, documentTitle, sourceUrl, enrollmentNumber: profile.enrollment,
+        attemptNumber, fetchedAt: new Date().toISOString(), appliedCourseCodes: updatedSubjects.map(subject => subject.courseCode),
+      }));
+      const backlogCount = updatedSubjects.filter(subject => subject.grade === "D").length;
+      setNotice(attemptNumber > 1
+        ? "Re-examination result saved to your academic profile. " + backlogCount + " active backlog(s) remain."
+        : "Official result saved directly to your academic profile. " + backlogCount + " active backlog(s) remain. " + (backlogCount ? "Check the re-examination option below." : "Your semester SGPA and CGPA profile are updated."));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Unable to update your academic profile.");
+    } finally {
+      setSavingSemester(false);
+    }
   }
 
   async function saveSemester() {
