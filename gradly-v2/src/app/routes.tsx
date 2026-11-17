@@ -5,7 +5,6 @@ import LegalPage from "../features/legal/LegalPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import StudentPlatform from "../features/dashboard/StudentPlatform";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
-import ExamProfileSetupPage from "../features/dashboard/ExamProfileSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
 
 function HomePage() {
@@ -32,7 +31,7 @@ export default function AppRoutes() {
     <Route path="/terms" element={<LegalPage type="terms" />} />
     <Route path="/privacy" element={<LegalPage type="privacy" />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
-    <Route path="/exam-profile" element={<ProtectedRoute><ExamProfileSetupPage /></ProtectedRoute>} />
+    <Route path="/exam-profile" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>;

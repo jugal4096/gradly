@@ -36,7 +36,6 @@ export default function AcademicSetupPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [examSetupChoice, setExamSetupChoice] = useState(false);
   const searchTimer = useRef<number | undefined>(undefined);
   const searchSequence = useRef(0);
   const previewSequence = useRef(0);
@@ -139,7 +138,7 @@ export default function AcademicSetupPage() {
             academicProfileConfirmed: Boolean(p.academic_profile_confirmed), pendingBacklogCount: p.pending_backlog_count ?? null,
             academicGapYears: p.academic_gap_years ?? null, predictedSemesterNumber: p.predicted_semester_number ?? null,
           }));
-          navigate(localStorage.getItem("gradly_student_exam_profile") ? "/dashboard" : "/exam-profile", { replace: true });
+          navigate("/dashboard", { replace: true });
         }
       } catch { /* A missing profile is expected during first-time setup. */ }
     })();
@@ -373,7 +372,7 @@ export default function AcademicSetupPage() {
         estimatedAcademicDelayYears: completed || expectedReferenceSemester === null ? null : academicGapYears,
         academicGapYears, academicGapPeriod: academicGapYears > 0 ? { fromAcademicYear: Number(gapAcademicYearFrom), toAcademicYear: Number(gapAcademicYearTo) } : null, pendingBacklogCount: null, scheme: curricula.find(item => item.id === curriculumId)?.scheme_name || preview.curriculumName || preview.scheme || "",
       }));
-      setExamSetupChoice(true);
+      navigate("/dashboard", { replace: true });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save your profile."); }
     finally { setSaving(false); }
   }
@@ -619,20 +618,6 @@ export default function AcademicSetupPage() {
             {grievances.length > 0 && <div className="academic-setup-dialog-history"><strong>Previous support requests</strong>{grievances.map(item => <article key={item.id}><span>Data mismatch request</span><small>{item.status.replace(/_/g," ")} · {new Date(item.createdAt).toLocaleDateString()}</small></article>)}</div>}
           </form>)}
           {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
-        </section>
-      </div>}
-      {examSetupChoice && <div className="exam-choice-overlay" role="dialog" aria-modal="true" aria-labelledby="exam-choice-title" aria-describedby="exam-choice-description">
-        <section className="exam-choice-modal">
-          <div className="exam-choice-icon" aria-hidden="true"><span>∑</span><i>✓</i></div>
-          <span className="exam-choice-eyebrow">ONE LAST STEP · OPTIONAL</span>
-          <h2 id="exam-choice-title">Set up your <em>Exam Profile?</em></h2>
-          <p id="exam-choice-description">Let Gradly organise your semester exam sessions and prepare for SGPA result fetching. You can skip this and continue using the manual SGPA calculator anytime.</p>
-          <div className="exam-choice-benefits"><span><b>↗</b> Semester-wise exam timeline</span><span><b>◎</b> Ready for result fetching</span></div>
-          <div className="exam-choice-actions">
-            <button className="exam-choice-primary" type="button" onClick={()=>navigate("/exam-profile",{replace:true})}>Set up Exam Profile <span>→</span></button>
-            <button className="exam-choice-skip" type="button" onClick={()=>{localStorage.removeItem("gradly_student_exam_profile");navigate("/dashboard",{replace:true});}}>Skip for now</button>
-          </div>
-          <small className="exam-choice-footnote"><span>✓</span> You can configure this later from your dashboard.</small>
         </section>
       </div>}
       <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
