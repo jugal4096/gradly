@@ -829,6 +829,7 @@ export default function StudentPlatform() {
         sessionTitle, documentTitle, sourceUrl, enrollmentNumber: profile.enrollment,
         attemptNumber, fetchedAt: new Date().toISOString(), appliedCourseCodes: updatedSubjects.map(subject => subject.courseCode),
       }));
+      if (attemptNumber > 1) setReExamTargetCourseCode("");
       const backlogCount = updatedSubjects.filter(subject => subject.grade === "D").length;
       setNotice(attemptNumber > 1
         ? "Re-examination result saved to your academic profile. " + backlogCount + " active backlog(s) remain."
@@ -844,8 +845,9 @@ export default function StudentPlatform() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
     let officialResultAttempt = 1;
-    try { officialResultAttempt = Number(JSON.parse(localStorage.getItem("gradly_online_result_source_"+semesterNumber)||"{}").attemptNumber||1); } catch { /* default to first attempt */ }
-    if(!isGuest && semesterNumber>=currentSemester && true) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
+    const officialResultSource = localStorage.getItem("gradly_online_result_source_"+semesterNumber);
+    try { officialResultAttempt = Number(JSON.parse(officialResultSource||"{}").attemptNumber||1); } catch { /* default to first attempt */ }
+    if(!isGuest && semesterNumber>=currentSemester && !officialResultSource) { setNotice("You can save SGPA only for completed semesters. Promote your academic profile after this semester ends to unlock its official entry."); return; }
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
