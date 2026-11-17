@@ -752,6 +752,7 @@ export default function StudentPlatform() {
       const grade = row.grade.trim().toUpperCase();
       if (!code || POINTS[grade] === undefined) return [];
       const existing = existingByCode.get(code);
+      if (row.useDefault && existing) return [{ ...existing, id: index + 1, grade }];
       const name = String(row.courseName || existing?.name || "").trim();
       const credits = Number(row.credits || existing?.credits || 0);
       return [{
