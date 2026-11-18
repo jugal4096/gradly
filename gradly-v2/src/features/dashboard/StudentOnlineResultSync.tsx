@@ -202,13 +202,18 @@ export default function StudentOnlineResultSync({
       const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
       return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
     });
-    // Remove duplicate subject titles while preserving different courses. The
-    // official PDF occasionally lists the same elective under duplicate codes.
+    // Deduplicate both repeated course codes and repeated subject titles.
+    // GECA PDFs sometimes repeat Entrepreneurship Development under alternate
+    // course-code/name spellings, so compare normalized code and canonical title.
+    const seenCourseCodes = new Set<string>();
     const seenSubjectNames = new Set<string>();
     const applicable = mappedRows.filter(row => {
+      const codeKey = normalizeCourseCode(row.courseCode);
       const nameKey = normalizeCourseCode(row.courseName || row.courseCode);
-      if (!nameKey || seenSubjectNames.has(nameKey)) return false;
-      seenSubjectNames.add(nameKey);
+      const canonicalNameKey = /ENTREPRENEURSHIP/.test(nameKey) ? "ENTREPRENEURSHIPDEVELOPMENT" : nameKey;
+      if (!codeKey || seenCourseCodes.has(codeKey) || !canonicalNameKey || seenSubjectNames.has(canonicalNameKey)) return false;
+      seenCourseCodes.add(codeKey);
+      seenSubjectNames.add(canonicalNameKey);
       return true;
     });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
