@@ -194,13 +194,22 @@ export default function StudentOnlineResultSync({
       return;
     }
 
-    const applicable = sourceRows.map(row => {
+    const mappedRows = sourceRows.map(row => {
       const code = normalizeCourseCode(row.courseCode);
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
       const parsedCredits = Number(row.credits || 0);
       const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
       return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
+    });
+    // Remove duplicate subject titles while preserving different courses. The
+    // official PDF occasionally lists the same elective under duplicate codes.
+    const seenSubjectNames = new Set<string>();
+    const applicable = mappedRows.filter(row => {
+      const nameKey = normalizeCourseCode(row.courseName || row.courseCode);
+      if (!nameKey || seenSubjectNames.has(nameKey)) return false;
+      seenSubjectNames.add(nameKey);
+      return true;
     });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
       setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "No valid, matching subjects were found in this result. No grades were changed.");
