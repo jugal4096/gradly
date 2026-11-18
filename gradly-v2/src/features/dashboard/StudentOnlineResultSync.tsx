@@ -315,7 +315,7 @@ export default function StudentOnlineResultSync({
         <label style={{display:"block",margin:"10px 0"}}>What is incorrect?<select value={reportKind} onChange={e=>setReportKind(e.target.value)} style={{display:"block",width:"100%",marginTop:5,padding:10,borderRadius:8}}><option>Incorrect grade</option><option>Wrong subject mapping</option><option>Incorrect course code</option><option>Unexpected result</option><option>Other</option></select></label>
         <label style={{display:"block"}}>Details (minimum 10 characters)<textarea value={reportDetails} onChange={e=>setReportDetails(e.target.value)} rows={4} placeholder="Explain what should be corrected…" style={{display:"block",width:"100%",boxSizing:"border-box",marginTop:5,padding:10,borderRadius:8}}/></label>
         {reportMessage&&<p role="status" style={{fontSize:13}}>{reportMessage}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:14}}><button type="button" onClick={()=>{setReportRow(null);setReportMessage("");}}>Cancel</button><button type="button" disabled={reportBusy||reportDetails.trim().length<10} onClick={()=>void submitMismatchReport()}>{reportBusy?"Submitting…":"Submit report"}</button></div>
-      </div></div>
+      </div></div>}
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Official result · one-step profile update</span></div>
     </section>}
   </>;
