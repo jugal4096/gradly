@@ -179,9 +179,9 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
     .map(row => ({ ...row, columns: Array.from(new Map(row.columns.map(column => [column.courseCode, column])).values()) }))
     .sort((a, b) => b.columns.length - a.columns.length || b.y - a.y);
   const best = ranked[0];
-  // Fail closed when only one course code is confidently found: a partial
-  // header cannot safely support positional grade mapping.
-  if (!best || best.columns.length < 2) return [];
+  // Single-course result tables are valid in GECA re-examination PDFs.
+  // Still fail closed if no valid course-code header was identified.
+  if (!best || best.columns.length < 1) return [];
   return best.columns.sort((a, b) => a.x - b.x);
 }
 
