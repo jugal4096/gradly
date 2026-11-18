@@ -337,18 +337,31 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     try { await cleanup.call(pdf); } catch { /* parsing result remains valid */ }
   }
   if (parsed.enrollmentFound && !parsed.grades.length) {
-    const columns = findCourseColumns(allLines);
-    const enrollmentRows = allLines.filter(line => lineContainsEnrollment(line, enrollment)).map(line => ({
-      text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
-      items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
-      gradeTokens: line.items.flatMap(item => gradeTokensFromItem(item)),
-    }));
+    const enrollmentIndices = allLines.map((line, index) => lineContainsEnrollment(line, enrollment) ? index : -1).filter(index => index >= 0);
+    const enrollmentRows = enrollmentIndices.map(index => {
+      const line = allLines[index];
+      return {
+        index,
+        text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
+        items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
+        gradeTokens: line.items.flatMap(item => gradeTokensFromItem(item)),
+      };
+    });
+    const tableContext = enrollmentIndices.flatMap(index => {
+      const start = Math.max(0, index - 28);
+      const end = Math.min(allLines.length, index + 9);
+      return allLines.slice(start, end).map((line, lineIndex) => ({
+        index: start + lineIndex,
+        text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
+        items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
+        courseCodes: findCourseColumns([line]).map(column => ({ courseCode: column.courseCode, x: Math.round(column.x) })),
+      }));
+    });
     console.warn("GECA result table parse diagnostic:", JSON.stringify({
       title,
       pageCount: pdf.numPages,
-      courseColumnCount: columns.length,
-      courseColumns: columns.map(column => ({ courseCode: column.courseCode, x: Math.round(column.x) })),
       enrollmentRows,
+      localTableContext: tableContext,
     }));
   }
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
