@@ -180,6 +180,13 @@ export default function StudentOnlineResultSync({
       unknownRows.length ? "official courses not in current curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ") : "",
       missingCodes.length ? "curriculum courses not detected in PDF: " + missingCodes.join(", ") : "",
     ].filter(Boolean);
+    // Treat curriculum reconciliation failures as a hard stop for a normal semester import.
+    // A parsed PDF can contain plausible grades but wrong/missing course codes; never save those silently.
+    if (!reExamMode && mismatchParts.length) {
+      setError("Result review required. No grades were applied because the PDF and semester curriculum do not match: " + mismatchParts.join("; ") + ". Please verify the official result PDF and report this parsing mismatch.");
+      setNotice("");
+      return;
+    }
     if (duplicateCodes.size) {
       setError("The result parser detected duplicate course codes (" + [...duplicateCodes].join(", ") + "). No grades were applied to avoid overwriting the wrong subject.");
       setNotice("");
