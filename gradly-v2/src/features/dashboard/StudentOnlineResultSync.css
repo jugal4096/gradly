@@ -185,3 +185,11 @@
 .sp-online-reexam-confirm .sp-online-reexam-yes{border-color:#a91f2a;background:#c92d38;color:#fff}
 .sp-online-reexam-confirm .sp-online-reexam-yes:hover{background:#a91f2a}
 .sp-online-reexam-confirm button:focus-visible{outline:2px solid #eaa3aa;outline-offset:2px}
+
+/* Clear, centered examination-session header */
+.sp-online-result-inline .sp-online-result-head>div:first-child{flex:1;text-align:center}
+.sp-online-result-inline .sp-online-result-heading{display:grid;justify-items:center;gap:7px;padding:6px 8px 12px}
+.sp-online-result-inline .sp-online-result-heading>span{font-size:10px;font-weight:900;letter-spacing:1.6px;color:#2563eb}
+.sp-online-result-inline .sp-online-result-heading h3{margin:2px 0;font-size:21px;font-weight:900;color:#1d4ed8;text-align:center}
+.sp-online-result-inline .sp-online-result-heading p{margin:0 auto;max-width:700px;text-align:center;color:var(--muted,#718195);font-size:12px;line-height:1.65}
+@media(max-width:520px){.sp-online-result-inline .sp-online-result-heading h3{font-size:18px}}
