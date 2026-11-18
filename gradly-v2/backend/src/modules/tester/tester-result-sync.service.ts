@@ -185,19 +185,27 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
   return best.columns.sort((a, b) => a.x - b.x);
 }
 
-function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
+function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[], nearbyGradeLines: TextLine[] = [line]): GecaMatchedGrade[] {
   if (!lineContainsEnrollment(line, enrollment) || !columns.length) return [];
   const mapped = new Map<string, string>();
-  const gradeCells = line.items.flatMap(item => {
+  const enrollmentY = line.items[0]?.y ?? 0;
+  // Grades can be emitted on a separate text baseline from the enrollment row.
+  // Use only lines in the caller's tight vertical neighborhood and prioritize
+  // grade cells closest to the enrollment baseline.
+  const gradeCells = nearbyGradeLines.flatMap(candidate => candidate.items.flatMap(item => {
     const tokens = item.text.toUpperCase().trim().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""));
-    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x }));
-  });
+    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({
+      grade, x: item.x, y: candidate.items[0]?.y ?? enrollmentY,
+    }));
+  }));
   const sortedColumns = [...columns].sort((a, b) => a.x - b.x);
   const distinctGradeColumns = new Set(gradeCells.map(item => Math.round(item.x)));
 
-  // First choice: map horizontally aligned grade cells to the closest course
-  // header, but only when the PDF provides genuinely distinct x positions.
-  if (gradeCells.length && distinctGradeColumns.size > 1) {
+  // First choice: map grade tokens on nearby baselines to the closest course
+  // header. Keep the closest token for each course to avoid neighboring rows
+  // overwriting a grade for the target student.
+  if (gradeCells.length && (distinctGradeColumns.size > 1 || sortedColumns.length === 1)) {
+    const nearestCellByCourse = new Map<string, { grade: string; verticalDistance: number }>();
     for (const cell of gradeCells) {
       let nearest: CourseColumn | null = null;
       let distance = Number.POSITIVE_INFINITY;
@@ -205,8 +213,13 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
         const nextDistance = Math.abs(column.x - cell.x);
         if (nextDistance < distance) { nearest = column; distance = nextDistance; }
       }
-      if (nearest && distance < 80 && !["-", "AB", "P"].includes(cell.grade)) mapped.set(nearest.courseCode, cell.grade);
+      const verticalDistance = Math.abs(cell.y - enrollmentY);
+      if (nearest && distance < 80 && !["-", "AB", "P"].includes(cell.grade)) {
+        const existing = nearestCellByCourse.get(nearest.courseCode);
+        if (!existing || verticalDistance < existing.verticalDistance) nearestCellByCourse.set(nearest.courseCode, { grade: cell.grade, verticalDistance });
+      }
     }
+    for (const [courseCode, cell] of nearestCellByCourse) mapped.set(courseCode, cell.grade);
   }
 
   // Fallback for GECA PDFs where the whole result row (including all grades)
