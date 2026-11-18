@@ -122,10 +122,10 @@ export default function StudentOnlineResultSync({
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
       setScan(body as MatchResponse);
       const matchingDocument = (body.matches || []).find((document: ResultDocument) => document.semester === selectedSemester);
-      if (matchingDocument) applyDocument(matchingDocument, session.title);
-      if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("Your enrollment was found, but the result could not be read. No grades were applied.");
+      if (matchingDocument) await applyDocument(matchingDocument, session.title);
+      else if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("Your enrollment was found, but the result could not be read. No grades were applied.");
       else if (!body.matches?.length) setNotice("Your enrollment was not found in this examination session.");
-      else setNotice("");
+      else setNotice("A matching result PDF was found, but it belongs to a different semester. No grades were applied.");
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(reason instanceof Error ? reason.message : "Unable to inspect this examination session.");
     } finally {
