@@ -977,10 +977,10 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     documentTitle:string,
     sourceUrl:string,
     attemptNumber=1
-  ) {
+  ): boolean {
     if(semesterNumber!==selectedSemester) {
       setNotice("Select Semester "+semesterNumber+" in the workspace before applying this result.");
-      return;
+      return false;
     }
     const existingByCode=new Map<string,Subject>(subjects.map(subject=>[normalizeResultCourseCode(subject.courseCode),subject] as const));
     let finalSubjects:Subject[];
@@ -997,17 +997,17 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       if(!matchedRow||!matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Tester grades were not changed."});
         setReExamTargetCourseCode("");
-        return;
+        return false;
       }
       if(matchedRow.grade.trim().toUpperCase()==="D") {
         setReExamOutcome({success:false,title:"Backlog remains",message:"You still have a D grade in both exams. No grades were changed."});
         setReExamTargetCourseCode("");
-        return;
+        return false;
       }
       if(!finalSubjects.some((subject,index)=>subject.grade!==subjects[index]?.grade)) {
         setReExamOutcome({success:false,title:"Result not applied",message:"The re-examination grade could not be applied. Tester profile was not changed."});
         setReExamTargetCourseCode("");
-        return;
+        return false;
       }
     } else {
       finalSubjects=fetchedGrades.flatMap((row,index)=>{
@@ -1023,7 +1023,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     }
     if(!finalSubjects.length||finalSubjects.some(subject=>!subject.name.trim()||subject.credits<=0||POINTS[subject.grade]===undefined)) {
       setNotice("The result is missing a valid subject name, credit value or grade. Tester profile was not changed.");
-      return;
+      return false;
     }
     const totalCredits=finalSubjects.reduce((sum,subject)=>sum+subject.credits,0);
     const weightedPoints=finalSubjects.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
@@ -1047,6 +1047,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     } else {
       setNotice("Official result reflected immediately in the isolated Tester profile. "+backlogCount+" active backlog(s) remain.");
     }
+    return true;
   }
   function navigate(next:Section) {
     if (isGuest && !isTester && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
