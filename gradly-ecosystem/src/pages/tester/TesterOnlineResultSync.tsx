@@ -145,28 +145,35 @@ export default function TesterOnlineResultSync({
       .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
 
     const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    const allowedCodes = new Set(subjectCodes.length ? subjectCodes : catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean));
+    const catalogueCodes = new Set(catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean));
+    const expectedCodes = new Set(subjectCodes.length ? subjectCodes : [...catalogueCodes]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = normalizeCourseCode(row.courseCode);
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    const unknownRows = sourceRows.filter(row => allowedCodes.size && !allowedCodes.has(normalizeCourseCode(row.courseCode)));
-    const duplicateRows = sourceRows.filter(row => duplicateCodes.has(normalizeCourseCode(row.courseCode)));
-    const filteredRows = sourceRows.filter(row => !duplicateCodes.has(normalizeCourseCode(row.courseCode)) && (!allowedCodes.size || allowedCodes.has(normalizeCourseCode(row.courseCode))));
-    const missingCodes = reExamMode ? [] : [...allowedCodes].filter(code => !counts.has(code));
+    // Never discard rows because their course codes are absent from the current curriculum.
+    // Official result PDFs are the source of truth; curriculum is only a mismatch reference.
+    const unknownRows = sourceRows.filter(row => expectedCodes.size && !expectedCodes.has(normalizeCourseCode(row.courseCode)));
+    const missingCodes = reExamMode ? [] : [...expectedCodes].filter(code => !counts.has(code));
     const mismatchParts = [
-      unknownRows.length ? "unexpected course codes: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ") : "",
-      duplicateRows.length ? "duplicate course codes: " + [...duplicateCodes].join(", ") : "",
-      missingCodes.length ? "not present in fetched PDF: " + missingCodes.join(", ") : "",
+      unknownRows.length ? "official courses not in current curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ") : "",
+      missingCodes.length ? "curriculum courses not detected in PDF: " + missingCodes.join(", ") : "",
     ].filter(Boolean);
+    if (duplicateCodes.size) {
+      setError("The result parser detected duplicate course codes (" + [...duplicateCodes].join(", ") + "). No grades were applied to avoid overwriting the wrong subject.");
+      setNotice("");
+      return;
+    }
 
-    const applicable = filteredRows.map(row => {
+    const applicable = sourceRows.map(row => {
       const code = normalizeCourseCode(row.courseCode);
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-      return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 3) };
+      const parsedCredits = Number(row.credits || 0);
+      const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
+      return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
     });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
       setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "No valid, matching subjects were found in this result. No grades were changed.");
