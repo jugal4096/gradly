@@ -131,28 +131,56 @@ export default function TesterOnlineResultSync({
     }
   }
 
-  function applyDocument(document: ResultDocument, sessionTitle: string) {
+  async function applyDocument(document: ResultDocument, sessionTitle: string) {
     if (!document.semester || document.semester !== selectedSemester) {
       setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
       return;
     }
     const targetCode = normalizeCourseCode(reExamTargetCourseCode);
-    const applicable = document.grades
+    const sourceRows = document.grades
       .filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
-      .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode)
-      .map(row => {
-        const code = normalizeCourseCode(row.courseCode);
-        const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
-        const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-        return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 3) };
-      });
+      .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
+
+    const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
+    const allowedCodes = new Set(subjectCodes.length ? subjectCodes : catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean));
+    const counts = new Map<string, number>();
+    sourceRows.forEach(row => {
+      const code = normalizeCourseCode(row.courseCode);
+      counts.set(code, (counts.get(code) || 0) + 1);
+    });
+    const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
+    const unknownRows = sourceRows.filter(row => allowedCodes.size && !allowedCodes.has(normalizeCourseCode(row.courseCode)));
+    const duplicateRows = sourceRows.filter(row => duplicateCodes.has(normalizeCourseCode(row.courseCode)));
+    const filteredRows = sourceRows.filter(row => !duplicateCodes.has(normalizeCourseCode(row.courseCode)) && (!allowedCodes.size || allowedCodes.has(normalizeCourseCode(row.courseCode))));
+    const missingCodes = reExamMode ? [] : [...allowedCodes].filter(code => !counts.has(code));
+    const mismatchParts = [
+      unknownRows.length ? "unexpected course codes: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ") : "",
+      duplicateRows.length ? "duplicate course codes: " + [...duplicateCodes].join(", ") : "",
+      missingCodes.length ? "not present in fetched PDF: " + missingCodes.join(", ") : "",
+    ].filter(Boolean);
+
+    const applicable = filteredRows.map(row => {
+      const code = normalizeCourseCode(row.courseCode);
+      const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
+      const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
+      return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 3) };
+    });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
-      setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "The official PDF did not provide enough course details to save this result. No academic data was changed.");
+      setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "No valid, matching subjects were found in this result. No grades were changed.");
       return;
     }
-    void onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
-    setNotice(reExamMode ? "Re-examination result is being applied to your active backlog subjects…" : "Official result is being saved directly to your academic profile…");
+
     setError("");
+    setNotice("Saving verified grades…");
+    try {
+      await onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
+      const appliedCount = applicable.length;
+      const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
+      setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save the fetched grades. Please retry.");
+      setNotice("");
+    }
   }
 
 
