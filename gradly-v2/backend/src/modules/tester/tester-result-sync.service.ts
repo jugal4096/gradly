@@ -149,7 +149,7 @@ function gradeTokensFromItem(item: PositionedItem): string[] {
 
 type CourseColumn = { courseCode: string; x: number };
 
-function findCourseColumns(lines: TextLine[]): CourseColumn[] {
+function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn[] {
   // Parse headers from the bounded table window supplied by the enrollment-row
   // caller. Never accumulate course codes across unrelated header windows.
   // PDF text extraction can split a code across adjacent items, so normalize
@@ -177,7 +177,17 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
   // tables, exam metadata, or unrelated text lines.
   const ranked = rows
     .map(row => ({ ...row, columns: Array.from(new Map(row.columns.map(column => [column.courseCode, column])).values()) }))
-    .sort((a, b) => b.columns.length - a.columns.length || b.y - a.y);
+    .sort((a, b) => {
+      // When parsing a particular student, prefer the nearest preceding
+      // course-header row. PDFs can contain several mini-tables per page,
+      // and choosing the header with the most codes can borrow another table.
+      if (referenceY !== undefined) {
+        const distanceA = Math.abs(referenceY - a.y);
+        const distanceB = Math.abs(referenceY - b.y);
+        if (distanceA !== distanceB) return distanceA - distanceB;
+      }
+      return b.columns.length - a.columns.length || b.y - a.y;
+    });
   const best = ranked[0];
   // Single-course result tables are valid in GECA re-examination PDFs.
   // Still fail closed if no valid course-code header was identified.
@@ -273,9 +283,9 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
       ENROLLMENT_PATTERN.test(candidate.text));
     const tableStart = Math.max(0, previousEnrollmentIndex + 1, rowIndex - 80);
     const rowWindow = lines.slice(tableStart, rowIndex + 1);
-    const columns = findCourseColumns(rowWindow);
-
     const enrollmentY = line.items[0]?.y ?? 0;
+    const columns = findCourseColumns(rowWindow, enrollmentY);
+
     const nearbyGradeLines = lines.filter(candidate => Math.abs((candidate.items[0]?.y ?? 0) - enrollmentY) <= 14);
     for (const grade of gradesInEnrollmentRow(line, enrollment, columns, nearbyGradeLines)) {
       matches.set(grade.courseCode, grade.grade);
