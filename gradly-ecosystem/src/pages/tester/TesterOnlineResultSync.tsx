@@ -118,6 +118,8 @@ export default function TesterOnlineResultSync({
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
       setScan(body as MatchResponse);
+      const matchingDocument = (body.matches || []).find((document: ResultDocument) => document.semester === selectedSemester);
+      if (matchingDocument) applyDocument(matchingDocument, session.title);
       if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("The enrollment number appears in " + body.enrollmentHits + " PDF(s), but the grade columns could not be read reliably. The parser diagnostics are shown below; no grades were applied.");
       else if (!body.matches?.length) setNotice("Enrollment not found in the scanned PDFs. " + body.documentsScanned + " PDFs were checked.");
       else setNotice("Found " + body.matches.length + " result PDF(s). Enrollment text was detected in " + body.enrollmentHits + " PDF(s). Select the matching semester PDF to preview and apply.");
@@ -159,11 +161,11 @@ export default function TesterOnlineResultSync({
     <button type="button" className={"sp-entry-mode " + (open ? "selected" : "")} onClick={() => void openArchive()} aria-expanded={open}>
       <span>ONLINE FETCHING</span>
       <strong>Fetch official results</strong>
-      <small>{loadingSessions ? "Loading GECA archive…" : sessions.length ? sessions.length + " examination sessions available" : "Browse GECA result archive"}</small>
+      <small>{loadingSessions ? "Loading GECA archive…" : sessions.length ? sessions.length + " examination sessions available" : "Fetch results for Semester {selectedSemester}"}</small>
     </button>
-    {open && createPortal(<div className="sp-online-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}><section className="sp-online-result-panel sp-online-result-modal" role="dialog" aria-modal="true" aria-label={reExamMode?"Choose re-examination session":"Choose examination session"} aria-busy={loadingSessions || Boolean(loadingSessionId)}>
+    {open && <section className="sp-online-result-panel sp-online-result-inline" role="dialog" aria-modal="true" aria-label={reExamMode?"Choose re-examination session":"Choose examination session"} aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
-        <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Choose an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>★ Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
+        <div><span>GECA · RESULT IMPORT</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Select an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>★ Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Choose the examination in which you appeared for Semester {selectedSemester}. We’ll scan its linked department result PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
         <button type="button" onClick={() => { if (reExamMode) onCancelReExam?.(); setReExamMode(false); setOpen(false); }} aria-label="Close online result archive">×</button>
       </div>
       {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
@@ -192,7 +194,7 @@ export default function TesterOnlineResultSync({
       {visibleSessions.length > 0 && <div className="sp-online-session-list">
         {visibleSessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId)}>
           <span><b>{session.title}</b><small>GECA examination result</small></span>
-          <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Scan →"}</strong>
+          <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Fetch grades →"}</strong>
         </button>)}
       </div>}
       {scan && <div className="sp-online-scan-result">
@@ -210,9 +212,7 @@ export default function TesterOnlineResultSync({
               <div className={backlogRows.length ? "has-backlog" : ""}><strong>{backlogRows.length}</strong><span>Active backlogs</span></div>
             </div>
             {backlogRows.length > 0 && !reExamMode && <div className="sp-online-backlog-alert"><b>！ {backlogRows.length} active backlog{backlogRows.length===1?"":"s"}</b><span>{backlogRows.map(row=>row.courseName || row.courseCode).slice(0,3).join(" · ")}{backlogRows.length>3?" · +"+(backlogRows.length-3)+" more":""}</span></div>}
-            <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
-              {canApply ? (reExamMode ? "Apply re-exam result to profile" : "Update academic profile") : "Semester does not match"}
-            </button>
+            <div className="sp-online-auto-apply-note">{canApply ? "Result auto-imported into your grade entry." : "Semester does not match your selected workspace."}</div>
 
             {reExamMode && <p className="sp-online-reexam-mode">Re-examination mode · fetched grades will update the existing backlog attempt without replacing unrelated subjects.</p>}
           </article>;
@@ -221,6 +221,6 @@ export default function TesterOnlineResultSync({
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved to this isolated browser session</span></div>
-    </section></div>, document.body)}
+    </section>}
   </>;
 }
