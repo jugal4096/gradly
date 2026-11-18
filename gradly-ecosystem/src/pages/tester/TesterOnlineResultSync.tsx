@@ -30,7 +30,7 @@ type Props = {
   subjects: TesterSubject[];
   reExamTargetCourseCode?: string;
   onCancelReExam?: () => void;
-  onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string, attemptNumber: number) => void | Promise<void>;
+  onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string, attemptNumber: number) => boolean | void | Promise<boolean | void>;
 };
 
 export default function TesterOnlineResultSync({
@@ -173,7 +173,11 @@ export default function TesterOnlineResultSync({
     setError("");
     setNotice("Saving verified grades…");
     try {
-      await onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
+      const applyResult = await onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
+      if (applyResult === false) {
+        setNotice("The result could not be applied to your profile. Check the message and try again.");
+        return;
+      }
       const appliedCount = applicable.length;
       const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
       setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
