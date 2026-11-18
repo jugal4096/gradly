@@ -149,7 +149,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
   const creditsWithoutUhv = normalized.filter(course => course.code.toUpperCase() !== "INHS1020")
     .reduce((sum, course) => sum + course.credits, 0);
-  if (creditsWithoutUhv > 28) {
+  const isOfficialGecaImport = req.body?.resultSource === "GECA_OFFICIAL";
+  if (creditsWithoutUhv > 28 && !isOfficialGecaImport) {
     return res.status(400).json({ code: "SEMESTER_CREDIT_LIMIT", message: "A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance." });
   }
   const sgpa = normalized.reduce((sum, course) => sum + course.credits * course.point, 0) / creditsRegistered;
