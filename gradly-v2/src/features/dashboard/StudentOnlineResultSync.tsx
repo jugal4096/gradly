@@ -202,18 +202,14 @@ export default function StudentOnlineResultSync({
       const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
       return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
     });
-    // Deduplicate both repeated course codes and repeated subject titles.
-    // GECA PDFs sometimes repeat Entrepreneurship Development under alternate
-    // course-code/name spellings, so compare normalized code and canonical title.
+    // Course code is the only deduplication key. Retain the first valid row
+    // for each normalized course code, even when names differ; distinct codes
+    // remain separate courses even when their names are identical.
     const seenCourseCodes = new Set<string>();
-    const seenSubjectNames = new Set<string>();
     const applicable = mappedRows.filter(row => {
       const codeKey = normalizeCourseCode(row.courseCode);
-      const nameKey = normalizeCourseCode(row.courseName || row.courseCode);
-      const canonicalNameKey = /ENTREPRENEURSHIP/.test(nameKey) ? "ENTREPRENEURSHIPDEVELOPMENT" : nameKey;
-      if (!codeKey || seenCourseCodes.has(codeKey) || !canonicalNameKey || seenSubjectNames.has(canonicalNameKey)) return false;
+      if (!codeKey || seenCourseCodes.has(codeKey)) return false;
       seenCourseCodes.add(codeKey);
-      seenSubjectNames.add(canonicalNameKey);
       return true;
     });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
