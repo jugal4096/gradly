@@ -552,7 +552,6 @@ export default function StudentPlatform() {
     ? subjects.filter(subject => [subject.name, subject.courseCode, subject.courseType, subject.electiveKind]
         .some(value => String(value ?? "").toLowerCase().includes(normalizedSubjectSearch)))
     : subjects;
-  const institutionLabel = profile.institutionName || localStorage.getItem("gradly_guest_institute_name") || "Institution selected";
   const name = user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
 
@@ -743,15 +742,6 @@ export default function StudentPlatform() {
     localStorage.setItem(key,JSON.stringify(next));
     setDroppedElectives(next);
     removeSubject(subjectId);
-  }
-  function restoreElective(subjectId:number) {
-    const subject=droppedElectives.find(item=>item.id===subjectId);
-    if(!subject) return;
-    const next=droppedElectives.filter(item=>item.id!==subjectId);
-    localStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(next));
-    setDroppedElectives(next);
-    setSubjects(current=>[...current,subject].sort((a,b)=>a.id-b.id));
-    setSgpa(null); setNotice("");
   }
   async function applyOnlineResultToStudent(
     semesterNumber: number,
