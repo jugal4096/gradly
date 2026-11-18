@@ -48,7 +48,7 @@ export default function StudentOnlineResultSync({
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
-  const [reExamChoice, setReExamChoice] = useState<boolean | null>(null);
+
   const [reExamMode, setReExamMode] = useState(false);
   const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
 
@@ -216,12 +216,7 @@ export default function StudentOnlineResultSync({
             <button type="button" className="sp-online-apply" disabled={!canApply} onClick={() => applyDocument(document,scan.session.title)}>
               {canApply ? (reExamMode ? "Apply re-exam result to profile" : "Update academic profile") : "Semester does not match"}
             </button>
-            {backlogRows.length > 0 && !reExamMode && <div className="sp-online-reexam-prompt">
-              <strong>Have you applied for a re-examination?</strong>
-              <div><button type="button" className={reExamChoice===true?"selected":""} onClick={()=>setReExamChoice(true)}>Yes, I have</button><button type="button" className={reExamChoice===false?"selected":""} onClick={()=>setReExamChoice(false)}>Not yet</button></div>
-              {reExamChoice===true && <button type="button" className="sp-online-reexam-launch" onClick={()=>{setReExamMode(true);setScan(null);setSelectedSessionId("");setNotice("Choose the GECA re-examination session and scan your enrollment again.");setError("");}}>Fetch re-examination result →</button>}
-              {reExamChoice===false && <small>We’ll keep the D grade marked as an active backlog. You can fetch the re-examination result whenever it is declared.</small>}
-            </div>}
+
             {reExamMode && <p className="sp-online-reexam-mode">Re-examination mode · fetched grades will update the existing backlog attempt without replacing unrelated subjects.</p>}
           </article>;
         })}
