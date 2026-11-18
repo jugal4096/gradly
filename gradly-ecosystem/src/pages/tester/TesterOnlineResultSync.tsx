@@ -93,7 +93,6 @@ export default function TesterOnlineResultSync({
   useEffect(() => {
     if (!reExamTargetCourseCode) { setReExamMode(false); return; }
     setReExamMode(true);
-    setReExamChoice(null);
     setOpen(true);
     setScan(null);
     setSelectedSessionId("");
