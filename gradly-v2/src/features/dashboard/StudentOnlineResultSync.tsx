@@ -111,6 +111,9 @@ export default function StudentOnlineResultSync({
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
+    // Enforce one examination-session scan at a time, even if rapid clicks bypass
+    // React's disabled-button render before state updates.
+    if (activeRequest.current || loadingSessionId) return;
     const controller = new AbortController();
     activeRequest.current = controller;
     setShowCancelConfirm(false);
