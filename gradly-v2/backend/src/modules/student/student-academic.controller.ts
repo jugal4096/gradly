@@ -173,7 +173,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       `SELECT id FROM student_semesters
        WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
        ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
-      [resolved.profile.id, semesterResult.rows[0].id],
+      [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
     );
     if (submittedOECodes.length) {
       const priorOE = await client.query(
