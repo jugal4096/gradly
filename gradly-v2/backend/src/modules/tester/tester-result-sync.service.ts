@@ -264,6 +264,12 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
       });
     }
   }
+  // Include every discovered course column in the result. If a grade cell could
+  // not be read confidently, mark it explicitly so the UI blocks the import
+  // instead of silently treating a partial set as a complete official result.
+  for (const column of sortedColumns) {
+    if (!mapped.has(column.courseCode)) mapped.set(column.courseCode, "UNREAD");
+  }
   return Array.from(mapped, ([courseCode, grade]) => ({ courseCode, grade }));
 }
 
