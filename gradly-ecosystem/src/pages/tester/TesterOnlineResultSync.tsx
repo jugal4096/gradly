@@ -120,9 +120,9 @@ export default function TesterOnlineResultSync({
       setScan(body as MatchResponse);
       const matchingDocument = (body.matches || []).find((document: ResultDocument) => document.semester === selectedSemester);
       if (matchingDocument) applyDocument(matchingDocument, session.title);
-      if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("The enrollment number appears in " + body.enrollmentHits + " PDF(s), but the grade columns could not be read reliably. The parser diagnostics are shown below; no grades were applied.");
-      else if (!body.matches?.length) setNotice("Enrollment not found in the scanned PDFs. " + body.documentsScanned + " PDFs were checked.");
-      else setNotice("Found " + body.matches.length + " result PDF(s). Enrollment text was detected in " + body.enrollmentHits + " PDF(s). Select the matching semester PDF to preview and apply.");
+      if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("Your enrollment was found, but the result could not be read. No grades were applied.");
+      else if (!body.matches?.length) setNotice("Your enrollment was not found in this examination session.");
+      else setNotice("");
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(reason instanceof Error ? reason.message : "Unable to inspect this examination session.");
     } finally {
@@ -197,8 +197,8 @@ export default function TesterOnlineResultSync({
           <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Fetch grades →"}</strong>
         </button>)}
       </div>}
-      {scan && <div className="sp-online-scan-result">
-        <div className="sp-online-scan-meta"><b>{scan.session.title}</b><span>{scan.documentsScanned} PDFs scanned · {scan.enrollmentHits} enrollment hits · {scan.matches.length} result found · {scan.parseFailures} parse issues</span></div>
+      {scan && !scan.matches?.length && <div className="sp-online-scan-result">
+        
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
           const validRows = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
