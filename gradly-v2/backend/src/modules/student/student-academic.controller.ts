@@ -205,7 +205,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = 'INHS1020'
            AND ss.semester_id <> $2
          LIMIT 1`,
-        [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
+        [resolved.profile.id, semesterResult.rows[0].id],
       );
       if (priorUhv.rows.length) {
         await client.query("ROLLBACK");
