@@ -30,11 +30,12 @@ type Props = {
   selectedSemester: number;
   subjects: StudentSubject[];
   reExamTargetCourseCode?: string;
+  onCancelReExam?: () => void;
   onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string, attemptNumber: number) => void | Promise<void>;
 };
 
 export default function StudentOnlineResultSync({
-  apiBase, curriculumId, getIdToken, enrollmentNumber, selectedSemester, subjects, reExamTargetCourseCode, onApply,
+  apiBase, curriculumId, getIdToken, enrollmentNumber, selectedSemester, subjects, reExamTargetCourseCode, onCancelReExam, onApply,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<ResultSession[]>([]);
@@ -92,7 +93,7 @@ export default function StudentOnlineResultSync({
   }
 
   useEffect(() => {
-    if (!reExamTargetCourseCode) return;
+    if (!reExamTargetCourseCode) { setReExamMode(false); return; }
     setReExamMode(true);
     setReExamChoice(null);
     setOpen(true);
@@ -167,7 +168,7 @@ export default function StudentOnlineResultSync({
     {open && createPortal(<div className="sp-online-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false);}}><section className="sp-online-result-panel sp-online-result-modal" role="dialog" aria-modal="true" aria-label={reExamMode?"Choose re-examination session":"Choose examination session"} aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
         <div><span>GECA · OFFICIAL RESULT ARCHIVE</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Choose an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>★ Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Click a session to scan its linked department and semester PDFs for enrollment <b>{enrollmentNumber}</b>. Review the official GECA result before applying grades to your student workspace.</p></div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close online result archive">×</button>
+        <button type="button" onClick={() => { if (reExamMode) onCancelReExam?.(); setReExamMode(false); setOpen(false); }} aria-label="Close online result archive">×</button>
       </div>
       {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
         <div className="sp-online-loading-dialog" role="status" aria-live="polite" aria-label={loadingSessions ? "Loading GECA examination archive" : "Scanning GECA result PDFs"}>
