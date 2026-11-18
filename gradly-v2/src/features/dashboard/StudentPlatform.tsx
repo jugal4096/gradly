@@ -768,29 +768,29 @@ export default function StudentPlatform() {
       // Full GECA import replaces this semester's subject list with the official
       // PDF rows. Keeping stale curriculum rows would hide official code/name
       // corrections (e.g. electives, UHV, or other non-standard subjects).
-      updatedSubjects = fetchedGrades.flatMap((row, index) => {
+      updatedSubjects = fetchedGrades.map((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
-        if (!code || POINTS[grade] === undefined) return [];
         const existing = existingByCode.get(code);
-        const name = String(row.courseName || existing?.name || row.courseCode).trim();
+        const name = String(row.courseName || existing?.name || row.courseCode || code).trim();
+        // Parsed official credits take precedence; use existing credits only when
+        // the PDF parser did not provide a reliable value.
         const credits = Number(row.credits || existing?.credits || 0);
-        if (!name || credits <= 0) return [];
-        return [{
+        return {
           ...(existing || {}),
           id: index + 1,
           name,
           credits,
           grade,
-          courseCode: row.courseCode.trim().toUpperCase(),
+          courseCode: String(row.courseCode || code).trim().toUpperCase(),
           courseType: existing?.courseType || "Official GECA result",
           curriculumSubjectId: existing?.curriculumSubjectId,
           isCustom: !existing,
-        }];
+        };
       });
     }
-    if (!updatedSubjects.length || updatedSubjects.some(subject => !subject.name.trim() || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
-      setNotice("The result is missing a valid subject name, credit value or grade. No academic data was changed.");
+    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
+      setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
     if (attemptNumber > 1) {
