@@ -112,7 +112,7 @@ export default function TesterOnlineResultSync({
       const response = await fetch(apiBase + "/api/tester/results/sessions/" + encodeURIComponent(session.id) + "/match", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + testerToken },
-        body: JSON.stringify({ enrollmentNumber, selectedSemester }),
+        body: JSON.stringify({ enrollmentNumber, selectedSemester, reExamTargetCourseCode: reExamMode ? reExamTargetCourseCode : undefined }),
         signal: controller.signal,
       });
       const body = await response.json();
