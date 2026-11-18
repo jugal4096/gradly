@@ -50,6 +50,7 @@ export default function TesterOnlineResultSync({
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
 
   const [reExamMode, setReExamMode] = useState(false);
+  const [reExamConfirmed, setReExamConfirmed] = useState(false);
   const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function TesterOnlineResultSync({
 
   async function openArchive() {
     setOpen(true);
-    if (open || sessions.length) return;
+    if (loadingSessions || sessions.length) return;
     const controller = new AbortController();
     activeRequest.current = controller;
     setShowCancelConfirm(false);
@@ -93,10 +94,12 @@ export default function TesterOnlineResultSync({
   useEffect(() => {
     if (!reExamTargetCourseCode) { setReExamMode(false); return; }
     setReExamMode(true);
+    setReExamConfirmed(false);
     setOpen(true);
     setScan(null);
     setSelectedSessionId("");
-    if (!sessions.length && !loadingSessions) void openArchive();
+    setNotice("");
+    setError("");
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
@@ -197,7 +200,7 @@ export default function TesterOnlineResultSync({
     </button>
     {open && <section className="sp-online-result-panel sp-online-result-inline" role="dialog" aria-modal="true" aria-label={reExamMode?"Choose re-examination session":"Choose examination session"} aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
-        <div><span>GECA · RESULT IMPORT</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Select an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>★ Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Choose the examination in which you appeared for Semester {selectedSemester}. We’ll scan its linked department result PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
+        <div><span>GECA · RESULT IMPORT</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Select an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>! Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Choose the examination in which you appeared for Semester {selectedSemester}. We’ll scan its linked department result PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
         <button type="button" onClick={() => { if (reExamMode) onCancelReExam?.(); setReExamMode(false); setOpen(false); }} aria-label="Close online result archive">×</button>
       </div>
       {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
@@ -220,10 +223,10 @@ export default function TesterOnlineResultSync({
           {!showCancelConfirm ? <button type="button" className="sp-online-cancel-fetch" onClick={() => setShowCancelConfirm(true)}>Cancel fetching</button> : <div className="sp-online-cancel-confirm" role="alertdialog" aria-modal="true" aria-labelledby="sp-online-cancel-title"><strong id="sp-online-cancel-title">Stop fetching?</strong><p>The current request will be cancelled. Any results already loaded will remain unchanged.</p><div><button type="button" onClick={() => setShowCancelConfirm(false)}>Continue fetching</button><button type="button" onClick={() => { activeRequest.current?.abort(); activeRequest.current = null; setShowCancelConfirm(false); setLoadingSessions(false); setLoadingSessionId(""); setNotice("Fetching was cancelled. No grades were applied."); }}>Stop fetching</button></div></div>}
         </div>
       </div>, document.body)}
-{loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
+{reExamMode && !reExamConfirmed && <div className="sp-online-reexam-confirm" role="group" aria-label="Re-examination confirmation"><strong>Have you applied for re-examination?</strong><p>Confirm before choosing an examination session for this backlog subject.</p><div><button type="button" className="sp-online-reexam-no" onClick={() => { onCancelReExam?.(); setReExamMode(false); setReExamConfirmed(false); setOpen(false); }}>No</button><button type="button" className="sp-online-reexam-yes" onClick={() => { setReExamConfirmed(true); void openArchive(); }}>Yes, show sessions</button></div></div>}{loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
       {!loadingSessions && reExamMode && sessions.length>0 && visibleSessions.length===0 && <p className="sp-online-result-muted">No re-examination sessions are currently listed in the GECA archive. Regular examination sessions are hidden in this view.</p>}
       {error && <p className="sp-online-result-error" role="alert">{error}</p>}
-      {visibleSessions.length > 0 && <div className="sp-online-session-list">
+      {(!reExamMode || reExamConfirmed) && visibleSessions.length > 0 && <div className="sp-online-session-list">
         {visibleSessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId)}>
           <span><b>{session.title}</b><small>GECA examination result</small></span>
           <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Fetch grades →"}</strong>
