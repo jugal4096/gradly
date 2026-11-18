@@ -750,10 +750,10 @@ export default function StudentPlatform() {
     documentTitle: string,
     sourceUrl: string,
     attemptNumber = 1
-  ) {
+  ): Promise<boolean> {
     if (semesterNumber !== selectedSemester || !user) {
       setNotice("Select Semester " + semesterNumber + " and sign in before applying this result.");
-      return;
+      return false;
     }
     const existingByCode = new Map<string, Subject>(subjects.map(subject => [normalizeResultCourseCode(subject.courseCode), subject] as const));
     let updatedSubjects: Subject[];
@@ -783,7 +783,7 @@ export default function StudentPlatform() {
     }
     if (!updatedSubjects.length || updatedSubjects.some(subject => !subject.name.trim() || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
       setNotice("The result is missing a valid subject name, credit value or grade. No academic data was changed.");
-      return;
+      return false;
     }
     if (attemptNumber > 1) {
       const targetCode = normalizeResultCourseCode(reExamTargetCourseCode);
@@ -792,17 +792,17 @@ export default function StudentPlatform() {
       if (!matchedRow || !matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Your grades were not changed."});
         setReExamTargetCourseCode("");
-        return;
+        return false;
       }
       if (matchedRow.grade.trim().toUpperCase() === "D") {
         setReExamOutcome({success:false,title:"Backlog remains",message:"You still have a D grade in both exams. No grades were changed."});
         setReExamTargetCourseCode("");
-        return;
+        return false;
       }
       if (!updatedSubjects.some((subject,index) => subject.grade !== subjects[index]?.grade)) {
         setReExamOutcome({success:false,title:"Result not applied",message:"The re-examination grade could not be applied. Your academic profile was not changed."});
         setReExamTargetCourseCode("");
-        return;
+        return false;
       }
     }
     const totalCredits = updatedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
@@ -844,8 +844,10 @@ export default function StudentPlatform() {
       } else {
         setNotice("Official result saved directly to your academic profile. " + backlogCount + " active backlog(s) remain. " + (backlogCount ? "You can use the star beside a D grade to fetch a re-examination result." : "Your semester SGPA and CGPA profile are updated."));
       }
+      return true;
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Unable to update your academic profile.");
+      return false;
     } finally {
       setSavingSemester(false);
     }
