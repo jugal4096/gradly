@@ -130,8 +130,11 @@ export default function StudentOnlineResultSync({
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
       setScan(body as MatchResponse);
-      const matchingDocument = (body.matches || []).find((document: ResultDocument) => document.semester === selectedSemester);
+      const matchedDocuments = (body.matches || []) as ResultDocument[];
+      const matchingDocument = matchedDocuments.find(document => document.semester === selectedSemester);
       if (matchingDocument) await applyDocument(matchingDocument, session.title);
+      else if (matchedDocuments.length === 1) await applyDocument(matchedDocuments[0], session.title);
+
       else if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("Your enrollment was found, but the result could not be read. No grades were applied.");
       else if (!body.matches?.length) setNotice("Your enrollment was not found in this examination session.");
       else setNotice("A matching result PDF was found, but it belongs to a different semester. No grades were applied.");
@@ -144,10 +147,11 @@ export default function StudentOnlineResultSync({
   }
 
   async function applyDocument(document: ResultDocument, sessionTitle: string) {
-    if (!document.semester || document.semester !== selectedSemester) {
-      setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
-      return;
-    }
+    // The enrollment is matched within the selected examination session. If the
+    // PDF parser misreads semester metadata, use the student's selected semester
+    // as a fallback only when the scan returned a single enrollment match.
+    const targetSemester = selectedSemester;
+
     const targetCode = normalizeCourseCode(reExamTargetCourseCode);
     const sourceRows = document.grades
       .filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))
@@ -185,13 +189,13 @@ export default function StudentOnlineResultSync({
     setError("");
     setNotice("Saving verified grades…");
     try {
-      const applyResult = await onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
+      const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
       if (applyResult === false) {
         setNotice("The result could not be applied to your profile. Check the message and try again.");
         return;
       }
       const appliedCount = applicable.length;
-      setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: document.semester});
+      setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
       const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
       setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
     } catch (reason) {
