@@ -765,30 +765,28 @@ export default function StudentPlatform() {
         return nextGrade && subject.grade.toUpperCase() === "D" && POINTS[nextGrade] !== undefined ? { ...subject, grade: nextGrade } : subject;
       });
     } else {
-      const fetchedByCode = new Map<string, typeof fetchedGrades[number]>();
-      fetchedGrades.forEach(row => {
-        const code = normalizeResultCourseCode(row.courseCode);
-        if (code) fetchedByCode.set(code, row);
-      });
-      // Preserve the complete existing semester subject list (including UHV and
-      // courses absent from the PDF); apply fetched grades by course code only.
-      updatedSubjects = subjects.map(subject => {
-        const fetched = fetchedByCode.get(normalizeResultCourseCode(subject.courseCode));
-        if (!fetched) return subject;
-        const grade = fetched.grade.trim().toUpperCase();
-        if (POINTS[grade] === undefined) return subject;
-        return { ...subject, grade };
-      });
-      const existingCodes = new Set(updatedSubjects.map(subject => normalizeResultCourseCode(subject.courseCode)));
-      fetchedGrades.forEach((row, index) => {
+      // Full GECA import replaces this semester's subject list with the official
+      // PDF rows. Keeping stale curriculum rows would hide official code/name
+      // corrections (e.g. electives, UHV, or other non-standard subjects).
+      updatedSubjects = fetchedGrades.flatMap((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
-        if (!code || existingCodes.has(code) || POINTS[grade] === undefined) return;
-        const name = String(row.courseName || "").trim();
-        const credits = Number(row.credits || 0);
-        if (!name || credits <= 0) return;
-        updatedSubjects.push({ id: Math.max(0,...updatedSubjects.map(subject=>subject.id))+index+1, name, credits, grade, courseCode: row.courseCode.trim().toUpperCase(), courseType: "Official GECA result", isCustom: true });
-        existingCodes.add(code);
+        if (!code || POINTS[grade] === undefined) return [];
+        const existing = existingByCode.get(code);
+        const name = String(row.courseName || existing?.name || row.courseCode).trim();
+        const credits = Number(row.credits || existing?.credits || 0);
+        if (!name || credits <= 0) return [];
+        return [{
+          ...(existing || {}),
+          id: index + 1,
+          name,
+          credits,
+          grade,
+          courseCode: row.courseCode.trim().toUpperCase(),
+          courseType: existing?.courseType || "Official GECA result",
+          curriculumSubjectId: existing?.curriculumSubjectId,
+          isCustom: !existing,
+        }];
       });
     }
     if (!updatedSubjects.length || updatedSubjects.some(subject => !subject.name.trim() || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
