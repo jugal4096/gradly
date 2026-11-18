@@ -179,6 +179,14 @@ export default function StudentOnlineResultSync({
       setNotice("");
       return;
     }
+    // A regular semester result must contain at least as many parsed courses as
+    // the current subject list. If fewer are detected, stop rather than saving
+    // a potentially incomplete result. Re-exam imports intentionally target one row.
+    if (!reExamMode && expectedCodes.size > 0 && sourceRows.length < expectedCodes.size) {
+      setError("Only " + sourceRows.length + " subjects were parsed, but your semester currently has " + expectedCodes.size + " course codes. The result may be incomplete; no grades were applied.");
+      setNotice("");
+      return;
+    }
 
     const applicable = sourceRows.map(row => {
       const code = normalizeCourseCode(row.courseCode);
