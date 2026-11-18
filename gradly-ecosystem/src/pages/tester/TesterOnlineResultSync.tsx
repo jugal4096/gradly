@@ -144,7 +144,7 @@ export default function TesterOnlineResultSync({
         const code = normalizeCourseCode(row.courseCode);
         const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
         const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-        return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 0) };
+        return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || row.credits || 3) };
       });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
       setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "The official PDF did not provide enough course details to save this result. No academic data was changed.");
