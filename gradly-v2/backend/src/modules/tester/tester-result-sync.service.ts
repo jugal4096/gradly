@@ -281,7 +281,7 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
     // combining headers from the first/second tables into one global list.
     const previousEnrollmentIndex = lines.slice(0, rowIndex).findLastIndex(candidate =>
       ENROLLMENT_PATTERN.test(candidate.text));
-    const tableStart = Math.max(0, previousEnrollmentIndex + 1, rowIndex - 80);
+    const tableStart = Math.max(0, rowIndex - 80);
     const rowWindow = lines.slice(tableStart, rowIndex + 1);
     const enrollmentY = line.items[0]?.y ?? 0;
     const columns = findCourseColumns(rowWindow, enrollmentY);
