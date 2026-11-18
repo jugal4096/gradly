@@ -840,7 +840,7 @@ export default function StudentPlatform() {
       if (attemptNumber > 1) setReExamTargetCourseCode("");
       const backlogCount = updatedSubjects.filter(subject => subject.grade === "D").length;
       if (attemptNumber > 1) {
-        setReExamOutcome({success:true,title:"Grades updated successfully!",message:"The selected course grade has been updated from the official re-examination result. "+backlogCount+" active backlog(s) remain."});
+        setReExamOutcome({success:true,title:"Re-examination grade updated!",message:matchedSubject.name+" ("+matchedSubject.courseCode+") was updated from D to "+matchedRow.grade.trim().toUpperCase()+" using the official re-examination result. Other subject grades were left unchanged. "+backlogCount+" active backlog(s) remain."});
       } else {
         setNotice("Official result saved directly to your academic profile. " + backlogCount + " active backlog(s) remain. " + (backlogCount ? "You can use the star beside a D grade to fetch a re-examination result." : "Your semester SGPA and CGPA profile are updated."));
       }
