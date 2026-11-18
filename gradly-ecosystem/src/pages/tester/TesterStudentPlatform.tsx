@@ -1043,7 +1043,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     if(attemptNumber>1) setReExamTargetCourseCode("");
     const backlogCount=finalSubjects.filter(subject=>subject.grade==="D").length;
     if(attemptNumber>1) {
-      setReExamOutcome({success:true,title:"Grades updated successfully!",message:"The selected course grade was updated from the official re-examination result in this isolated Tester profile. "+backlogCount+" active backlog(s) remain."});
+      setReExamOutcome({success:true,title:"Re-examination grade updated!",message:""+matchedSubject.name+" ("+matchedSubject.courseCode+") was updated from D to "+matchedRow.grade.trim().toUpperCase()+" using the official re-examination result. Other subject grades were left unchanged. "+backlogCount+" active backlog(s) remain."});
     } else {
       setNotice("Official result reflected immediately in the isolated Tester profile. "+backlogCount+" active backlog(s) remain.");
     }
