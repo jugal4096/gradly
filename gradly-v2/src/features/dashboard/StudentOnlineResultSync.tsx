@@ -207,7 +207,7 @@ export default function StudentOnlineResultSync({
     setReportBusy(true); setReportMessage("");
     try {
       const token = await getIdToken();
-      const message = ["OFFICIAL RESULT MISMATCH REPORT","Issue: " + reportKind,"Semester: " + (appliedResult?.semester || selectedSemester),"Course code: " + (reportRow.courseCode || "Not detected"),"Subject: " + (reportRow.courseName || reportRow.courseCode || "Unknown subject"),"Fetched grade: " + reportRow.grade,"Examination session: " + (appliedResult?.session || "Unknown"),"Result PDF: " + (appliedResult?.document || "Unknown"),"Source: " + (appliedResult?.url || "GECA"),"Student explanation: " + reportDetails.trim()].join("\\n");
+      const message = ["OFFICIAL RESULT MISMATCH REPORT","Issue: " + reportKind,"Semester: " + (appliedResult?.semester || selectedSemester),"Course code: " + (reportRow.courseCode || "Not detected"),"Subject: " + (reportRow.courseName || reportRow.courseCode || "Unknown subject"),"Fetched grade: " + reportRow.grade,"Examination session: " + (appliedResult?.session || "Unknown"),"Result PDF: " + (appliedResult?.document || "Unknown"),"Source: " + (appliedResult?.url || "GECA"),"Student explanation: " + reportDetails.trim()].join("\n");
       const response = await fetch(apiBase + "/api/student/syllabus-feedback", {method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({requestType:"SYLLABUS_FEEDBACK",semesterNumber:appliedResult?.semester||selectedSemester,subjectName:"Result mismatch · "+(reportRow.courseName||reportRow.courseCode||"Subject"),message})});
       const body=await response.json();
       if(!response.ok) throw new Error(body.message||"Unable to submit your report.");
