@@ -173,7 +173,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       `SELECT id FROM student_semesters
        WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
        ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
-      [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
+      [resolved.profile.id, semesterResult.rows[0].id],
     );
     if (submittedOECodes.length) {
       const priorOE = await client.query(
@@ -185,7 +185,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = ANY($2::text[])
            AND ss.semester_id <> $3
          LIMIT 1`,
-        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id, attemptNumber],
+        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id],
       );
       if (priorOE.rows.length) {
         await client.query("ROLLBACK");
