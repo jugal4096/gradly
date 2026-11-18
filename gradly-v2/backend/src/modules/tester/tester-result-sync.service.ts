@@ -267,6 +267,31 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
   return Array.from(mapped, ([courseCode, grade]) => ({ courseCode, grade }));
 }
 
+/** Dedicated conservative parser for a single GECA re-examination subject. */
+function extractReExamSubject(lines: TextLine[], enrollment: string, targetCourseCode: string): GecaMatchedGrade[] {
+  const target = compactPdfText(targetCourseCode);
+  if (!target) return [];
+  const studentRows = lines.filter(line => lineContainsEnrollment(line, enrollment));
+  for (const studentLine of studentRows) {
+    const studentY = studentLine.items[0]?.y ?? 0;
+    const headers = lines.flatMap(headerLine => {
+      const headerY = headerLine.items[0]?.y ?? 0;
+      if (headerY <= studentY || headerY - studentY > 220) return [];
+      return headerLine.items.flatMap(item => compactPdfText(item.text) === target
+        ? [{ x: item.x, distance: headerY - studentY }] : []);
+    }).sort((a, c) => a.distance - c.distance);
+    const header = headers[0];
+    if (!header) continue;
+    const grades = lines.filter(line => Math.abs((line.items[0]?.y ?? studentY) - studentY) <= 14)
+      .flatMap(line => line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x }))))
+      .filter(cell => !["-", "AB", "P"].includes(cell.grade))
+      .sort((a, c) => Math.abs(a.x - header.x) - Math.abs(c.x - header.x));
+    const grade = grades[0];
+    if (grade && Math.abs(grade.x - header.x) < 85) return [{ courseCode: target, grade: grade.grade }];
+  }
+  return [];
+}
+
 function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
   const matches = new Map<string, string>();
   let enrollmentFound = false;
@@ -305,7 +330,7 @@ function romanSemester(text: string): number | null {
   return values[match[1].toUpperCase()] ?? null;
 }
 
-async function readResultPdf(url: string, title: string, enrollment: string): Promise<{
+async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string): Promise<{
   document: GecaMatchedDocument | null;
   enrollmentFound: boolean;
   error?: string;
@@ -334,7 +359,7 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     const lines = groupPdfLines(positioned);
     if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
     allLines.push(...lines);
-    parsed = extractMatchingGrades(allLines, enrollment);
+    parsed = reExamTargetCourseCode ? { grades: extractReExamSubject(allLines, enrollment, reExamTargetCourseCode), enrollmentFound: allLines.some(line => lineContainsEnrollment(line, enrollment)) } : extractMatchingGrades(allLines, enrollment);
     // Stop reading the remaining pages once the matching enrollment row and
     // its grade columns have been found, while retaining earlier page headers.
     if (parsed.enrollmentFound && parsed.grades.length) break;
@@ -394,7 +419,7 @@ const BRANCH_NAMES: Record<string, string[]> = {
   "06": ["information technology", "information tech"],
 };
 
-export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number): Promise<{
+export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
   enrollmentHits: number;
@@ -449,7 +474,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
         if (scannedUrls.has(document.url)) continue;
         scannedUrls.add(document.url);
         try {
-          const parsed = await readResultPdf(document.url, document.title, enrollment);
+          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode);
           if (parsed.enrollmentFound) enrollmentHits++;
           if (parsed.document) matches.push(parsed.document);
           else if (parsed.enrollmentFound) parseFailures++;
