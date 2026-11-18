@@ -765,20 +765,30 @@ export default function StudentPlatform() {
         return nextGrade && subject.grade.toUpperCase() === "D" && POINTS[nextGrade] !== undefined ? { ...subject, grade: nextGrade } : subject;
       });
     } else {
-      updatedSubjects = fetchedGrades.flatMap((row, index) => {
+      const fetchedByCode = new Map<string, typeof fetchedGrades[number]>();
+      fetchedGrades.forEach(row => {
+        const code = normalizeResultCourseCode(row.courseCode);
+        if (code) fetchedByCode.set(code, row);
+      });
+      // Preserve the complete existing semester subject list (including UHV and
+      // courses absent from the PDF); apply fetched grades by course code only.
+      updatedSubjects = subjects.map(subject => {
+        const fetched = fetchedByCode.get(normalizeResultCourseCode(subject.courseCode));
+        if (!fetched) return subject;
+        const grade = fetched.grade.trim().toUpperCase();
+        if (POINTS[grade] === undefined) return subject;
+        return { ...subject, grade };
+      });
+      const existingCodes = new Set(updatedSubjects.map(subject => normalizeResultCourseCode(subject.courseCode)));
+      fetchedGrades.forEach((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
-        if (!code || POINTS[grade] === undefined) return [];
-        const existing = existingByCode.get(code);
-        const name = String(row.courseName || existing?.name || "").trim();
-        const credits = Number(row.credits || existing?.credits || 0);
-        if (!name || credits <= 0) return [];
-        return [{
-          ...(existing || {}), id: index + 1, name, credits, grade,
-          courseCode: row.courseCode.trim().toUpperCase(),
-          courseType: existing?.courseType || "Official GECA result",
-          curriculumSubjectId: existing?.curriculumSubjectId, isCustom: !existing,
-        }];
+        if (!code || existingCodes.has(code) || POINTS[grade] === undefined) return;
+        const name = String(row.courseName || "").trim();
+        const credits = Number(row.credits || 0);
+        if (!name || credits <= 0) return;
+        updatedSubjects.push({ id: Math.max(0,...updatedSubjects.map(subject=>subject.id))+index+1, name, credits, grade, courseCode: row.courseCode.trim().toUpperCase(), courseType: "Official GECA result", isCustom: true });
+        existingCodes.add(code);
       });
     }
     if (!updatedSubjects.length || updatedSubjects.some(subject => !subject.name.trim() || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
@@ -815,7 +825,7 @@ export default function StudentPlatform() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({
-          semesterNumber, attemptNumber,
+          semesterNumber, attemptNumber, resultSource: "GECA_OFFICIAL",
           courses: updatedSubjects.map(subject => ({
             courseCode: subject.courseCode || "", courseName: subject.name, credits: subject.credits,
             gradeSymbol: subject.grade, gradePoint: POINTS[subject.grade],
@@ -863,7 +873,8 @@ export default function StudentPlatform() {
     const gradedCourses=subjects.filter(subject=>subject.name.trim()&&subject.credits>0);
     const degreeCreditLimit=isDirectSecondYear?121:160;
     const previouslyRegistered=results.filter(result=>result.semester!==semesterNumber).reduce((sum,result)=>sum+result.credits,0);
-    if(creditsForSemesterLimit>28){setNotice("A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance.");return;}
+    const importedOfficialResult=Boolean(localStorage.getItem("gradly_online_result_source_"+semesterNumber));
+    if(creditsForSemesterLimit>28&&!importedOfficialResult){setNotice("A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance.");return;}
     if(previouslyRegistered+countedCredits>degreeCreditLimit){setNotice(`Your programme credit limit is ${degreeCreditLimit} credits (${isDirectSecondYear?"Direct Second Year":"Regular"} entry).`);return;}
     if(subjects.some(subject=>subject.electiveKind&&!subject.name.trim())){setNotice("Choose a course for every available elective slot before saving.");return;}
     if(!gradedCourses.length||gradedCourses.some(subject=>POINTS[subject.grade]===undefined)) { setNotice("Select a valid grade for every curriculum subject before saving."); return; }
