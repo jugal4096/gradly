@@ -185,13 +185,16 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
   return best.columns.sort((a, b) => a.x - b.x);
 }
 
-function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
+function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[], nearbyLines: TextLine[] = [line]): GecaMatchedGrade[] {
   if (!lineContainsEnrollment(line, enrollment) || !columns.length) return [];
   const mapped = new Map<string, string>();
-  const gradeCells = line.items.flatMap(item => {
-    const tokens = item.text.toUpperCase().trim().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""));
-    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x }));
-  });
+  // GECA PDFs can place grade tokens on adjacent baselines to the enrollment row.
+  // Collect within a narrow vertical band and retain x coordinates for mapping.
+  const anchorY = line.items[0]?.y ?? 0;
+  const gradeCells = nearbyLines.flatMap(candidate => candidate.items.flatMap(item => {
+    const tokens = item.text.toUpperCase().trim().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""));
+    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x, y: item.y }));
+  })).filter(cell => Math.abs(cell.y - anchorY) <= 14);
   const sortedColumns = [...columns].sort((a, b) => a.x - b.x);
   const distinctGradeColumns = new Set(gradeCells.map(item => Math.round(item.x)));
 
@@ -262,7 +265,9 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
     const rowWindow = lines.slice(tableStart, rowIndex + 1);
     const columns = findCourseColumns(rowWindow);
 
-    for (const grade of gradesInEnrollmentRow(line, enrollment, columns)) {
+    const enrollmentY = line.items[0]?.y ?? 0;
+    const nearbyGradeLines = lines.filter(candidate => Math.abs((candidate.items[0]?.y ?? 0) - enrollmentY) <= 14);
+    for (const grade of gradesInEnrollmentRow(line, enrollment, columns, nearbyGradeLines)) {
       matches.set(grade.courseCode, grade.grade);
     }
   }
