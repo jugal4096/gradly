@@ -248,13 +248,23 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
 }
 
 function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
-  const columns = findCourseColumns(lines);
   const matches = new Map<string, string>();
   let enrollmentFound = false;
 
-  for (const line of lines) {
+  for (let rowIndex = 0; rowIndex < lines.length; rowIndex++) {
+    const line = lines[rowIndex];
     if (!lineContainsEnrollment(line, enrollment)) continue;
     enrollmentFound = true;
+
+    // GECA PDFs can contain multiple independent result tables on the same page.
+    // Resolve the course headers for THIS enrollment row only, rather than
+    // combining headers from the first/second tables into one global list.
+    const previousEnrollmentIndex = lines.slice(0, rowIndex).findLastIndex(candidate =>
+      ENROLLMENT_PATTERN.test(candidate.text));
+    const tableStart = Math.max(0, previousEnrollmentIndex + 1, rowIndex - 45);
+    const rowWindow = lines.slice(tableStart, rowIndex + 1);
+    const columns = findCourseColumns(rowWindow);
+
     for (const grade of gradesInEnrollmentRow(line, enrollment, columns)) {
       matches.set(grade.courseCode, grade.grade);
     }
