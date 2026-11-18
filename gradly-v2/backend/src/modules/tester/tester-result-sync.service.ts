@@ -185,15 +185,13 @@ function findCourseColumns(lines: TextLine[]): CourseColumn[] {
   return best.columns.sort((a, b) => a.x - b.x);
 }
 
-function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[], nearbyLines: TextLine[] = [line]): GecaMatchedGrade[] {
+function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
   if (!lineContainsEnrollment(line, enrollment) || !columns.length) return [];
   const mapped = new Map<string, string>();
-  const anchorY = line.items[0]?.y ?? 0;
-  // Some GECA PDFs position the grade cells on a neighboring text baseline.
-  const gradeCells = nearbyLines.flatMap(candidate => candidate.items.flatMap(item => {
+  const gradeCells = line.items.flatMap(item => {
     const tokens = item.text.toUpperCase().trim().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""));
-    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x, y: item.y }));
-  })).filter(cell => Math.abs(cell.y - anchorY) <= 14);
+    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x }));
+  });
   const sortedColumns = [...columns].sort((a, b) => a.x - b.x);
   const distinctGradeColumns = new Set(gradeCells.map(item => Math.round(item.x)));
 
@@ -260,7 +258,7 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
     // combining headers from the first/second tables into one global list.
     const previousEnrollmentIndex = lines.slice(0, rowIndex).findLastIndex(candidate =>
       ENROLLMENT_PATTERN.test(candidate.text));
-    const tableStart = Math.max(0, previousEnrollmentIndex + 1, rowIndex - 20);
+    const tableStart = Math.max(0, previousEnrollmentIndex + 1, rowIndex - 80);
     const rowWindow = lines.slice(tableStart, rowIndex + 1);
     const columns = findCourseColumns(rowWindow);
 
