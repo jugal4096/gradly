@@ -115,7 +115,7 @@ export default function StudentOnlineResultSync({
       const response = await fetch(apiBase + "/api/student/results/sessions/" + encodeURIComponent(session.id) + "/match", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ selectedSemester }),
+        body: JSON.stringify({ selectedSemester, reExamTargetCourseCode: reExamMode ? reExamTargetCourseCode : undefined }),
         signal: controller.signal,
       });
       const body = await response.json();
