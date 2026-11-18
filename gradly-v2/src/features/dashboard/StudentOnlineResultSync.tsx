@@ -95,7 +95,6 @@ export default function StudentOnlineResultSync({
   useEffect(() => {
     if (!reExamTargetCourseCode) { setReExamMode(false); return; }
     setReExamMode(true);
-    setReExamChoice(null);
     setOpen(true);
     setScan(null);
     setSelectedSessionId("");
