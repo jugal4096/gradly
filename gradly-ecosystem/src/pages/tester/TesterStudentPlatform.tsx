@@ -934,15 +934,6 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     setDroppedElectives(next);
     removeSubject(subjectId);
   }
-  function restoreElective(subjectId:number) {
-    const subject=droppedElectives.find(item=>item.id===subjectId);
-    if(!subject) return;
-    const next=droppedElectives.filter(item=>item.id!==subjectId);
-    studentStorage.setItem("gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester,JSON.stringify(next));
-    setDroppedElectives(next);
-    setSubjects(current=>[...current,subject].sort((a,b)=>a.id-b.id));
-    setSgpa(null); setNotice("");
-  }
   async function saveSemester() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }
     const semesterNumber=isGuest?Number(guestSemester):selectedSemester;
