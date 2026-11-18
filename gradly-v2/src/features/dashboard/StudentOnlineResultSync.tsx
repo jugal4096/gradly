@@ -49,6 +49,12 @@ export default function StudentOnlineResultSync({
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
+  const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
+  const [reportRow, setReportRow] = useState<ResultGrade | null>(null);
+  const [reportKind, setReportKind] = useState("Incorrect grade");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
 
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
@@ -185,6 +191,7 @@ export default function StudentOnlineResultSync({
         return;
       }
       const appliedCount = applicable.length;
+      setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: document.semester});
       const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
       setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
     } catch (reason) {
@@ -194,6 +201,21 @@ export default function StudentOnlineResultSync({
   }
 
 
+
+  async function submitMismatchReport() {
+    if (!reportRow || reportDetails.trim().length < 10) { setReportMessage("Please add at least 10 characters explaining the mismatch."); return; }
+    setReportBusy(true); setReportMessage("");
+    try {
+      const token = await getIdToken();
+      const message = ["OFFICIAL RESULT MISMATCH REPORT","Issue: " + reportKind,"Semester: " + (appliedResult?.semester || selectedSemester),"Course code: " + (reportRow.courseCode || "Not detected"),"Subject: " + (reportRow.courseName || reportRow.courseCode || "Unknown subject"),"Fetched grade: " + reportRow.grade,"Examination session: " + (appliedResult?.session || "Unknown"),"Result PDF: " + (appliedResult?.document || "Unknown"),"Source: " + (appliedResult?.url || "GECA"),"Student explanation: " + reportDetails.trim()].join("\\n");
+      const response = await fetch(apiBase + "/api/student/syllabus-feedback", {method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({requestType:"SYLLABUS_FEEDBACK",semesterNumber:appliedResult?.semester||selectedSemester,subjectName:"Result mismatch · "+(reportRow.courseName||reportRow.courseCode||"Subject"),message})});
+      const body=await response.json();
+      if(!response.ok) throw new Error(body.message||"Unable to submit your report.");
+      setReportMessage("Report submitted to department review. The department can forward it to Super Admin.");
+      setReportRow(null);setReportDetails("");setReportKind("Incorrect grade");
+    }catch(err){setReportMessage(err instanceof Error?err.message:"Unable to submit your report. Please try again.");}
+    finally{setReportBusy(false);}
+  }
 
   return <>
     <button type="button" className={"sp-entry-mode " + (open ? "selected" : "")} onClick={() => void openArchive()} aria-expanded={open}>
@@ -258,6 +280,17 @@ export default function StudentOnlineResultSync({
 
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
+      {appliedResult && <div style={{border:"1px solid #cde7d5",background:"#f5fbf7",borderRadius:12,padding:12,marginTop:10}}>
+        <strong style={{display:"block",color:"#146c3e",marginBottom:8}}>Grades applied successfully</strong><p style={{margin:"0 0 8px",fontSize:13}}>Review the fetched subjects. Report any incorrect grade or subject detail.</p>
+        {appliedResult.rows.map((row,i)=><div key={row.courseCode+i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,borderTop:"1px solid #dcebe1",padding:"8px 0"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.7}}>{row.courseCode} · Grade {row.grade}</small></span><button type="button" onClick={()=>{setReportRow(row);setReportKind("Incorrect grade");setReportMessage("");}} style={{border:"1px solid #d2d8de",background:"#fff",borderRadius:8,padding:"6px 9px",cursor:"pointer"}}>⋯ Report</button></div>)}
+      </div>}
+      {reportRow && <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(15,20,25,.45)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Report result mismatch"><div style={{background:"white",color:"#20242a",borderRadius:16,padding:20,width:"min(480px,100%)",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:12}}><div><small>GECA · RESULT REVIEW</small><h3 style={{margin:"6px 0"}}>Report a mismatch</h3></div><button type="button" onClick={()=>{setReportRow(null);setReportMessage("");}} aria-label="Close">×</button></div>
+        <p><b>{reportRow.courseName||reportRow.courseCode}</b> · {reportRow.courseCode} · Fetched grade: <b>{reportRow.grade}</b></p>
+        <label style={{display:"block",margin:"10px 0"}}>What is incorrect?<select value={reportKind} onChange={e=>setReportKind(e.target.value)} style={{display:"block",width:"100%",marginTop:5,padding:10,borderRadius:8}}><option>Incorrect grade</option><option>Wrong subject mapping</option><option>Incorrect course code</option><option>Unexpected result</option><option>Other</option></select></label>
+        <label style={{display:"block"}}>Details (minimum 10 characters)<textarea value={reportDetails} onChange={e=>setReportDetails(e.target.value)} rows={4} placeholder="Explain what should be corrected…" style={{display:"block",width:"100%",boxSizing:"border-box",marginTop:5,padding:10,borderRadius:8}}/></label>
+        {reportMessage&&<p role="status" style={{fontSize:13}}>{reportMessage}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:14}}><button type="button" onClick={()=>{setReportRow(null);setReportMessage("");}}>Cancel</button><button type="button" disabled={reportBusy||reportDetails.trim().length<10} onClick={()=>void submitMismatchReport()}>{reportBusy?"Submitting…":"Submit report"}</button></div>
+      </div></div>
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Official result · one-step profile update</span></div>
     </section>}
   </>;
