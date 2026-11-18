@@ -89,6 +89,17 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").repla
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
 const gradeNames = Object.keys(POINTS);
 function normalizeResultCourseCode(value: unknown): string { return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+function dedupeSubjectsByCourseCode(rows: Subject[]): Subject[] {
+  const byCode = new Map<string, Subject>();
+  for (const row of rows) {
+    const code = normalizeResultCourseCode(row.courseCode);
+    if (!code) { byCode.set("missing:"+row.id, row); continue; }
+    const existing = byCode.get(code);
+    // Keep a single course row; prefer the one carrying a saved grade.
+    if (!existing || (!existing.grade && Boolean(row.grade))) byCode.set(code, row);
+  }
+  return [...byCode.values()].map((row, index) => ({...row, id:index+1}));
+}
 const isDseAdmission = (admissionMode: string, enrollment: string) => /\bDSE\b|DIRECT\s+SECOND\s+YEAR|SECOND\s+YEAR\s+DIRECT/i.test(admissionMode||"") || String(enrollment||"").trim().toUpperCase().replace(/\s+/g,"")[4] === "S";
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
@@ -347,7 +358,7 @@ export default function StudentPlatform() {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
-          if(authoritative.length) { setSubjects(authoritative); return; }
+          if(authoritative.length) { setSubjects(dedupeSubjectsByCourseCode(authoritative)); return; }
         }
         let electiveSaved:Subject[]=[];
         try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
@@ -376,7 +387,7 @@ export default function StudentPlatform() {
         const customSavedSubjects: Subject[] = saved
           .filter(subject=>!subject.curriculumSubjectId)
           .map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
-        setSubjects([...availableCurriculumSubjects,...customSavedSubjects]);
+        setSubjects(dedupeSubjectsByCourseCode([...availableCurriculumSubjects,...customSavedSubjects]));
         setSgpa(null);
       } catch(error) {
         if(!cancelled) { setSubjects([]); setNotice(error instanceof Error?error.message:"Unable to load curriculum subjects."); }
