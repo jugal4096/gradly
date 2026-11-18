@@ -150,42 +150,39 @@ function gradeTokensFromItem(item: PositionedItem): string[] {
 type CourseColumn = { courseCode: string; x: number };
 
 function findCourseColumns(lines: TextLine[]): CourseColumn[] {
-  const candidates: CourseColumn[] = [];
-  // GECA layouts vary: course codes may appear on several lines after the
-  // seat-number heading, so inspect a wider header window and tolerate split
-  // PDF text items without treating enrollment numbers as course codes.
-  const headerIndexes = lines.map((line, index) => /(?:Exam\s*Seat|Seat\s*No|Enrollment\s*No|Roll\s*No)/i.test(line.text) ? index : -1).filter(index => index >= 0);
-  // Some GECA re-examination PDFs place course-code headers before the
-  // candidate/seat-number heading. Keep a second bounded header window for
-  // those layouts instead of declaring an enrollment hit unparsable.
-  const windows = [
-    // GECA re-exam PDFs sometimes put subject-code headings before the
-    // Exam Seat No heading; inspect the opening table header in either case.
-    { start: 0, end: Math.min(lines.length, headerIndexes.length ? headerIndexes[0] + 1 : 80) },
-    ...headerIndexes.map(index => ({ start: index + 1, end: Math.min(lines.length, index + 41) })),
-  ];
-  for (const window of windows) {
-    for (let lineIndex = window.start; lineIndex < window.end; lineIndex++) {
-      const line = lines[lineIndex];
-      for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
-        const item = line.items[itemIndex];
-        const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        const single = clean(item.text);
-        const next = line.items[itemIndex + 1];
-        const combined = next ? single + clean(next.text) : "";
-        const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
-        if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
-          candidates.push({ courseCode: token, x: item.x });
-          if (token === combined) itemIndex++;
-        }
+  // Parse headers from the bounded table window supplied by the enrollment-row
+  // caller. Never accumulate course codes across unrelated header windows.
+  // PDF text extraction can split a code across adjacent items, so normalize
+  // and join at most two neighboring items.
+  const rows: Array<{ y: number; columns: CourseColumn[] }> = [];
+  for (const line of lines) {
+    const columns: CourseColumn[] = [];
+    for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
+      const item = line.items[itemIndex];
+      const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const single = clean(item.text);
+      const next = line.items[itemIndex + 1];
+      const combined = next ? single + clean(next.text) : "";
+      const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
+      if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
+        columns.push({ courseCode: token, x: item.x });
+        if (token === combined) itemIndex++;
       }
-      if (/\bGrade\b/i.test(line.text) && candidates.length) break;
-      if (candidates.length >= 40) break;
     }
+    if (columns.length) rows.push({ y: line.items[0]?.y ?? 0, columns });
   }
-  const unique = new Map<string, CourseColumn>();
-  for (const column of candidates) if (!unique.has(column.courseCode)) unique.set(column.courseCode, column);
-  return Array.from(unique.values()).sort((a, b) => a.x - b.x);
+
+  // Course-code headers are normally emitted on one horizontal row. Select the
+  // strongest horizontal code row rather than mixing codes from neighboring
+  // tables, exam metadata, or unrelated text lines.
+  const ranked = rows
+    .map(row => ({ ...row, columns: Array.from(new Map(row.columns.map(column => [column.courseCode, column])).values()) }))
+    .sort((a, b) => b.columns.length - a.columns.length || b.y - a.y);
+  const best = ranked[0];
+  // Fail closed when only one course code is confidently found: a partial
+  // header cannot safely support positional grade mapping.
+  if (!best || best.columns.length < 2) return [];
+  return best.columns.sort((a, b) => a.x - b.x);
 }
 
 function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
