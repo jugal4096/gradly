@@ -136,7 +136,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
   }
   const openElectiveCodes = new Set([
     "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027","MEOE0050",
-    "EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
+    "ME2023","EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
   ]);
   const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code));
   if (new Set(submittedOECodes).size !== submittedOECodes.length) {
@@ -187,6 +187,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         // returned by the branch-specific curriculum subject query.
         "CEHS1030",
         "INHS1020",
+        "INMC2010",
+        "ME2023",
       ]);
       const invalidCodes = [...new Set(normalized
         .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
