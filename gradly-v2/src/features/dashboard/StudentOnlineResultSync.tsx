@@ -168,7 +168,11 @@ export default function StudentOnlineResultSync({
 
     const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
     const catalogueCodes = new Set(catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean));
-    const expectedCodes = new Set(subjectCodes.length ? subjectCodes : [...catalogueCodes]);
+    // The visible grade list can omit shared HS/UHV curriculum rows when the
+    // curriculum endpoint returns only branch-specific subjects. Reconcile
+    // against both sources, and explicitly retain the configured GECA HS/UHV
+    // courses rather than misclassifying them as unknown PDF columns.
+    const expectedCodes = new Set([...subjectCodes, ...catalogueCodes, "CEHS1030", "INHS1020"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = normalizeCourseCode(row.courseCode);
