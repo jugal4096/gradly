@@ -128,10 +128,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const credits = Number(course?.credits);
     const grade = String(course?.gradeSymbol ?? "").trim().toUpperCase();
     const point = course?.gradePoint === undefined ? gradePoints[grade] : Number(course.gradePoint);
-    const isZeroCreditMandatory = code.toUpperCase().replace(/[^A-Z0-9]/g, "") === "INMC2010";
+    const isZeroCreditMandatory = ["INMC2001","INMC2010"].includes(code.toUpperCase().replace(/[^A-Z0-9]/g, ""));
     if (!name || !Number.isFinite(credits) || credits < 0 || (credits === 0 && !isZeroCreditMandatory) || credits > 30 ||
         !Number.isFinite(point) || point < 0 || point > 10) {
-      return res.status(400).json({ message: "Each subject needs a name, valid credits (zero is allowed only for INMC2010) and a grade point from 0 to 10." });
+      return res.status(400).json({ message: "Each subject needs a name, valid credits (zero is allowed only for Environmental Science (INMC2001)) and a grade point from 0 to 10." });
     }
     normalized.push({ code, name, credits, grade, point });
   }
@@ -191,6 +191,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         // returned by the branch-specific curriculum subject query.
         "CEHS1030",
         "INHS1020",
+        "INMC2001",
         "INMC2010",
         "ME2023",
       ]);
