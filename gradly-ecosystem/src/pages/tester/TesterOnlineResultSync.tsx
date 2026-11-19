@@ -221,10 +221,6 @@ export default function TesterOnlineResultSync({
         mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
         present.add(code);
       }
-      if (hasMechanicalEntrepreneurshipExamCode && !present.has("MEOE1040")) {
-        mappedRows.push({ courseCode: "MEOE1040", courseName: "Entrepreneurship Development (Mechanical Engineering)", credits: 3, grade: "", useDefault: true });
-        present.add("MEOE1040");
-      }
     }
     // Course code is the only deduplication key. Retain the first valid row
     // for each normalized course code, even when names differ; distinct codes
