@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
+type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
@@ -33,7 +33,7 @@ type Props = {
   onApply: (semester: number, grades: ResultGrade[], sessionTitle: string, documentTitle: string, sourceUrl: string, attemptNumber: number) => boolean | void | Promise<boolean | void>;
 };
 
-export default function TesterOnlineResultSync({
+export default function StudentOnlineResultSync({
   apiBase, curriculumId, testerToken, enrollmentNumber, selectedSemester, subjects, reExamTargetCourseCode, onCancelReExam, onApply,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -48,8 +48,10 @@ export default function TesterOnlineResultSync({
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
-  const [appliedResult, setAppliedResult] = useState<{ rows: ResultGrade[]; semester: number; session: string } | null>(null);
-
+  const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
+  const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
+  const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
+  
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
   const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
@@ -104,6 +106,9 @@ export default function TesterOnlineResultSync({
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
+    // Enforce one examination-session scan at a time, even if rapid clicks bypass
+    // React's disabled-button render before state updates.
+    if (activeRequest.current || loadingSessionId) return;
     const controller = new AbortController();
     activeRequest.current = controller;
     setShowCancelConfirm(false);
@@ -122,8 +127,11 @@ export default function TesterOnlineResultSync({
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
       setScan(body as MatchResponse);
-      const matchingDocument = (body.matches || []).find((document: ResultDocument) => document.semester === selectedSemester);
+      const matchedDocuments = (body.matches || []) as ResultDocument[];
+      const matchingDocument = matchedDocuments.find(document => document.semester === selectedSemester);
       if (matchingDocument) await applyDocument(matchingDocument, session.title);
+      else if (matchedDocuments.length === 1) await applyDocument(matchedDocuments[0], session.title);
+
       else if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("Your enrollment was found, but the result could not be read. No grades were applied.");
       else if (!body.matches?.length) setNotice("Your enrollment was not found in this examination session.");
       else setNotice("A matching result PDF was found, but it belongs to a different semester. No grades were applied.");
@@ -136,15 +144,17 @@ export default function TesterOnlineResultSync({
   }
 
   async function applyDocument(document: ResultDocument, sessionTitle: string) {
-    if (!document.semester || document.semester !== selectedSemester) {
-      setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
-      return;
-    }
+    // The enrollment is matched within the selected examination session. If the
+    // PDF parser misreads semester metadata, use the student's selected semester
+    // as a fallback only when the scan returned a single enrollment match.
+    const targetSemester = selectedSemester;
+
     const targetCode = normalizeCourseCode(reExamTargetCourseCode);
     const sourceRows = document.grades
       .filter(row => row.courseCode.trim())
       .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
-    const invalidGradeRows = sourceRows.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    const manualGradeCodes = new Set(["MEOE1040","INMC2010","INMC2001","CEHS1030","INHS1020"]);
+    const invalidGradeRows = sourceRows.filter(row => !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (invalidGradeRows.length) {
       setError("The PDF contains course rows with grades Gradly could not recognise (" + invalidGradeRows.map(row => row.courseCode + ": " + row.grade).join(", ") + "). No grades were applied; the result needs parser review.");
       setNotice("");
@@ -152,77 +162,132 @@ export default function TesterOnlineResultSync({
     }
 
     const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    const catalogueCodes = new Set(catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean));
-    const expectedCodes = new Set(subjectCodes.length ? subjectCodes : [...catalogueCodes]);
+    // Reconcile against the student's selected subjects, not every department's
+    // elective catalogue. GECA's exam PDF may use the legacy MEOE1040 code.
+    const expectedCodes = new Set([...subjectCodes, "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = normalizeCourseCode(row.courseCode);
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    // Never discard rows because their course codes are absent from the current curriculum.
-    // Official result PDFs are the source of truth; curriculum is only a mismatch reference.
-    const unknownRows = sourceRows.filter(row => expectedCodes.size && !expectedCodes.has(normalizeCourseCode(row.courseCode)));
-    const missingCodes = reExamMode ? [] : [...expectedCodes].filter(code => !counts.has(code));
-    const mismatchParts = [
-      unknownRows.length ? "official courses not in current curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ") : "",
-      missingCodes.length ? "curriculum courses not detected in PDF: " + missingCodes.join(", ") : "",
-    ].filter(Boolean);
+    const knownLegacyCodes = new Set(["MEOE1040", "INMC2010"]);
+    const unknownRows = sourceRows.filter(row => {
+      const code = normalizeCourseCode(row.courseCode);
+      return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
+    });
+    const mismatchParts = unknownRows.length
+      ? ["official courses not in the selected curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ")]
+      : [];
+    if (!reExamMode && mismatchParts.length) {
+      setError("Result review required. No grades were applied because the PDF contains unexpected course codes: " + mismatchParts.join("; ") + ". Please verify the official result PDF.");
+      setNotice("");
+      return;
+    }
     if (duplicateCodes.size) {
       setError("The result parser detected duplicate course codes (" + [...duplicateCodes].join(", ") + "). No grades were applied to avoid overwriting the wrong subject.");
       setNotice("");
       return;
     }
-    // A regular semester result must contain at least as many parsed courses as
-    // the current subject list. If fewer are detected, stop rather than saving
-    // a potentially incomplete result. Re-exam imports intentionally target one row.
-    if (!reExamMode && expectedCodes.size > 0 && sourceRows.length < expectedCodes.size) {
-      setError("Only " + sourceRows.length + " subjects were parsed, but your semester currently has " + expectedCodes.size + " course codes. The result may be incomplete; no grades were applied.");
-      setNotice("");
-      return;
-    }
-
-    const mappedRows = sourceRows.map(row => {
-      const code = normalizeCourseCode(row.courseCode);
+    // MEOE1040 is the legacy exam code for Entrepreneurship Development.
+    // The student selected the Mechanical option (ME2023), so do not import a
+    // parser-inferred grade from this row; require manual grade-card entry.
+    const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
+    const mappedRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040").map(row => {
+      const sourceCode = normalizeCourseCode(row.courseCode);
+      const code = sourceCode === "INMC2010" ? "INMC2001" : sourceCode;
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
-      const parsedCredits = Number(row.credits || 0);
-      const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
-      return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
+      const knownNames: Record<string,string> = {
+        "CEHS1030":"Humanities & Social Sciences (HS)",
+        "INHS1020":"Universal Human Values-II: Understanding Harmony",
+        "INMC2001":"Environmental Science",
+      };
+      const parsedCredits = row.credits == null ? null : Number(row.credits);
+      const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 2 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
+      const parsedGrade = String(row.grade || "").trim().toUpperCase();
+      const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
+      return { ...row, courseCode: code, grade, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
     });
-    // Remove duplicate subject titles while preserving different courses. The
-    // official PDF occasionally lists the same elective under duplicate codes.
-    const seenSubjectNames = new Set<string>();
+    // Preserve selected courses whose grades are absent from the online PDF.
+    // Blank grades are entered by the student in the review step, never
+    // converted into D or another failure grade.
+    if (!reExamMode) {
+      const present = new Set(mappedRows.map(row => normalizeCourseCode(row.courseCode)));
+      for (const subject of subjects) {
+        const code = normalizeCourseCode(subject.courseCode);
+        const staleElectricalEntrepreneurship = hasMechanicalEntrepreneurshipExamCode && code === "EE3018" && /entrepreneurship development/i.test(subject.name);
+        if (!code || staleElectricalEntrepreneurship || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && code !== "INMC2001") || present.has(code)) continue;
+        mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
+        present.add(code);
+      }
+      if (hasMechanicalEntrepreneurshipExamCode && !present.has("ME2023")) {
+        mappedRows.push({ courseCode: "ME2023", courseName: "Entrepreneurship Development (Mechanical Engineering)", credits: 3, grade: "", useDefault: true });
+        present.add("ME2023");
+      }
+    }
+    // Course code is the only deduplication key. Retain the first valid row
+    // for each normalized course code, even when names differ; distinct codes
+    // remain separate courses even when their names are identical.
+    const seenCourseCodes = new Set<string>();
     const applicable = mappedRows.filter(row => {
-      const nameKey = normalizeCourseCode(row.courseName || row.courseCode);
-      if (!nameKey || seenSubjectNames.has(nameKey)) return false;
-      seenSubjectNames.add(nameKey);
+      const codeKey = normalizeCourseCode(row.courseCode);
+      if (!codeKey || seenCourseCodes.has(codeKey)) return false;
+      seenCourseCodes.add(codeKey);
       return true;
     });
-    if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
+    if (!applicable.length || applicable.some(row => !Number.isFinite(row.credits) || row.credits < 0 || (row.credits === 0 && normalizeCourseCode(row.courseCode) !== "INMC2001") || !row.courseName.trim())) {
       setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "No valid, matching subjects were found in this result. No grades were changed.");
       return;
     }
 
     setError("");
-    setNotice("Saving verified grades…");
-    try {
-      const applyResult = await onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
-      if (applyResult === false) {
-        setNotice("The result could not be applied to your profile. Check the message and try again.");
-        return;
+    setNotice("");
+    if (reExamMode) {
+      try {
+        const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, 2);
+        if (applyResult === false) { setNotice("The re-examination result could not be applied. Check the message and try again."); return; }
+        setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
+        setNotice("Re-examination grades added successfully.");
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Could not save the re-examination grade. Please retry.");
       }
-      const appliedCount = applicable.length;
-      setAppliedResult({ rows: applicable, semester: document.semester, session: sessionTitle });
-      const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
-      setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save the fetched grades. Please retry.");
-      setNotice("");
+      return;
     }
+    setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
+    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
+    setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving.");
   }
 
 
+
+  async function confirmPendingReview() {
+    if (!pendingReview) return;
+    const grades = pendingReview.rows.map(row => ({
+      ...row,
+      grade: reviewGrades[normalizeCourseCode(row.courseCode)] || "",
+    }));
+    const missing = grades.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    if (missing.length) {
+      setError("Enter a grade for every subject before saving. Missing: " + missing.map(row => row.courseName || row.courseCode).join(", "));
+      return;
+    }
+    setError("");
+    setNotice("Saving reviewed grades…");
+    try {
+      const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
+      if (result === false) {
+        setNotice("The result could not be saved. Your academic profile was not changed.");
+        return;
+      }
+      setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
+      setPendingReview(null);
+      setNotice("Reviewed grades saved successfully. " + grades.length + " subjects were applied.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save the reviewed grades. Please retry.");
+      setNotice("");
+    }
+  }
 
   return <>
     <button type="button" className={"sp-entry-mode " + (open ? "selected" : "")} onClick={() => void openArchive()} aria-expanded={open}>
@@ -232,7 +297,7 @@ export default function TesterOnlineResultSync({
     </button>
     {open && <section className="sp-online-result-panel sp-online-result-inline" role="dialog" aria-modal="true" aria-label={reExamMode?"Choose re-examination session":"Choose examination session"} aria-busy={loadingSessions || Boolean(loadingSessionId)}>
       <div className="sp-online-result-head">
-        <div><span>GECA · RESULT IMPORT</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Select an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>! Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Choose the examination in which you appeared for Semester {selectedSemester}. We’ll scan its linked department result PDFs for enrollment <b>{enrollmentNumber}</b>. This Tester workflow changes only the isolated test profile.</p></div>
+        <div className="sp-online-result-heading"><span>GECA · RESULT IMPORT</span><h3>{reExamMode ? "Fetch your re-examination marks" : "Select an examination session"}</h3>{reExamMode&&reExamTargetCourseCode&&<div className="sp-reexam-subject-callout"><b>! Backlog subject selected</b><strong>{subjects.find(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(reExamTargetCourseCode))?.name||reExamTargetCourseCode}</strong><span>Choose the examination session in which you appeared for this subject. Gradly will update this subject’s grade only.</span></div>}<p>Choose the examination in which you appeared for Semester {selectedSemester}. We’ll scan its linked department result PDFs for enrollment <b>{enrollmentNumber}</b>. Review the official GECA result before applying grades to this isolated tester workspace.</p></div>
         <button type="button" onClick={() => { if (reExamMode) onCancelReExam?.(); setReExamMode(false); setOpen(false); }} aria-label="Close online result archive">×</button>
       </div>
       {(loadingSessions || Boolean(loadingSessionId)) && createPortal(<div className="sp-online-loading-backdrop" role="presentation">
@@ -268,7 +333,7 @@ export default function TesterOnlineResultSync({
         
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
-          const validRows = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+          const validRows = document.grades.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040" && row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
           const backlogRows = validRows.filter(row => row.grade.toUpperCase() === "D");
           const canApply = document.semester === selectedSemester && validRows.length > 0;
           return <article className="sp-online-match" key={document.url}>
@@ -279,7 +344,7 @@ export default function TesterOnlineResultSync({
               <div className={backlogRows.length ? "has-backlog" : ""}><strong>{backlogRows.length}</strong><span>Active backlogs</span></div>
             </div>
             {backlogRows.length > 0 && !reExamMode && <div className="sp-online-backlog-alert"><b>！ {backlogRows.length} active backlog{backlogRows.length===1?"":"s"}</b><span>{backlogRows.map(row=>row.courseName || row.courseCode).slice(0,3).join(" · ")}{backlogRows.length>3?" · +"+(backlogRows.length-3)+" more":""}</span></div>}
-            <div className="sp-online-auto-apply-note">{canApply ? "Result auto-imported into your grade entry." : "Semester does not match your selected workspace."}</div>
+            <div className="sp-online-auto-apply-note">{canApply ? "Result found. Review and confirm grades before saving." : "Semester does not match your selected workspace."}</div>
 
             {reExamMode && <p className="sp-online-reexam-mode">Re-examination mode · fetched grades will update the existing backlog attempt without replacing unrelated subjects.</p>}
           </article>;
@@ -287,8 +352,11 @@ export default function TesterOnlineResultSync({
 
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
-      <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved to this isolated browser session</span></div>
+      {pendingReview && createPortal(<div style={{position:"fixed",inset:0,zIndex:100020,background:"rgba(8,15,24,.78)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Review official result grades"><section style={{background:"#fff",color:"#17231d",borderRadius:16,padding:22,width:"min(680px,100%)",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><small style={{fontWeight:800,color:"#167348"}}>GECA · RESULT REVIEW</small><h2 style={{margin:"8px 0"}}>Review your semester grades</h2><p style={{marginTop:0}}>Check the fetched grades against your official grade card. If GECA has not published a grade online, select it manually here. A missing online grade is not treated as a failure.</p><div style={{borderTop:"1px solid #e4e9e5"}}>{pendingReview.rows.map((row,index)=>{const key=normalizeCourseCode(row.courseCode);const manual=!row.grade;return <div key={key+index} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 118px",gap:12,alignItems:"center",padding:"10px 0",borderBottom:"1px solid #e8ece9"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.65}}>{row.courseCode}{manual?" · Manual grade required":""}</small></span><select aria-label={"Grade for "+(row.courseName||row.courseCode)} value={reviewGrades[key]||""} onChange={event=>setReviewGrades(current=>({...current,[key]:event.target.value}))} style={{width:"100%",padding:9,borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}><option value="">Select grade</option>{["A++","A+","A","B+","B","C+","C","D"].map(grade=><option key={grade} value={grade}>{grade}</option>)}</select></div>})}</div>{error&&<p role="alert" style={{color:"#b42318"}}>{error}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:16}}><button type="button" onClick={()=>{setPendingReview(null);setError("");setNotice("Result review cancelled. No grades were saved.");}} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}>Cancel</button><button type="button" onClick={()=>void confirmPendingReview()} disabled={!pendingReview.rows.every(row=>["A++","A+","A","B+","B","C+","C","D"].includes((reviewGrades[normalizeCourseCode(row.courseCode)]||"").toUpperCase()))} style={{padding:"10px 16px",border:0,borderRadius:8,background:"#172d21",color:"#fff",fontWeight:700}}>Confirm and save grades</button></div></section></div>,document.body)}
+      {appliedResult && createPortal(<div style={{position:"fixed",inset:0,zIndex:100010,background:"rgba(8,15,24,.72)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Tester grades saved"><section style={{background:"#fff",color:"#14251c",borderRadius:16,padding:22,width:"min(560px,100%)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><small style={{color:"#14804b",fontWeight:800}}>GRADLY · OFFICIAL RESULT SAVED</small><h2 style={{margin:"8px 0"}}>Grades applied successfully ✓</h2><p>Saved {appliedResult.rows.length} subject grades for Semester {appliedResult.semester}. This is isolated tester data.</p><div style={{borderTop:"1px solid #e0e7e3"}}>{appliedResult.rows.map((row,index)=><div key={(row.courseCode||row.courseName||"row")+index} style={{display:"flex",justifyContent:"space-between",gap:10,padding:"9px 0",borderBottom:"1px solid #e5eae7"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.65}}>{row.courseCode}</small></span><strong>{row.grade}</strong></div>)}</div><button type="button" onClick={()=>setAppliedResult(null)} style={{display:"block",width:"100%",marginTop:14,padding:12,border:0,borderRadius:10,background:"#15271d",color:"#fff",fontWeight:800}}>Done</button></section></div>,document.body)}
+
+      <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved only in this isolated browser session</span></div>
     </section>}
-    {appliedResult && <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(10,14,20,.58)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Tester grades saved"><section style={{background:"#fff",color:"#17211b",borderRadius:18,padding:20,width:"min(560px,100%)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 24px 70px rgba(0,0,0,.28)"}}><small style={{color:"#16834d",fontWeight:700,letterSpacing:".08em"}}>GRADLY · TESTER RESULT SAVED</small><h2 style={{margin:"8px 0"}}>Grades added successfully</h2><p>Saved {appliedResult.rows.length} result rows for Semester {appliedResult.semester}. This is isolated tester data.</p>{appliedResult.rows.map((row,i)=><div key={row.courseCode+i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,borderTop:"1px solid #e1e8e3",padding:"9px 0"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.7}}>{row.courseCode} · {row.credits} credits</small></span><strong>{row.grade}</strong></div>)}<button type="button" onClick={()=>setAppliedResult(null)} style={{display:"block",width:"100%",marginTop:14,padding:12,border:0,borderRadius:10,background:"#17211b",color:"#fff",fontWeight:700}}>Done</button></section></div>}
+    
   </>;
 }
