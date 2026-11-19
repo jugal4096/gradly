@@ -128,7 +128,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const credits = Number(course?.credits);
     const grade = String(course?.gradeSymbol ?? "").trim().toUpperCase();
     const point = course?.gradePoint === undefined ? gradePoints[grade] : Number(course.gradePoint);
-    if (!name || !Number.isFinite(credits) || credits <= 0 || credits > 30 ||
+    const isZeroCreditMandatory = code.toUpperCase().replace(/[^A-Z0-9]/g, "") === "INMC2010";
+    if (!name || !Number.isFinite(credits) || credits < 0 || (credits === 0 && !isZeroCreditMandatory) || credits > 30 ||
         !Number.isFinite(point) || point < 0 || point > 10) {
       return res.status(400).json({ message: "Each subject needs a name, positive credits and a grade point from 0 to 10." });
     }
@@ -147,6 +148,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     return res.status(400).json({ code: "UHV_DUPLICATE", message: "Universal Human Values can be registered only once throughout your degree." });
   }
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
+  if (creditsRegistered <= 0) {
+    return res.status(400).json({ message: "At least one credit-bearing subject is required to calculate SGPA." });
+  }
   const creditsWithoutUhv = normalized.filter(course => course.code.toUpperCase() !== "INHS1020")
     .reduce((sum, course) => sum + course.credits, 0);
   const isOfficialGecaImport = req.body?.resultSource === "GECA_OFFICIAL";
