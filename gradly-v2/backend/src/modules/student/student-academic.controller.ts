@@ -128,15 +128,16 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const credits = Number(course?.credits);
     const grade = String(course?.gradeSymbol ?? "").trim().toUpperCase();
     const point = course?.gradePoint === undefined ? gradePoints[grade] : Number(course.gradePoint);
-    if (!name || !Number.isFinite(credits) || credits <= 0 || credits > 30 ||
+    const isZeroCreditMandatory = ["INMC2001","INMC2010"].includes(code.toUpperCase().replace(/[^A-Z0-9]/g, ""));
+    if (!name || !Number.isFinite(credits) || credits < 0 || (credits === 0 && !isZeroCreditMandatory) || credits > 30 ||
         !Number.isFinite(point) || point < 0 || point > 10) {
-      return res.status(400).json({ message: "Each subject needs a name, positive credits and a grade point from 0 to 10." });
+      return res.status(400).json({ message: "Each subject needs a name, valid credits (zero is allowed only for Environmental Science) and a grade point from 0 to 10." });
     }
     normalized.push({ code, name, credits, grade, point });
   }
   const openElectiveCodes = new Set([
     "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027","MEOE0050",
-    "EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
+    "MEOE1040","EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
   ]);
   const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code));
   if (new Set(submittedOECodes).size !== submittedOECodes.length) {

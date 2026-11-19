@@ -136,8 +136,11 @@ export default function TesterOnlineResultSync({
   }
 
   async function applyDocument(document: ResultDocument, sessionTitle: string) {
-    if (!document.semester || document.semester !== selectedSemester) {
-      setNotice("This PDF belongs to Semester " + (document.semester || "unknown") + ". Change the workspace semester to match before applying the grades.");
+    // The selected examination session is already scoped to this enrollment.
+    // Fall back to the selected workspace semester when GECA's PDF metadata is absent.
+    const targetSemester = selectedSemester;
+    if (document.semester && document.semester !== selectedSemester) {
+      setNotice("This PDF belongs to Semester " + document.semester + ". Change the workspace semester to match before applying the grades.");
       return;
     }
     const targetCode = normalizeCourseCode(reExamTargetCourseCode);
@@ -182,21 +185,32 @@ export default function TesterOnlineResultSync({
       return;
     }
 
+    const officialCourseNames: Record<string, string> = {
+      MEOE1040: "Entrepreneurship Development",
+      CEHS1030: "Constitution of India and Professional Ethics",
+      INHS1020: "Universal Human Values-II: Understanding Harmony",
+      INMC2001: "Environmental Science",
+      INMC2010: "Environmental Science",
+    };
     const mappedRows = sourceRows.map(row => {
       const code = normalizeCourseCode(row.courseCode);
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
       const parsedCredits = Number(row.credits || 0);
       const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
-      return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
+      return {
+        ...row,
+        courseName: officialCourseNames[code] || row.courseName || existing?.name || catalog?.name || row.courseCode,
+        credits: code === "INHS1020" ? 3 : Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits),
+      };
     });
-    // Remove duplicate subject titles while preserving different courses. The
-    // official PDF occasionally lists the same elective under duplicate codes.
-    const seenSubjectNames = new Set<string>();
+    // Course code is the stable identifier. Different subjects may share a
+    // title, so never deduplicate official rows by display name.
+    const seenCourseCodes = new Set<string>();
     const applicable = mappedRows.filter(row => {
-      const nameKey = normalizeCourseCode(row.courseName || row.courseCode);
-      if (!nameKey || seenSubjectNames.has(nameKey)) return false;
-      seenSubjectNames.add(nameKey);
+      const code = normalizeCourseCode(row.courseCode);
+      if (!code || seenCourseCodes.has(code)) return false;
+      seenCourseCodes.add(code);
       return true;
     });
     if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
@@ -207,13 +221,13 @@ export default function TesterOnlineResultSync({
     setError("");
     setNotice("Saving verified grades…");
     try {
-      const applyResult = await onApply(document.semester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
+      const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
       if (applyResult === false) {
         setNotice("The result could not be applied to your profile. Check the message and try again.");
         return;
       }
       const appliedCount = applicable.length;
-      setAppliedResult({ rows: applicable, semester: document.semester, session: sessionTitle });
+      setAppliedResult({ rows: applicable, semester: targetSemester, session: sessionTitle });
       const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
       setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
     } catch (reason) {
@@ -289,6 +303,6 @@ export default function TesterOnlineResultSync({
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved to this isolated browser session</span></div>
     </section>}
-    {appliedResult && <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(10,14,20,.58)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Tester grades saved"><section style={{background:"#fff",color:"#17211b",borderRadius:18,padding:20,width:"min(560px,100%)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 24px 70px rgba(0,0,0,.28)"}}><small style={{color:"#16834d",fontWeight:700,letterSpacing:".08em"}}>GRADLY · TESTER RESULT SAVED</small><h2 style={{margin:"8px 0"}}>Grades added successfully</h2><p>Saved {appliedResult.rows.length} result rows for Semester {appliedResult.semester}. This is isolated tester data.</p>{appliedResult.rows.map((row,i)=><div key={row.courseCode+i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,borderTop:"1px solid #e1e8e3",padding:"9px 0"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.7}}>{row.courseCode} · {row.credits} credits</small></span><strong>{row.grade}</strong></div>)}<button type="button" onClick={()=>setAppliedResult(null)} style={{display:"block",width:"100%",marginTop:14,padding:12,border:0,borderRadius:10,background:"#17211b",color:"#fff",fontWeight:700}}>Done</button></section></div>}
+    {appliedResult && <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(10,14,20,.58)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Tester grades saved"><section style={{background:"#fff",color:"#17211b",borderRadius:18,padding:20,width:"min(560px,100%)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 24px 70px rgba(0,0,0,.28)"}}><small style={{color:"#16834d",fontWeight:700,letterSpacing:".08em"}}>GRADLY · TESTER RESULT SAVED</small><h2 style={{margin:"8px 0"}}>Grades added successfully</h2><p>Saved {appliedResult.rows.length} result rows for Semester {appliedResult.semester}. This is isolated tester data.</p>{appliedResult.rows.map((row,i)=><div key={row.courseCode+i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,borderTop:"1px solid #e1e8e3",padding:"9px 0"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.7}}>{row.courseCode} · {row.credits} credits</small></span><strong>{row.grade}</strong></div>)}<button type="button" onClick={()=>{setAppliedResult(null);setOpen(false);setScan(null);setSelectedSessionId("");setNotice("");setError("");}} style={{display:"block",width:"100%",marginTop:14,padding:12,border:0,borderRadius:10,background:"#17211b",color:"#fff",fontWeight:700,cursor:"pointer",position:"relative",zIndex:2,pointerEvents:"auto"}}>Done</button></section></div>}
   </>;
 }
