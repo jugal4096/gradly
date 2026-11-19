@@ -171,14 +171,14 @@ export default function StudentOnlineResultSync({
     const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
     // Reconcile against the student's selected subjects, not every department's
     // elective catalogue. GECA's exam PDF may use the legacy MEOE1040 code.
-    const expectedCodes = new Set([...subjectCodes, "CEHS1030", "INHS1020", "INMC2010"]);
+    const expectedCodes = new Set([...subjectCodes, "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = normalizeCourseCode(row.courseCode);
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    const knownLegacyCodes = new Set(["MEOE1040"]);
+    const knownLegacyCodes = new Set(["MEOE1040", "INMC2010"]);
     const unknownRows = sourceRows.filter(row => {
       const code = normalizeCourseCode(row.courseCode);
       return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
@@ -200,16 +200,17 @@ export default function StudentOnlineResultSync({
     // The student selected the Mechanical option (ME2023), so do not import a
     // parser-inferred grade from this row; require manual grade-card entry.
     const mappedRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040").map(row => {
-      const code = normalizeCourseCode(row.courseCode);
+      const sourceCode = normalizeCourseCode(row.courseCode);
+      const code = sourceCode === "INMC2010" ? "INMC2001" : sourceCode;
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
       const knownNames: Record<string,string> = {
         "CEHS1030":"Constitution of India and Professional Ethics",
         "INHS1020":"Universal Human Values",
-        "INMC2010":"Environmental Studies",
+        "INMC2001":"Environmental Science",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
-      const fallbackCredits = code === "INMC2010" ? 0 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
+      const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 2 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
       return { ...row, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
@@ -219,7 +220,7 @@ export default function StudentOnlineResultSync({
       const present = new Set(mappedRows.map(row => normalizeCourseCode(row.courseCode)));
       for (const subject of subjects) {
         const code = normalizeCourseCode(subject.courseCode);
-        if (!code || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && code !== "INMC2010") || present.has(code)) continue;
+        if (!code || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && code !== "INMC2001") || present.has(code)) continue;
         mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
         present.add(code);
       }
@@ -234,7 +235,7 @@ export default function StudentOnlineResultSync({
       seenCourseCodes.add(codeKey);
       return true;
     });
-    if (!applicable.length || applicable.some(row => !Number.isFinite(row.credits) || row.credits < 0 || (row.credits === 0 && normalizeCourseCode(row.courseCode) !== "INMC2010") || !row.courseName.trim())) {
+    if (!applicable.length || applicable.some(row => !Number.isFinite(row.credits) || row.credits < 0 || (row.credits === 0 && normalizeCourseCode(row.courseCode) !== "INMC2001") || !row.courseName.trim())) {
       setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "No valid, matching subjects were found in this result. No grades were changed.");
       return;
     }
