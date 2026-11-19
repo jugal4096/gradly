@@ -208,9 +208,9 @@ export default function StudentOnlineResultSync({
         "INHS1020":"Universal Human Values",
         "INMC2010":"Environmental Studies",
       };
-      const parsedCredits = Number(row.credits || 0);
-      const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
-      return { ...row, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: code === "INMC2010" ? 0 : Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
+      const parsedCredits = row.credits == null ? null : Number(row.credits);
+      const fallbackCredits = code === "INMC2010" ? 0 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
+      return { ...row, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
     // Blank grades are entered by the student in the review step, never
