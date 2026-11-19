@@ -358,7 +358,22 @@ export default function StudentPlatform() {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
-          if(authoritative.length) { setSubjects(dedupeSubjectsByCourseCode(authoritative)); return; }
+          // An earlier GECA parser build could attach courses from a different
+          // semester (for example MEOE1040 / INMC2010) as custom rows. An
+          // official semester result must only display courses belonging to
+          // this semester's curriculum; never trust the old local cache alone.
+          const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
+            .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
+            .filter(Boolean));
+          const verifiedAuthoritative=authoritative.filter(subject=>
+            curriculumCodes.has(normalizeResultCourseCode(subject.courseCode))
+          );
+          if(verifiedAuthoritative.length) {
+            const cleaned=dedupeSubjectsByCourseCode(verifiedAuthoritative);
+            setSubjects(cleaned);
+            localStorage.setItem(officialResultKey,JSON.stringify(cleaned));
+            return;
+          }
         }
         let electiveSaved:Subject[]=[];
         try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
