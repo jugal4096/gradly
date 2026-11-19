@@ -310,8 +310,6 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
     // GECA PDFs can contain multiple independent result tables on the same page.
     // Resolve the course headers for THIS enrollment row only, rather than
     // combining headers from the first/second tables into one global list.
-    const previousEnrollmentIndex = lines.slice(0, rowIndex).findLastIndex(candidate =>
-      ENROLLMENT_PATTERN.test(candidate.text));
     const tableStart = Math.max(0, rowIndex - 80);
     const rowWindow = lines.slice(tableStart, rowIndex + 1);
     const enrollmentY = line.items[0]?.y ?? 0;
