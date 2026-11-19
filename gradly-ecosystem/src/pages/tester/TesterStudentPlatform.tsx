@@ -1020,9 +1020,9 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         return false;
       }
     } else {
-      // Keep the same course-name corrections and zero-credit Environmental
-      // Science handling as Student mode. MEOE1040 is converted to a manual
-      // ME2023 row by the review component; no parser-inferred grade is trusted.
+      // Preserve GECA's actual exam code for Mechanical Entrepreneurship.
+      // MEOE1040 has no trustworthy online grade in this result; the review
+      // component requires manual grade-card entry for this row.
       finalSubjects=fetchedGrades.map((row,index)=>{
         const code=normalizeResultCourseCode(row.courseCode);
         const existing=existingByCode.get(code)||(code==="MEOE1040"?subjects.find(subject=>subject.electiveKind==="OE"&&/entrepreneurship development/i.test(subject.name)&&!/electrical engineering/i.test(subject.name)):undefined);
@@ -1033,8 +1033,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
           INMC2010:"Environmental Science",
         };
         const grade=String(row.grade||"").trim().toUpperCase();
-        const name=String(row.courseName||existing?.name||knownNames[code]||row.courseCode||code).trim();
-        const credits=Number(row.credits??existing?.credits??0);
+        const name=String(knownNames[code]||row.courseName||existing?.name||row.courseCode||code).trim();
+        const credits=code==="INHS1020"?3:Number(row.credits??existing?.credits??0);
         const courseType=existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":code==="CEHS1030"?"Humanities & Social Sciences (HS)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course":"Official GECA result");
         return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
       });
