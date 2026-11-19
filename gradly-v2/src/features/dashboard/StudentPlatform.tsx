@@ -13,7 +13,7 @@ type ElectiveOption = { code: string; name: string; credits: number };
 const OE_OPTIONS: ElectiveOption[] = [
   {code:"CE3008",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
   {code:"ME2022",name:"Total Quality Management",credits:3},{code:"ME4015",name:"Industrial Management",credits:3},{code:"ME4031",name:"Renewable Energy Engineering",credits:3},{code:"ME3027",name:"Quality Management System",credits:3},{code:"MEOE0050",name:"Additive Manufacturing",credits:3},
-  {code:"ME2023",name:"Entrepreneurship Development (Mechanical Engineering)",credits:3},{code:"EE3018",name:"Entrepreneurship Development (Electrical Engineering)",credits:3},{code:"EE4046",name:"Energy and Environment",credits:3},
+  {code:"MEOE1040",name:"Entrepreneurship Development (Mechanical Engineering)",credits:3},{code:"EE3018",name:"Entrepreneurship Development (Electrical Engineering)",credits:3},{code:"EE4046",name:"Energy and Environment",credits:3},
   {code:"ET3033",name:"Consumer Electronics",credits:3},{code:"ET3034",name:"Microcontroller Applications",credits:3},{code:"ET3035",name:"Industrial Automation Applications",credits:3},
   {code:"CS2017",name:"Introduction to C & C++",credits:3},{code:"OEIT4001",name:"Machine Learning",credits:3},
 ];
@@ -364,7 +364,7 @@ export default function StudentPlatform() {
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
-          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2001","INMC2010","ME2023","EE3018"]);
+          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2001","INMC2010","MEOE1040","EE3018"]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
             return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
@@ -809,9 +809,9 @@ export default function StudentPlatform() {
       updatedSubjects = fetchedGrades.map((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
-        const existing = existingByCode.get(code) || (code==="ME2023" ? subjects.find(subject => subject.electiveKind==="OE" && /entrepreneurship development/i.test(subject.name)) : undefined);
+        const existing = existingByCode.get(code) || (code==="MEOE1040" ? subjects.find(subject => subject.electiveKind==="OE" && /entrepreneurship development/i.test(subject.name)) : undefined);
         const knownNames: Record<string,string> = {
-          "CEHS1030":"Humanities & Social Sciences (HS)",
+          "CEHS1030":"Constitution of India and Professional Ethics",
           "INHS1020":"Universal Human Values-II: Understanding Harmony",
           "INMC2001":"Environmental Science",
           "INMC2010":"Environmental Science",
@@ -819,7 +819,7 @@ export default function StudentPlatform() {
         const name = String(row.courseName || existing?.name || knownNames[code] || row.courseCode || code).trim();
         // Parsed official credits take precedence; use existing credits only when
         // the PDF parser did not provide a reliable value.
-        const credits = Number(row.credits ?? existing?.credits ?? 0);
+        const credits = code === "INHS1020" ? 3 : Number(row.credits ?? existing?.credits ?? 0);
         const courseType = existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "Humanities & Social Sciences (HS)" : (code==="INMC2001"||code==="INMC2010") ? "Mandatory Course" : "Official GECA result");
         return {
           ...(existing || {}),
