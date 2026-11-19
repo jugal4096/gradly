@@ -860,6 +860,9 @@ export default function StudentPlatform() {
         return false;
       }
     }
+    const reExamSuccess = attemptNumber > 1 && matchedRow && matchedSubject
+      ? { subjectName: matchedSubject.name, courseCode: matchedSubject.courseCode || "", grade: matchedRow.grade.trim().toUpperCase() }
+      : null;
     const totalCredits = updatedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
     const weightedPoints = updatedSubjects.reduce((sum, subject) => sum + subject.credits * POINTS[subject.grade], 0);
     const nextSgpa = Number((weightedPoints / totalCredits).toFixed(3));
@@ -896,8 +899,8 @@ export default function StudentPlatform() {
       }));
       if (attemptNumber > 1) setReExamTargetCourseCode("");
       const backlogCount = updatedSubjects.filter(subject => subject.grade === "D").length;
-      if (attemptNumber > 1) {
-        setReExamOutcome({success:true,title:"Re-examination grade updated!",message:matchedSubject.name+" ("+matchedSubject.courseCode+") was updated from D to "+matchedRow.grade.trim().toUpperCase()+" using the official re-examination result. Other subject grades were left unchanged. "+backlogCount+" active backlog(s) remain."});
+      if (reExamSuccess) {
+        setReExamOutcome({success:true,title:"Re-examination grade updated!",message:reExamSuccess.subjectName+" ("+reExamSuccess.courseCode+") was updated from D to "+reExamSuccess.grade+" using the official re-examination result. Other subject grades were left unchanged. "+backlogCount+" active backlog(s) remain."});
       } else {
         setNotice("Official result saved directly to your academic profile. " + backlogCount + " active backlog(s) remain. " + (backlogCount ? "You can use the star beside a D grade to fetch a re-examination result." : "Your semester SGPA and CGPA profile are updated."));
       }
