@@ -200,6 +200,7 @@ export default function StudentOnlineResultSync({
     // MEOE1040 is the legacy exam code for Entrepreneurship Development.
     // The student selected the Mechanical option (ME2023), so do not import a
     // parser-inferred grade from this row; require manual grade-card entry.
+    const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
     const mappedRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040").map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const code = sourceCode === "INMC2010" ? "INMC2001" : sourceCode;
@@ -223,9 +224,14 @@ export default function StudentOnlineResultSync({
       const present = new Set(mappedRows.map(row => normalizeCourseCode(row.courseCode)));
       for (const subject of subjects) {
         const code = normalizeCourseCode(subject.courseCode);
-        if (!code || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && code !== "INMC2001") || present.has(code)) continue;
+        const staleElectricalEntrepreneurship = hasMechanicalEntrepreneurshipExamCode && code === "EE3018" && /entrepreneurship development/i.test(subject.name);
+        if (!code || staleElectricalEntrepreneurship || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && code !== "INMC2001") || present.has(code)) continue;
         mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
         present.add(code);
+      }
+      if (hasMechanicalEntrepreneurshipExamCode && !present.has("ME2023")) {
+        mappedRows.push({ courseCode: "ME2023", courseName: "Entrepreneurship Development (Mechanical Engineering)", credits: 3, grade: "", useDefault: true });
+        present.add("ME2023");
       }
     }
     // Course code is the only deduplication key. Retain the first valid row
