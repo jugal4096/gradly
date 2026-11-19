@@ -358,7 +358,23 @@ export default function StudentPlatform() {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
-          if(authoritative.length) { setSubjects(dedupeSubjectsByCourseCode(authoritative)); return; }
+          // An earlier GECA parser build could attach unrelated courses as
+          // custom rows. Keep only this semester's curriculum courses plus
+          // verified GECA shared subjects and selected department electives.
+          const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
+            .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
+            .filter(Boolean));
+          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2001","INMC2010","MEOE1040","EE3018"]);
+          const verifiedAuthoritative=authoritative.filter(subject=>{
+            const code=normalizeResultCourseCode(subject.courseCode);
+            return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
+          });
+          if(verifiedAuthoritative.length) {
+            const cleaned=dedupeSubjectsByCourseCode(verifiedAuthoritative);
+            setSubjects(cleaned);
+            localStorage.setItem(officialResultKey,JSON.stringify(cleaned));
+            return;
+          }
         }
         let electiveSaved:Subject[]=[];
         try { const cached=JSON.parse(localStorage.getItem("gradly_elective_choices_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) electiveSaved=cached; } catch { /* ignore invalid local cache */ }
@@ -793,17 +809,18 @@ export default function StudentPlatform() {
       updatedSubjects = fetchedGrades.map((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
-        const existing = existingByCode.get(code);
-        const officialCourseNames: Record<string,string> = {
-          MEOE1040:"Entrepreneurship Development",
-          CEHS1030:"Constitution of India and Professional Ethics",
-          INHS1020:"Universal Human Values-II: Understanding Harmony",
-          INMC2001:"Environmental Science",
-          INMC2010:"Environmental Science",
+        const existing = existingByCode.get(code) || (code==="MEOE1040" ? subjects.find(subject => subject.electiveKind==="OE" && /entrepreneurship development/i.test(subject.name)) : undefined);
+        const knownNames: Record<string,string> = {
+          "CEHS1030":"Constitution of India and Professional Ethics",
+          "INHS1020":"Universal Human Values-II: Understanding Harmony",
+          "INMC2001":"Environmental Science",
+          "INMC2010":"Environmental Science",
         };
-        const name = String(officialCourseNames[code] || row.courseName || existing?.name || row.courseCode || code).trim();
-        // UHV is a three-credit course in the GECA result structure.
-        const credits = code === "INHS1020" ? 3 : Number(row.credits || existing?.credits || 0);
+        const name = String(row.courseName || existing?.name || knownNames[code] || row.courseCode || code).trim();
+        // Parsed official credits take precedence; use existing credits only when
+        // the PDF parser did not provide a reliable value.
+        const credits = code === "INHS1020" ? 3 : Number(row.credits ?? existing?.credits ?? 0);
+        const courseType = existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "Humanities & Social Sciences (HS)" : (code==="INMC2001"||code==="INMC2010") ? "Mandatory Course" : "Official GECA result");
         return {
           ...(existing || {}),
           id: index + 1,
@@ -811,22 +828,20 @@ export default function StudentPlatform() {
           credits,
           grade,
           courseCode: String(row.courseCode || code).trim().toUpperCase(),
-          courseType: existing?.courseType || "Official GECA result",
+          courseType,
           curriculumSubjectId: existing?.curriculumSubjectId,
           isCustom: !existing,
         };
       });
     }
-    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
+    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && !["INMC2001","INMC2010"].includes(normalizeResultCourseCode(subject.courseCode))) || POINTS[subject.grade] === undefined)) {
       setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
-    let matchedRow: typeof fetchedGrades[number] | undefined;
-    let matchedSubject: typeof subjects[number] | undefined;
     if (attemptNumber > 1) {
       const targetCode = normalizeResultCourseCode(reExamTargetCourseCode);
-      matchedRow = fetchedGrades.find(row => normalizeResultCourseCode(row.courseCode) === targetCode);
-      matchedSubject = subjects.find(subject => normalizeResultCourseCode(subject.courseCode) === targetCode && subject.grade.toUpperCase() === "D");
+      const matchedRow = fetchedGrades.find(row => normalizeResultCourseCode(row.courseCode) === targetCode);
+      const matchedSubject = subjects.find(subject => normalizeResultCourseCode(subject.courseCode) === targetCode && subject.grade.toUpperCase() === "D");
       if (!matchedRow || !matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Your grades were not changed."});
         setReExamTargetCourseCode("");
@@ -865,6 +880,7 @@ export default function StudentPlatform() {
       setSubjects(updatedSubjects);
       setSavedSubjectsBySemester(current => ({ ...current, [semesterNumber]: updatedSubjects }));
       localStorage.setItem("gradly_online_result_subjects_" + profile.curriculumId + "_" + semesterNumber, JSON.stringify(updatedSubjects));
+      localStorage.setItem("gradly_elective_choices_" + profile.curriculumId + "_" + semesterNumber, JSON.stringify(updatedSubjects));
       const nextResults = [...results.filter(item => item.semester !== semesterNumber), {
         id: data.semester.id, semester: semesterNumber, sgpa: nextSgpa, credits: totalCredits, savedAt: new Date().toISOString(),
       }].sort((x,y) => x.semester-y.semester);

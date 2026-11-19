@@ -131,7 +131,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const isZeroCreditMandatory = ["INMC2001","INMC2010"].includes(code.toUpperCase().replace(/[^A-Z0-9]/g, ""));
     if (!name || !Number.isFinite(credits) || credits < 0 || (credits === 0 && !isZeroCreditMandatory) || credits > 30 ||
         !Number.isFinite(point) || point < 0 || point > 10) {
-      return res.status(400).json({ message: "Each subject needs a name, valid credits (zero is allowed only for Environmental Science) and a grade point from 0 to 10." });
+      return res.status(400).json({ message: "Each subject needs a name, valid credits (zero is allowed only for Environmental Science (INMC2001)) and a grade point from 0 to 10." });
     }
     normalized.push({ code, name, credits, grade, point });
   }
@@ -148,6 +148,9 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     return res.status(400).json({ code: "UHV_DUPLICATE", message: "Universal Human Values can be registered only once throughout your degree." });
   }
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
+  if (creditsRegistered <= 0) {
+    return res.status(400).json({ message: "At least one credit-bearing subject is required to calculate SGPA." });
+  }
   const creditsWithoutUhv = normalized.filter(course => course.code.toUpperCase() !== "INHS1020")
     .reduce((sum, course) => sum + course.credits, 0);
   const isOfficialGecaImport = req.body?.resultSource === "GECA_OFFICIAL";
@@ -169,6 +172,40 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     if (!semesterResult.rows[0]) {
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "No curriculum semester is configured for this semester. Check your academic profile and scheme." });
+    }
+    // GECA imports must never attach a course from another semester to this
+    // semester's record. This is a server-side guard in addition to the
+    // frontend curriculum reconciliation.
+    if (isOfficialGecaImport) {
+      const curriculumCodesResult = await client.query(
+        `SELECT DISTINCT UPPER(course_code) AS code
+         FROM curriculum_subjects
+         WHERE curriculum_id = $1 AND semester_id = $2 AND course_code IS NOT NULL`,
+        [resolved.profile.curriculum_id, semesterResult.rows[0].id],
+      );
+      const allowedCodes = new Set<string>([
+        ...curriculumCodesResult.rows.map((row: { code: string }) =>
+          String(row.code || "").replace(/[^A-Z0-9]/g, ""),
+        ),
+        // Shared GECA humanities and one-time UHV subjects are not always
+        // returned by the branch-specific curriculum subject query.
+        "CEHS1030",
+        "INHS1020",
+        "INMC2001",
+        "INMC2010",
+        "MEOE1040",
+        "EE3018",
+      ]);
+      const invalidCodes = [...new Set(normalized
+        .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+        .filter(code => code && !allowedCodes.has(code)))];
+      if (invalidCodes.length) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          code: "GECA_COURSE_SEMESTER_MISMATCH",
+          message: `The GECA result contains course(s) not registered in Semester ${semesterNumber}: ${invalidCodes.join(", ")}. No grades were saved.`,
+        });
+      }
     }
     const existing = await client.query(
       `SELECT id FROM student_semesters
