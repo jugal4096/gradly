@@ -190,7 +190,7 @@ export default function TesterOnlineResultSync({
       return;
     }
     // MEOE1040 is the legacy exam code for Entrepreneurship Development.
-    // The tester selected the Mechanical option (ME2023), so do not import a
+    // The tester selected the Mechanical Entrepreneurship option, so do not import a
     // parser-inferred grade from this row; require manual grade-card entry.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
     const mappedRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040").map(row => {
