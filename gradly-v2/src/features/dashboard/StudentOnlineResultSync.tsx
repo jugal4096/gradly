@@ -69,7 +69,7 @@ export default function StudentOnlineResultSync({
       .then(response => response.json().then(body => ({ response, body })))
       .then(({ response, body }) => {
         if (!cancelled && response.ok && Array.isArray(body.data)) {
-          setCatalogue(body.data.map((item: any) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0) })));
+          setCatalogue(body.data.map((item: { code?: string | number | null; name?: string | null; credits?: string | number | null }) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0) })));
         }
       }).catch(() => { if (!cancelled) setCatalogue([]); });
     return () => { cancelled = true; };
