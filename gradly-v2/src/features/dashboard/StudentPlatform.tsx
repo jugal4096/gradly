@@ -365,9 +365,11 @@ export default function StudentPlatform() {
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
-          const verifiedAuthoritative=authoritative.filter(subject=>
-            curriculumCodes.has(normalizeResultCourseCode(subject.courseCode))
-          );
+          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020"]);
+          const verifiedAuthoritative=authoritative.filter(subject=>{
+            const code=normalizeResultCourseCode(subject.courseCode);
+            return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
+          });
           if(verifiedAuthoritative.length) {
             const cleaned=dedupeSubjectsByCourseCode(verifiedAuthoritative);
             setSubjects(cleaned);
