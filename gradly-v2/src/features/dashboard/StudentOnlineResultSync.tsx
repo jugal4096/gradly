@@ -161,7 +161,7 @@ export default function StudentOnlineResultSync({
     const sourceRows = document.grades
       .filter(row => row.courseCode.trim())
       .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
-    const manualGradeCodes = new Set(["MEOE1040","INMC2010","INMC2001","CEHS1030","INHS1020"]);
+    const manualGradeCodes = new Set(["INMC2010","INMC2001","CEHS1030","INHS1020"]);
     const invalidGradeRows = sourceRows.filter(row => !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (invalidGradeRows.length) {
       setError("The PDF contains course rows with grades Gradly could not recognise (" + invalidGradeRows.map(row => row.courseCode + ": " + row.grade).join(", ") + "). No grades were applied; the result needs parser review.");
@@ -197,11 +197,9 @@ export default function StudentOnlineResultSync({
       setNotice("");
       return;
     }
-    // MEOE1040 is the legacy exam code for Entrepreneurship Development.
-    // The student selected the Mechanical Entrepreneurship option (MEOE1040), so do not import a
-    // parser-inferred grade from this row; require manual grade-card entry.
+    // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
-    const mappedRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040").map(row => {
+    const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const code = sourceCode === "INMC2010" ? "INMC2001" : sourceCode;
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
@@ -210,12 +208,13 @@ export default function StudentOnlineResultSync({
         "CEHS1030":"Constitution of India and Professional Ethics",
         "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
+        "MEOE1040":"Entrepreneurship Development",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: code === "CEHS1030" ? knownNames[code] : (row.courseName || existing?.name || catalog?.name || knownNames[code] || row.courseCode), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
+      return { ...row, courseCode: code, grade, courseName: row.courseName || (code === "CEHS1030" || code === "MEOE1040" ? knownNames[code] : (existing?.name || catalog?.name || knownNames[code] || row.courseCode)), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
     // Blank grades are entered by the student in the review step, never
@@ -352,7 +351,7 @@ export default function StudentOnlineResultSync({
         
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
-          const validRows = document.grades.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040" && row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+          const validRows = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
           const backlogRows = validRows.filter(row => row.grade.toUpperCase() === "D");
           const canApply = document.semester === selectedSemester && validRows.length > 0;
           return <article className="sp-online-match" key={document.url}>
