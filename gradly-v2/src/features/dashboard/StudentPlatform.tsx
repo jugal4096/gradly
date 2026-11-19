@@ -326,7 +326,7 @@ export default function StudentPlatform() {
             const semesterNumber=Number(row.semester_number);
             if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>{
               const code=course.course_code_snapshot||"";
-              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":code==="INMC2010"?"Mandatory Course · Environmental Studies":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
+              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course · Environmental Science":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
               return {
                 id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
                 courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined,
@@ -359,13 +359,13 @@ export default function StudentPlatform() {
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
           // An earlier GECA parser build could attach courses from a different
-          // semester (for example MEOE1040 / INMC2010) as custom rows. An
+          // semester (for example MEOE1040 / INMC2010 (curriculum INMC2001)) as custom rows. An
           // official semester result must only display courses belonging to
           // this semester's curriculum; never trust the old local cache alone.
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
-          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2010","ME2023","EE3018"]);
+          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2001","INMC2010","ME2023","EE3018"]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
             return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
@@ -814,13 +814,14 @@ export default function StudentPlatform() {
         const knownNames: Record<string,string> = {
           "CEHS1030":"Constitution of India and Professional Ethics",
           "INHS1020":"Universal Human Values",
-          "INMC2010":"Environmental Studies",
+          "INMC2001":"Environmental Science",
+          "INMC2010":"Environmental Science",
         };
         const name = String(row.courseName || existing?.name || knownNames[code] || row.courseCode || code).trim();
         // Parsed official credits take precedence; use existing credits only when
         // the PDF parser did not provide a reliable value.
         const credits = Number(row.credits ?? existing?.credits ?? 0);
-        const courseType = existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "Humanities & Social Sciences (HS)" : code==="INMC2010" ? "Mandatory Course" : "Official GECA result");
+        const courseType = existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "Humanities & Social Sciences (HS)" : (code==="INMC2001"||code==="INMC2010") ? "Mandatory Course" : "Official GECA result");
         return {
           ...(existing || {}),
           id: index + 1,
@@ -834,7 +835,7 @@ export default function StudentPlatform() {
         };
       });
     }
-    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && normalizeResultCourseCode(subject.courseCode) !== "INMC2010") || POINTS[subject.grade] === undefined)) {
+    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && !["INMC2001","INMC2010"].includes(normalizeResultCourseCode(subject.courseCode))) || POINTS[subject.grade] === undefined)) {
       setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
