@@ -149,58 +149,73 @@ function gradeTokensFromItem(item: PositionedItem): string[] {
 
 type CourseColumn = { courseCode: string; x: number };
 
-function findCourseColumns(lines: TextLine[]): CourseColumn[] {
-  const candidates: CourseColumn[] = [];
-  // GECA layouts vary: course codes may appear on several lines after the
-  // seat-number heading, so inspect a wider header window and tolerate split
-  // PDF text items without treating enrollment numbers as course codes.
-  const headerIndexes = lines.map((line, index) => /(?:Exam\s*Seat|Seat\s*No|Enrollment\s*No|Roll\s*No)/i.test(line.text) ? index : -1).filter(index => index >= 0);
-  // Some GECA re-examination PDFs place course-code headers before the
-  // candidate/seat-number heading. Keep a second bounded header window for
-  // those layouts instead of declaring an enrollment hit unparsable.
-  const windows = [
-    // GECA re-exam PDFs sometimes put subject-code headings before the
-    // Exam Seat No heading; inspect the opening table header in either case.
-    { start: 0, end: Math.min(lines.length, headerIndexes.length ? headerIndexes[0] + 1 : 80) },
-    ...headerIndexes.map(index => ({ start: index + 1, end: Math.min(lines.length, index + 41) })),
-  ];
-  for (const window of windows) {
-    for (let lineIndex = window.start; lineIndex < window.end; lineIndex++) {
-      const line = lines[lineIndex];
-      for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
-        const item = line.items[itemIndex];
-        const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        const single = clean(item.text);
-        const next = line.items[itemIndex + 1];
-        const combined = next ? single + clean(next.text) : "";
-        const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
-        if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
-          candidates.push({ courseCode: token, x: item.x });
-          if (token === combined) itemIndex++;
-        }
+function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn[] {
+  // Parse headers from the bounded table window supplied by the enrollment-row
+  // caller. Never accumulate course codes across unrelated header windows.
+  // PDF text extraction can split a code across adjacent items, so normalize
+  // and join at most two neighboring items.
+  const rows: Array<{ y: number; columns: CourseColumn[] }> = [];
+  for (const line of lines) {
+    const columns: CourseColumn[] = [];
+    for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
+      const item = line.items[itemIndex];
+      const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const single = clean(item.text);
+      const next = line.items[itemIndex + 1];
+      const combined = next ? single + clean(next.text) : "";
+      const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
+      if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
+        columns.push({ courseCode: token, x: item.x });
+        if (token === combined) itemIndex++;
       }
-      if (/\bGrade\b/i.test(line.text) && candidates.length) break;
-      if (candidates.length >= 40) break;
     }
+    if (columns.length) rows.push({ y: line.items[0]?.y ?? 0, columns });
   }
-  const unique = new Map<string, CourseColumn>();
-  for (const column of candidates) if (!unique.has(column.courseCode)) unique.set(column.courseCode, column);
-  return Array.from(unique.values()).sort((a, b) => a.x - b.x);
+
+  // Course-code headers are normally emitted on one horizontal row. Select the
+  // strongest horizontal code row rather than mixing codes from neighboring
+  // tables, exam metadata, or unrelated text lines.
+  const ranked = rows
+    .map(row => ({ ...row, columns: Array.from(new Map(row.columns.map(column => [column.courseCode, column])).values()) }))
+    .sort((a, b) => {
+      // When parsing a particular student, prefer the nearest preceding
+      // course-header row. PDFs can contain several mini-tables per page,
+      // and choosing the header with the most codes can borrow another table.
+      if (referenceY !== undefined) {
+        const distanceA = Math.abs(referenceY - a.y);
+        const distanceB = Math.abs(referenceY - b.y);
+        if (distanceA !== distanceB) return distanceA - distanceB;
+      }
+      return b.columns.length - a.columns.length || b.y - a.y;
+    });
+  const best = ranked[0];
+  // Single-course result tables are valid in GECA re-examination PDFs.
+  // Still fail closed if no valid course-code header was identified.
+  if (!best || best.columns.length < 1) return [];
+  return best.columns.sort((a, b) => a.x - b.x);
 }
 
-function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[]): GecaMatchedGrade[] {
+function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: CourseColumn[], nearbyGradeLines: TextLine[] = [line]): GecaMatchedGrade[] {
   if (!lineContainsEnrollment(line, enrollment) || !columns.length) return [];
   const mapped = new Map<string, string>();
-  const gradeCells = line.items.flatMap(item => {
+  const enrollmentY = line.items[0]?.y ?? 0;
+  // Grades can be emitted on a separate text baseline from the enrollment row.
+  // Use only lines in the caller's tight vertical neighborhood and prioritize
+  // grade cells closest to the enrollment baseline.
+  const gradeCells = nearbyGradeLines.flatMap(candidate => candidate.items.flatMap(item => {
     const tokens = item.text.toUpperCase().trim().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""));
-    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({ grade, x: item.x }));
-  });
+    return tokens.filter(token => GRADE_TOKEN_PATTERN.test(token)).map(grade => ({
+      grade, x: item.x, y: candidate.items[0]?.y ?? enrollmentY,
+    }));
+  }));
   const sortedColumns = [...columns].sort((a, b) => a.x - b.x);
   const distinctGradeColumns = new Set(gradeCells.map(item => Math.round(item.x)));
 
-  // First choice: map horizontally aligned grade cells to the closest course
-  // header, but only when the PDF provides genuinely distinct x positions.
-  if (gradeCells.length && distinctGradeColumns.size > 1) {
+  // First choice: map grade tokens on nearby baselines to the closest course
+  // header. Keep the closest token for each course to avoid neighboring rows
+  // overwriting a grade for the target student.
+  if (gradeCells.length && (distinctGradeColumns.size > 1 || sortedColumns.length === 1)) {
+    const nearestCellByCourse = new Map<string, { grade: string; verticalDistance: number }>();
     for (const cell of gradeCells) {
       let nearest: CourseColumn | null = null;
       let distance = Number.POSITIVE_INFINITY;
@@ -208,8 +223,13 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
         const nextDistance = Math.abs(column.x - cell.x);
         if (nextDistance < distance) { nearest = column; distance = nextDistance; }
       }
-      if (nearest && distance < 80 && !["-", "AB", "P"].includes(cell.grade)) mapped.set(nearest.courseCode, cell.grade);
+      const verticalDistance = Math.abs(cell.y - enrollmentY);
+      if (nearest && distance < 80 && !["-", "AB", "P"].includes(cell.grade)) {
+        const existing = nearestCellByCourse.get(nearest.courseCode);
+        if (!existing || verticalDistance < existing.verticalDistance) nearestCellByCourse.set(nearest.courseCode, { grade: cell.grade, verticalDistance });
+      }
     }
+    for (const [courseCode, cell] of nearestCellByCourse) mapped.set(courseCode, cell.grade);
   }
 
   // Fallback for GECA PDFs where the whole result row (including all grades)
@@ -244,18 +264,61 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
       });
     }
   }
+  // Include every discovered course column in the result. If a grade cell could
+  // not be read confidently, mark it explicitly so the UI blocks the import
+  // instead of silently treating a partial set as a complete official result.
+  for (const column of sortedColumns) {
+    if (!mapped.has(column.courseCode)) mapped.set(column.courseCode, "UNREAD");
+  }
   return Array.from(mapped, ([courseCode, grade]) => ({ courseCode, grade }));
 }
 
+/** Dedicated conservative parser for a single GECA re-examination subject. */
+function extractReExamSubject(lines: TextLine[], enrollment: string, targetCourseCode: string): GecaMatchedGrade[] {
+  const target = compactPdfText(targetCourseCode);
+  if (!target) return [];
+  const studentRows = lines.filter(line => lineContainsEnrollment(line, enrollment));
+  for (const studentLine of studentRows) {
+    const studentY = studentLine.items[0]?.y ?? 0;
+    const headers = lines.flatMap(headerLine => {
+      const headerY = headerLine.items[0]?.y ?? 0;
+      if (headerY <= studentY || headerY - studentY > 220) return [];
+      return headerLine.items.flatMap(item => compactPdfText(item.text) === target
+        ? [{ x: item.x, distance: headerY - studentY }] : []);
+    }).sort((a, c) => a.distance - c.distance);
+    const header = headers[0];
+    if (!header) continue;
+    const grades = lines.filter(line => Math.abs((line.items[0]?.y ?? studentY) - studentY) <= 14)
+      .flatMap(line => line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x }))))
+      .filter(cell => !["-", "AB", "P"].includes(cell.grade))
+      .sort((a, c) => Math.abs(a.x - header.x) - Math.abs(c.x - header.x));
+    const grade = grades[0];
+    if (grade && Math.abs(grade.x - header.x) < 85) return [{ courseCode: target, grade: grade.grade }];
+  }
+  return [];
+}
+
 function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
-  const columns = findCourseColumns(lines);
   const matches = new Map<string, string>();
   let enrollmentFound = false;
 
-  for (const line of lines) {
+  for (let rowIndex = 0; rowIndex < lines.length; rowIndex++) {
+    const line = lines[rowIndex];
     if (!lineContainsEnrollment(line, enrollment)) continue;
     enrollmentFound = true;
-    for (const grade of gradesInEnrollmentRow(line, enrollment, columns)) {
+
+    // GECA PDFs can contain multiple independent result tables on the same page.
+    // Resolve the course headers for THIS enrollment row only, rather than
+    // combining headers from the first/second tables into one global list.
+    const previousEnrollmentIndex = lines.slice(0, rowIndex).findLastIndex(candidate =>
+      ENROLLMENT_PATTERN.test(candidate.text));
+    const tableStart = Math.max(0, rowIndex - 80);
+    const rowWindow = lines.slice(tableStart, rowIndex + 1);
+    const enrollmentY = line.items[0]?.y ?? 0;
+    const columns = findCourseColumns(rowWindow, enrollmentY);
+
+    const nearbyGradeLines = lines.filter(candidate => Math.abs((candidate.items[0]?.y ?? 0) - enrollmentY) <= 14);
+    for (const grade of gradesInEnrollmentRow(line, enrollment, columns, nearbyGradeLines)) {
       matches.set(grade.courseCode, grade.grade);
     }
   }
@@ -273,7 +336,7 @@ function romanSemester(text: string): number | null {
   return values[match[1].toUpperCase()] ?? null;
 }
 
-async function readResultPdf(url: string, title: string, enrollment: string): Promise<{
+async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string): Promise<{
   document: GecaMatchedDocument | null;
   enrollmentFound: boolean;
   error?: string;
@@ -302,7 +365,7 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     const lines = groupPdfLines(positioned);
     if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
     allLines.push(...lines);
-    parsed = extractMatchingGrades(allLines, enrollment);
+    parsed = reExamTargetCourseCode ? { grades: extractReExamSubject(allLines, enrollment, reExamTargetCourseCode), enrollmentFound: allLines.some(line => lineContainsEnrollment(line, enrollment)) } : extractMatchingGrades(allLines, enrollment);
     // Stop reading the remaining pages once the matching enrollment row and
     // its grade columns have been found, while retaining earlier page headers.
     if (parsed.enrollmentFound && parsed.grades.length) break;
@@ -315,18 +378,31 @@ async function readResultPdf(url: string, title: string, enrollment: string): Pr
     try { await cleanup.call(pdf); } catch { /* parsing result remains valid */ }
   }
   if (parsed.enrollmentFound && !parsed.grades.length) {
-    const columns = findCourseColumns(allLines);
-    const enrollmentRows = allLines.filter(line => lineContainsEnrollment(line, enrollment)).map(line => ({
-      text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
-      items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
-      gradeTokens: line.items.flatMap(item => gradeTokensFromItem(item)),
-    }));
+    const enrollmentIndices = allLines.map((line, index) => lineContainsEnrollment(line, enrollment) ? index : -1).filter(index => index >= 0);
+    const enrollmentRows = enrollmentIndices.map(index => {
+      const line = allLines[index];
+      return {
+        index,
+        text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
+        items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
+        gradeTokens: line.items.flatMap(item => gradeTokensFromItem(item)),
+      };
+    });
+    const tableContext = enrollmentIndices.flatMap(index => {
+      const start = Math.max(0, index - 28);
+      const end = Math.min(allLines.length, index + 9);
+      return allLines.slice(start, end).map((line, lineIndex) => ({
+        index: start + lineIndex,
+        text: line.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"),
+        items: line.items.map(item => ({ text: item.text.replace(new RegExp(enrollment, "i"), "[ENROLLMENT]"), x: Math.round(item.x), y: Math.round(item.y) })),
+        courseCodes: findCourseColumns([line]).map(column => ({ courseCode: column.courseCode, x: Math.round(column.x) })),
+      }));
+    });
     console.warn("GECA result table parse diagnostic:", JSON.stringify({
       title,
       pageCount: pdf.numPages,
-      courseColumnCount: columns.length,
-      courseColumns: columns.map(column => ({ courseCode: column.courseCode, x: Math.round(column.x) })),
       enrollmentRows,
+      localTableContext: tableContext,
     }));
   }
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
@@ -349,7 +425,7 @@ const BRANCH_NAMES: Record<string, string[]> = {
   "06": ["information technology", "information tech"],
 };
 
-export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number): Promise<{
+export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
   enrollmentHits: number;
@@ -404,7 +480,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
         if (scannedUrls.has(document.url)) continue;
         scannedUrls.add(document.url);
         try {
-          const parsed = await readResultPdf(document.url, document.title, enrollment);
+          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode);
           if (parsed.enrollmentFound) enrollmentHits++;
           if (parsed.document) matches.push(parsed.document);
           else if (parsed.enrollmentFound) parseFailures++;

@@ -88,10 +88,12 @@ export async function matchTesterGecaResult(req: TesterAuthenticatedRequest, res
     const enrollmentNumber = typeof req.body?.enrollmentNumber === "string" ? req.body.enrollmentNumber.trim().toUpperCase() : "";
     const selectedSemester = Number(req.body?.selectedSemester);
     if (!enrollmentNumber) return res.status(400).json({ success: false, message: "Tester enrollment number is required." });
+    const reExamTargetCourseCode = typeof req.body?.reExamTargetCourseCode === "string" ? req.body.reExamTargetCourseCode.trim() : undefined;
     const result = await findGecaEnrollmentResults(
       resultId,
       enrollmentNumber,
       Number.isInteger(selectedSemester) && selectedSemester >= 1 && selectedSemester <= 12 ? selectedSemester : undefined,
+      reExamTargetCourseCode,
     );
     return res.status(200).json({ success: true, ...result, enrollmentNumber, readOnly: true, isolated: true });
   } catch (error) {

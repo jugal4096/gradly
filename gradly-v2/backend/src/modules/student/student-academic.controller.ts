@@ -149,7 +149,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
   const creditsRegistered = normalized.reduce((sum, course) => sum + course.credits, 0);
   const creditsWithoutUhv = normalized.filter(course => course.code.toUpperCase() !== "INHS1020")
     .reduce((sum, course) => sum + course.credits, 0);
-  if (creditsWithoutUhv > 28) {
+  const isOfficialGecaImport = req.body?.resultSource === "GECA_OFFICIAL";
+  if (creditsWithoutUhv > 28 && !isOfficialGecaImport) {
     return res.status(400).json({ code: "SEMESTER_CREDIT_LIMIT", message: "A semester cannot exceed 28 registered credits, excluding the one-time UHV allowance." });
   }
   const sgpa = normalized.reduce((sum, course) => sum + course.credits * course.point, 0) / creditsRegistered;
@@ -184,7 +185,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = ANY($2::text[])
            AND ss.semester_id <> $3
          LIMIT 1`,
-        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id, attemptNumber],
+        [resolved.profile.id, submittedOECodes, semesterResult.rows[0].id],
       );
       if (priorOE.rows.length) {
         await client.query("ROLLBACK");
@@ -204,7 +205,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
            AND UPPER(COALESCE(c.course_code_snapshot, '')) = 'INHS1020'
            AND ss.semester_id <> $2
          LIMIT 1`,
-        [resolved.profile.id, semesterResult.rows[0].id, attemptNumber],
+        [resolved.profile.id, semesterResult.rows[0].id],
       );
       if (priorUhv.rows.length) {
         await client.query("ROLLBACK");

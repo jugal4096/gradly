@@ -52,7 +52,8 @@ export async function matchStudentGecaResult(req: AuthenticatedRequest, res: Res
     if (!Number.isInteger(selectedSemester) || selectedSemester < 1 || selectedSemester > Number(profile.current_semester_number || 0)) {
       return res.status(400).json({ success: false, message: "Choose a semester within your confirmed academic profile." });
     }
-    const result = await findGecaEnrollmentResults(resultId, profile.student_identifier, selectedSemester);
+    const reExamTargetCourseCode = typeof req.body?.reExamTargetCourseCode === "string" ? req.body.reExamTargetCourseCode.trim() : undefined;
+    const result = await findGecaEnrollmentResults(resultId, profile.student_identifier, selectedSemester, reExamTargetCourseCode);
     return res.status(200).json({ success: true, ...result, readOnly: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to inspect the selected examination result.";
