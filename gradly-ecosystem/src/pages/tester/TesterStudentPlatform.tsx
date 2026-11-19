@@ -984,6 +984,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     }
     const existingByCode=new Map<string,Subject>(subjects.map(subject=>[normalizeResultCourseCode(subject.courseCode),subject] as const));
     let finalSubjects:Subject[];
+    let matchedRow: typeof fetchedGrades[number] | undefined;
+    let matchedSubject: Subject | undefined;
     if(attemptNumber>1) {
       const reExamGrades=new Map(fetchedGrades.map(row=>[normalizeResultCourseCode(row.courseCode),row.grade.trim().toUpperCase()]));
       finalSubjects=subjects.map(subject=>{
@@ -992,8 +994,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         return nextGrade&&subject.grade.toUpperCase()==="D"&&POINTS[nextGrade]!==undefined?{...subject,grade:nextGrade}:subject;
       });
       const targetCode=normalizeResultCourseCode(reExamTargetCourseCode);
-      const matchedRow=fetchedGrades.find(row=>normalizeResultCourseCode(row.courseCode)===targetCode);
-      const matchedSubject=subjects.find(subject=>normalizeResultCourseCode(subject.courseCode)===targetCode&&subject.grade.toUpperCase()==="D");
+      matchedRow=fetchedGrades.find(row=>normalizeResultCourseCode(row.courseCode)===targetCode);
+      matchedSubject=subjects.find(subject=>normalizeResultCourseCode(subject.courseCode)===targetCode&&subject.grade.toUpperCase()==="D");
       if(!matchedRow||!matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Tester grades were not changed."});
         setReExamTargetCourseCode("");
