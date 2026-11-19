@@ -358,10 +358,9 @@ export default function StudentPlatform() {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
-          // An earlier GECA parser build could attach courses from a different
-          // semester (for example MEOE1040 / INMC2010 (curriculum INMC2001)) as custom rows. An
-          // official semester result must only display courses belonging to
-          // this semester's curriculum; never trust the old local cache alone.
+          // An earlier GECA parser build could attach unrelated courses as
+          // custom rows. Keep only this semester's curriculum courses plus
+          // verified GECA shared subjects and selected department electives.
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
