@@ -210,7 +210,7 @@ export default function StudentOnlineResultSync({
       };
       const parsedCredits = Number(row.credits || 0);
       const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
-      return { ...row, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
+      return { ...row, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: code === "INMC2010" ? 0 : Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
     // Blank grades are entered by the student in the review step, never
@@ -219,7 +219,7 @@ export default function StudentOnlineResultSync({
       const present = new Set(mappedRows.map(row => normalizeCourseCode(row.courseCode)));
       for (const subject of subjects) {
         const code = normalizeCourseCode(subject.courseCode);
-        if (!code || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || present.has(code)) continue;
+        if (!code || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && code !== "INMC2010") || present.has(code)) continue;
         mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
         present.add(code);
       }
@@ -234,7 +234,7 @@ export default function StudentOnlineResultSync({
       seenCourseCodes.add(codeKey);
       return true;
     });
-    if (!applicable.length || applicable.some(row => !row.credits || !row.courseName.trim())) {
+    if (!applicable.length || applicable.some(row => !Number.isFinite(row.credits) || row.credits < 0 || (row.credits === 0 && normalizeCourseCode(row.courseCode) !== "INMC2010") || !row.courseName.trim())) {
       setError(reExamMode && reExamTargetCourseCode ? "This re-examination PDF does not contain the selected backlog subject. No grades were changed." : "No valid, matching subjects were found in this result. No grades were changed.");
       return;
     }
