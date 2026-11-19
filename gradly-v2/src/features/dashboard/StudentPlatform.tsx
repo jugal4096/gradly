@@ -326,7 +326,7 @@ export default function StudentPlatform() {
             const semesterNumber=Number(row.semester_number);
             if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>{
               const code=course.course_code_snapshot||"";
-              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
+              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":code==="INMC2010"?"Mandatory Course · Environmental Studies":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
               return {
                 id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
                 courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined,
@@ -365,7 +365,7 @@ export default function StudentPlatform() {
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
-          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020"]);
+          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2010"]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
             return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
