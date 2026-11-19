@@ -1010,15 +1010,18 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         return false;
       }
     } else {
+      const seenCodes=new Set<string>();
       finalSubjects=fetchedGrades.flatMap((row,index)=>{
         const code=normalizeResultCourseCode(row.courseCode);
         const grade=row.grade.trim().toUpperCase();
-        if(!code||POINTS[grade]===undefined) return [];
-        const existing=existingByCode.get(code);
-        const name=String(row.courseName||existing?.name||"").trim();
-        const credits=Number(row.credits||existing?.credits||0);
+        if(!code||seenCodes.has(code)||POINTS[grade]===undefined) return [];
+        seenCodes.add(code);
+        const existing=existingByCode.get(code)||(code==="MEOE1040"?subjects.find(subject=>subject.electiveKind==="OE"&&/entrepreneurship development/i.test(subject.name)&&!/electrical engineering/i.test(subject.name)):undefined);
+        const officialNames:Record<string,string>={MEOE1040:"Entrepreneurship Development",CEHS1030:"Constitution of India and Professional Ethics",INHS1020:"Universal Human Values-II: Understanding Harmony",INMC2001:"Environmental Science",INMC2010:"Environmental Science"};
+        const name=String(officialNames[code]||row.courseName||existing?.name||row.courseCode||code).trim();
+        const credits=code==="INHS1020"?3:Number(row.credits||existing?.credits||0);
         if(!name||credits<=0) return [];
-        return [{...(existing||{}),id:index+1,name,credits,grade,courseCode:row.courseCode.trim().toUpperCase(),courseType:existing?.courseType||"Official GECA result",curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing}];
+        return [{...(existing||{}),id:index+1,name,credits,grade,courseCode:row.courseCode.trim().toUpperCase(),courseType:existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course · Environmental Science":"Official GECA result"),curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing}];
       });
     }
     if(!finalSubjects.length||finalSubjects.some(subject=>!subject.name.trim()||subject.credits<=0||POINTS[subject.grade]===undefined)) {
