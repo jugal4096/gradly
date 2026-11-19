@@ -206,8 +206,8 @@ export default function StudentOnlineResultSync({
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
       const knownNames: Record<string,string> = {
-        "CEHS1030":"Constitution of India and Professional Ethics",
-        "INHS1020":"Universal Human Values",
+        "CEHS1030":"Humanities & Social Sciences (HS)",
+        "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
