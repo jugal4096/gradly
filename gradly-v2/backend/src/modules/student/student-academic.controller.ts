@@ -194,6 +194,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         "INMC2001",
         "INMC2010",
         "ME2023",
+        "EE3018",
       ]);
       const invalidCodes = [...new Set(normalized
         .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
