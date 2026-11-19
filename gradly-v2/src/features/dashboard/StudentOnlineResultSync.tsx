@@ -212,7 +212,9 @@ export default function StudentOnlineResultSync({
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 2 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
-      return { ...row, courseCode: code, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
+      const parsedGrade = String(row.grade || "").trim().toUpperCase();
+      const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
+      return { ...row, courseCode: code, grade, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
     // Blank grades are entered by the student in the review step, never
