@@ -821,10 +821,12 @@ export default function StudentPlatform() {
       setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
+    let matchedRow: typeof fetchedGrades[number] | undefined;
+    let matchedSubject: typeof subjects[number] | undefined;
     if (attemptNumber > 1) {
       const targetCode = normalizeResultCourseCode(reExamTargetCourseCode);
-      const matchedRow = fetchedGrades.find(row => normalizeResultCourseCode(row.courseCode) === targetCode);
-      const matchedSubject = subjects.find(subject => normalizeResultCourseCode(subject.courseCode) === targetCode && subject.grade.toUpperCase() === "D");
+      matchedRow = fetchedGrades.find(row => normalizeResultCourseCode(row.courseCode) === targetCode);
+      matchedSubject = subjects.find(subject => normalizeResultCourseCode(subject.courseCode) === targetCode && subject.grade.toUpperCase() === "D");
       if (!matchedRow || !matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Your grades were not changed."});
         setReExamTargetCourseCode("");
