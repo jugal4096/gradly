@@ -50,6 +50,8 @@ export default function StudentOnlineResultSync({
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
   const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
+  const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
+  const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
   const [reportRow, setReportRow] = useState<ResultGrade | null>(null);
   const [reportKind, setReportKind] = useState("Incorrect grade");
   const [reportDetails, setReportDetails] = useState("");
@@ -167,30 +169,25 @@ export default function StudentOnlineResultSync({
     }
 
     const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    const catalogueCodes = new Set(catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean));
-    // The visible grade list can omit shared HS/UHV curriculum rows when the
-    // curriculum endpoint returns only branch-specific subjects. Reconcile
-    // against both sources, and explicitly retain the configured GECA HS/UHV
-    // courses rather than misclassifying them as unknown PDF columns.
-    const expectedCodes = new Set([...subjectCodes, ...catalogueCodes, "CEHS1030", "INHS1020"]);
+    // Reconcile against the student's selected subjects, not every department's
+    // elective catalogue. GECA's exam PDF may use the legacy MEOE1040 code.
+    const expectedCodes = new Set([...subjectCodes, "CEHS1030", "INHS1020", "INMC2010"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = normalizeCourseCode(row.courseCode);
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    // Never discard rows because their course codes are absent from the current curriculum.
-    // Official result PDFs are the source of truth; curriculum is only a mismatch reference.
-    const unknownRows = sourceRows.filter(row => expectedCodes.size && !expectedCodes.has(normalizeCourseCode(row.courseCode)));
-    const missingCodes = reExamMode ? [] : [...expectedCodes].filter(code => !counts.has(code));
-    const mismatchParts = [
-      unknownRows.length ? "official courses not in current curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ") : "",
-      missingCodes.length ? "curriculum courses not detected in PDF: " + missingCodes.join(", ") : "",
-    ].filter(Boolean);
-    // Treat curriculum reconciliation failures as a hard stop for a normal semester import.
-    // A parsed PDF can contain plausible grades but wrong/missing course codes; never save those silently.
+    const knownLegacyCodes = new Set(["MEOE1040"]);
+    const unknownRows = sourceRows.filter(row => {
+      const code = normalizeCourseCode(row.courseCode);
+      return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
+    });
+    const mismatchParts = unknownRows.length
+      ? ["official courses not in the selected curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ")]
+      : [];
     if (!reExamMode && mismatchParts.length) {
-      setError("Result review required. No grades were applied because the PDF and semester curriculum do not match: " + mismatchParts.join("; ") + ". Please verify the official result PDF and report this parsing mismatch.");
+      setError("Result review required. No grades were applied because the PDF contains unexpected course codes: " + mismatchParts.join("; ") + ". Please verify the official result PDF.");
       setNotice("");
       return;
     }
@@ -199,23 +196,34 @@ export default function StudentOnlineResultSync({
       setNotice("");
       return;
     }
-    // A regular semester result must contain at least as many parsed courses as
-    // the current subject list. If fewer are detected, stop rather than saving
-    // a potentially incomplete result. Re-exam imports intentionally target one row.
-    if (!reExamMode && expectedCodes.size > 0 && sourceRows.length < expectedCodes.size) {
-      setError("Only " + sourceRows.length + " subjects were parsed, but your semester currently has " + expectedCodes.size + " course codes. The result may be incomplete; no grades were applied.");
-      setNotice("");
-      return;
-    }
-
-    const mappedRows = sourceRows.map(row => {
+    // MEOE1040 is the legacy exam code for Entrepreneurship Development.
+    // The student selected the Mechanical option (ME2023), so do not import a
+    // parser-inferred grade from this row; require manual grade-card entry.
+    const mappedRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040").map(row => {
       const code = normalizeCourseCode(row.courseCode);
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
+      const knownNames: Record<string,string> = {
+        "CEHS1030":"Constitution of India and Professional Ethics",
+        "INHS1020":"Universal Human Values",
+        "INMC2010":"Environmental Studies",
+      };
       const parsedCredits = Number(row.credits || 0);
       const fallbackCredits = /LAB|PRACTICAL/i.test(code) ? 1 : 3;
-      return { ...row, courseName: existing?.name || catalog?.name || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
+      return { ...row, courseName: existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode, credits: Number(existing?.credits || catalog?.credits || parsedCredits || fallbackCredits) };
     });
+    // Preserve selected courses whose grades are absent from the online PDF.
+    // Blank grades are entered by the student in the review step, never
+    // converted into D or another failure grade.
+    if (!reExamMode) {
+      const present = new Set(mappedRows.map(row => normalizeCourseCode(row.courseCode)));
+      for (const subject of subjects) {
+        const code = normalizeCourseCode(subject.courseCode);
+        if (!code || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || present.has(code)) continue;
+        mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
+        present.add(code);
+      }
+    }
     // Course code is the only deduplication key. Retain the first valid row
     // for each normalized course code, even when names differ; distinct codes
     // remain separate courses even when their names are identical.
@@ -232,21 +240,21 @@ export default function StudentOnlineResultSync({
     }
 
     setError("");
-    setNotice("Saving verified grades…");
-    try {
-      const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, reExamMode ? 2 : 1);
-      if (applyResult === false) {
-        setNotice("The result could not be applied to your profile. Check the message and try again.");
-        return;
+    setNotice("");
+    if (reExamMode) {
+      try {
+        const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, 2);
+        if (applyResult === false) { setNotice("The re-examination result could not be applied. Check the message and try again."); return; }
+        setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
+        setNotice("Re-examination grades added successfully.");
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Could not save the re-examination grade. Please retry.");
       }
-      const appliedCount = applicable.length;
-      setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
-      const warning = mismatchParts.length ? " Review needed — " + mismatchParts.join("; ") : "";
-      setNotice((reExamMode ? "Re-examination grades added successfully." : "Grades added successfully.") + " " + appliedCount + " subject" + (appliedCount === 1 ? " was" : "s were") + " applied and checked for mismatches." + warning);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not save the fetched grades. Please retry.");
-      setNotice("");
+      return;
     }
+    setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
+    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
+    setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving.");
   }
 
 
