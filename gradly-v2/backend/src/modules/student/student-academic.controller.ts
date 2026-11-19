@@ -131,7 +131,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     const isZeroCreditMandatory = code.toUpperCase().replace(/[^A-Z0-9]/g, "") === "INMC2010";
     if (!name || !Number.isFinite(credits) || credits < 0 || (credits === 0 && !isZeroCreditMandatory) || credits > 30 ||
         !Number.isFinite(point) || point < 0 || point > 10) {
-      return res.status(400).json({ message: "Each subject needs a name, positive credits and a grade point from 0 to 10." });
+      return res.status(400).json({ message: "Each subject needs a name, valid credits (zero is allowed only for INMC2010) and a grade point from 0 to 10." });
     }
     normalized.push({ code, name, credits, grade, point });
   }
