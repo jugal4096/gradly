@@ -1025,9 +1025,9 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       // ME2023 row by the review component; no parser-inferred grade is trusted.
       finalSubjects=fetchedGrades.map((row,index)=>{
         const code=normalizeResultCourseCode(row.courseCode);
-        const existing=existingByCode.get(code)||(code==="ME2023"?subjects.find(subject=>subject.electiveKind==="OE"&&/entrepreneurship development/i.test(subject.name)):undefined);
+        const existing=existingByCode.get(code)||(code==="MEOE1040"?subjects.find(subject=>subject.electiveKind==="OE"&&/entrepreneurship development/i.test(subject.name)&&!/electrical engineering/i.test(subject.name)):undefined);
         const knownNames:Record<string,string>={
-          CEHS1030:"Humanities & Social Sciences (HS)",
+          CEHS1030:"Constitution of India and Professional Ethics",
           INHS1020:"Universal Human Values-II: Understanding Harmony",
           INMC2001:"Environmental Science",
           INMC2010:"Environmental Science",
