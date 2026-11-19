@@ -812,8 +812,8 @@ export default function StudentPlatform() {
         const grade = row.grade.trim().toUpperCase();
         const existing = existingByCode.get(code);
         const knownNames: Record<string,string> = {
-          "CEHS1030":"Constitution of India and Professional Ethics",
-          "INHS1020":"Universal Human Values",
+          "CEHS1030":"Humanities & Social Sciences (HS)",
+          "INHS1020":"Universal Human Values-II: Understanding Harmony",
           "INMC2001":"Environmental Science",
           "INMC2010":"Environmental Science",
         };
