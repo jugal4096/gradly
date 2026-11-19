@@ -179,9 +179,15 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          WHERE curriculum_id = $1 AND semester_id = $2 AND course_code IS NOT NULL`,
         [resolved.profile.curriculum_id, semesterResult.rows[0].id],
       );
-      const allowedCodes = new Set<string>(curriculumCodesResult.rows.map((row: { code: string }) =>
-        String(row.code || "").replace(/[^A-Z0-9]/g, ""),
-      ));
+      const allowedCodes = new Set<string>([
+        ...curriculumCodesResult.rows.map((row: { code: string }) =>
+          String(row.code || "").replace(/[^A-Z0-9]/g, ""),
+        ),
+        // Shared GECA humanities and one-time UHV subjects are not always
+        // returned by the branch-specific curriculum subject query.
+        "CEHS1030",
+        "INHS1020",
+      ]);
       const invalidCodes = [...new Set(normalized
         .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
         .filter(code => code && !allowedCodes.has(code)))];
