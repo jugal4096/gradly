@@ -329,7 +329,7 @@ export default function TesterOnlineResultSync({
           <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Fetch grades →"}</strong>
         </button>)}
       </div>}
-      {scan && !scan.matches?.length && <div className="sp-online-scan-result">
+      {scan && <div className="sp-online-scan-result">
         
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
         {scan.matches.map(document => {
