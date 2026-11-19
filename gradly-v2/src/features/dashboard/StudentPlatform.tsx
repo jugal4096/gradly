@@ -365,7 +365,7 @@ export default function StudentPlatform() {
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
-          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2010"]);
+          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2010","ME2023","EE3018"]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
             return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
