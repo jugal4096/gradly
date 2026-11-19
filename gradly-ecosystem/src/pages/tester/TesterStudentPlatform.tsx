@@ -1033,7 +1033,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
           INMC2010:"Environmental Science",
         };
         const grade=String(row.grade||"").trim().toUpperCase();
-        const name=String(knownNames[code]||row.courseName||existing?.name||row.courseCode||code).trim();
+        const name=String(row.courseName||knownNames[code]||existing?.name||row.courseCode||code).trim();
         const credits=code==="INHS1020"?3:Number(row.credits??existing?.credits??0);
         const courseType=existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":code==="CEHS1030"?"Humanities & Social Sciences (HS)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course":"Official GECA result");
         return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
