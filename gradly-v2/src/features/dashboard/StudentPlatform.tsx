@@ -834,7 +834,7 @@ export default function StudentPlatform() {
         };
       });
     }
-    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || POINTS[subject.grade] === undefined)) {
+    if (!updatedSubjects.length || updatedSubjects.length !== fetchedGrades.length || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && normalizeResultCourseCode(subject.courseCode) !== "INMC2010") || POINTS[subject.grade] === undefined)) {
       setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
