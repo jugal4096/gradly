@@ -982,8 +982,18 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       setNotice("Select Semester "+semesterNumber+" in the workspace before applying this result.");
       return false;
     }
+    // Match the student result pipeline: course codes, not names, are unique.
+    const seenCodes=new Set<string>();
+    fetchedGrades=fetchedGrades.filter(row=>{
+      const code=normalizeResultCourseCode(row.courseCode);
+      if(!code||seenCodes.has(code)) return false;
+      seenCodes.add(code);
+      return true;
+    });
     const existingByCode=new Map<string,Subject>(subjects.map(subject=>[normalizeResultCourseCode(subject.courseCode),subject] as const));
     let finalSubjects:Subject[];
+    let matchedRow:{courseCode:string;grade:string;courseName?:string;credits?:number;useDefault?:boolean}|undefined;
+    let matchedSubject:Subject|undefined;
     if(attemptNumber>1) {
       const reExamGrades=new Map(fetchedGrades.map(row=>[normalizeResultCourseCode(row.courseCode),row.grade.trim().toUpperCase()]));
       finalSubjects=subjects.map(subject=>{
@@ -992,8 +1002,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         return nextGrade&&subject.grade.toUpperCase()==="D"&&POINTS[nextGrade]!==undefined?{...subject,grade:nextGrade}:subject;
       });
       const targetCode=normalizeResultCourseCode(reExamTargetCourseCode);
-      const matchedRow=fetchedGrades.find(row=>normalizeResultCourseCode(row.courseCode)===targetCode);
-      const matchedSubject=subjects.find(subject=>normalizeResultCourseCode(subject.courseCode)===targetCode&&subject.grade.toUpperCase()==="D");
+      matchedRow=fetchedGrades.find(row=>normalizeResultCourseCode(row.courseCode)===targetCode);
+      matchedSubject=subjects.find(subject=>normalizeResultCourseCode(subject.courseCode)===targetCode&&subject.grade.toUpperCase()==="D");
       if(!matchedRow||!matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Tester grades were not changed."});
         setReExamTargetCourseCode("");
@@ -1010,22 +1020,37 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         return false;
       }
     } else {
-      finalSubjects=fetchedGrades.flatMap((row,index)=>{
+      // Keep the same course-name corrections and zero-credit Environmental
+      // Science handling as Student mode. MEOE1040 is converted to a manual
+      // ME2023 row by the review component; no parser-inferred grade is trusted.
+      finalSubjects=fetchedGrades.map((row,index)=>{
         const code=normalizeResultCourseCode(row.courseCode);
-        const grade=row.grade.trim().toUpperCase();
-        if(!code||POINTS[grade]===undefined) return [];
-        const existing=existingByCode.get(code);
-        const name=String(row.courseName||existing?.name||"").trim();
-        const credits=Number(row.credits||existing?.credits||0);
-        if(!name||credits<=0) return [];
-        return [{...(existing||{}),id:index+1,name,credits,grade,courseCode:row.courseCode.trim().toUpperCase(),courseType:existing?.courseType||"Official GECA result",curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing}];
+        const existing=existingByCode.get(code)||(code==="ME2023"?subjects.find(subject=>subject.electiveKind==="OE"&&/entrepreneurship development/i.test(subject.name)):undefined);
+        const knownNames:Record<string,string>={
+          CEHS1030:"Humanities & Social Sciences (HS)",
+          INHS1020:"Universal Human Values-II: Understanding Harmony",
+          INMC2001:"Environmental Science",
+          INMC2010:"Environmental Science",
+        };
+        const grade=String(row.grade||"").trim().toUpperCase();
+        const name=String(row.courseName||existing?.name||knownNames[code]||row.courseCode||code).trim();
+        const credits=Number(row.credits??existing?.credits??0);
+        const courseType=existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":code==="CEHS1030"?"Humanities & Social Sciences (HS)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course":"Official GECA result");
+        return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
       });
     }
-    if(!finalSubjects.length||finalSubjects.some(subject=>!subject.name.trim()||subject.credits<=0||POINTS[subject.grade]===undefined)) {
-      setNotice("The result is missing a valid subject name, credit value or grade. Tester profile was not changed.");
+    if(!finalSubjects.length||finalSubjects.length!==fetchedGrades.length||finalSubjects.some(subject=>{
+      const code=normalizeResultCourseCode(subject.courseCode);
+      return !code||!subject.name.trim()||!Number.isFinite(subject.credits)||subject.credits<0||(subject.credits===0&&!["INMC2001","INMC2010"].includes(code))||POINTS[subject.grade]===undefined;
+    })) {
+      setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
     const totalCredits=finalSubjects.reduce((sum,subject)=>sum+subject.credits,0);
+    if(totalCredits<=0) {
+      setNotice("The fetched result has no positive-credit subjects. Tester grades were not changed.");
+      return false;
+    }
     const weightedPoints=finalSubjects.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
     const nextSgpa=Number((weightedPoints/totalCredits).toFixed(3));
     setSubjects(finalSubjects);
@@ -1037,15 +1062,15 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
       appliedCourseCodes:finalSubjects.map(subject=>subject.courseCode),
     }));
     setSgpa(nextSgpa);
-    const nextResults=[...results.filter(item=>item.semester!==semesterNumber),{id:"tester-result-"+semesterNumber,semester:semesterNumber,sgpa:nextSgpa,credits:totalCredits,savedAt:new Date().toISOString()}].sort((x,y)=>x.semester-y.semester);
+    const nextResults=[...results.filter(item=>item.semester!==semesterNumber),{id:"tester-result-"+semesterNumber,semester:semesterNumber,sgpa:nextSgpa,credits:totalCredits,savedAt:new Date().toISOString()}].sort((a,b)=>a.semester-b.semester);
     setResults(nextResults);
     studentStorage.setItem("gradly_semester_results",JSON.stringify(nextResults));
     if(attemptNumber>1) setReExamTargetCourseCode("");
     const backlogCount=finalSubjects.filter(subject=>subject.grade==="D").length;
-    if(attemptNumber>1) {
-      setReExamOutcome({success:true,title:"Re-examination grade updated!",message:""+matchedSubject.name+" ("+matchedSubject.courseCode+") was updated from D to "+matchedRow.grade.trim().toUpperCase()+" using the official re-examination result. Other subject grades were left unchanged. "+backlogCount+" active backlog(s) remain."});
+    if(attemptNumber>1&&matchedRow&&matchedSubject) {
+      setReExamOutcome({success:true,title:"Re-examination grade updated!",message:matchedSubject.name+" ("+matchedSubject.courseCode+") was updated from D to "+matchedRow.grade.trim().toUpperCase()+" using the official re-examination result. Other subject grades were left unchanged. "+backlogCount+" active backlog(s) remain."});
     } else {
-      setNotice("Official result reflected immediately in the isolated Tester profile. "+backlogCount+" active backlog(s) remain.");
+      setNotice("Official result reviewed and reflected in the isolated Tester profile. "+backlogCount+" active backlog(s) remain.");
     }
     return true;
   }
