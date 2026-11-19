@@ -809,7 +809,7 @@ export default function StudentPlatform() {
       updatedSubjects = fetchedGrades.map((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
-        const existing = existingByCode.get(code);
+        const existing = existingByCode.get(code) || (code==="ME2023" ? subjects.find(subject => subject.electiveKind==="OE" && /entrepreneurship development/i.test(subject.name)) : undefined);
         const knownNames: Record<string,string> = {
           "CEHS1030":"Humanities & Social Sciences (HS)",
           "INHS1020":"Universal Human Values-II: Understanding Harmony",
@@ -880,6 +880,7 @@ export default function StudentPlatform() {
       setSubjects(updatedSubjects);
       setSavedSubjectsBySemester(current => ({ ...current, [semesterNumber]: updatedSubjects }));
       localStorage.setItem("gradly_online_result_subjects_" + profile.curriculumId + "_" + semesterNumber, JSON.stringify(updatedSubjects));
+      localStorage.setItem("gradly_elective_choices_" + profile.curriculumId + "_" + semesterNumber, JSON.stringify(updatedSubjects));
       const nextResults = [...results.filter(item => item.semester !== semesterNumber), {
         id: data.semester.id, semester: semesterNumber, sgpa: nextSgpa, credits: totalCredits, savedAt: new Date().toISOString(),
       }].sort((x,y) => x.semester-y.semester);
