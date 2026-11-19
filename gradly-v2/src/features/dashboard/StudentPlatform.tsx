@@ -819,7 +819,7 @@ export default function StudentPlatform() {
         const name = String(row.courseName || existing?.name || knownNames[code] || row.courseCode || code).trim();
         // Parsed official credits take precedence; use existing credits only when
         // the PDF parser did not provide a reliable value.
-        const credits = Number(row.credits || existing?.credits || 0);
+        const credits = Number(row.credits ?? existing?.credits ?? 0);
         const courseType = existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "Humanities & Social Sciences (HS)" : code==="INMC2010" ? "Mandatory Course" : "Official GECA result");
         return {
           ...(existing || {}),
