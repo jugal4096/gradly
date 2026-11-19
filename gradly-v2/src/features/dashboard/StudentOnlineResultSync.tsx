@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./StudentOnlineResultSync.css";
 
-type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null };
+type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
@@ -219,7 +219,7 @@ export default function StudentOnlineResultSync({
       const present = new Set(mappedRows.map(row => normalizeCourseCode(row.courseCode)));
       for (const subject of subjects) {
         const code = normalizeCourseCode(subject.courseCode);
-        if (!code || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || present.has(code)) continue;
+        if (!code || (subject.electiveSlotCode && normalizeCourseCode(subject.electiveSlotCode) === code) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits <= 0 || present.has(code)) continue;
         mappedRows.push({ courseCode: subject.courseCode || code, courseName: subject.name, credits: subject.credits, grade: "", useDefault: true });
         present.add(code);
       }
