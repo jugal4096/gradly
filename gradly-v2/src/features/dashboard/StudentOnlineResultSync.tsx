@@ -161,7 +161,8 @@ export default function StudentOnlineResultSync({
     const sourceRows = document.grades
       .filter(row => row.courseCode.trim())
       .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
-    const invalidGradeRows = sourceRows.filter(row => normalizeCourseCode(row.courseCode) !== "MEOE1040" && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    const manualGradeCodes = new Set(["MEOE1040","INMC2010","INMC2001","CEHS1030","INHS1020"]);
+    const invalidGradeRows = sourceRows.filter(row => !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (invalidGradeRows.length) {
       setError("The PDF contains course rows with grades Gradly could not recognise (" + invalidGradeRows.map(row => row.courseCode + ": " + row.grade).join(", ") + "). No grades were applied; the result needs parser review.");
       setNotice("");
