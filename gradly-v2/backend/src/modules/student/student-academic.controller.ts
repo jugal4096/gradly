@@ -169,6 +169,30 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "No curriculum semester is configured for this semester. Check your academic profile and scheme." });
     }
+    // GECA imports must never attach a course from another semester to this
+    // semester's record. This is a server-side guard in addition to the
+    // frontend curriculum reconciliation.
+    if (isOfficialGecaImport) {
+      const curriculumCodesResult = await client.query(
+        `SELECT DISTINCT UPPER(course_code) AS code
+         FROM curriculum_subjects
+         WHERE curriculum_id = $1 AND semester_id = $2 AND course_code IS NOT NULL`,
+        [resolved.profile.curriculum_id, semesterResult.rows[0].id],
+      );
+      const allowedCodes = new Set<string>(curriculumCodesResult.rows.map((row: { code: string }) =>
+        String(row.code || "").replace(/[^A-Z0-9]/g, ""),
+      ));
+      const invalidCodes = [...new Set(normalized
+        .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+        .filter(code => code && !allowedCodes.has(code)))];
+      if (invalidCodes.length) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          code: "GECA_COURSE_SEMESTER_MISMATCH",
+          message: `The GECA result contains course(s) not registered in Semester ${semesterNumber}: ${invalidCodes.join(", ")}. No grades were saved.`,
+        });
+      }
+    }
     const existing = await client.query(
       `SELECT id FROM student_semesters
        WHERE student_profile_id = $1 AND semester_id = $2 AND attempt_number = $3
