@@ -64,7 +64,7 @@ export default function StudentOnlineResultSync({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
-  const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
+  const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number; courseType?: string }[]>([]);
   const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
   const [appliedResult, setAppliedResult] = useState<{semester:number; count:number; session:string} | null>(null);
@@ -91,7 +91,7 @@ export default function StudentOnlineResultSync({
       .then(response => response.json().then(body => ({ response, body })))
       .then(({ response, body }) => {
         if (!cancelled && response.ok && Array.isArray(body.data)) {
-          setCatalogue(body.data.map((item: { code?: string | number | null; name?: string | null; credits?: string | number | null }) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0) })));
+          setCatalogue(body.data.map((item: { code?: string | number | null; name?: string | null; credits?: string | number | null; courseType?: string | null; course_type?: string | null }) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0), courseType: String(item.courseType || item.course_type || "").trim() })));
         }
       }).catch(() => { if (!cancelled) setCatalogue([]); });
     return () => { cancelled = true; };
@@ -278,6 +278,7 @@ export default function StudentOnlineResultSync({
         if (/^CEOE/.test(code)) return "OE";
         if (/^ITPC/.test(code)) return "PCC";
         if (/^ITPE/.test(code)) return "PEC";
+        if (code === "ITHS1030") return "HSSM";
         if (/^ITHS/.test(code)) return "AEC";
         if (/^INHS/.test(code)) return "VEC";
         if (/^ITES/.test(code)) return "ESC";
@@ -289,7 +290,7 @@ export default function StudentOnlineResultSync({
       const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL|WORKSHOP/i.test(subjectName) ? 1 : inferredCategory === "INT" ? 12 : ["VSEC","AEC","EEM","IKS","VEC","RMC","CEP","CCC"].includes(inferredCategory) ? 2 : /PROJECT/i.test(subjectName) ? 2 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog && !registryEntry && !knownNames[code], courseCategory: registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (existing || catalog || knownNames[code] ? "CURRICULUM" : "FIRST_USER_CONFIRMATION") };
+      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog && !registryEntry && !knownNames[code], courseCategory: catalog?.courseType || registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (existing || catalog || knownNames[code] ? "CURRICULUM" : "FIRST_USER_CONFIRMATION") };
     });
     // Course code is the only deduplication key. Retain the first valid row
     // for each normalized course code, even when names differ; distinct codes
