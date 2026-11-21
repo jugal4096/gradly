@@ -73,7 +73,7 @@ export default function TesterOnlineResultSync({
   const [savingReview, setSavingReview] = useState(false);
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
   const [courseNameEdits, setCourseNameEdits] = useState<Record<string,string>>({});
-  const testerRegistryKey="gradly_tester_discovered_subjects_"+curriculumId+"_"+normalizeCourseCode(enrollmentNumber);
+  const testerRegistryKey="gradly_tester_discovered_subjects_"+curriculumId;
   const [testerDiscoveredRegistry, setTesterDiscoveredRegistry] = useState<Record<string,{courseName:string;credits:number;courseCategory:string}>>({});
   useEffect(() => {
     setCreditEdits({});
@@ -223,15 +223,21 @@ export default function TesterOnlineResultSync({
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
-    // Read persisted tester confirmations at scan time as well as from React
-    // state. This avoids a race where a fast PDF scan starts before the
-    // hydration effect has populated testerDiscoveredRegistry.
+    // The shared database catalogue is authoritative and keyed by curriculum + course code,
+    // never by the tester's temporary enrollment. Local storage is only a cache.
     let persistedTesterRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
     try {
       const stored = JSON.parse(testerStorageGet(testerRegistryKey) || "{}");
       if (stored && typeof stored === "object" && !Array.isArray(stored)) persistedTesterRegistry = stored;
-    } catch { /* Ignore malformed local tester cache; never fall back to student storage. */ }
-    const discoveredRegistry = { ...persistedTesterRegistry, ...testerDiscoveredRegistry };
+    } catch { /* Ignore malformed local cache; the shared database remains canonical. */ }
+    const codes = [...new Set(sourceRows.map(row => canonicalResultCourseCode(row.courseCode)))].join(",");
+    const registryResponse = await fetch(apiBase + "/api/tester/results/discovered-subjects?curriculumId=" + encodeURIComponent(curriculumId) + "&codes=" + encodeURIComponent(codes), { headers: { Authorization: "Bearer " + testerToken } });
+    const registryBody = await registryResponse.json();
+    if (!registryResponse.ok || !Array.isArray(registryBody.data)) throw new Error(registryBody.message || "The shared subject catalogue could not be checked.");
+    const databaseRegistry = Object.fromEntries(registryBody.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
+    const discoveredRegistry = { ...persistedTesterRegistry, ...testerDiscoveredRegistry, ...databaseRegistry };
+    setTesterDiscoveredRegistry(discoveredRegistry);
+    try { testerStorageSet(testerRegistryKey, JSON.stringify(discoveredRegistry)); } catch { /* Database remains canonical. */ }
     const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
@@ -341,23 +347,30 @@ export default function TesterOnlineResultSync({
     setNotice("Saving reviewed grades…");
     setSavingReview(true);
     try {
-      // Confirm the subject identity before attempting grade persistence. A
-      // failed grade save must not send the same course back through NEW SUBJECT
-      // classification on the next PDF fetch. This remains tester-local only.
+      // Persist confirmed course metadata once in the shared curriculum catalogue.
+      // Tester grades/profile data still remain isolated in the local tester workspace.
       const nextTesterRegistry = { ...testerDiscoveredRegistry };
       for (const row of grades.filter(item => item.isNewSubject)) {
-        nextTesterRegistry[normalizeCourseCode(row.courseCode)] = {
-          courseName: row.courseName || row.courseCode,
-          credits: Number(row.credits),
-          courseCategory: row.courseCategory || "UNCLASSIFIED",
-        };
+        const response = await fetch(apiBase + "/api/tester/results/discovered-subjects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + testerToken },
+          body: JSON.stringify({ curriculumId, semesterNumber: pendingReview.semester, courseCode: row.courseCode, courseName: row.courseName, courseCategory: row.courseCategory, credits: row.credits }),
+        });
+        const body = await response.json();
+        if (!response.ok || !body.data) throw new Error(body.message || "Unable to save the confirmed subject to the shared catalogue.");
+        const saved = body.data;
+        row.courseName = String(saved.courseName || row.courseName);
+        row.credits = Number(saved.credits ?? row.credits);
+        row.courseCategory = String(saved.courseCategory || row.courseCategory || "UNCLASSIFIED");
+        row.creditStatus = saved.creditStatus || "USER_CONFIRMED";
+        nextTesterRegistry[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName, credits: row.credits, courseCategory: row.courseCategory };
       }
       setTesterDiscoveredRegistry(nextTesterRegistry);
       testerStorageSet(testerRegistryKey, JSON.stringify(nextTesterRegistry));
 
       const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
       if (result === false) {
-        setNotice("Subject details were retained in this tester session, but grades were not saved. Retry applying the grades.");
+        setNotice("The shared subject catalogue was updated, but tester grades were not saved. Retry applying the grades; the course will remain recognised.");
         return;
       }
       setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
