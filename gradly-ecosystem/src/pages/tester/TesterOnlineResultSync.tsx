@@ -174,7 +174,7 @@ export default function TesterOnlineResultSync({
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    const knownLegacyCodes = new Set(["MEOE1040", "INMC2010"]);
+    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "INMC2010"]);
     const unknownRows = sourceRows.filter(row => {
       const code = normalizeCourseCode(row.courseCode);
       return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
@@ -204,6 +204,7 @@ export default function TesterOnlineResultSync({
         "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
         "MEOE1040":"Entrepreneurship Development",
+        "MEOE0031":"Renewable Energy Sources",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
