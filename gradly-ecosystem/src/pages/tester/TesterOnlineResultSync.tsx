@@ -242,6 +242,17 @@ export default function TesterOnlineResultSync({
       try {
         const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, 2);
         if (applyResult === false) { setNotice("The re-examination result could not be applied. Check the message and try again."); return; }
+        // Re-examination success is presented by the parent tester grade dialog.
+        // Avoid stacking two success modals, which made Done reveal another modal.
+        if (reExamMode) {
+          setAppliedResult(null);
+          setPendingReview(null);
+          setOpen(false);
+          setScan(null);
+          setSelectedSessionId("");
+          setNotice("Re-examination grade applied successfully in this tester session.");
+          return;
+        }
         setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
         setNotice("Re-examination grades added successfully.");
       } catch (reason) {
