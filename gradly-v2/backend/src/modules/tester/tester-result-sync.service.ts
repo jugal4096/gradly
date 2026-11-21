@@ -273,27 +273,81 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
   return Array.from(mapped, ([courseCode, grade]) => ({ courseCode, grade }));
 }
 
-/** Dedicated conservative parser for a single GECA re-examination subject. */
+/** Parse the selected course from GECA's single-subject re-examination tables. */
 function extractReExamSubject(lines: TextLine[], enrollment: string, targetCourseCode: string): GecaMatchedGrade[] {
   const target = compactPdfText(targetCourseCode);
   if (!target) return [];
+
   const studentRows = lines.filter(line => lineContainsEnrollment(line, enrollment));
   for (const studentLine of studentRows) {
     const studentY = studentLine.items[0]?.y ?? 0;
-    const headers = lines.flatMap(headerLine => {
+
+    // GECA exports are inconsistent: a course code may be one PDF text item,
+    // embedded in a "Course Code: ..." item, or split across adjacent items.
+    // Resolve the target header using compact text across up to three items.
+    const headers: Array<{ x: number; distance: number }> = [];
+    for (const headerLine of lines) {
       const headerY = headerLine.items[0]?.y ?? 0;
-      if (headerY <= studentY || headerY - studentY > 220) return [];
-      return headerLine.items.flatMap(item => compactPdfText(item.text) === target
-        ? [{ x: item.x, distance: headerY - studentY }] : []);
-    }).sort((a, c) => a.distance - c.distance);
+      const verticalDistance = Math.abs(headerY - studentY);
+      if (headerLine === studentLine || verticalDistance > 320) continue;
+      for (let index = 0; index < headerLine.items.length; index++) {
+        let combined = "";
+        for (let end = index; end < Math.min(headerLine.items.length, index + 3); end++) {
+          combined += compactPdfText(headerLine.items[end].text);
+          if (combined.includes(target)) {
+            headers.push({ x: headerLine.items[index].x, distance: verticalDistance });
+            break;
+          }
+          if (combined.length > target.length + 32) break;
+        }
+      }
+    }
+    headers.sort((a, b) => a.distance - b.distance);
     const header = headers[0];
     if (!header) continue;
-    const grades = lines.filter(line => Math.abs((line.items[0]?.y ?? studentY) - studentY) <= 14)
-      .flatMap(line => line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x }))))
+
+    // Grade cells may be placed on a neighbouring baseline rather than the
+    // enrollment baseline. Score candidates by both horizontal and vertical
+    // proximity so a nearby student's grade is not selected accidentally.
+    const grades = lines
+      .filter(line => Math.abs((line.items[0]?.y ?? studentY) - studentY) <= 18)
+      .flatMap(line => line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({
+        grade,
+        x: item.x,
+        y: line.items[0]?.y ?? studentY,
+      }))))
       .filter(cell => !["AB", "P"].includes(cell.grade))
-      .sort((a, c) => Math.abs(a.x - header.x) - Math.abs(c.x - header.x));
+      .map(cell => ({
+        ...cell,
+        horizontalDistance: Math.abs(cell.x - header.x),
+        verticalDistance: Math.abs(cell.y - studentY),
+      }))
+      .filter(cell => cell.horizontalDistance < 110)
+      .sort((a, b) =>
+        (a.horizontalDistance + a.verticalDistance * 2) -
+        (b.horizontalDistance + b.verticalDistance * 2)
+      );
+
     const grade = grades[0];
-    if (grade && Math.abs(grade.x - header.x) < 85) return [{ courseCode: target, grade: grade.grade === "-" ? "" : grade.grade }];
+    if (grade) return [{ courseCode: target, grade: grade.grade === "-" ? "" : grade.grade }];
+
+    // Some GECA PDFs flatten the entire one-course student row into a single
+    // text item. In that layout the grade follows the enrollment in reading
+    // order, so accept it only when exactly one grade token follows it.
+    const enrollmentItemIndex = studentLine.items.findIndex(item =>
+      compactPdfText(item.text).includes(compactPdfText(enrollment))
+    );
+    if (enrollmentItemIndex >= 0) {
+      const tail = studentLine.items.slice(enrollmentItemIndex).flatMap(item =>
+        item.text.toUpperCase().split(/[\\s|,;]+/)
+          .map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""))
+          .filter(token => GRADE_TOKEN_PATTERN.test(token) && !["AB", "P"].includes(token))
+      );
+      const afterEnrollment = tail.slice(1);
+      if (afterEnrollment.length === 1) {
+        return [{ courseCode: target, grade: afterEnrollment[0] === "-" ? "" : afterEnrollment[0] }];
+      }
+    }
   }
   return [];
 }
