@@ -193,3 +193,24 @@
 .sp-online-result-inline .sp-online-result-heading h3{margin:2px 0;font-size:21px;font-weight:900;color:#1d4ed8;text-align:center}
 .sp-online-result-inline .sp-online-result-heading p{margin:0 auto;max-width:700px;text-align:center;color:var(--muted,#718195);font-size:12px;line-height:1.65}
 @media(max-width:520px){.sp-online-result-inline .sp-online-result-heading h3{font-size:18px}}
+
+
+/* Backlog decision: keep the yes/no choice at the top of the user's viewport. */
+.sp-online-reexam-confirm{
+  position:fixed;z-index:100040;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(470px,calc(100vw - 32px));max-width:470px;margin:0;padding:25px;
+  border:1px solid #e5b8bc;border-radius:20px;
+  background:linear-gradient(145deg,#fff 0%,#fff8f8 100%);color:#54252b;
+  box-shadow:0 0 0 100vmax rgba(8,13,22,.68),0 28px 90px rgba(0,0,0,.28);
+  animation:spReexamPromptIn .22s ease-out;
+}
+.sp-online-reexam-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#ffe6e8;color:#b42332;font-size:23px;font-weight:900}
+.sp-online-reexam-confirm>strong{font-size:17px;line-height:1.25;font-weight:850;letter-spacing:-.025em}
+.sp-online-reexam-confirm p{font-size:12px;line-height:1.65;color:#80535a}
+.sp-online-reexam-confirm>div{justify-content:stretch;margin-top:7px}
+.sp-online-reexam-confirm button{flex:1;min-height:44px;border-radius:11px;font-size:12px}
+.sp-online-reexam-confirm .sp-online-reexam-yes{background:#bd2938;border-color:#bd2938}
+.sp-online-reexam-confirm .sp-online-reexam-yes:hover{background:#991f2c}
+@keyframes spReexamPromptIn{from{opacity:0;transform:translate(-50%,-47%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media(max-width:480px){.sp-online-reexam-confirm{padding:20px}.sp-online-reexam-confirm>div{flex-direction:column-reverse}.sp-online-reexam-confirm button{width:100%}}
+@media(prefers-reduced-motion:reduce){.sp-online-reexam-confirm{animation:none}}
