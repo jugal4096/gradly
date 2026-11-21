@@ -113,7 +113,7 @@ export async function submitStudentSyllabusFeedback(req: AuthenticatedRequest, r
     `, [user.id, p.institutionId, p.programId, p.branchId, p.curriculumId, p.schemeName,
       semester, typeof subjectName === "string" ? subjectName.trim().slice(0,180) || null : null,
       requestType, message.trim()]);
-    return res.status(201).json({ success: true, message: "Your syllabus feedback has been submitted for department review.", feedback: result.rows[0] });
+    return res.status(201).json({ success: true, message: requestType === "CREDIT_CORRECTION" ? "Your credit correction grievance has been sent to Super Admin." : "Your syllabus feedback has been submitted for department review.", feedback: result.rows[0] });
   } catch (error) {
     console.error("Student syllabus feedback submission failed:", error);
     return res.status(500).json({ success: false, message: "Unable to submit syllabus feedback." });
