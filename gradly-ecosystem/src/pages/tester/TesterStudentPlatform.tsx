@@ -361,7 +361,9 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const isTester = true;
   const signOut = async () => onExit();
   const loginWithGoogle = async () => {};
-  const [section,setSection] = useState<Section>("home");
+  const validSections: Section[] = ["home","sgpa","sgpaWhatIf","sgpaPlanner","tracker","cgpa","cgpaWhatIf","planner","cgpaTracker","community","events","assistant","aiStudyPlanner","profile","academicManagement","settings","credits"];
+  const [section,setSection] = useState<Section>(() => { const saved = studentStorage.getItem("gradly_last_section") as Section | null; return saved && validSections.includes(saved) ? saved : "home"; });
+  useEffect(() => { studentStorage.setItem("gradly_last_section", section); }, [section]);
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
   const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{const saved=studentStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
