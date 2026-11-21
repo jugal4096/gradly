@@ -41,7 +41,14 @@ export default function TesterWorkspace() {
   const [busy, setBusy] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
-  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(() => {
+    const prefix = sessionStorage.getItem("gradly_tester_storage_prefix");
+    if (!prefix || sessionStorage.getItem(prefix + ":gradly_tester_profile_ready") !== "true") return false;
+    try {
+      const profile = JSON.parse(sessionStorage.getItem(prefix + ":gradly_student_profile") || "null");
+      return Boolean(profile?.institutionId && profile?.enrollment);
+    } catch { return false; }
+  });
 
   useEffect(() => {
     const savedToken = sessionStorage.getItem("gradly_tester_access_token") || "";
