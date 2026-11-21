@@ -343,7 +343,7 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
           .map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, ""))
           .filter(token => GRADE_TOKEN_PATTERN.test(token) && !["AB", "P"].includes(token))
       );
-      const afterEnrollment = tail.slice(1);
+      const afterEnrollment = tail;
       if (afterEnrollment.length === 1) {
         return [{ courseCode: target, grade: afterEnrollment[0] === "-" ? "" : afterEnrollment[0] }];
       }
