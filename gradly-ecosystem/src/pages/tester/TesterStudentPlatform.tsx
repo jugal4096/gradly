@@ -553,7 +553,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
               "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
               "MEOE0050","MEOE1040","CEOE1010","EE3018","EE4046","ET3033","ET3034","ET3035",
               "CS2017","OEIT4001",
-            ...(selectedSemester===6?["ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
+            "ITHS1030",
+            ...(selectedSemester===6?["ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
             ]);
             const verified=authoritative.filter(subject=>{
               const code=normalizeResultCourseCode(subject.courseCode);
@@ -1156,20 +1157,28 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const courseType=row.courseCategory||existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":code==="CEHS1030"?"HSSM":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course":"Official GECA result");
         return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,courseCategory:row.courseCategory||existing?.courseCategory,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
       });
+      const importedCodes=new Set(finalSubjects.map(subject=>normalizeResultCourseCode(subject.courseCode)));
+      const preservedSelectedHs=subjects.filter(subject=>
+        subject.electiveKind==="HS"&&
+        normalizeResultCourseCode(subject.courseCode)&&
+        !importedCodes.has(normalizeResultCourseCode(subject.courseCode))
+      ).map(subject=>({...subject,grade:subject.grade||""}));
+      finalSubjects=[...finalSubjects,...preservedSelectedHs];
     }
-    if(!finalSubjects.length||(attemptNumber===1&&finalSubjects.length!==fetchedGrades.length)||finalSubjects.some(subject=>{
+    if(!finalSubjects.length||(attemptNumber===1&&fetchedGrades.length===0)||finalSubjects.some(subject=>{
       const code=normalizeResultCourseCode(subject.courseCode);
-      return !code||!subject.name.trim()||!Number.isFinite(subject.credits)||subject.credits<0||(subject.credits===0&&!["INMC2001","INMC2010"].includes(code))||POINTS[subject.grade]===undefined;
+      return !code||!subject.name.trim()||!Number.isFinite(subject.credits)||subject.credits<0||(subject.credits===0&&!["INMC2001","INMC2010"].includes(code))||(subject.grade!==""&&POINTS[subject.grade]===undefined);
     })) {
       setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
-    const totalCredits=finalSubjects.reduce((sum,subject)=>sum+subject.credits,0);
-    if(totalCredits<=0) {
-      setNotice("The fetched result has no positive-credit subjects. Tester grades were not changed.");
+    const gradedSubjects=finalSubjects.filter(subject=>POINTS[subject.grade]!==undefined);
+    const totalCredits=gradedSubjects.reduce((sum,subject)=>sum+subject.credits,0);
+    if(!gradedSubjects.length||totalCredits<=0) {
+      setNotice("The fetched result has no graded, positive-credit subjects. Tester grades were not changed.");
       return false;
     }
-    const weightedPoints=finalSubjects.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
+    const weightedPoints=gradedSubjects.reduce((sum,subject)=>sum+subject.credits*POINTS[subject.grade],0);
     const nextSgpa=Number((weightedPoints/totalCredits).toFixed(3));
     setSubjects(finalSubjects);
     setSavedSubjectsBySemester(current=>({...current,[semesterNumber]:finalSubjects}));
