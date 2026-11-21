@@ -297,7 +297,7 @@ export default function StudentPlatform() {
   const [addCourseCode,setAddCourseCode] = useState("");
   const [subjectSearch,setSubjectSearch] = useState("");
   const [savedSubjectsBySemester,setSavedSubjectsBySemester] = useState<Record<number,Subject[]>>({});
-  const [droppedElectives,setDroppedElectives] = useState<Subject[]>([]);
+  const [,setDroppedElectives] = useState<Subject[]>([]);
   const [sgpa,setSgpa] = useState<number|null>(null);
   const [results,setResults] = useState<SemesterResult[]>(() => {
     try { return JSON.parse(localStorage.getItem(isGuest ? "gradly_guest_semester_results" : "gradly_semester_results") || "[]"); } catch { return []; }
@@ -308,8 +308,6 @@ export default function StudentPlatform() {
   const [whatIfSubjects,setWhatIfSubjects] = useState<Subject[]>([]);
   const [whatIfLoading,setWhatIfLoading] = useState(false);
   const [whatIfNotice,setWhatIfNotice] = useState("");
-  const [whatIfScenariosSaved,setWhatIfScenariosSaved] = useState<{id:number;name:string;semester:number;sgpa:number;credits:number;subjects:Subject[]}[]>([]);
-  const [whatIfScenarioName,setWhatIfScenarioName] = useState("");
   const [targetSgpa,setTargetSgpa] = useState("9");
   const [trackerChartType,setTrackerChartType] = useState<"line"|"bar"|"histogram">("line");
   const [trackerSelectedSemester,setTrackerSelectedSemester] = useState(0);
@@ -586,14 +584,6 @@ export default function StudentPlatform() {
     setWhatIfSubjects(current=>current.filter(subject=>subject.id!==id));
     setWhatIfNotice("");
   }
-  function saveWhatIfScenario() {
-    if(!whatIfSubjects.length||whatIfCountedCredits<=0) {setWhatIfNotice("Add at least one subject with credits before saving a test case.");return;}
-    const name=whatIfScenarioName.trim()||`Test case ${whatIfScenariosSaved.length+1}`;
-    setWhatIfScenariosSaved(current=>[...current,{id:Date.now(),name,semester:whatIfSemester,sgpa:whatIfLiveSgpa,credits:whatIfCountedCredits,subjects:whatIfSubjects.map(subject=>({...subject}))}]);
-    setWhatIfScenarioName("");
-    setWhatIfNotice("Test case saved for comparison. Your academic record has not been changed.");
-  }
-
   const weighted = subjects.filter(s=>s.name.trim() && s.credits>0 && POINTS[s.grade]!==undefined).reduce((sum,s)=>sum+(POINTS[s.grade]??0)*s.credits,0);
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const creditsForSemesterLimit = subjects.filter(s=>s.name.trim() && s.credits>0 && s.courseCode?.toUpperCase()!=="INHS1020").reduce((sum,s)=>sum+s.credits,0);
@@ -1126,7 +1116,6 @@ export default function StudentPlatform() {
   const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
-  const whatIfScenarios=buildSgpaScenarios(Number(whatIf),whatIfSubjects);
 
   if (isGuest && !guestSessionReady) return <GuestOnboarding onComplete={() => setGuestSessionReady(true)} />;
   if (onboarding && !isGuest) return <Navigate to="/academic-setup" replace />;
