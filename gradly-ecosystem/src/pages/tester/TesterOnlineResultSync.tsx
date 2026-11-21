@@ -347,7 +347,7 @@ export default function TesterOnlineResultSync({
         setNotice("Subject details were retained in this tester session, but grades were not saved. Retry applying the grades.");
         return;
       }
-      if (pendingReview.attemptNumber === 1) setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
+      setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
       setPendingReview(null);
       setError("");
       setNotice("");
