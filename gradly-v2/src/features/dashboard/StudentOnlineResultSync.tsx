@@ -191,14 +191,10 @@ export default function StudentOnlineResultSync({
       const code = canonicalResultCourseCode(row.courseCode);
       return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
     });
-    const mismatchParts = unknownRows.length
-      ? ["official courses not in the selected curriculum: " + [...new Set(unknownRows.map(row => row.courseCode))].join(", ")]
-      : [];
-    if (!reExamMode && mismatchParts.length) {
-      setError("Result review required. No grades were applied because the PDF contains unexpected course codes: " + mismatchParts.join("; ") + ". Please verify the official result PDF.");
-      setNotice("");
-      return;
-    }
+    // An official result row must not be discarded just because its course code
+    // is absent from this student's curriculum catalogue. Keep it as an
+    // independent result subject and surface the code during review.
+    const unmatchedOfficialCodes = [...new Set(unknownRows.map(row => row.courseCode))];
     if (duplicateCodes.size) {
       setError("The result parser detected duplicate course codes (" + [...duplicateCodes].join(", ") + "). No grades were applied to avoid overwriting the wrong subject.");
       setNotice("");
@@ -298,7 +294,7 @@ export default function StudentOnlineResultSync({
     }
     setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
     setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
-    setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving.");
+    setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving." + (unmatchedOfficialCodes.length ? " Official PDF courses outside the selected curriculum are included as separate result subjects: " + unmatchedOfficialCodes.join(", ") + "." : ""));
   }
 
 
