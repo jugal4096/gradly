@@ -75,9 +75,10 @@ export default function StudentOnlineResultSync({
     return () => { cancelled = true; };
   }, [apiBase, curriculumId, selectedSemester]);
 
-  async function openArchive() {
+  async function openArchive(forceRefresh = false) {
     setOpen(true);
-    if (loadingSessions || sessions.length) return;
+    if (loadingSessions || (!forceRefresh && sessions.length)) return;
+    if (forceRefresh) { setSessions([]); setScan(null); setSelectedSessionId(""); }
     const controller = new AbortController();
     activeRequest.current = controller;
     setShowCancelConfirm(false);
@@ -110,9 +111,8 @@ export default function StudentOnlineResultSync({
     setSelectedSessionId("");
     setNotice("");
     setError("");
-    // The backlog action opens the archive directly; it must also load the
-    // examination-session list rather than only revealing an empty panel.
-    void openArchive();
+    // Show the re-examination confirmation first. Do not fetch or expose
+    // archive sessions until the student confirms they applied for re-exam.
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
@@ -353,7 +353,7 @@ export default function StudentOnlineResultSync({
           {!showCancelConfirm ? <button type="button" className="sp-online-cancel-fetch" onClick={() => setShowCancelConfirm(true)}>Cancel fetching</button> : <div className="sp-online-cancel-confirm" role="alertdialog" aria-modal="true" aria-labelledby="sp-online-cancel-title"><strong id="sp-online-cancel-title">Stop fetching?</strong><p>The current request will be cancelled. Any results already loaded will remain unchanged.</p><div><button type="button" onClick={() => setShowCancelConfirm(false)}>Continue fetching</button><button type="button" onClick={() => { activeRequest.current?.abort(); activeRequest.current = null; setShowCancelConfirm(false); setLoadingSessions(false); setLoadingSessionId(""); setNotice("Fetching was cancelled. No grades were applied."); }}>Stop fetching</button></div></div>}
         </div>
       </div>, document.body)}
-{reExamMode && !reExamConfirmed && <div className="sp-online-reexam-confirm" role="group" aria-label="Re-examination confirmation"><strong>Have you applied for re-examination?</strong><p>Confirm before choosing an examination session for this backlog subject.</p><div><button type="button" className="sp-online-reexam-no" onClick={() => { onCancelReExam?.(); setReExamMode(false); setReExamConfirmed(false); setOpen(false); }}>No</button><button type="button" className="sp-online-reexam-yes" onClick={() => { setReExamConfirmed(true); void openArchive(); }}>Yes, show sessions</button></div></div>}{loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
+{reExamMode && !reExamConfirmed && <div className="sp-online-reexam-confirm" role="group" aria-label="Re-examination confirmation"><strong>Have you applied for re-examination?</strong><p>Confirm before choosing an examination session for this backlog subject.</p><div><button type="button" className="sp-online-reexam-no" onClick={() => { onCancelReExam?.(); setReExamMode(false); setReExamConfirmed(false); setOpen(false); }}>No</button><button type="button" className="sp-online-reexam-yes" onClick={() => { setReExamConfirmed(true); void openArchive(true); }}>Yes, show sessions</button></div></div>}{loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
       {!loadingSessions && reExamMode && sessions.length>0 && visibleSessions.length===0 && <p className="sp-online-result-muted">No re-examination sessions are currently listed in the GECA archive. Regular examination sessions are hidden in this view.</p>}
       {error && <p className="sp-online-result-error" role="alert">{error}</p>}
       {(!reExamMode || reExamConfirmed) && visibleSessions.length > 0 && <div className="sp-online-session-list">
