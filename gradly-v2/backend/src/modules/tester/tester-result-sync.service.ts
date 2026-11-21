@@ -410,7 +410,7 @@ function findCourseName(lines: TextLine[], courseCode: string): string | undefin
     for (const candidateLine of [lines[index], lines[index + 1], lines[index - 1]]) {
       if (!candidateLine) continue;
       const candidate = candidateLine.text
-        .replace(new RegExp(courseCode, "i"), " ")
+        .replace(new RegExp(courseCode.split("").join("\\s*"), "i"), " ")
         .replace(/\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL)\b/gi, " ")
         .replace(/\b(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P)\b/gi, " ")
         .replace(/\s+/g, " ").trim();
