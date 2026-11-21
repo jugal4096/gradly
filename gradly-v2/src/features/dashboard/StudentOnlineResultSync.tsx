@@ -79,7 +79,7 @@ export default function StudentOnlineResultSync({
   const [reportMessage, setReportMessage] = useState("");
 
   // Browser-local recovery mirror; the authenticated backend remains canonical.
-  const localRegistryKey = "gradly_discovered_result_subjects_" + curriculumId + "_" + normalizeCourseCode(enrollmentNumber);
+  const localRegistryKey = "gradly_discovered_result_subjects_" + curriculumId;
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
   const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*(?:exam|ese)|re[\\s-]*examination|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
