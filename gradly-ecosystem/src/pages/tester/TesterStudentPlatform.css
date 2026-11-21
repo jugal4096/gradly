@@ -418,6 +418,9 @@
 .sp-heading h1{letter-spacing:-1.4px}
 .sp-card{border-radius:19px;border-color:#e9e6f1}
 .sp-nav-group-5 button i{background:linear-gradient(145deg,#d9f4ee,#bce8dc);color:#087b70}
+.sp-nav-group-3 button i{background:linear-gradient(145deg,#d9f4ee,#bce8dc);color:#087b70}
+.sp-nav-group-3 button.active i{background:linear-gradient(145deg,#28b7a2,#087b70);color:white;box-shadow:0 6px 16px rgba(15,143,131,.28)}
+.sp-nav-group-3 button:hover i{background:#d5f2ec;color:#087b70}
 .sp-nav-group-5 button.active i{background:linear-gradient(145deg,#28b7a2,#087b70);color:white;box-shadow:0 6px 16px rgba(15,143,131,.28)}
 .sp-nav-group-5 button:hover i{background:#d5f2ec;color:#087b70}
 .sp-credit-visual{padding:22px;border-radius:16px;background:linear-gradient(120deg,#effaf7,#f4f1ff);border:1px solid #dcefe9}
