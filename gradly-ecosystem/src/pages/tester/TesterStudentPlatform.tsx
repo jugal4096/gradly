@@ -507,11 +507,18 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
         try { const cached=JSON.parse(studentStorage.getItem(droppedKey)||"[]"); if(Array.isArray(cached)) dropped=cached; } catch { /* ignore invalid dropped-elective cache */ }
-        setDroppedElectives(dropped);
         const droppedSlotCodes=new Set(dropped.map(subject=>subject.electiveSlotCode||""));
-        const availableCurriculumSubjects=loadedCurriculumSubjects.filter(subject=>!droppedSlotCodes.has(subject.electiveSlotCode||""));
+        // Migrate old hidden elective slots back into the framework as empty
+        // selectable rows. Removing an OE/HS must never erase its curriculum slot.
+        const availableCurriculumSubjects=loadedCurriculumSubjects.map(subject=>{
+          if(!droppedSlotCodes.has(subject.electiveSlotCode||"")||!(subject.electiveKind==="OE"||subject.electiveKind==="HS")) return subject;
+          return {...subject,name:"",grade:"",courseCode:subject.electiveSlotCode||"",isCustom:false};
+        });
+        setDroppedElectives([]);
+        if(dropped.length) studentStorage.removeItem(droppedKey);
         const savedHssm=[...saved,...electiveSaved].find(subject=>hssmOptions.some(option=>option.code===subject.courseCode));
-        const defaultHsSlot:Subject[]=hssmOptions.length&&!droppedSlotCodes.has("HSSM")?[{id:loadedCurriculumSubjects.length+1,name:savedHssm?.name||"",credits:savedHssm?.credits??hssmOptions[0].credits,grade:savedHssm?.grade||"",courseCode:savedHssm?.courseCode||"",courseType:"Humanities & Social Sciences (HS)",curriculumSubjectId:savedHssm?hssmOptions.find(option=>option.code===savedHssm.courseCode)?.curriculumSubjectId:undefined,electiveKind:"HS",electiveSlotCode:"HSSM"}]:[];
+        const hssmWasDropped=droppedSlotCodes.has("HSSM");
+        const defaultHsSlot:Subject[]=hssmOptions.length?[{id:loadedCurriculumSubjects.length+1,name:hssmWasDropped?"":savedHssm?.name||"",credits:savedHssm?.credits??hssmOptions[0].credits,grade:hssmWasDropped?"":savedHssm?.grade||"",courseCode:hssmWasDropped?"":savedHssm?.courseCode||"",courseType:"Humanities & Social Sciences (HS)",curriculumSubjectId:hssmWasDropped?undefined:savedHssm?hssmOptions.find(option=>option.code===savedHssm.courseCode)?.curriculumSubjectId:undefined,electiveKind:"HS",electiveSlotCode:"HSSM"}]:[];
         const allSavedMdm=[...saved,...electiveSaved];
         const savedMdm=allSavedMdm.find(subject=>!!subject.curriculumSubjectId&&mdmOptions.some(option=>(option as { curriculumSubjectId?: string }).curriculumSubjectId===subject.curriculumSubjectId))
           ||allSavedMdm.find(subject=>mdmOptions.some(option=>option.code===subject.courseCode))
@@ -928,11 +935,12 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   function removeElective(subjectId:number) {
     const subject=subjects.find(item=>item.id===subjectId);
     if(!subject||!(subject.electiveKind==="OE"||subject.electiveKind==="HS")) return;
-    const key="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
-    const next=[...droppedElectives.filter(item=>item.electiveSlotCode!==subject.electiveSlotCode),subject];
-    studentStorage.setItem(key,JSON.stringify(next));
-    setDroppedElectives(next);
-    removeSubject(subjectId);
+    // Keep the framework slot and clear only the selected course and grade.
+    setSubjects(current=>current.map(item=>item.id===subjectId
+      ? {...item,name:"",grade:"",courseCode:item.electiveSlotCode||"",isCustom:false}
+      : item));
+    setSgpa(null);
+    setNotice("");
   }
   async function saveSemester() {
     if(sgpa===null) { setNotice("Complete the grade selection for every subject before saving your SGPA."); return; }

@@ -397,9 +397,16 @@ export default function StudentPlatform() {
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
         try { const cached=JSON.parse(localStorage.getItem(droppedKey)||"[]"); if(Array.isArray(cached)) dropped=cached; } catch { /* ignore invalid dropped-elective cache */ }
-        setDroppedElectives(dropped);
         const droppedSlotCodes=new Set(dropped.map(subject=>subject.electiveSlotCode||""));
-        const availableCurriculumSubjects=loadedCurriculumSubjects.filter(subject=>!droppedSlotCodes.has(subject.electiveSlotCode||""));
+        // Older builds hid the entire curriculum OE/HS slot after removal.
+        // Restore it as an empty selectable slot instead of making approved
+        // framework courses disappear from grade entry.
+        const availableCurriculumSubjects=loadedCurriculumSubjects.map(subject=>{
+          if(!droppedSlotCodes.has(subject.electiveSlotCode||"")||!(subject.electiveKind==="OE"||subject.electiveKind==="HS")) return subject;
+          return {...subject,name:"",courseCode:subject.electiveSlotCode||"",grade:"",isCustom:false};
+        });
+        setDroppedElectives([]);
+        if(dropped.length) localStorage.removeItem(droppedKey);
         const customSavedSubjects: Subject[] = saved
           .filter(subject=>!subject.curriculumSubjectId)
           .map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
@@ -766,11 +773,13 @@ export default function StudentPlatform() {
   function removeElective(subjectId:number) {
     const subject=subjects.find(item=>item.id===subjectId);
     if(!subject||!(subject.electiveKind==="OE"||subject.electiveKind==="HS")) return;
-    const key="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
-    const next=[...droppedElectives.filter(item=>item.electiveSlotCode!==subject.electiveSlotCode),subject];
-    localStorage.setItem(key,JSON.stringify(next));
-    setDroppedElectives(next);
-    removeSubject(subjectId);
+    // Clear the student's choice but keep the curriculum framework slot visible
+    // so another approved OE/HS course can be selected without losing the slot.
+    setSubjects(current=>current.map(item=>item.id===subjectId
+      ? {...item,name:"",grade:"",courseCode:item.electiveSlotCode||"",isCustom:false}
+      : item));
+    setSgpa(null);
+    setNotice("");
   }
   async function applyOnlineResultToStudent(
     semesterNumber: number,
