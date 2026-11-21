@@ -20,6 +20,7 @@ type MatchResponse = {
   matches: ResultDocument[];
 };
 function normalizeCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="MEOE0031"?"ME4031":code; }
 
 type Props = {
   apiBase: string;
@@ -152,10 +153,10 @@ export default function TesterOnlineResultSync({
     // as a fallback only when the scan returned a single enrollment match.
     const targetSemester = selectedSemester;
 
-    const targetCode = normalizeCourseCode(reExamTargetCourseCode);
+    const targetCode = canonicalResultCourseCode(reExamTargetCourseCode);
     const sourceRows = document.grades
       .filter(row => row.courseCode.trim())
-      .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
+      .filter(row => !reExamMode || !targetCode || canonicalResultCourseCode(row.courseCode) === targetCode);
     const manualGradeCodes = new Set(["MEOE1040","INMC2010","INMC2001","CEHS1030","INHS1020"]);
     const invalidGradeRows = sourceRows.filter(row => row.grade.trim() !== "" && !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (invalidGradeRows.length) {
@@ -170,13 +171,13 @@ export default function TesterOnlineResultSync({
     const expectedCodes = new Set([...subjectCodes, "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
-      const code = normalizeCourseCode(row.courseCode);
+      const code = canonicalResultCourseCode(row.courseCode);
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "INMC2010"]);
+    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "ME4031", "INMC2010"]);
     const unknownRows = sourceRows.filter(row => {
-      const code = normalizeCourseCode(row.courseCode);
+      const code = canonicalResultCourseCode(row.courseCode);
       return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
     });
     const mismatchParts = unknownRows.length
@@ -196,7 +197,8 @@ export default function TesterOnlineResultSync({
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
     const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
-      const code = sourceCode === "INMC2010" ? "INMC2001" : sourceCode;
+      const canonicalCode = canonicalResultCourseCode(sourceCode);
+      const code = canonicalCode === "INMC2010" ? "INMC2001" : canonicalCode;
       const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
       const knownNames: Record<string,string> = {
@@ -204,13 +206,13 @@ export default function TesterOnlineResultSync({
         "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
         "MEOE1040":"Entrepreneurship Development",
-        "MEOE0031":"Renewable Energy Sources",
+        "ME4031":"Renewable Energy Engineering",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: row.courseName || knownNames[code] || existing?.name || catalog?.name || row.courseCode, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
+      return { ...row, courseCode: code, grade, courseName: code === "ME4031" ? (existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode) : (row.courseName || knownNames[code] || existing?.name || catalog?.name || row.courseCode), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
     // Blank grades are entered by the student in the review step, never
