@@ -40,7 +40,18 @@ export async function confirmDiscoveredResultSubject(req: AuthenticatedRequest, 
     const curriculumId = String(req.body?.curriculumId || "");
     const courseCode = String(req.body?.courseCode || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     const courseName = String(req.body?.courseName || "").trim().slice(0, 180);
-    const courseCategory = String(req.body?.courseCategory || "UNCLASSIFIED").toUpperCase().slice(0, 24);
+    const requestedCategory = String(req.body?.courseCategory || "UNCLASSIFIED").toUpperCase().slice(0, 24);
+    const inferredCategory = courseCode.startsWith("ETHS") ? "HSSM"
+      : courseCode.startsWith("CEOE") ? "OE"
+      : courseCode.startsWith("ITPC") ? "PCC"
+      : courseCode.startsWith("ITPE") ? "PEC"
+      : courseCode.startsWith("ITES") ? "ESC"
+      : courseCode.startsWith("MABS") ? "BSC"
+      : courseCode.startsWith("ITHS") ? "AEC"
+      : courseCode.startsWith("INHS") ? "VEC"
+      : courseCode.startsWith("ITMD") ? "MDM"
+      : "UNCLASSIFIED";
+    const courseCategory = requestedCategory === "UNCLASSIFIED" ? inferredCategory : requestedCategory;
     const credits = Number(req.body?.credits);
     const semesterNumber = Number(req.body?.semesterNumber);
     if (curriculumId !== profile.curriculumId) return res.status(403).json({ success: false, message: "The requested curriculum does not match your confirmed academic profile." });
