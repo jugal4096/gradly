@@ -24,7 +24,9 @@ export default function TesterLogin() {
       });
       const data = await response.json();
       if (!response.ok || !data.token) throw new Error(data.message || "Unable to sign in.");
+      localStorage.setItem("gradly_tester_access_token", data.token);
       sessionStorage.setItem("gradly_tester_access_token", data.token);
+      localStorage.setItem("gradly_tester_login_id", data.tester?.loginId || loginId.trim());
       sessionStorage.setItem("gradly_tester_login_id", data.tester?.loginId || loginId.trim());
       navigate("/tester/workspace", { replace: true });
     } catch (reason) {
