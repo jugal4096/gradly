@@ -212,7 +212,15 @@ export default function TesterOnlineResultSync({
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
-    const discoveredRegistry = testerDiscoveredRegistry;
+    // Read persisted tester confirmations at scan time as well as from React
+    // state. This avoids a race where a fast PDF scan starts before the
+    // hydration effect has populated testerDiscoveredRegistry.
+    let persistedTesterRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
+    try {
+      const stored = JSON.parse(testerStorageGet(testerRegistryKey) || "{}");
+      if (stored && typeof stored === "object" && !Array.isArray(stored)) persistedTesterRegistry = stored;
+    } catch { /* Ignore malformed local tester cache; never fall back to student storage. */ }
+    const discoveredRegistry = { ...persistedTesterRegistry, ...testerDiscoveredRegistry };
     const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
