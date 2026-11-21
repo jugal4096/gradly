@@ -56,6 +56,7 @@ export default function TesterOnlineResultSync({
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
   const [savingReview, setSavingReview] = useState(false);
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
+  const [testerDiscoveredRegistry, setTesterDiscoveredRegistry] = useState<Record<string,{courseName:string;credits:number;courseCategory:string}>>({});
   
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
@@ -194,9 +195,7 @@ export default function TesterOnlineResultSync({
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
-    const testerRegistryKey = "gradly-tester-discovered-subjects:" + curriculumId;
-    let discoveredRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
-    try { discoveredRegistry = JSON.parse(localStorage.getItem(testerRegistryKey) || "{}"); } catch { discoveredRegistry = {}; }
+    const discoveredRegistry = testerDiscoveredRegistry;
     const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
@@ -272,7 +271,8 @@ export default function TesterOnlineResultSync({
     setNotice("");
     if (reExamMode && applicable.some(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))) {
       setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
-      setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));\n      setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 2});
+      setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));
+      setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 2});
       setNotice("GECA has not announced a grade for this subject (shown as “-”). Enter the grade from your official grade card, then confirm and save.");
       return;
     }
@@ -299,7 +299,8 @@ export default function TesterOnlineResultSync({
       return;
     }
     setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
-    setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));\n    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
+    setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));
+    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
     setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving." + (unmatchedOfficialCodes.length ? " Official PDF courses outside the selected curriculum are included as separate result subjects: " + unmatchedOfficialCodes.join(", ") + "." : ""));
   }
 
@@ -310,8 +311,10 @@ export default function TesterOnlineResultSync({
     const grades = pendingReview.rows.map(row => ({
       ...row,
       grade: reviewGrades[normalizeCourseCode(row.courseCode)] || "",
+      ...(row.isNewSubject ? { credits: Number(creditEdits[normalizeCourseCode(row.courseCode)] ?? row.credits ?? 3) } : {}),
     }));
-    const missing = grades.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));\n    const invalidCredits = grades.filter(row => row.isNewSubject && (!Number.isFinite(Number(row.credits)) || Number(row.credits) <= 0 || Number(row.credits) > 30));\n    if (invalidCredits.length) { setError("Enter a valid credit value (greater than 0 and no more than 30) for: " + invalidCredits.map(row => row.courseName || row.courseCode).join(", ")); return; }
+    const missing = grades.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    const invalidCredits = grades.filter(row => row.isNewSubject && (!Number.isFinite(Number(row.credits)) || Number(row.credits) <= 0 || Number(row.credits) > 30));\n    if (invalidCredits.length) { setError("Enter a valid credit value (greater than 0 and no more than 30) for: " + invalidCredits.map(row => row.courseName || row.courseCode).join(", ")); return; }
     if (missing.length) {
       setError("Enter a grade for every subject before saving. Missing: " + missing.map(row => row.courseName || row.courseCode).join(", "));
       return;
@@ -320,11 +323,7 @@ export default function TesterOnlineResultSync({
     setNotice("Saving reviewed grades…");
     setSavingReview(true);
     try {
-      const key = "gradly-tester-discovered-subjects:" + curriculumId;
-      let registry: Record<string,any> = {};
-      try { registry = JSON.parse(localStorage.getItem(key) || "{}"); } catch { registry = {}; }
-      for (const row of grades.filter(item => item.isNewSubject)) registry[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName, credits: row.credits, courseCategory: row.courseCategory, creditStatus: "TESTER_CONFIRMED" };
-      localStorage.setItem(key, JSON.stringify(registry));
+      setTesterDiscoveredRegistry(current => { const next = { ...current }; for (const row of grades.filter(item => item.isNewSubject)) next[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName || row.courseCode, credits: Number(row.credits), courseCategory: row.courseCategory || "UNCLASSIFIED" }; return next; });
       const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
       if (result === false) {
         setNotice("The result could not be saved. Your academic profile was not changed.");
