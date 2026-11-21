@@ -6,7 +6,7 @@ import "./TesterOnlineResultSync.css";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
-type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"MDM"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean };
+type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"MDM"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean; courseCategory?: string };
 type ElectiveOption = { code: string; name: string; credits: number; curriculumSubjectId?: string; branchName?: string };
 const OE_OPTIONS: ElectiveOption[] = [
   {code:"CE3008",name:"Disaster Management",credits:3},{code:"CEOE1010",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
@@ -1083,7 +1083,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   }
   function applyOnlineResultToTester(
     semesterNumber:number,
-    fetchedGrades:{courseCode:string;grade:string;courseName?:string;credits?:number;useDefault?:boolean}[],
+    fetchedGrades:{courseCode:string;grade:string;courseName?:string;credits?:number;useDefault?:boolean;courseCategory?:string;creditStatus?:string}[],
     sessionTitle:string,
     documentTitle:string,
     sourceUrl:string,
@@ -1146,8 +1146,8 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const grade=String(row.grade||"").trim().toUpperCase();
         const name=String(row.courseName||knownNames[code]||existing?.name||row.courseCode||code).trim();
         const credits=code==="INHS1020"?3:Number(row.credits??existing?.credits??0);
-        const courseType=existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":code==="CEHS1030"?"Humanities & Social Sciences (HS)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course":"Official GECA result");
-        return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
+        const courseType=row.courseCategory||existing?.courseType||(code==="INHS1020"?"Universal Human Values (UHV)":code==="CEHS1030"?"HSSM":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course":"Official GECA result");
+        return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,courseCategory:row.courseCategory||existing?.courseCategory,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
       });
     }
     if(!finalSubjects.length||(attemptNumber===1&&finalSubjects.length!==fetchedGrades.length)||finalSubjects.some(subject=>{
