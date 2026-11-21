@@ -136,7 +136,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
     normalized.push({ code, name, credits, grade, point });
   }
   const openElectiveCodes = new Set([
-    "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027","MEOE0050",
+    "CE3008","CE2014","CEOE0040","CEOE1010","ME2022","ME4015","ME4031","ME3027","MEOE0050",
     "MEOE1040","EE3018","EE4046","ET3033","ET3034","ET3035","CS2017","OEIT4001",
   ]);
   const submittedOECodes = normalized.map(course => course.code.toUpperCase()).filter(code => openElectiveCodes.has(code));
@@ -199,6 +199,8 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         // the base branch curriculum_subjects table. Validate against the
         // official GECA OE catalogue rather than rejecting a valid OE result.
         ...openElectiveCodes,
+        // CEOE1010 is Disaster Management, an official GECA even-semester OE.
+        ...(semesterNumber === 6 ? ["CEOE1010"] : []),
       ]);
       const invalidCodes = [...new Set(normalized
         .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
