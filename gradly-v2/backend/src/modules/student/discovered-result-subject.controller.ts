@@ -21,12 +21,20 @@ export async function listDiscoveredResultSubjects(req: AuthenticatedRequest, re
     const curriculumId = String(req.query.curriculumId || "");
     if (curriculumId !== profile.curriculumId) return res.status(403).json({ success: false, message: "The requested curriculum does not match your confirmed academic profile." });
     const codes = String(req.query.codes || "").split(",").map(value => value.toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean).slice(0, 100);
-    if (!codes.length) return res.json({ success: true, data: [] });
-    const result = await pool.query(
-      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus"
-       FROM public.discovered_result_subjects WHERE curriculum_id = $1 AND course_code = ANY($2::text[])`,
-      [curriculumId, codes],
-    );
+    const semesterNumber = Number(req.query.semesterNumber);
+    const hasSemester = Number.isInteger(semesterNumber) && semesterNumber >= 1 && semesterNumber <= 12;
+    if (!codes.length && !hasSemester) return res.json({ success: true, data: [] });
+    const result = codes.length
+      ? await pool.query(
+          `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
+           FROM public.discovered_result_subjects WHERE curriculum_id = $1 AND course_code = ANY($2::text[])`,
+          [curriculumId, codes],
+        )
+      : await pool.query(
+          `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
+           FROM public.discovered_result_subjects WHERE curriculum_id = $1 AND semester_number = $2 ORDER BY course_code`,
+          [curriculumId, semesterNumber],
+        );
     return res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error("Discovered result subject lookup failed:", error);
