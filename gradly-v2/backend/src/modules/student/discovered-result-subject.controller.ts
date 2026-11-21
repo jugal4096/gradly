@@ -70,15 +70,7 @@ export async function confirmDiscoveredResultSubject(req: AuthenticatedRequest, 
       `INSERT INTO public.discovered_result_subjects
         (curriculum_id, course_code, course_name, course_category, credits, credit_status, confirmed_by, source, semester_number)
        VALUES ($1,$2,$3,$4,$5,'FIRST_USER_CONFIRMED',$6,$7,$8)
-       ON CONFLICT (curriculum_id, course_code) DO UPDATE SET
-         course_name = EXCLUDED.course_name,
-         course_category = EXCLUDED.course_category,
-         credits = EXCLUDED.credits,
-         credit_status = 'FIRST_USER_CONFIRMED',
-         confirmed_by = EXCLUDED.confirmed_by,
-         source = EXCLUDED.source,
-         semester_number = EXCLUDED.semester_number,
-         updated_at = NOW()
+       ON CONFLICT (curriculum_id, course_code) DO NOTHING
        RETURNING course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus"`,
       [curriculumId, courseCode, courseName, courseCategory, credits, profile.userId, String(req.body?.source || "RESULT_PDF").slice(0, 80), semesterNumber],
     );
