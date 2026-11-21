@@ -8,7 +8,7 @@ import StudentOnlineResultSync from "./StudentOnlineResultSync";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
-type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean };
+type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean; courseCategory?: string };
 type ElectiveOption = { code: string; name: string; credits: number };
 const OE_OPTIONS: ElectiveOption[] = [
   {code:"CE3008",name:"Disaster Management",credits:3},{code:"CEOE1010",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
@@ -880,7 +880,7 @@ export default function StudentPlatform() {
   }
   async function applyOnlineResultToStudent(
     semesterNumber: number,
-    fetchedGrades: { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean }[],
+    fetchedGrades: { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean; courseCategory?: string; creditStatus?: string }[],
     sessionTitle: string,
     documentTitle: string,
     sourceUrl: string,
@@ -926,7 +926,7 @@ export default function StudentPlatform() {
         // Parsed official credits take precedence; use existing credits only when
         // the PDF parser did not provide a reliable value.
         const credits = code === "INHS1020" ? 3 : Number(row.credits ?? existing?.credits ?? 0);
-        const courseType = existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "Humanities & Social Sciences (HS)" : (code==="INMC2001"||code==="INMC2010") ? "Mandatory Course" : "Official GECA result");
+        const courseType = row.courseCategory || existing?.courseType || (code==="INHS1020" ? "Universal Human Values (UHV)" : code==="CEHS1030" ? "HSSM" : (code==="INMC2001"||code==="INMC2010") ? "Mandatory Course" : "Official GECA result");
         return {
           ...(existing || {}),
           id: index + 1,
@@ -935,6 +935,7 @@ export default function StudentPlatform() {
           grade,
           courseCode: String(row.courseCode || code).trim().toUpperCase(),
           courseType,
+          courseCategory: row.courseCategory || existing?.courseCategory,
           curriculumSubjectId: existing?.curriculumSubjectId,
           isCustom: !existing,
         };
