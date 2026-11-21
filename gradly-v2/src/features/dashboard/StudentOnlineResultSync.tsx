@@ -231,7 +231,8 @@ export default function StudentOnlineResultSync({
         "ITPR3002":"Mini Project II",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
-      const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };\n      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3);
+      const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };
+      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
       return { ...row, courseCode: code, grade, courseName: code === "ME4031" ? (existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode) : (row.courseName || (code === "CEHS1030" || code === "MEOE1040" ? knownNames[code] : (existing?.name || catalog?.name || knownNames[code] || row.courseCode))), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
@@ -341,7 +342,8 @@ export default function StudentOnlineResultSync({
     setReportBusy(true); setReportMessage("");
     try {
       const token = await getIdToken();
-      const message = ["OFFICIAL RESULT MISMATCH REPORT","Issue: " + reportKind,"Semester: " + (appliedResult?.semester || selectedSemester),"Course code: " + (reportRow.courseCode || "Not detected"),"Subject: " + (reportRow.courseName || reportRow.courseCode || "Unknown subject"),"Fetched grade: " + reportRow.grade,"Examination session: " + (appliedResult?.session || "Unknown"),"Result PDF: " + (appliedResult?.document || "Unknown"),"Source: " + (appliedResult?.url || "GECA"),"Student explanation: " + reportDetails.trim()].join("\n");
+      const message = ["OFFICIAL RESULT MISMATCH REPORT","Issue: " + reportKind,"Semester: " + (appliedResult?.semester || selectedSemester),"Course code: " + (reportRow.courseCode || "Not detected"),"Subject: " + (reportRow.courseName || reportRow.courseCode || "Unknown subject"),"Fetched grade: " + reportRow.grade,"Examination session: " + (appliedResult?.session || "Unknown"),"Result PDF: " + (appliedResult?.document || "Unknown"),"Source: " + (appliedResult?.url || "GECA"),"Student explanation: " + reportDetails.trim()].join("
+");
       const response = await fetch(apiBase + "/api/student/syllabus-feedback", {method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({requestType:"SYLLABUS_FEEDBACK",semesterNumber:appliedResult?.semester||selectedSemester,subjectName:"Result mismatch · "+(reportRow.courseName||reportRow.courseCode||"Subject"),message})});
       const body=await response.json();
       if(!response.ok) throw new Error(body.message||"Unable to submit your report.");
