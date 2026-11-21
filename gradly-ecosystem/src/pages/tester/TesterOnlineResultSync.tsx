@@ -20,6 +20,9 @@ type MatchResponse = {
   matches: ResultDocument[];
 };
 function normalizeCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function testerStorageGet(key:string):string|null { const prefix=sessionStorage.getItem("gradly_tester_storage_prefix"); return prefix?sessionStorage.getItem(prefix+":"+key):localStorage.getItem(key); }
+function testerStorageSet(key:string,value:string):void { const prefix=sessionStorage.getItem("gradly_tester_storage_prefix"); if(prefix) sessionStorage.setItem(prefix+":"+key,value); else localStorage.setItem(key,value); }
+
 function usableParsedCourseName(value:unknown):string { const name=String(value||"").replace(/\s+/g," ").trim(); if(!name || name.length>90 || /\bFOREIGN\b|\bCOURSE\s*CODE\b|\bRESULT\s*SUMMARY\b/i.test(name)) return ""; return name; }
 function formatCourseCategory(value?:string):string { const labels:Record<string,string>={BSC:"Basic Science",ESC:"Engineering Science",PCC:"Professional Core Course",PEC:"Professional Elective",OE:"Open Elective",MDM:"Multidisciplinary Course",AEC:"Ability Enhancement Course",VEC:"Value Education Course",VSEC:"Value Skill Enhancement Course",INT:"Internship",PRJ:"Project",HSSM:"Humanities & Social Sciences",UNCLASSIFIED:"Needs classification"}; return labels[String(value||"").toUpperCase()] || String(value||"Other"); }
 // GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
@@ -59,8 +62,16 @@ export default function TesterOnlineResultSync({
   const [savingReview, setSavingReview] = useState(false);
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
   const [courseNameEdits, setCourseNameEdits] = useState<Record<string,string>>({});
+  const testerRegistryKey="gradly_tester_discovered_subjects_"+curriculumId+"_"+normalizeCourseCode(enrollmentNumber);
   const [testerDiscoveredRegistry, setTesterDiscoveredRegistry] = useState<Record<string,{courseName:string;credits:number;courseCategory:string}>>({});
-  useEffect(() => { setTesterDiscoveredRegistry({}); setCreditEdits({}); setCourseNameEdits({}); }, [curriculumId, enrollmentNumber]);
+  useEffect(() => {
+    setCreditEdits({});
+    setCourseNameEdits({});
+    try {
+      const saved=JSON.parse(testerStorageGet(testerRegistryKey)||"{}");
+      setTesterDiscoveredRegistry(saved&&typeof saved==="object"&&!Array.isArray(saved)?saved:{});
+    } catch { setTesterDiscoveredRegistry({}); }
+  }, [testerRegistryKey]);
   
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
@@ -334,7 +345,7 @@ export default function TesterOnlineResultSync({
         setNotice("The result could not be saved. Your academic profile was not changed.");
         return;
       }
-      setTesterDiscoveredRegistry(current => { const next = { ...current }; for (const row of grades.filter(item => item.isNewSubject)) next[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName || row.courseCode, credits: Number(row.credits), courseCategory: row.courseCategory || "UNCLASSIFIED" }; return next; });
+      const nextTesterRegistry = { ...testerDiscoveredRegistry }; for (const row of grades.filter(item => item.isNewSubject)) nextTesterRegistry[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName || row.courseCode, credits: Number(row.credits), courseCategory: row.courseCategory || "UNCLASSIFIED" }; setTesterDiscoveredRegistry(nextTesterRegistry); testerStorageSet(testerRegistryKey, JSON.stringify(nextTesterRegistry));
       if (pendingReview.attemptNumber === 1) setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
       setPendingReview(null);
       setError("");
