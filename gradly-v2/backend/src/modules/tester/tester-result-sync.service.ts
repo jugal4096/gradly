@@ -317,8 +317,8 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   const target = compactPdfText(targetCourseCode);
   if (!target) return [];
 
-  // The official GECA CBCS-NEW V-semester PDF labels Renewable Energy
-  // Engineering as MEOE0031, while the registered curriculum uses MEOE0031.
+  // The official GECA CBCS-NEW V-semester subject code is MEOE0031.
+  // Keep ME4031 as a legacy alias so older saved result references still match.
   // Treat both identifiers as the same subject during re-exam header lookup.
   const targetAliases = new Set([target]);
   if (target === "ME4031") targetAliases.add("MEOE0031");
