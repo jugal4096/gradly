@@ -278,6 +278,13 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   const target = compactPdfText(targetCourseCode);
   if (!target) return [];
 
+  // The official GECA CBCS-NEW V-semester PDF labels Renewable Energy
+  // Engineering as MEOE0031, while the registered curriculum uses ME4031.
+  // Treat both identifiers as the same subject during re-exam header lookup.
+  const targetAliases = new Set([target]);
+  if (target === "ME4031") targetAliases.add("MEOE0031");
+  if (target === "MEOE0031") targetAliases.add("ME4031");
+
   const studentRows = lines.filter(line => lineContainsEnrollment(line, enrollment));
   for (const studentLine of studentRows) {
     const studentY = studentLine.items[0]?.y ?? 0;
@@ -294,7 +301,7 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
         let combined = "";
         for (let end = index; end < Math.min(headerLine.items.length, index + 3); end++) {
           combined += compactPdfText(headerLine.items[end].text);
-          if (combined.includes(target)) {
+          if ([...targetAliases].some(alias => combined.includes(alias))) {
             headers.push({ x: headerLine.items[index].x, distance: verticalDistance });
             break;
           }
