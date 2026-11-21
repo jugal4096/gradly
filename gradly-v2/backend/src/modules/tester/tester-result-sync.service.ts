@@ -413,9 +413,9 @@ function findCourseName(lines: TextLine[], courseCode: string): string | undefin
   const candidates: Array<{ value: string; score: number }> = [];
   const isNoise = (value: string) =>
     !value || value.length < 5 || value.length > 100 ||
-    /\\b(?:ENROLLMENT|ROLL\\s*NO|RESULT\\s*SUMMARY|COURSE\\s*CODE|SUBJECT\\s*CODE|GRADE|CREDIT|SEMESTER|TOTAL|PASS|FAIL|PROGRAMME|EXAMINATION|UNIVERSITY|COLLEGE|BRANCH|DIVISION|SEAT\\s*NO)\\b/i.test(value) ||
+    /\b(?:ENROLLMENT|ROLL\s*NO|RESULT\s*SUMMARY|COURSE\s*CODE|SUBJECT\s*CODE|GRADE|CREDIT|SEMESTER|TOTAL|PASS|FAIL|PROGRAMME|EXAMINATION|UNIVERSITY|COLLEGE|BRANCH|DIVISION|SEAT\s*NO)\b/i.test(value) ||
     ENROLLMENT_PATTERN.test(value) || COURSE_CODE_PATTERN.test(value) ||
-    /^(?:A\\+\\+|A\\+|B\\+|C\\+|A|B|C|D|F|AB|P|-)$/i.test(value);
+    /^(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P|-)$/i.test(value);
 
   for (let index = 0; index < lines.length; index += 1) {
     const codeLine = lines[index];
@@ -423,9 +423,8 @@ function findCourseName(lines: TextLine[], courseCode: string): string | undefin
     const codeItems = codeLine.items.filter(item => compactPdfText(item.text).includes(normalizedCode));
     const codeX = codeItems.length ? codeItems.reduce((sum, item) => sum + item.x, 0) / codeItems.length : 0;
 
-    // Course titles are sometimes printed several baselines away from the
-    // course-code row. Search a wider local window, but keep the code column's
-    // horizontal neighbourhood to avoid borrowing another subject's title.
+    // Course titles can be several baselines away from the course-code row.
+    // Search a wider local window while respecting the code column's position.
     for (let offset = -8; offset <= 8; offset += 1) {
       const candidateLine = lines[index + offset];
       if (!candidateLine) continue;
@@ -436,15 +435,14 @@ function findCourseName(lines: TextLine[], courseCode: string): string | undefin
       const raw = nearbyItems.map(item => item.text).join(" ");
       const cleaned = raw
         .replace(new RegExp(normalizedCode.split("").join("[^A-Z0-9]*"), "i"), " ")
-        .replace(/\\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL|ENROLLMENT|ROLL\\s*NO|THEORY|PRACTICAL)\\b/gi, " ")
-        .replace(/\\b(?:A\\+\\+|A\\+|B\\+|C\\+|A|B|C|D|F|AB|P)\\b/gi, " ")
-        .replace(/\\b[A-Z]{2,6}\\d{4}\\b/gi, " ")
+        .replace(/\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL|ENROLLMENT|ROLL\s*NO|THEORY|PRACTICAL)\b/gi, " ")
+        .replace(/\b(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P)\b/gi, " ")
+        .replace(/\b[A-Z]{2,6}\d{4}\b/gi, " ")
         .replace(/[|:;]+/g, " ")
-        .replace(/\\s+/g, " ").trim();
+        .replace(/\s+/g, " ").trim();
       if (isNoise(cleaned)) continue;
-      const words = cleaned.split(/\\s+/).filter(word => /[A-Za-z]{2,}/.test(word));
-      if (words.length < 2 || words.length > 12) continue;
-      if (/\\d{2,}/.test(cleaned)) continue;
+      const words = cleaned.split(/\s+/).filter(word => /[A-Za-z]{2,}/.test(word));
+      if (words.length < 2 || words.length > 12 || /\d{2,}/.test(cleaned)) continue;
       const distancePenalty = Math.abs(offset) * 15;
       const xPenalty = codeX ? Math.min(90, Math.abs((candidateLine.items[0]?.x ?? codeX) - codeX) / 6) : 0;
       const lengthPenalty = Math.max(0, cleaned.length - 65) * 1.5;
