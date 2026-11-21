@@ -22,7 +22,7 @@ type MatchResponse = {
 };
 function normalizeCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
 function usableParsedCourseName(value:unknown):string { const name=String(value||"").replace(/\s+/g," ").trim(); if(!name || name.length>90 || /\bFOREIGN\b|\bCOURSE\s*CODE\b|\bRESULT\s*SUMMARY\b/i.test(name)) return ""; return name; }
-function formatCourseCategory(value?:string):string { const labels:Record<string,string>={BSC:"Basic Science",ESC:"Engineering Science",PCC:"Professional Core Course",PEC:"Professional Elective",OE:"Open Elective",MDM:"Multidisciplinary Course",AEC:"Ability Enhancement Course",VEC:"Value Education Course",VSEC:"Value Skill Enhancement Course",INT:"Internship",PRJ:"Project",UNCLASSIFIED:"Needs classification"}; return labels[String(value||"").toUpperCase()] || String(value||"Other"); }
+function formatCourseCategory(value?:string):string { const labels:Record<string,string>={BSC:"Basic Science",ESC:"Engineering Science",PCC:"Professional Core Course",PEC:"Professional Elective",OE:"Open Elective",MDM:"Multidisciplinary Course",AEC:"Ability Enhancement Course",VEC:"Value Education Course",VSEC:"Value Skill Enhancement Course",INT:"Internship",PRJ:"Project",HSSM:"Humanities & Social Sciences",UNCLASSIFIED:"Needs classification"}; return labels[String(value||"").toUpperCase()] || String(value||"Other"); }
 // GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
 // elective, while the selected CBCS curriculum stores the same course as CE3008.
 function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="MEOE0031"?"ME4031":code==="CEOE1010"?"CE3008":code; }
@@ -247,6 +247,8 @@ export default function StudentOnlineResultSync({
       const inferredCategory = (() => {
         const match = code.match(/^[A-Z]{2}(BSC|ESC|PCC|PEC|MDM|OEC|VSE|AEC|EEM|IKS|VEC|RMC|CEP|PRJ|INT|CCC|HNC|RPR)/);
         if (match) return match[1] === "VSE" ? "VSEC" : match[1] === "OEC" ? "OE" : match[1];
+        if (/^ETHS/.test(code)) return "HSSM";
+        if (/^CEOE/.test(code)) return "OE";
         if (/^ITPC/.test(code)) return "PCC";
         if (/^ITPE/.test(code)) return "PEC";
         if (/^ITHS/.test(code)) return "AEC";
@@ -260,7 +262,7 @@ export default function StudentOnlineResultSync({
       const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL|WORKSHOP/i.test(subjectName) ? 1 : inferredCategory === "INT" ? 12 : ["VSEC","AEC","EEM","IKS","VEC","RMC","CEP","CCC"].includes(inferredCategory) ? 2 : /PROJECT/i.test(subjectName) ? 2 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog, courseCategory: registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (!existing && !catalog ? "FIRST_USER_CONFIRMATION" : "CURRICULUM") };
+      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !registryEntry, courseCategory: registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (!existing ? "FIRST_USER_CONFIRMATION" : "CURRICULUM") };
     });
     // Course code is the only deduplication key. Retain the first valid row
     // for each normalized course code, even when names differ; distinct codes
@@ -341,16 +343,20 @@ export default function StudentOnlineResultSync({
     setSavingReview(true);
     try {
       const token = await getIdToken();
-      const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
-      if (result === false) {
-        setNotice("The result could not be saved. Your academic profile was not changed.");
-        return;
-      }
+      // Register newly identified courses first: the academic-result API validates
+      // official GECA rows against this shared registry in the same transaction.
+      // Saving after onApply caused valid new codes to be rejected as unknown.
       for (const row of grades.filter(item => item.isNewSubject)) {
         const response = await fetch(apiBase + "/api/student/results/discovered-subjects", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ curriculumId, semesterNumber: pendingReview.semester, courseCode: row.courseCode, courseName: row.courseName, courseCategory: row.courseCategory, credits: row.credits, source: "GECA_OFFICIAL_RESULT_PDF" }) });
         const body = await response.json();
         if (!response.ok) throw new Error(body.message || "Unable to register the newly discovered subject.");
         if (body.data?.credits != null) row.credits = Number(body.data.credits);
+        row.creditStatus = "USER_CONFIRMED";
+      }
+      const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
+      if (result === false) {
+        setNotice("The subject catalogue was updated, but the semester result was not saved. Retry the result save; the courses will now be recognised.");
+        return;
       }
       setPendingReview(null);
       setError("");
