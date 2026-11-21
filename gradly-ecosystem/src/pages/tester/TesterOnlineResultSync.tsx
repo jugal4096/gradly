@@ -208,6 +208,8 @@ export default function TesterOnlineResultSync({
       const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
       const knownNames: Record<string,string> = {
         "CEHS1030":"Constitution of India and Professional Ethics",
+        "ETHS0020":"Foreign Language - German",
+        "CEOE0020":"Watershed Management",
         "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
         "MEOE1040":"Entrepreneurship Development",
@@ -244,7 +246,7 @@ export default function TesterOnlineResultSync({
       const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL|WORKSHOP/i.test(subjectName) ? 1 : inferredCategory === "INT" ? 12 : ["VSEC","AEC","EEM","IKS","VEC","RMC","CEP","CCC"].includes(inferredCategory) ? 2 : /PROJECT/i.test(subjectName) ? 2 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog && !registryEntry, courseCategory: registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (!existing && !catalog ? "FIRST_USER_CONFIRMATION" : "CURRICULUM") };
+      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog, courseCategory: registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (!existing && !catalog ? "FIRST_USER_CONFIRMATION" : "CURRICULUM") };
     });
     // Course code is the only deduplication key. Retain the first valid row
     // for each normalized course code, even when names differ; distinct codes
