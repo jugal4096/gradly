@@ -282,26 +282,41 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
       );
       semesterRecord = inserted.rows[0];
     }
-    for (const course of normalized) {
-      const curriculumSubject = course.code
-        ? await client.query(
-            `SELECT id FROM curriculum_subjects
-             WHERE curriculum_id = $1 AND semester_id = $2 AND course_code = $3
-             LIMIT 1`,
-            [resolved.profile.curriculum_id, semesterRecord.semester_id, course.code],
-          )
-        : { rows: [] };
-      await client.query(
-        `INSERT INTO student_semester_courses
-          (student_semester_id, curriculum_subject_id, course_code_snapshot,
-           course_name_snapshot, credits, registration_status, grade_symbol,
-           grade_point, result_status, result_source, attempt_number)
-         VALUES ($1, $2, $3, $4, $5, 'REGISTERED', $6, $7::numeric,
-                 CASE WHEN $7::numeric > 0::numeric THEN 'PASS' ELSE 'FAIL' END, 'MANUAL_ENTRY', $8)`,
-        [semesterRecord.id, curriculumSubject.rows[0]?.id ?? null, course.code || null,
-         course.name, course.credits, course.grade || null, course.point, attemptNumber],
-      );
-    }
+    // Insert the semester's subjects in one database round-trip. The previous
+    // per-course loop performed a curriculum lookup and INSERT for every row,
+    // making a 13-subject result require 26 sequential queries.
+    await client.query(
+      `INSERT INTO student_semester_courses
+        (student_semester_id, curriculum_subject_id, course_code_snapshot,
+         course_name_snapshot, credits, registration_status, grade_symbol,
+         grade_point, result_status, result_source, attempt_number)
+       SELECT $1, curriculum_subject.id, course.course_code, course.course_name,
+              course.credits, 'REGISTERED', course.grade_symbol, course.grade_point,
+              CASE WHEN course.grade_point > 0::numeric THEN 'PASS' ELSE 'FAIL' END,
+              'MANUAL_ENTRY', $7
+       FROM unnest(
+         $2::text[], $3::text[], $4::numeric[], $5::text[], $6::numeric[]
+       ) AS course(course_code, course_name, credits, grade_symbol, grade_point)
+       LEFT JOIN LATERAL (
+         SELECT id
+         FROM curriculum_subjects
+         WHERE curriculum_id = $8
+           AND semester_id = $9
+           AND course_code = course.course_code
+         LIMIT 1
+       ) AS curriculum_subject ON TRUE`,
+      [
+        semesterRecord.id,
+        normalized.map(course => course.code || null),
+        normalized.map(course => course.name),
+        normalized.map(course => course.credits),
+        normalized.map(course => course.grade || null),
+        normalized.map(course => course.point),
+        attemptNumber,
+        resolved.profile.curriculum_id,
+        semesterRecord.semester_id,
+      ],
+    );
     await client.query("COMMIT");
     return res.status(201).json({
       message: "Semester result saved.",
