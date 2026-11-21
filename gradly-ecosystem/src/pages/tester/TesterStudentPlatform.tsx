@@ -1039,7 +1039,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         return {...(existing||{}),id:index+1,name,credits,grade,courseCode:String(row.courseCode||code).trim().toUpperCase(),courseType,curriculumSubjectId:existing?.curriculumSubjectId,isCustom:!existing};
       });
     }
-    if(!finalSubjects.length||finalSubjects.length!==fetchedGrades.length||finalSubjects.some(subject=>{
+    if(!finalSubjects.length||(attemptNumber===1&&finalSubjects.length!==fetchedGrades.length)||finalSubjects.some(subject=>{
       const code=normalizeResultCourseCode(subject.courseCode);
       return !code||!subject.name.trim()||!Number.isFinite(subject.credits)||subject.credits<0||(subject.credits===0&&!["INMC2001","INMC2010"].includes(code))||POINTS[subject.grade]===undefined;
     })) {
