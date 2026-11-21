@@ -180,9 +180,11 @@ export default function StudentOnlineResultSync({
       return;
     }
 
-    const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    // Reconcile against the student's selected subjects, not every department's
-    // elective catalogue. GECA's exam PDF may use the legacy MEOE1040 code.
+    // Only curriculum/selected elective rows count as in-curriculum. A subject
+    // already registered in the discovered-result database is still outside the
+    // student's selected curriculum and must remain explicitly identified as such.
+    const subjectCodes = subjects.filter(subject => !subject.isCustom || Boolean(subject.curriculumSubjectId))
+      .map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
     const expectedCodes = new Set([...subjectCodes, ...catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean), "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
