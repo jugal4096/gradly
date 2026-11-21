@@ -478,7 +478,12 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
   }
 
   return {
-    grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade, courseName: findCourseName(lines, courseCode) })),
+    // Do not infer titles by collecting nearby PDF text. GECA result PDFs place
+    // course codes, titles and grade cells in separate columns; a broad nearby
+    // text search can concatenate several unrelated subjects into one title.
+    // The client resolves names from the selected curriculum / confirmed
+    // catalogue, and asks the user to enter a title when neither is available.
+    grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade })),
     enrollmentFound,
   };
 }
