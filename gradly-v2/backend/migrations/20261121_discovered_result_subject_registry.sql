@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.discovered_result_subjects (
   course_code text NOT NULL,
   course_name text NOT NULL,
   course_category text NOT NULL DEFAULT 'UNCLASSIFIED',
-  credits numeric(5,2) NOT NULL CHECK (credits >= 0 AND credits <= 30),
+  credits numeric(5,2) NOT NULL CHECK (credits > 0 AND credits <= 30),
   credit_status text NOT NULL DEFAULT 'FIRST_USER_CONFIRMED'
     CHECK (credit_status IN ('FIRST_USER_CONFIRMED', 'SUPER_ADMIN_VERIFIED')),
   confirmed_by uuid NULL REFERENCES public.users(id) ON DELETE SET NULL,
