@@ -44,7 +44,7 @@ export async function confirmDiscoveredResultSubject(req: AuthenticatedRequest, 
     const credits = Number(req.body?.credits);
     const semesterNumber = Number(req.body?.semesterNumber);
     if (curriculumId !== profile.curriculumId) return res.status(403).json({ success: false, message: "The requested curriculum does not match your confirmed academic profile." });
-    if (!/^[A-Z0-9]{4,16}$/.test(courseCode) || courseName.length < 2 || !Number.isFinite(credits) || credits <= 0 || credits > 30 || !Number.isInteger(semesterNumber) || semesterNumber < 1 || semesterNumber > 12) {
+    if (!/^[A-Z0-9]{4,16}$/.test(courseCode) || courseName.length < 2 || !Number.isFinite(credits) || credits < 0 || credits > 30 || !Number.isInteger(semesterNumber) || semesterNumber < 1 || semesterNumber > 12) {
       return res.status(400).json({ success: false, message: "Enter a valid course code, subject name, semester and credit value." });
     }
     const inserted = await pool.query(
