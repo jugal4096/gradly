@@ -110,6 +110,9 @@ export default function StudentOnlineResultSync({
     setSelectedSessionId("");
     setNotice("");
     setError("");
+    // The backlog action opens the archive directly; it must also load the
+    // examination-session list rather than only revealing an empty panel.
+    void openArchive();
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
