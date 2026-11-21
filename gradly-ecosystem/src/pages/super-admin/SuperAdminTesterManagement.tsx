@@ -11,7 +11,11 @@ export default function SuperAdminTesterManagement() {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
-  const [created,setCreated]=useState<{loginId:string;password:string}|null>(null);\n  const [editing,setEditing]=useState<TesterAccount|null>(null);\n  const [editLoginId,setEditLoginId]=useState("");\n  const [editPassword,setEditPassword]=useState("");\n  const [editBusy,setEditBusy]=useState(false);
+  const [created,setCreated]=useState<{loginId:string;password:string}|null>(null);
+  const [editing,setEditing]=useState<TesterAccount|null>(null);
+  const [editLoginId,setEditLoginId]=useState("");
+  const [editPassword,setEditPassword]=useState("");
+  const [editBusy,setEditBusy]=useState(false);
   const token=localStorage.getItem("gradly_super_admin_token")||"";
   const headers={Authorization:"Bearer "+token,"Content-Type":"application/json"};
   const load=useCallback(async()=>{try{const r=await fetch(API_BASE_URL+"/api/super-admin/testers",{headers:{Authorization:"Bearer "+token}});const d=await r.json();if(!r.ok)throw new Error(d.message||"Could not load tester accounts.");setTesters(Array.isArray(d.testers)?d.testers:[]);setError("");}catch(e){setError(e instanceof Error?e.message:"Unable to connect to Gradly API.");}},[token]);
