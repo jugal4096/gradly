@@ -491,7 +491,8 @@ export default function StudentPlatform() {
             "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
             "MEOE0050","MEOE1040","CEOE1010","EE3018","EE4046","ET3033","ET3034","ET3035",
             "CS2017","OEIT4001",
-            ...(selectedSemester===6?["ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
+            "ITHS1030",
+            ...(selectedSemester===6?["ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
           ]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
@@ -976,8 +977,15 @@ export default function StudentPlatform() {
           isCustom: !existing,
         };
       });
+      const importedCodes = new Set(updatedSubjects.map(subject => normalizeResultCourseCode(subject.courseCode)));
+      const preservedSelectedHs = subjects.filter(subject =>
+        subject.electiveKind === "HS" &&
+        normalizeResultCourseCode(subject.courseCode) &&
+        !importedCodes.has(normalizeResultCourseCode(subject.courseCode))
+      ).map(subject => ({ ...subject, grade: subject.grade || "" }));
+      updatedSubjects = [...updatedSubjects, ...preservedSelectedHs];
     }
-    if (!updatedSubjects.length || (attemptNumber === 1 && updatedSubjects.length !== fetchedGrades.length) || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && !["INMC2001","INMC2010"].includes(normalizeResultCourseCode(subject.courseCode))) || POINTS[subject.grade] === undefined)) {
+    if (!updatedSubjects.length || (attemptNumber === 1 && fetchedGrades.length === 0) || updatedSubjects.some(subject => !normalizeResultCourseCode(subject.courseCode) || !subject.name.trim() || !Number.isFinite(subject.credits) || subject.credits < 0 || (subject.credits === 0 && !["INMC2001","INMC2010"].includes(normalizeResultCourseCode(subject.courseCode))) || (subject.grade !== "" && POINTS[subject.grade] === undefined))) {
       setNotice("At least one official result row has an invalid course code, subject name, credit value or grade. Nothing was saved, so no parsed subject was silently skipped.");
       return false;
     }
@@ -1006,8 +1014,13 @@ export default function StudentPlatform() {
     const reExamSuccess = attemptNumber > 1 && matchedRow && matchedSubject
       ? { subjectName: matchedSubject.name, courseCode: matchedSubject.courseCode || "", grade: matchedRow.grade.trim().toUpperCase() }
       : null;
-    const totalCredits = updatedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
-    const weightedPoints = updatedSubjects.reduce((sum, subject) => sum + subject.credits * POINTS[subject.grade], 0);
+    const gradedSubjects = updatedSubjects.filter(subject => POINTS[subject.grade] !== undefined);
+    const totalCredits = gradedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
+    const weightedPoints = gradedSubjects.reduce((sum, subject) => sum + subject.credits * POINTS[subject.grade], 0);
+    if (!gradedSubjects.length || totalCredits <= 0) {
+      setNotice("The official result did not contain any graded, positive-credit subjects. Nothing was saved.");
+      return false;
+    }
     const nextSgpa = Number((weightedPoints / totalCredits).toFixed(3));
     setSavingSemester(true);
     try {
@@ -1017,7 +1030,7 @@ export default function StudentPlatform() {
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
         body: JSON.stringify({
           semesterNumber, attemptNumber, resultSource: "GECA_OFFICIAL",
-          courses: updatedSubjects.map(subject => ({
+          courses: gradedSubjects.map(subject => ({
             courseCode: subject.courseCode || "", courseName: subject.name, credits: subject.credits,
             gradeSymbol: subject.grade, gradePoint: POINTS[subject.grade],
           })),
