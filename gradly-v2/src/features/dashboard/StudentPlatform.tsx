@@ -424,8 +424,28 @@ export default function StudentPlatform() {
         const data=await response.json();
         if(!response.ok) throw new Error(data.message||"Unable to load curriculum subjects.");
         if(cancelled) return;
-        const saved=savedSubjectsBySemester[selectedSemester]||[];
+        let saved=savedSubjectsBySemester[selectedSemester]||[];
         const officialResultKey="gradly_online_result_subjects_"+profile.curriculumId+"_"+selectedSemester;
+        // Restore shared discovered-subject metadata from the database when
+        // Grade Entry is opened on another browser/device or after cache loss.
+        const savedCodes=[...new Set(saved.map(subject=>normalizeResultCourseCode(subject.courseCode)).filter(Boolean))];
+        const discoveredByCode=new Map<string,{courseName:string;courseCategory:string;credits:number}>();
+        if(savedCodes.length&&user) {
+          try {
+            const token=await user.getIdToken();
+            const registryResponse=await fetch(API+"/api/student/results/discovered-subjects?curriculumId="+encodeURIComponent(profile.curriculumId)+"&codes="+encodeURIComponent(savedCodes.join(",")),{headers:{Authorization:"Bearer "+token}});
+            const registryBody=await registryResponse.json();
+            if(registryResponse.ok&&Array.isArray(registryBody.data)) {
+              registryBody.data.forEach((item:{courseCode:string;courseName:string;courseCategory:string;credits:number})=>{
+                discoveredByCode.set(normalizeResultCourseCode(item.courseCode),{courseName:String(item.courseName||""),courseCategory:String(item.courseCategory||""),credits:Number(item.credits)});
+              });
+              saved=saved.map(subject=>{
+                const entry=discoveredByCode.get(normalizeResultCourseCode(subject.courseCode));
+                return entry?{...subject,name:entry.courseName||subject.name,credits:entry.credits,courseType:entry.courseCategory||subject.courseType,courseCategory:entry.courseCategory,isCustom:true}:subject;
+              });
+            }
+          } catch { /* Saved grade entry remains available if the registry is temporarily offline. */ }
+        }
         if(localStorage.getItem("gradly_online_result_source_"+selectedSemester)) {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
@@ -437,7 +457,7 @@ export default function StudentPlatform() {
             const cachedCodes=new Set(authoritative.map(subject=>normalizeResultCourseCode(subject.courseCode)).filter(Boolean));
             const persistedDiscovered=saved.filter(subject=>{
               const code=normalizeResultCourseCode(subject.courseCode);
-              return Boolean(code)&&!cachedCodes.has(code)&&!subject.curriculumSubjectId&&subject.courseType==="Additional course";
+              return Boolean(code)&&!cachedCodes.has(code)&&!subject.curriculumSubjectId&&(subject.isCustom===true||Boolean(subject.courseCategory)||subject.courseType==="Additional course"||subject.courseType==="Official GECA result");
             });
             authoritative=[...authoritative,...persistedDiscovered];
           }
@@ -459,7 +479,7 @@ export default function StudentPlatform() {
           ]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
-            return curriculumCodes.has(code)||sharedSemesterCourses.has(code)||subject.isCustom===true||(!subject.curriculumSubjectId&&subject.courseType==="Additional course");
+            return curriculumCodes.has(code)||sharedSemesterCourses.has(code)||discoveredByCode.has(code)||subject.isCustom===true||(!subject.curriculumSubjectId&&subject.courseType==="Additional course");
           });
           if(verifiedAuthoritative.length) {
             const cleaned=dedupeSubjectsByCourseCode(verifiedAuthoritative);
