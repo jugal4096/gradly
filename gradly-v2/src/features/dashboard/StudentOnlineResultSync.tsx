@@ -186,7 +186,7 @@ export default function StudentOnlineResultSync({
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "MEOE0050", "ME4031", "INMC2010", "CEOE1010"]);
+    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "MEOE0050", "ME4031", "INMC2010", "CEOE1010", "ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]);
     const unknownRows = sourceRows.filter(row => {
       const code = canonicalResultCourseCode(row.courseCode);
       return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
@@ -221,9 +221,17 @@ export default function StudentOnlineResultSync({
         "MEOE0050":"Additive Manufacturing",
         "CE3008":"Disaster Management",
         "CEOE1010":"Disaster Management",
+        "ITHS1030":"Business Intelligence",
+        "ITPE3005":"Advanced Database Management Systems",
+        "ITPE3006":"Lab-Advanced Database Management Systems",
+        "ITPE3007":"Data Mining",
+        "ITPE3008":"Lab-Data Mining",
+        "ITPE3032":"Deep Learning",
+        "ITPC3010":"Computer Programming Lab II",
+        "ITPR3002":"Mini Project II",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
-      const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
+      const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };\n      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
       return { ...row, courseCode: code, grade, courseName: code === "ME4031" ? (existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode) : (row.courseName || (code === "CEHS1030" || code === "MEOE1040" ? knownNames[code] : (existing?.name || catalog?.name || knownNames[code] || row.courseCode))), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
