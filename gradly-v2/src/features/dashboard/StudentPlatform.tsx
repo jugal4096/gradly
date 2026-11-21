@@ -364,7 +364,15 @@ export default function StudentPlatform() {
           const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
             .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
             .filter(Boolean));
-          const sharedSemesterCourses=new Set(["CEHS1030","INHS1020","INMC2001","INMC2010","MEOE1040","EE3018"]);
+          const sharedSemesterCourses=new Set([
+            "CEHS1030","INHS1020","INMC2001","INMC2010",
+            // GECA Open Electives are student-selected and may not exist in
+            // the branch's base curriculum_subjects rows. Keep official
+            // result courses when rebuilding the grade-entry list.
+            "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
+            "MEOE0050","MEOE1040","EE3018","EE4046","ET3033","ET3034","ET3035",
+            "CS2017","OEIT4001",
+          ]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
             return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
