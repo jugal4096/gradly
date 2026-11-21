@@ -162,11 +162,33 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
       const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
       const single = clean(item.text);
       const next = line.items[itemIndex + 1];
-      const combined = next ? single + clean(next.text) : "";
-      const token = COURSE_CODE_PATTERN.test(single) ? single : combined;
-      if (COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
+      const nextCompact = next ? clean(next.text) : "";
+      // PDF.js can split one GECA course code across three text items. It can
+      // also emit a partial code (for example CEOE10) that looks valid alone.
+      let token = COURSE_CODE_PATTERN.test(single) ? single : "";
+      let consumed = 0;
+      if (nextCompact && /^\\d{2,4}$/.test(nextCompact) && /\\d{1,2}$/.test(single) && single.length < 8) {
+        const joined = single + nextCompact;
+        if (COURSE_CODE_PATTERN.test(joined) && joined.length <= 12) {
+          token = joined;
+          consumed = 1;
+        }
+      }
+      if (!token) {
+        let combined = single;
+        for (let span = 1; span <= 2 && itemIndex + span < line.items.length; span++) {
+          combined += clean(line.items[itemIndex + span].text);
+          if (combined.length > 12) break;
+          if (COURSE_CODE_PATTERN.test(combined)) {
+            token = combined;
+            consumed = span;
+            break;
+          }
+        }
+      }
+      if (token && COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
         columns.push({ courseCode: token, x: item.x });
-        if (token === combined) itemIndex++;
+        itemIndex += consumed;
       }
     }
     if (columns.length) rows.push({ y: line.items[0]?.y ?? 0, columns });
@@ -232,35 +254,33 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
     for (const [courseCode, cell] of nearestCellByCourse) mapped.set(courseCode, cell.grade);
   }
 
-  // Fallback for GECA PDFs where the whole result row (including all grades)
-  // is emitted as one text item or where enrollment characters are split
-  // across items. Only accept a complete positional sequence: one grade cell
-  // per discovered course column. This avoids shifting grades onto wrong codes.
-  if (!mapped.size) {
+  // Fallback for GECA PDFs where the whole result row is emitted as one
+  // text item, or individual grade cells are not close enough to their header
+  // x-coordinate. Accept only a complete positional sequence and only fill
+  // columns that the proximity pass could not map.
+  if (mapped.size < sortedColumns.length) {
     const orderedText = line.items.map(item => item.text).join(" ");
     const compactEnrollment = compactPdfText(enrollment);
     const compactLine = compactPdfText(orderedText);
     const enrollmentAt = compactLine.indexOf(compactEnrollment);
+    let positionalGrades: string[] = [];
     if (enrollmentAt >= 0) {
       const compactTail = compactLine.slice(enrollmentAt + compactEnrollment.length);
-      const gradeSequence = compactTail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
-      if (gradeSequence.length === sortedColumns.length) {
-        sortedColumns.forEach((column, index) => {
-          const grade = gradeSequence[index];
-          if (grade && !["AB", "P"].includes(grade)) mapped.set(column.courseCode, grade === "-" ? "" : grade);
-        });
-      }
+      positionalGrades = compactTail.match(/A\\+\\+|A\\+|B\\+|C\\+|AB|[ABCDFP]|-/g) || [];
     }
-    // A single PDF text item may contain whitespace-separated grade tokens;
-    // use that sequence only when its length exactly matches the header count.
-    if (!mapped.size) {
+    if (positionalGrades.length !== sortedColumns.length) {
       const enrollmentItemIndex = line.items.findIndex(item => compactPdfText(item.text).includes(compactEnrollment));
       const tailItems = enrollmentItemIndex >= 0 ? line.items.slice(enrollmentItemIndex) : line.items;
-      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
+      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
       const afterEnrollment = enrollmentItemIndex >= 0 ? sequence.slice(1) : sequence;
-      if (afterEnrollment.length === sortedColumns.length) sortedColumns.forEach((column, index) => {
-        const grade = afterEnrollment[index];
-        if (grade && !["AB", "P"].includes(grade)) mapped.set(column.courseCode, grade === "-" ? "" : grade);
+      if (afterEnrollment.length === sortedColumns.length) positionalGrades = afterEnrollment;
+    }
+    if (positionalGrades.length === sortedColumns.length) {
+      sortedColumns.forEach((column, index) => {
+        const grade = positionalGrades[index];
+        if (grade && !["AB", "P"].includes(grade) && !mapped.has(column.courseCode)) {
+          mapped.set(column.courseCode, grade === "-" ? "" : grade);
+        }
       });
     }
   }
@@ -284,6 +304,10 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   const targetAliases = new Set([target]);
   if (target === "ME4031") targetAliases.add("MEOE0031");
   if (target === "MEOE0031") targetAliases.add("ME4031");
+  // GECA labels the CBCS-NEW Disaster Management OE as CEOE1010,
+  // while Gradly's selected curriculum uses CE3008.
+  if (target === "CE3008") targetAliases.add("CEOE1010");
+  if (target === "CEOE1010") targetAliases.add("CE3008");
 
   const studentRows = lines.filter(line => lineContainsEnrollment(line, enrollment));
   for (const studentLine of studentRows) {
