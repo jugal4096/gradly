@@ -229,6 +229,9 @@ export default function TesterOnlineResultSync({
         const match = code.match(/^[A-Z]{2}(BSC|ESC|PCC|PEC|MDM|OEC|VSE|AEC|EEM|IKS|VEC|RMC|CEP|PRJ|INT|CCC|HNC|RPR)/);
         if (match) return match[1] === "VSE" ? "VSEC" : match[1] === "OEC" ? "OE" : match[1];
         if (/^ITPC/.test(code)) return "PCC";
+        if (/^ITPE/.test(code)) return "PEC";
+        if (/^ITHS/.test(code)) return "AEC";
+        if (/^INHS/.test(code)) return "VEC";
         if (/^ITES/.test(code)) return "ESC";
         if (/^MABS/.test(code)) return "BSC";
         if (/^ITOE/.test(code)) return "OE";
