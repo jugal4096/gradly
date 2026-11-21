@@ -164,7 +164,7 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
       // GECA course codes end in four digits. Requiring the complete suffix
       // prevents a split fragment such as "CEOE10" from being accepted as a
       // separate course code.
-      let token = /^[A-Z]{2,6}\\d{4}$/.test(single) ? single : "";
+      let token = /^[A-Z]{2,6}\d{4}$/.test(single) ? single : "";
       let consumed = 0;
       if (!token) {
         let combined = single;
@@ -173,7 +173,7 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
           if (!fragment) break;
           combined += fragment;
           if (combined.length > 12) break;
-          if (/^[A-Z]{2,6}\\d{4}$/.test(combined)) {
+          if (/^[A-Z]{2,6}\d{4}$/.test(combined)) {
             token = combined;
             consumed = span;
             break;
