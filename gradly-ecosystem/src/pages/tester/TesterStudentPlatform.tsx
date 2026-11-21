@@ -166,8 +166,7 @@ function officialGecaMdmName(item:CurriculumSubjectApi):string {
     }
   };
   const branchKey=/COMPUTER SCIENCE|\bCSE\b/.test(branch)?"CSE":/INFORMATION TECHNOLOGY|\bIT\b/.test(branch)?"IT":/CIVIL/.test(branch)?"CIVIL":/MECHANICAL|\bMECH/.test(branch)?"MECHANICAL":/ELECTRICAL|\bELECTR/.test(branch)?"ELECTRICAL":/ELECTRONICS|\bENTC\b|TELECOMMUNICATION/.test(branch)?"ENTC":"";
-  return catalogues[branchKey]?.[number]||String(item.name||"").replace(/[\r
-\t]+/g," ").replace(/\s+/g," ").trim();
+  return catalogues[branchKey]?.[number]||String(item.name||"").replace(/[\r\n\t]+/g," ").replace(/\s+/g," ").trim();
 }
 function mdmOptionsFromCurriculum(items:CurriculumSubjectApi[]):ElectiveOption[] {
   const unique=new Map<string,ElectiveOption>();
@@ -185,8 +184,7 @@ function hssmOptionsFromCurriculum(items:CurriculumSubjectApi[]):ElectiveOption[
   const unique=new Map<string,ElectiveOption>();
   items.filter(isHssmCatalogueRow).forEach(item=>{
     const code=String(item.code||"").trim();
-    const name=String(item.name||"").replace(/[\r
-]+/g," ").replace(/\s+/g," ").trim();
+    const name=String(item.name||"").replace(/[\r\n]+/g," ").replace(/\s+/g," ").trim();
     const credits=Number(item.credits||0);
     if(code&&name&&credits>0&&!unique.has(code)) unique.set(code,{code,name,credits,curriculumSubjectId:String(item.id||"")||undefined});
   });
