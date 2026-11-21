@@ -1222,7 +1222,7 @@ export default function StudentPlatform() {
           <section className="sp-user-stats" aria-label="Academic summary">
             <article className="sp-user-stat sp-user-stat-lilac"><span className="sp-user-stat-icon">◈</span><small>YOUR CGPA</small><strong>{results.length?cgpaValue.toFixed(3):"—"}</strong><p>{results.length?"Across "+results.length+" saved semesters":"Save your first semester result"}</p>{results.length>0&&<small className="sp-cgpa-standing">{cgpaStanding}</small>}</article>
             <article className="sp-user-stat sp-user-stat-mint"><span className="sp-user-stat-icon">∑</span><small>LATEST SGPA</small><strong>{results.length?results[results.length-1].sgpa.toFixed(3):"—"}</strong><p>{results.length?"Your latest saved performance":"Ready when you are"}</p></article>
-            <article className="sp-user-stat sp-user-stat-peach"><span className="sp-user-stat-icon">▤</span><small>CREDITS EARNED</small><strong>{earnedCredits||"0"}</strong><p>Keep your credit record up to date</p></article>
+            <article className="sp-user-stat sp-user-stat-peach"><span className="sp-user-stat-icon">▤</span><small>CREDITS EARNED</small><strong>{degreeCreditProgress?.earned??"—"}</strong><p>New CBCS degree credits earned</p></article>
             <article className="sp-user-stat sp-user-stat-blue"><span className="sp-user-stat-icon">✦</span><small>PROFILE STATUS</small><strong>{profile.institutionName?"Ready":"Setup"}</strong><p>{profile.institutionName?"Your academic profile is active":"Complete your academic profile"}</p></article>
           </section>
 
