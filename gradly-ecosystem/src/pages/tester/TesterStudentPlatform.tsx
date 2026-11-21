@@ -556,7 +556,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
             ]);
             const verified=authoritative.filter(subject=>{
               const code=normalizeResultCourseCode(subject.courseCode);
-              return curriculumCodes.has(code)||approvedSharedAndOECodes.has(code);
+              return curriculumCodes.has(code)||approvedSharedAndOECodes.has(code)||subject.isCustom===true||(!subject.curriculumSubjectId&&subject.courseType==="Additional course");
             });
             setSubjects(verified.length?verified:authoritative);
             setCurriculumReadySemester(selectedSemester);
