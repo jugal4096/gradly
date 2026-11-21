@@ -173,9 +173,11 @@ export default function TesterOnlineResultSync({
       return;
     }
 
-    const subjectCodes = subjects.map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    // Reconcile against the tester's selected subjects, not every department's
-    // elective catalogue. GECA's exam PDF may use the legacy MEOE1040 code.
+    // Only curriculum/selected elective rows count as in-curriculum. A subject
+    // already registered in the tester's discovered-subject registry is still
+    // outside the selected curriculum and must be called out in the PDF review.
+    const subjectCodes = subjects.filter(subject => !subject.isCustom || Boolean(subject.curriculumSubjectId))
+      .map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
     const expectedCodes = new Set([...subjectCodes, ...catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean), "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
