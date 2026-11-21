@@ -66,6 +66,8 @@ export default function StudentOnlineResultSync({
   const [reportBusy, setReportBusy] = useState(false);
   const [reportMessage, setReportMessage] = useState("");
 
+  // Browser-local recovery mirror; the authenticated backend remains canonical.
+  const localRegistryKey = "gradly_discovered_result_subjects_" + curriculumId + "_" + normalizeCourseCode(enrollmentNumber);
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
   const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*(?:exam|ese)|re[\\s-]*examination|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
@@ -208,10 +210,6 @@ export default function StudentOnlineResultSync({
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
-    // Keep a browser-local mirror of confirmed subjects as a recovery layer.
-    // The authenticated backend remains authoritative, but a transient registry
-    // read must never make a previously confirmed course look newly discovered.
-    const localRegistryKey = "gradly_discovered_result_subjects_" + curriculumId + "_" + normalizeCourseCode(enrollmentNumber);
     let discoveredRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
     try {
       const cached = JSON.parse(localStorage.getItem(localRegistryKey) || "{}");
