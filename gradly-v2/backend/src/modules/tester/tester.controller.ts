@@ -68,6 +68,75 @@ export async function previewTesterEnrollment(req: TesterAuthenticatedRequest, r
 }
 
 
+
+/** Shared course metadata only; tester grades and profiles remain local and isolated. */
+export async function listTesterDiscoveredResultSubjects(req: TesterAuthenticatedRequest, res: Response) {
+  try {
+    if (!(await requireActiveTester(req, res))) return;
+    const curriculumId = String(req.query.curriculumId || "");
+    const codes = String(req.query.codes || "").split(",").map(value => value.toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean).slice(0, 100);
+    if (!curriculumId || !codes.length) return res.json({ success: true, data: [] });
+    const curriculum = await pool.query("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
+    if (!curriculum.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
+    const result = await pool.query(
+      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
+       FROM public.discovered_result_subjects WHERE curriculum_id=$1 AND course_code=ANY($2::text[])`,
+      [curriculumId, codes],
+    );
+    return res.json({ success: true, data: result.rows, sharedCatalogue: true, testerProfileIsolated: true });
+  } catch (error) {
+    console.error("Tester discovered subject lookup failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to load the shared discovered subject catalogue." });
+  }
+}
+
+export async function confirmTesterDiscoveredResultSubject(req: TesterAuthenticatedRequest, res: Response) {
+  try {
+    if (!(await requireActiveTester(req, res))) return;
+    const curriculumId = String(req.body?.curriculumId || "");
+    const courseCode = String(req.body?.courseCode || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const courseName = String(req.body?.courseName || "").trim().slice(0, 180);
+    const requestedCategory = String(req.body?.courseCategory || "UNCLASSIFIED").toUpperCase().slice(0, 24);
+    const inferredCategory = courseCode.startsWith("ETHS") ? "HSSM"
+      : courseCode.startsWith("CEOE") ? "OE"
+      : courseCode.startsWith("ITPC") ? "PCC"
+      : courseCode.startsWith("ITPE") ? "PEC"
+      : courseCode.startsWith("ITES") ? "ESC"
+      : courseCode.startsWith("MABS") ? "BSC"
+      : courseCode === "ITHS1030" ? "HSSM"
+      : courseCode.startsWith("ITHS") ? "AEC"
+      : courseCode.startsWith("INHS") ? "VEC"
+      : courseCode.startsWith("ITMD") ? "MDM"
+      : courseCode.startsWith("MEOE") || courseCode.startsWith("CEOE") ? "OE"
+      : "UNCLASSIFIED";
+    const courseCategory = requestedCategory === "UNCLASSIFIED" ? inferredCategory : requestedCategory;
+    const credits = Number(req.body?.credits);
+    const semesterNumber = Number(req.body?.semesterNumber);
+    if (!curriculumId || !/^[A-Z0-9]{4,16}$/.test(courseCode) || courseName.length < 2 || !Number.isFinite(credits) || credits < 0 || credits > 30 || !Number.isInteger(semesterNumber) || semesterNumber < 1 || semesterNumber > 12) {
+      return res.status(400).json({ success: false, message: "Enter a valid curriculum, course code, subject name, semester and credit value." });
+    }
+    const curriculum = await pool.query("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
+    if (!curriculum.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
+    const inserted = await pool.query(
+      `INSERT INTO public.discovered_result_subjects
+        (curriculum_id, course_code, course_name, course_category, credits, credit_status, confirmed_by, source, semester_number)
+       VALUES ($1,$2,$3,$4,$5,'FIRST_USER_CONFIRMED',NULL,'TESTER_OFFICIAL_RESULT_PDF',$6)
+       ON CONFLICT (curriculum_id, course_code) DO NOTHING
+       RETURNING course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"`,
+      [curriculumId, courseCode, courseName, courseCategory, credits, semesterNumber],
+    );
+    const row = inserted.rows[0] || (await pool.query(
+      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
+       FROM public.discovered_result_subjects WHERE curriculum_id=$1 AND course_code=$2 LIMIT 1`,
+      [curriculumId, courseCode],
+    )).rows[0];
+    return res.status(inserted.rowCount ? 201 : 200).json({ success: true, created: Boolean(inserted.rowCount), data: row, sharedCatalogue: true, testerProfileIsolated: true });
+  } catch (error) {
+    console.error("Tester discovered subject registration failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to register the discovered subject in the shared catalogue." });
+  }
+}
+
 /** Tester-only result archive discovery. This does not touch student accounts or saved records. */
 export async function listTesterGecaResultSessions(req: TesterAuthenticatedRequest, res: Response) {
   try {
