@@ -471,7 +471,25 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(studentStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid Tester result cache */ }
           if(!authoritative.length) authoritative=saved;
-          if(authoritative.length) { setSubjects(authoritative); setCurriculumReadySemester(selectedSemester); return; }
+          if(authoritative.length) {
+            const curriculumCodes=new Set((Array.isArray(data.data)?data.data:[])
+              .map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code))
+              .filter(Boolean));
+            const approvedSharedAndOECodes=new Set([
+              "CEHS1030","INHS1020","INMC2001","INMC2010",
+              "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
+              "MEOE0050","MEOE1040","EE3018","EE4046","ET3033","ET3034","ET3035",
+              "CS2017","OEIT4001",
+            ]);
+            const verified=authoritative.filter(subject=>{
+              const code=normalizeResultCourseCode(subject.courseCode);
+              return curriculumCodes.has(code)||approvedSharedAndOECodes.has(code);
+            });
+            const reconciled=dedupeSubjectsByCourseCode(verified.length?verified:authoritative);
+            setSubjects(reconciled);
+            setCurriculumReadySemester(selectedSemester);
+            return;
+          }
         }
         let electiveSaved:Subject[]=[];
         let mdmOptions:ElectiveOption[]=[];
