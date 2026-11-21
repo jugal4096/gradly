@@ -2631,3 +2631,135 @@
 @media(max-width:640px){.sp-whatif-hero{align-items:flex-start;padding:22px;gap:14px}.sp-whatif-score-orb{width:100px;height:100px;flex-basis:100px}.sp-whatif-score-orb strong{font-size:28px}.sp-whatif-grade-area{margin-left:0}.sp-whatif-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:520px){.sp-whatif-sidebar{grid-template-columns:1fr}.sp-whatif-semester-footer{gap:10px}.sp-whatif-semester-footer label{width:100%;justify-content:space-between}}
 @media(prefers-reduced-motion:reduce){.sp-whatif-hero:after,.sp-whatif-grade-options button{transition:none!important}}
+
+
+/* What-if analysis — split SGPA planner workspace */
+.sp-whatif-planner-banner{
+  position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:24px;
+  min-height:205px;overflow:hidden;margin:0 0 16px;padding:clamp(24px,4vw,38px);
+  border:1px solid rgba(255,255,255,.12);border-radius:22px;
+  color:#f7fbf8;background:
+    radial-gradient(ellipse at 82% 15%,rgba(129,211,166,.27),transparent 34%),
+    radial-gradient(ellipse at 12% 110%,rgba(90,156,130,.2),transparent 38%),
+    linear-gradient(112deg,#101d19 0%,#1b3027 48%,#254638 100%);
+  box-shadow:0 18px 42px rgba(21,54,39,.16)
+}
+.sp-whatif-banner-copy{position:relative;z-index:2;max-width:670px}
+.sp-whatif-banner-copy>span,.sp-whatif-banner-score>small,.sp-whatif-banner-score>span{font-size:9px;font-weight:900;letter-spacing:.17em;color:#b5d9c1}
+.sp-whatif-banner-copy h2{margin:11px 0 8px;font-size:clamp(25px,3.3vw,37px);line-height:1.08;letter-spacing:-.05em;color:#fff}
+.sp-whatif-banner-copy p{max-width:540px;margin:0;color:#c6d8cd;font-size:12px;line-height:1.7}
+.sp-whatif-banner-points{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.sp-whatif-banner-points span{padding:7px 10px;border:1px solid rgba(220,255,232,.2);border-radius:8px;background:rgba(255,255,255,.07);color:#e1f0e5;font-size:9px;font-weight:700}
+.sp-whatif-banner-score{position:relative;z-index:2;display:flex;flex:0 0 154px;width:154px;height:154px;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(225,255,235,.48);border-radius:50%;background:radial-gradient(circle at 35% 25%,#e7fff0,#a8d9b8 72%,#8fc6a2);color:#173b29;box-shadow:0 0 0 9px rgba(224,255,234,.07),0 15px 38px rgba(0,0,0,.18);animation:spWhatIfPulse 4s ease-in-out infinite}
+.sp-whatif-banner-score>small,.sp-whatif-banner-score>span{color:#3c7152;font-size:8px}
+.sp-whatif-banner-score strong{margin:5px 0;font-size:36px;line-height:1;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.sp-whatif-banner-art{position:absolute;z-index:0;right:10%;top:-125px;width:380px;height:380px;border:1px solid rgba(231,255,239,.14);border-radius:50%;pointer-events:none;box-shadow:0 0 0 25px rgba(231,255,239,.025),0 0 0 55px rgba(231,255,239,.02),0 0 0 90px rgba(231,255,239,.015)}
+.sp-whatif-banner-art span{position:absolute;display:block;border:1px solid rgba(231,255,239,.14);border-radius:50%}
+.sp-whatif-banner-art span:nth-child(1){inset:38px}
+.sp-whatif-banner-art span:nth-child(2){inset:86px}
+.sp-whatif-banner-art span:nth-child(3){inset:135px;background:rgba(197,244,211,.04)}
+.sp-whatif-planner-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:15px;padding:13px 17px;border:1px solid var(--sp-border,#e1e7e2);border-radius:14px;background:var(--sp-surface,#fff);box-shadow:0 5px 18px rgba(18,38,28,.035)}
+.sp-whatif-planner-controls>label{display:flex;flex-direction:column;gap:6px;min-width:min(280px,48%);font-size:8px;font-weight:900;letter-spacing:.13em;color:var(--sp-muted,#77847b)}
+.sp-whatif-planner-controls select{width:100%;min-height:42px;padding:8px 36px 8px 11px;border:1px solid var(--sp-border,#dce4de);border-radius:9px;background:var(--sp-subtle,#f7faf8);color:var(--sp-text,#1b2720);font-size:14px;font-weight:800}
+.sp-whatif-controls-note{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sp-whatif-controls-note strong{font-size:21px;color:var(--sp-text,#1b2720);font-variant-numeric:tabular-nums}
+.sp-whatif-controls-note span{font-size:10px;color:var(--sp-muted,#77847b)}
+.sp-whatif-controls-note i{padding:6px 8px;border-radius:7px;background:#eaf5ed;color:#32704a;font-size:9px;font-style:normal;font-weight:800}
+.sp-whatif-planner-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(285px,.8fr);align-items:start;gap:16px}
+.sp-whatif-entry-panel,.sp-whatif-live-panel>.sp-card{border:1px solid var(--sp-border,#e0e7e2);border-radius:17px;box-shadow:0 7px 24px rgba(18,38,28,.045)}
+.sp-whatif-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-bottom:15px;border-bottom:1px solid var(--sp-border,#e7ebe8)}
+.sp-whatif-panel-heading>div>span{font-size:8px;font-weight:900;letter-spacing:.15em;color:#548467}
+.sp-whatif-panel-heading h2{margin:6px 0 4px;font-size:21px;letter-spacing:-.04em;color:var(--sp-text,#1b2720)}
+.sp-whatif-panel-heading p{margin:0;font-size:10px;color:var(--sp-muted,#78827b)}
+.sp-whatif-panel-heading .sp-add{white-space:nowrap;border-radius:9px}
+.sp-whatif-entry-list{display:grid;gap:10px;padding-top:5px}
+.sp-whatif-entry-row{padding:13px 12px 12px;border:1px solid var(--sp-border,#e5ebe6);border-radius:13px;background:var(--sp-surface,#fff);transition:border-color .16s,box-shadow .16s}
+.sp-whatif-entry-row:focus-within{border-color:#8fbea0;box-shadow:0 0 0 3px rgba(81,151,104,.09)}
+.sp-whatif-entry-top{display:flex;align-items:center;gap:10px;min-width:0}
+.sp-whatif-entry-number{display:grid;place-items:center;flex:0 0 31px;width:31px;height:31px;border-radius:9px;background:#eaf5ed;color:#326c48;font-size:9px;font-weight:900}
+.sp-whatif-entry-name{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.sp-whatif-entry-name input{width:100%;min-width:0;padding:3px 2px;border:0;outline:0;background:transparent;color:var(--sp-text,#1b2720);font-size:12px;font-weight:800}
+.sp-whatif-entry-name small{padding-left:2px;color:var(--sp-muted,#7b867e);font-size:9px}
+.sp-whatif-entry-credit{display:flex;flex:0 0 65px;flex-direction:column;gap:4px;font-size:7px;font-weight:900;letter-spacing:.1em;color:var(--sp-muted,#7b867e)}
+.sp-whatif-entry-credit input{width:65px;padding:7px;border:1px solid var(--sp-border,#e1e7e2);border-radius:8px;background:var(--sp-subtle,#f7faf8);color:var(--sp-text,#1b2720);font-size:11px;font-weight:800}
+.sp-whatif-entry-remove{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border:1px solid var(--sp-border,#e1e7e2);border-radius:8px;background:transparent;color:var(--sp-muted,#7b867e);font-size:18px;cursor:pointer}
+.sp-whatif-entry-remove:hover{border-color:#d88d8d;background:#fff3f3;color:#a12f35}
+.sp-whatif-entry-grade{display:grid;gap:8px;margin:11px 0 0 41px;padding:10px;border-radius:10px;background:var(--sp-subtle,#f6f9f7)}
+.sp-whatif-entry-grade>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sp-whatif-entry-grade>div:first-child>span{font-size:7px;font-weight:900;letter-spacing:.12em;color:var(--sp-muted,#7b867e)}
+.sp-whatif-entry-grade>div:first-child>strong{font-size:10px;color:var(--sp-text,#1b2720)}
+.sp-whatif-entry-grade>div:first-child>strong small{font-size:9px;color:var(--sp-muted,#7b867e);font-weight:600}
+.sp-whatif-entry-grade-options{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+.sp-whatif-entry-grade-options button{min-width:0;min-height:42px;border:1px solid var(--sp-border,#dfe7e1);border-radius:8px;background:var(--sp-surface,#fff);color:var(--sp-text,#1b2720);cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.sp-whatif-entry-grade-options button:hover{transform:translateY(-2px);border-color:#76a987}
+.sp-whatif-entry-grade-options button.selected{border-color:#286746;background:linear-gradient(145deg,#286746,#194b31);color:#fff;box-shadow:0 3px 9px rgba(36,99,62,.18)}
+.sp-whatif-entry-grade-options button strong{display:block;font-size:10px}
+.sp-whatif-entry-grade-options button small{display:block;margin-top:2px;font-size:8px;opacity:.72}
+.sp-whatif-entry-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:15px;padding-top:12px;border-top:1px solid var(--sp-border,#e5ebe6)}
+.sp-whatif-entry-footer>span{font-size:9px;color:var(--sp-muted,#758078)}
+.sp-whatif-entry-footer .sp-secondary{padding:8px 10px;border-radius:8px;font-size:9px}
+.sp-whatif-live-panel{position:sticky;top:16px;display:grid;gap:12px}
+.sp-whatif-live-card{padding:19px!important;background:
+  radial-gradient(ellipse at 95% 0%,rgba(125,195,147,.2),transparent 42%),
+  linear-gradient(150deg,#f8fcf9,#edf6f0)!important;border-color:#d6e7da!important}
+.sp-whatif-live-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sp-whatif-live-heading>div>span,.sp-whatif-target-heading>span:first-child,.sp-whatif-credit-panel>div:first-child>span{font-size:8px;font-weight:900;letter-spacing:.13em;color:#537a60}
+.sp-whatif-live-heading h2{margin:5px 0 0;font-size:16px;color:#1d3d2a}
+.sp-whatif-live-indicator{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:99px;background:#dcefe1;color:#286746;font-size:8px;font-weight:900;letter-spacing:.08em}
+.sp-whatif-live-indicator i{width:6px;height:6px;border-radius:50%;background:#2b9b58;box-shadow:0 0 0 3px rgba(43,155,88,.13)}
+.sp-whatif-live-score{margin:23px 0 3px;color:#1e5838;font-size:clamp(44px,5vw,61px);line-height:1;font-weight:950;letter-spacing:-.075em;font-variant-numeric:tabular-nums}
+.sp-whatif-live-score small{margin-left:5px;color:#789481;font-size:13px;font-weight:750;letter-spacing:0}
+.sp-whatif-live-caption{margin:0;color:#6b8272;font-size:10px}
+.sp-whatif-live-meter{height:9px;margin:16px 0 17px;overflow:hidden;border-radius:99px;background:#d6e7da}
+.sp-whatif-live-meter span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8dcba0,#286746);transition:width .25s ease}
+.sp-whatif-live-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding-top:13px;border-top:1px solid #d9e8dc}
+.sp-whatif-live-stats>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.sp-whatif-live-stats span{font-size:8px;color:#718477}
+.sp-whatif-live-stats strong{font-size:14px;color:#244d33;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.sp-whatif-target-panel{padding:17px!important;background:linear-gradient(145deg,#1e3528,#2c5940)!important;border-color:#315b40!important;color:#fff}
+.sp-whatif-target-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+.sp-whatif-target-heading>span:first-child{color:#b9d9c2}
+.sp-whatif-target-heading>span:last-child{color:#c9efd3;font-size:17px}
+.sp-whatif-target-panel label{display:grid;gap:7px;color:#e2eee5;font-size:10px;font-weight:750}
+.sp-whatif-target-input{display:flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid rgba(255,255,255,.22);border-radius:10px;background:rgba(255,255,255,.09)}
+.sp-whatif-target-input input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#fff;font-size:26px;font-weight:900;letter-spacing:-.04em}
+.sp-whatif-target-input small{color:#c2d9c8;font-size:10px}
+.sp-whatif-target-status{margin-top:12px;color:#d9eadf;font-size:10px;line-height:1.5}
+.sp-whatif-target-progress{height:7px;margin-top:10px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.18)}
+.sp-whatif-target-progress span{display:block;height:100%;border-radius:99px;background:#c1edcd;transition:width .2s}
+.sp-whatif-target-hint{display:block;margin-top:6px;color:#b8d2c0;font-size:8px}
+.sp-whatif-credit-panel{padding:15px!important}
+.sp-whatif-credit-panel>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sp-whatif-credit-panel>div:first-child>strong{font-size:18px;color:var(--sp-text,#1b2720);font-variant-numeric:tabular-nums}
+.sp-whatif-credit-panel>div:first-child>strong small{font-size:10px;color:var(--sp-muted,#78827b)}
+.sp-whatif-credit-panel .sp-whatif-credit-track{margin:10px 0 7px}
+.sp-whatif-credit-panel p{margin:0;color:var(--sp-muted,#78827b);font-size:9px;line-height:1.5}
+.sp-whatif-disclaimer{margin:13px 2px 0;color:var(--sp-muted,#7a857d);font-size:9px;line-height:1.6}
+.sp-whatif-empty{display:grid;justify-items:center;gap:7px;padding:42px 15px;text-align:center;color:var(--sp-muted,#77827a)}
+.sp-whatif-empty strong{font-size:14px;color:var(--sp-text,#1b2720)}
+.sp-whatif-empty p{margin:0 0 7px;font-size:10px}
+.sp-whatif-spinner{font-size:28px;color:#46845b;animation:spWhatIfPulse 1.3s ease-in-out infinite}
+.sp-dark-theme .sp-whatif-planner-controls,.sp-dark-theme .sp-whatif-entry-panel,.sp-dark-theme .sp-whatif-credit-panel{background:#191f1b;border-color:#39483d}
+.sp-dark-theme .sp-whatif-planner-controls select,.sp-dark-theme .sp-whatif-entry-row,.sp-dark-theme .sp-whatif-entry-credit input{background:#202923;color:#f1f7f2;border-color:#3b4b40}
+.sp-dark-theme .sp-whatif-entry-name input,.sp-dark-theme .sp-whatif-panel-heading h2,.sp-dark-theme .sp-whatif-entry-grade>div:first-child>strong,.sp-dark-theme .sp-whatif-credit-panel>div:first-child>strong{color:#f1f7f2}
+.sp-dark-theme .sp-whatif-entry-grade{background:#1b241e}
+.sp-dark-theme .sp-whatif-entry-grade-options button{background:#202923;color:#eaf2ec;border-color:#3b4b40}
+.sp-dark-theme .sp-whatif-entry-grade-options button.selected{background:#bde6c8;color:#173b25;border-color:#bde6c8}
+.sp-dark-theme .sp-whatif-entry-number{background:#263d2d;color:#c4e8cc}
+.sp-dark-theme .sp-whatif-live-card{background:linear-gradient(150deg,#1c2b21,#18241c)!important;border-color:#354a39!important}
+.sp-dark-theme .sp-whatif-live-heading h2,.sp-dark-theme .sp-whatif-live-score,.sp-dark-theme .sp-whatif-live-stats strong{color:#d6f0dc}
+.sp-dark-theme .sp-whatif-live-heading>div>span,.sp-dark-theme .sp-whatif-live-caption,.sp-dark-theme .sp-whatif-live-stats span{color:#a9c5af}
+.sp-dark-theme .sp-whatif-live-meter,.sp-dark-theme .sp-whatif-live-stats{border-color:#3b5140;background-color:#304234}
+.sp-dark-theme .sp-whatif-live-meter span{background:linear-gradient(90deg,#b1e4bf,#5fa779)}
+.sp-dark-theme .sp-whatif-target-panel{background:linear-gradient(145deg,#d8efde,#c1e4ca)!important;color:#173b25}
+.sp-dark-theme .sp-whatif-target-panel label,.sp-dark-theme .sp-whatif-target-status{color:#315b3d}
+.sp-dark-theme .sp-whatif-target-input{background:rgba(255,255,255,.38);border-color:#8fb99a}
+.sp-dark-theme .sp-whatif-target-input input,.sp-dark-theme .sp-whatif-target-input small{color:#173b25}
+.sp-dark-theme .sp-whatif-target-progress{background:#91b99b}
+.sp-dark-theme .sp-whatif-target-progress span{background:#286746}
+.sp-dark-theme .sp-whatif-target-hint{color:#456b4d}
+@keyframes spWhatIfPulse{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@media(max-width:900px){.sp-whatif-planner-layout{grid-template-columns:minmax(0,1fr) minmax(260px,.78fr)}.sp-whatif-entry-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:720px){.sp-whatif-planner-layout{grid-template-columns:1fr}.sp-whatif-live-panel{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.sp-whatif-live-card{grid-column:1/-1}.sp-whatif-banner-score{width:120px;height:120px;flex-basis:120px}.sp-whatif-banner-score strong{font-size:29px}}
+@media(max-width:520px){.sp-whatif-planner-banner{align-items:flex-start;padding:21px;gap:12px}.sp-whatif-banner-score{width:88px;height:88px;flex-basis:88px}.sp-whatif-banner-score>small,.sp-whatif-banner-score>span{font-size:6px}.sp-whatif-banner-score strong{font-size:23px}.sp-whatif-banner-points{gap:5px}.sp-whatif-banner-points span{font-size:7px;padding:6px}.sp-whatif-planner-controls{align-items:stretch;flex-direction:column}.sp-whatif-planner-controls>label{min-width:100%}.sp-whatif-controls-note{justify-content:space-between}.sp-whatif-panel-heading{align-items:flex-start}.sp-whatif-panel-heading h2{font-size:18px}.sp-whatif-entry-row{padding:10px 8px}.sp-whatif-entry-grade{margin-left:0}.sp-whatif-entry-grade-options{grid-template-columns:repeat(4,minmax(0,1fr))}.sp-whatif-live-panel{grid-template-columns:1fr}.sp-whatif-live-card{grid-column:auto}.sp-whatif-entry-footer{align-items:flex-start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.sp-whatif-banner-score,.sp-whatif-spinner{animation:none}.sp-whatif-entry-grade-options button,.sp-whatif-live-meter span,.sp-whatif-target-progress span{transition:none}}
