@@ -411,10 +411,10 @@ function findCourseName(lines: TextLine[], courseCode: string): string | undefin
       if (!candidateLine) continue;
       const candidate = candidateLine.text
         .replace(new RegExp(courseCode, "i"), " ")
-        .replace(/\\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL)\\b/gi, " ")
-        .replace(/\\b(?:A\\+\\+|A\\+|B\\+|C\\+|A|B|C|D|F|AB|P)\\b/gi, " ")
-        .replace(/\\s+/g, " ").trim();
-      if (candidate.length >= 5 && /[A-Z]{3}/i.test(candidate) && !/^[A-Z0-9\\s-]{1,12}$/.test(candidate)) candidates.push(candidate);
+        .replace(/\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL)\b/gi, " ")
+        .replace(/\b(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P)\b/gi, " ")
+        .replace(/\s+/g, " ").trim();
+      if (candidate.length >= 5 && /[A-Z]{3}/i.test(candidate) && !/^[A-Z0-9\s-]{1,12}$/.test(candidate)) candidates.push(candidate);
     }
   }
   const best = candidates.sort((a, b) => b.length - a.length)[0];

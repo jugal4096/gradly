@@ -107,8 +107,8 @@ export async function submitStudentSyllabusFeedback(req: AuthenticatedRequest, r
     const result = await pool.query(`
       INSERT INTO public.student_syllabus_feedback
         (submitted_by_user_id, institution_id, program_id, branch_id, curriculum_id,
-         scheme_name, semester_number, subject_name, request_type, message)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         scheme_name, semester_number, subject_name, request_type, message, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,CASE WHEN $9 = 'CREDIT_CORRECTION' THEN 'FORWARDED' ELSE 'PENDING' END)
       RETURNING id, status, created_at AS "createdAt"
     `, [user.id, p.institutionId, p.programId, p.branchId, p.curriculumId, p.schemeName,
       semester, typeof subjectName === "string" ? subjectName.trim().slice(0,180) || null : null,
