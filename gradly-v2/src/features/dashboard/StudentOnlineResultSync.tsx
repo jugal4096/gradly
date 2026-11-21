@@ -254,7 +254,7 @@ export default function StudentOnlineResultSync({
         "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
         "MEOE1040":"Entrepreneurship Development",
-        "ME4031":"Renewable Energy Engineering",
+        "ME4031":"Renewable Energy Resources",
         "MEOE0050":"Additive Manufacturing",
         "CE3008":"Disaster Management",
         "CEOE1010":"Disaster Management",
@@ -291,7 +291,7 @@ export default function StudentOnlineResultSync({
       const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL|WORKSHOP/i.test(subjectName) ? 1 : inferredCategory === "INT" ? 12 : ["VSEC","AEC","EEM","IKS","VEC","RMC","CEP","CCC"].includes(inferredCategory) ? 2 : /PROJECT/i.test(subjectName) ? 2 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog && !registryEntry && !knownNames[code], courseCategory: catalog?.courseType || registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (existing || catalog || knownNames[code] ? "CURRICULUM" : "FIRST_USER_CONFIRMATION") };
+      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog && !registryEntry && !knownNames[code], courseCategory: (catalog?.courseType && catalog.courseType.toUpperCase() !== "UNCLASSIFIED" ? catalog.courseType : null) || (registryEntry?.courseCategory && registryEntry.courseCategory.toUpperCase() !== "UNCLASSIFIED" ? registryEntry.courseCategory : null) || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (existing || catalog || knownNames[code] ? "CURRICULUM" : "FIRST_USER_CONFIRMATION") };
     });
     // Course code is the only deduplication key. Retain the first valid row
     // for each normalized course code, even when names differ; distinct codes
