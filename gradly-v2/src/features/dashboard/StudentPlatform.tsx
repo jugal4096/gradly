@@ -251,7 +251,10 @@ export default function StudentPlatform() {
   const { user, isGuest, signOut, loginWithGoogle } = useAuth();
   const routeNavigate = useNavigate();
   const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(localStorage.getItem("gradly_guest_session_token")));
-  const [section,setSection] = useState<Section>("home");
+  const sectionStorageKey = "gradly_user_last_section_" + (user?.uid || ("guest_" + (localStorage.getItem("gradly_guest_id") || "session")));
+  const validSections: Section[] = ["home","sgpa","sgpaWhatIf","sgpaPlanner","tracker","cgpa","cgpaWhatIf","planner","cgpaTracker","community","events","assistant","aiStudyPlanner","profile","academicManagement","settings","credits"];
+  const [section,setSection] = useState<Section>(() => { const saved = localStorage.getItem(sectionStorageKey) as Section | null; return saved && validSections.includes(saved) ? saved : "home"; });
+  useEffect(() => { localStorage.setItem(sectionStorageKey, section); }, [sectionStorageKey, section]);
   const [mobileOpen,setMobileOpen] = useState(false);
   const [profileMenuOpen,setProfileMenuOpen] = useState(false);
   const [themeMode,setThemeMode] = useState<"light"|"dark"|"system">(()=>{const saved=localStorage.getItem("gradly_theme");return saved==="dark"||saved==="light"||saved==="system"?saved:"light";});
