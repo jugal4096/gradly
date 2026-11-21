@@ -348,12 +348,25 @@ export default function TesterOnlineResultSync({
     setNotice("Saving reviewed grades…");
     setSavingReview(true);
     try {
+      // Confirm the subject identity before attempting grade persistence. A
+      // failed grade save must not send the same course back through NEW SUBJECT
+      // classification on the next PDF fetch. This remains tester-local only.
+      const nextTesterRegistry = { ...testerDiscoveredRegistry };
+      for (const row of grades.filter(item => item.isNewSubject)) {
+        nextTesterRegistry[normalizeCourseCode(row.courseCode)] = {
+          courseName: row.courseName || row.courseCode,
+          credits: Number(row.credits),
+          courseCategory: row.courseCategory || "UNCLASSIFIED",
+        };
+      }
+      setTesterDiscoveredRegistry(nextTesterRegistry);
+      testerStorageSet(testerRegistryKey, JSON.stringify(nextTesterRegistry));
+
       const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
       if (result === false) {
-        setNotice("The result could not be saved. Your academic profile was not changed.");
+        setNotice("Subject details were retained in this tester session, but grades were not saved. Retry applying the grades.");
         return;
       }
-      const nextTesterRegistry = { ...testerDiscoveredRegistry }; for (const row of grades.filter(item => item.isNewSubject)) nextTesterRegistry[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName || row.courseCode, credits: Number(row.credits), courseCategory: row.courseCategory || "UNCLASSIFIED" }; setTesterDiscoveredRegistry(nextTesterRegistry); testerStorageSet(testerRegistryKey, JSON.stringify(nextTesterRegistry));
       if (pendingReview.attemptNumber === 1) setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
       setPendingReview(null);
       setError("");
