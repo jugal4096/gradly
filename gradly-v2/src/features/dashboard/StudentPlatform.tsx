@@ -428,17 +428,29 @@ export default function StudentPlatform() {
         const officialResultKey="gradly_online_result_subjects_"+profile.curriculumId+"_"+selectedSemester;
         // Restore shared discovered-subject metadata from the database when
         // Grade Entry is opened on another browser/device or after cache loss.
-        const savedCodes=[...new Set(saved.map(subject=>normalizeResultCourseCode(subject.courseCode)).filter(Boolean))];
         const discoveredByCode=new Map<string,{courseName:string;courseCategory:string;credits:number}>();
-        if(savedCodes.length&&user) {
+        if(user) {
           try {
             const token=await user.getIdToken();
-            const registryResponse=await fetch(API+"/api/student/results/discovered-subjects?curriculumId="+encodeURIComponent(profile.curriculumId)+"&codes="+encodeURIComponent(savedCodes.join(",")),{headers:{Authorization:"Bearer "+token}});
+            const registryResponse=await fetch(API+"/api/student/results/discovered-subjects?curriculumId="+encodeURIComponent(profile.curriculumId)+"&semesterNumber="+selectedSemester,{headers:{Authorization:"Bearer "+token}});
             const registryBody=await registryResponse.json();
             if(registryResponse.ok&&Array.isArray(registryBody.data)) {
               registryBody.data.forEach((item:{courseCode:string;courseName:string;courseCategory:string;credits:number})=>{
-                discoveredByCode.set(normalizeResultCourseCode(item.courseCode),{courseName:String(item.courseName||""),courseCategory:String(item.courseCategory||""),credits:Number(item.credits)});
+                const code=normalizeResultCourseCode(item.courseCode);
+                if(code) discoveredByCode.set(code,{courseName:String(item.courseName||""),courseCategory:String(item.courseCategory||""),credits:Number(item.credits)});
               });
+              const savedByCode=new Set(saved.map(subject=>normalizeResultCourseCode(subject.courseCode)).filter(Boolean));
+              const curriculumByCode=new Set((Array.isArray(data.data)?data.data:[]).map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code)).filter(Boolean));
+              const registryRows:Subject[]=registryBody.data
+                .filter((item:{courseCode:string})=>!savedByCode.has(normalizeResultCourseCode(item.courseCode))&&!curriculumByCode.has(normalizeResultCourseCode(item.courseCode)))
+                .map((item:{courseCode:string;courseName:string;courseCategory:string;credits:number},index)=>({
+                  id:Math.max(0,...saved.map(subject=>subject.id))+index+1,
+                  name:String(item.courseName||item.courseCode),credits:Number(item.credits)||0,grade:"",
+                  courseCode:String(item.courseCode||"").trim().toUpperCase(),
+                  courseType:String(item.courseCategory||"UNCLASSIFIED"),courseCategory:String(item.courseCategory||"UNCLASSIFIED"),
+                  isCustom:true,
+                }));
+              saved=[...saved,...registryRows];
               saved=saved.map(subject=>{
                 const entry=discoveredByCode.get(normalizeResultCourseCode(subject.courseCode));
                 return entry?{...subject,name:entry.courseName||subject.name,credits:entry.credits,courseType:entry.courseCategory||subject.courseType,courseCategory:entry.courseCategory,isCustom:true}:subject;
