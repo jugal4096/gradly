@@ -431,7 +431,7 @@ function findCourseName(lines: TextLine[], courseCode: string): string | undefin
         .replace(new RegExp(courseCode.split("").join("\\s*"), "i"), " ")
         .replace(/\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL|ENROLLMENT|ROLL\s*NO)\b/gi, " ")
         .replace(/\b(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P)\b/gi, " ")
-        .replace(/\b[A-Z]{2,}[A-Z0-9]{2,}\b/gi, " ")
+        .replace(/\b[A-Z]{2,}\d{2,}[A-Z0-9]*\b/g, " ")
         .replace(/[|:;]+/g, " ")
         .replace(/\s+/g, " ").trim();
       if (isNoise(cleaned)) continue;
