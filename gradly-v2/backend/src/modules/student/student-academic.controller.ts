@@ -198,7 +198,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         // Open Electives are selected per student and are not always rows in
         // the base branch curriculum_subjects table. Validate against the
         // official GECA OE catalogue rather than rejecting a valid OE result.
-        ...([...openElectiveCodes].filter(code => code !== "CEOE1010"),
+        ...[...openElectiveCodes].filter(code => code !== "CEOE1010"),
         // CEOE1010 is Disaster Management, an official GECA even-semester OE.
         ...(semesterNumber === 6 ? ["CEOE1010"] : []),
       ]);
