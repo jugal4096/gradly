@@ -404,56 +404,6 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   return [];
 }
 
-const GECA_KNOWN_COURSE_NAMES: Record<string, string> = {
-  ETHS0020: "Foreign Language - German",
-  CEOE0020: "Watershed Management",
-};
-
-function findCourseName(lines: TextLine[], courseCode: string): string | undefined {
-  const normalizedCode = compactPdfText(courseCode);
-  if (GECA_KNOWN_COURSE_NAMES[normalizedCode]) return GECA_KNOWN_COURSE_NAMES[normalizedCode];
-  const candidates: Array<{ value: string; score: number }> = [];
-  const isNoise = (value: string) =>
-    !value || value.length < 5 || value.length > 100 ||
-    /\b(?:ENROLLMENT|ROLL\s*NO|RESULT\s*SUMMARY|COURSE\s*CODE|SUBJECT\s*CODE|GRADE|CREDIT|SEMESTER|TOTAL|PASS|FAIL|PROGRAMME|EXAMINATION|UNIVERSITY|COLLEGE|BRANCH|DIVISION|SEAT\s*NO)\b/i.test(value) ||
-    ENROLLMENT_PATTERN.test(value) || COURSE_CODE_PATTERN.test(value) ||
-    /^(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P|-)$/i.test(value);
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const codeLine = lines[index];
-    if (!compactPdfText(codeLine.text).includes(normalizedCode)) continue;
-    const codeItems = codeLine.items.filter(item => compactPdfText(item.text).includes(normalizedCode));
-    const codeX = codeItems.length ? codeItems.reduce((sum, item) => sum + item.x, 0) / codeItems.length : 0;
-
-    // Course titles can be several baselines away from the course-code row.
-    // Search a wider local window while respecting the code column's position.
-    for (let offset = -8; offset <= 8; offset += 1) {
-      const candidateLine = lines[index + offset];
-      if (!candidateLine) continue;
-      const nearbyItems = candidateLine.items.filter(item =>
-        offset === 0 || !codeX || Math.abs(item.x - codeX) < 340
-      );
-      if (!nearbyItems.length) continue;
-      const raw = nearbyItems.map(item => item.text).join(" ");
-      const cleaned = raw
-        .replace(new RegExp(normalizedCode.split("").join("[^A-Z0-9]*"), "i"), " ")
-        .replace(/\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL|ENROLLMENT|ROLL\s*NO|THEORY|PRACTICAL)\b/gi, " ")
-        .replace(/\b(?:A\+\+|A\+|B\+|C\+|A|B|C|D|F|AB|P)\b/gi, " ")
-        .replace(/\b[A-Z]{2,6}\d{4}\b/gi, " ")
-        .replace(/[|:;]+/g, " ")
-        .replace(/\s+/g, " ").trim();
-      if (isNoise(cleaned)) continue;
-      const words = cleaned.split(/\s+/).filter(word => /[A-Za-z]{2,}/.test(word));
-      if (words.length < 2 || words.length > 12 || /\d{2,}/.test(cleaned)) continue;
-      const distancePenalty = Math.abs(offset) * 15;
-      const xPenalty = codeX ? Math.min(90, Math.abs((candidateLine.items[0]?.x ?? codeX) - codeX) / 6) : 0;
-      const lengthPenalty = Math.max(0, cleaned.length - 65) * 1.5;
-      const titleCaseBonus = /^[A-Z][a-z]/.test(cleaned) ? 8 : 0;
-      candidates.push({ value: cleaned, score: 100 - distancePenalty - xPenalty - lengthPenalty + titleCaseBonus + Math.min(words.length, 5) * 2 });
-    }
-  }
-  return candidates.sort((a, b) => b.score - a.score)[0]?.value;
-}
 function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
   const matches = new Map<string, string>();
   let enrollmentFound = false;
