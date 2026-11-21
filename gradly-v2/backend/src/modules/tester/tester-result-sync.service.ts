@@ -248,6 +248,31 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
     for (const [courseCode, cell] of nearestCellByCourse) mapped.set(courseCode, cell.grade);
   }
 
+  // If PDF.js places every grade on one nearby baseline, use the complete
+  // left-to-right grade sequence to fill any course missed by x-distance
+  // matching. A complete row must contain exactly one token per course.
+  if (mapped.size < sortedColumns.length) {
+    const gradeRows = new Map<number, typeof gradeCells>();
+    for (const cell of gradeCells) {
+      const baseline = Math.round(cell.y);
+      const row = gradeRows.get(baseline) || [];
+      row.push(cell);
+      gradeRows.set(baseline, row);
+    }
+    const completeGradeRow = [...gradeRows.entries()]
+      .filter(([, cells]) => cells.length === sortedColumns.length)
+      .sort((a, b) => Math.abs(a[0] - enrollmentY) - Math.abs(b[0] - enrollmentY))[0];
+    if (completeGradeRow) {
+      const orderedGrades = [...completeGradeRow[1]].sort((a, b) => a.x - b.x);
+      sortedColumns.forEach((column, index) => {
+        const grade = orderedGrades[index]?.grade;
+        if (grade && !["AB", "P"].includes(grade) && !mapped.has(column.courseCode)) {
+          mapped.set(column.courseCode, grade === "-" ? "" : grade);
+        }
+      });
+    }
+  }
+
   // Fallback for GECA PDFs where the whole result row is emitted as one
   // text item, or individual grade cells are not close enough to their header
   // x-coordinate. Accept only a complete positional sequence and only fill
