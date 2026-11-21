@@ -448,7 +448,7 @@ export default function StudentPlatform() {
           ]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
-            return curriculumCodes.has(code)||sharedSemesterCourses.has(code);
+            return curriculumCodes.has(code)||sharedSemesterCourses.has(code)||subject.isCustom===true||(!subject.curriculumSubjectId&&subject.courseType==="Additional course");
           });
           if(verifiedAuthoritative.length) {
             const cleaned=dedupeSubjectsByCourseCode(verifiedAuthoritative);
