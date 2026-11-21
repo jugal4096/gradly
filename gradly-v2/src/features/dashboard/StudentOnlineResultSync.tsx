@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "./StudentOnlineResultSync.css";
 
 type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string };
-type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean };
+type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean; isNewSubject?: boolean; courseCategory?: string; creditStatus?: string };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
   title: string;
@@ -56,6 +56,7 @@ export default function StudentOnlineResultSync({
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
   const [savingReview, setSavingReview] = useState(false);
+  const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
   const [reportRow, setReportRow] = useState<ResultGrade | null>(null);
   const [reportKind, setReportKind] = useState("Incorrect grade");
   const [reportDetails, setReportDetails] = useState("");
@@ -202,6 +203,14 @@ export default function StudentOnlineResultSync({
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
+    let discoveredRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
+    try {
+      const token = await getIdToken();
+      const codes = [...new Set(sourceRows.map(row => canonicalResultCourseCode(row.courseCode)))].join(",");
+      const response = await fetch(apiBase + "/api/student/results/discovered-subjects?curriculumId=" + encodeURIComponent(curriculumId) + "&codes=" + encodeURIComponent(codes), { headers: { Authorization: "Bearer " + token } });
+      const body = await response.json();
+      if (response.ok && Array.isArray(body.data)) discoveredRegistry = Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
+    } catch { /* Registry lookup must not interrupt official result extraction. */ }
     const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
@@ -228,10 +237,22 @@ export default function StudentOnlineResultSync({
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };
-      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3);
+      const registryEntry = discoveredRegistry[code];
+      const subjectName = row.courseName || knownNames[code] || existing?.name || catalog?.name || registryEntry?.courseName || row.courseCode;
+      const inferredCategory = (() => {
+        const match = code.match(/^[A-Z]{2}(BSC|ESC|PCC|PEC|MDM|OEC|VSE|AEC|EEM|IKS|VEC|RMC|CEP|PRJ|INT|CCC|HNC|RPR)/);
+        if (match) return match[1] === "VSE" ? "VSEC" : match[1] === "OEC" ? "OE" : match[1];
+        if (/^ITPC/.test(code)) return "PCC";
+        if (/^ITES/.test(code)) return "ESC";
+        if (/^MABS/.test(code)) return "BSC";
+        if (/^ITOE/.test(code)) return "OE";
+        if (/^ITMD/.test(code)) return "MDM";
+        return "UNCLASSIFIED";
+      })();
+      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL|WORKSHOP/i.test(subjectName) ? 1 : /PROJECT/i.test(subjectName) ? 2 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
-      return { ...row, courseCode: code, grade, courseName: code === "ME4031" ? (existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode) : (row.courseName || (code === "CEHS1030" || code === "MEOE1040" ? knownNames[code] : (existing?.name || catalog?.name || knownNames[code] || row.courseCode))), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
+      return { ...row, courseCode: code, grade, courseName: registryEntry?.courseName || subjectName, credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? registryEntry?.credits ?? parsedCredits ?? fallbackCredits), isNewSubject: !existing && !catalog && !registryEntry, courseCategory: registryEntry?.courseCategory || inferredCategory, creditStatus: registryEntry ? "USER_CONFIRMED" : (!existing && !catalog ? "FIRST_USER_CONFIRMATION" : "CURRICULUM") };
     });
     // Preserve selected courses whose grades are absent from the online PDF.
     // Blank grades are entered by the student in the review step, never
@@ -265,7 +286,7 @@ export default function StudentOnlineResultSync({
     setNotice("");
     if (reExamMode && applicable.some(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))) {
       setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
-      setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 2});
+      setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));\n      setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 2});
       setNotice("GECA has not announced a grade for this subject (shown as “-”). Enter the grade from your official grade card, then confirm and save.");
       return;
     }
@@ -293,7 +314,7 @@ export default function StudentOnlineResultSync({
       return;
     }
     setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
-    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
+    setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));\n    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
     setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving." + (unmatchedOfficialCodes.length ? " Official PDF courses outside the selected curriculum are included as separate result subjects: " + unmatchedOfficialCodes.join(", ") + "." : ""));
   }
 
@@ -305,7 +326,7 @@ export default function StudentOnlineResultSync({
       ...row,
       grade: reviewGrades[normalizeCourseCode(row.courseCode)] || "",
     }));
-    const missing = grades.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    const missing = grades.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));\n    const invalidCredits = grades.filter(row => row.isNewSubject && (!Number.isFinite(Number(row.credits)) || Number(row.credits) <= 0 || Number(row.credits) > 30));\n    if (invalidCredits.length) { setError("Enter a valid credit value (greater than 0 and no more than 30) for: " + invalidCredits.map(row => row.courseName || row.courseCode).join(", ")); return; }
     if (missing.length) {
       setError("Enter a grade for every subject before saving. Missing: " + missing.map(row => row.courseName || row.courseCode).join(", "));
       return;
@@ -314,6 +335,13 @@ export default function StudentOnlineResultSync({
     setNotice("Saving reviewed grades…");
     setSavingReview(true);
     try {
+      const token = await getIdToken();
+      for (const row of grades.filter(item => item.isNewSubject)) {
+        const response = await fetch(apiBase + "/api/student/results/discovered-subjects", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ curriculumId, semesterNumber: pendingReview.semester, courseCode: row.courseCode, courseName: row.courseName, courseCategory: row.courseCategory, credits: row.credits, source: "GECA_OFFICIAL_RESULT_PDF" }) });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.message || "Unable to register the newly discovered subject.");
+        if (body.data?.credits != null) row.credits = Number(body.data.credits);
+      }
       const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
       if (result === false) {
         setNotice("The result could not be saved. Your academic profile was not changed.");
@@ -411,7 +439,7 @@ export default function StudentOnlineResultSync({
 
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
-      {pendingReview && createPortal(<div style={{position:"fixed",inset:0,zIndex:100020,background:"rgba(8,15,24,.78)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Review official result grades"><section style={{background:"#fff",color:"#17231d",borderRadius:16,padding:22,width:"min(680px,100%)",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><small style={{fontWeight:800,color:"#167348"}}>GECA · RESULT REVIEW</small><h2 style={{margin:"8px 0"}}>Review your semester grades</h2><p style={{marginTop:0}}>Check the fetched grades against your official grade card. If GECA has not published a grade online, select it manually here. A missing online grade is not treated as a failure.</p>{pendingReview.rows.some(row=>!subjects.some(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(row.courseCode)))&&<p style={{margin:"10px 0",padding:"10px 12px",borderRadius:8,background:"#fff7e6",color:"#805400",fontSize:13}}>The official PDF includes course codes outside your selected curriculum. They are retained below as separate result subjects and will not be mapped to another course: <b>{[...new Set(pendingReview.rows.filter(row=>!subjects.some(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(row.courseCode))).map(row=>row.courseCode))].join(", ")}</b>.</p>}<div style={{borderTop:"1px solid #e4e9e5"}}>{pendingReview.rows.map((row,index)=>{const key=normalizeCourseCode(row.courseCode);const manual=!row.grade;return <div key={key+index} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 118px",gap:12,alignItems:"center",padding:"10px 0",borderBottom:"1px solid #e8ece9"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.65}}>{row.courseCode}{manual?" · Manual grade required":""}</small></span><select aria-label={"Grade for "+(row.courseName||row.courseCode)} value={reviewGrades[key]||""} onChange={event=>setReviewGrades(current=>({...current,[key]:event.target.value}))} style={{width:"100%",padding:9,borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}><option value="">Select grade</option>{["A++","A+","A","B+","B","C+","C","D"].map(grade=><option key={grade} value={grade}>{grade}</option>)}</select></div>})}</div>{error&&<p role="alert" style={{color:"#b42318"}}>{error}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:16}}><button type="button" onClick={()=>{setPendingReview(null);setError("");setNotice("Result review cancelled. No grades were saved.");}} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}>Cancel</button><button type="button" onClick={()=>void confirmPendingReview()} disabled={savingReview || !pendingReview.rows.every(row=>["A++","A+","A","B+","B","C+","C","D"].includes((reviewGrades[normalizeCourseCode(row.courseCode)]||"").toUpperCase()))} style={{padding:"10px 16px",border:0,borderRadius:8,background:"#172d21",color:"#fff",fontWeight:700,opacity:savingReview ? 0.72 : 1}}>{savingReview?"Saving grades…":"Confirm and save grades"}</button></div></section></div>,document.body)}
+      {pendingReview && createPortal(<div style={{position:"fixed",inset:0,zIndex:100020,background:"rgba(8,15,24,.78)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Review official result grades"><section style={{background:"#fff",color:"#17231d",borderRadius:16,padding:22,width:"min(680px,100%)",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><small style={{fontWeight:800,color:"#167348"}}>GECA · RESULT REVIEW</small><h2 style={{margin:"8px 0"}}>Review your semester grades</h2><p style={{marginTop:0}}>Check the fetched grades against your official grade card. Newly detected subjects are added to the catalogue after you confirm their credits. If GECA has not published a grade online, select it manually here.</p>{pendingReview.rows.some(row=>!subjects.some(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(row.courseCode)))&&<p style={{margin:"10px 0",padding:"10px 12px",borderRadius:8,background:"#fff7e6",color:"#805400",fontSize:13}}>The official PDF includes course codes outside your selected curriculum. They are retained below as separate result subjects and will not be mapped to another course: <b>{[...new Set(pendingReview.rows.filter(row=>!subjects.some(subject=>normalizeCourseCode(subject.courseCode)===normalizeCourseCode(row.courseCode))).map(row=>row.courseCode))].join(", ")}</b>.</p>}<div style={{borderTop:"1px solid #e4e9e5"}}>{pendingReview.rows.map((row,index)=>{const key=normalizeCourseCode(row.courseCode);const manual=!row.grade;return <div key={key+index} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 118px",gap:12,alignItems:"center",padding:"10px 0",borderBottom:"1px solid #e8ece9"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.65}}>{row.courseCode}{manual?" · Manual grade required":""}</small>{row.isNewSubject && <label style={{display:"block",marginTop:7,fontSize:12}}>New subject · detected credits (edit if needed)<input type="number" min="0.5" max="30" step="0.5" value={creditEdits[key] ?? String(row.credits ?? 3)} onChange={event=>setCreditEdits(current=>({...current,[key]:event.target.value}))} style={{display:"block",width:110,marginTop:4,padding:7,border:"1px solid #cbd5ce",borderRadius:7}} /></label>}</span><select aria-label={"Grade for "+(row.courseName||row.courseCode)} value={reviewGrades[key]||""} onChange={event=>setReviewGrades(current=>({...current,[key]:event.target.value}))} style={{width:"100%",padding:9,borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}><option value="">Select grade</option>{["A++","A+","A","B+","B","C+","C","D"].map(grade=><option key={grade} value={grade}>{grade}</option>)}</select></div>})}</div>{error&&<p role="alert" style={{color:"#b42318"}}>{error}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:16}}><button type="button" onClick={()=>{setPendingReview(null);setError("");setNotice("Result review cancelled. No grades were saved.");}} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}>Cancel</button><button type="button" onClick={()=>void confirmPendingReview()} disabled={savingReview || !pendingReview.rows.every(row=>["A++","A+","A","B+","B","C+","C","D"].includes((reviewGrades[normalizeCourseCode(row.courseCode)]||"").toUpperCase()))} style={{padding:"10px 16px",border:0,borderRadius:8,background:"#172d21",color:"#fff",fontWeight:700,opacity:savingReview ? 0.72 : 1}}>{savingReview?"Saving grades…":"Confirm and save grades"}</button></div></section></div>,document.body)}
       {/* Success is shown once by the parent student workspace. */}
 
       {reportRow && <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(15,20,25,.45)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Report result mismatch"><div style={{background:"white",color:"#20242a",borderRadius:16,padding:20,width:"min(480px,100%)",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
