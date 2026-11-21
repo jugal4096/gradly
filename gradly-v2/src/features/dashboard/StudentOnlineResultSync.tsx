@@ -212,8 +212,14 @@ export default function StudentOnlineResultSync({
       const codes = [...new Set(sourceRows.map(row => canonicalResultCourseCode(row.courseCode)))].join(",");
       const response = await fetch(apiBase + "/api/student/results/discovered-subjects?curriculumId=" + encodeURIComponent(curriculumId) + "&codes=" + encodeURIComponent(codes), { headers: { Authorization: "Bearer " + token } });
       const body = await response.json();
-      if (response.ok && Array.isArray(body.data)) discoveredRegistry = Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
-    } catch { /* Registry lookup must not interrupt official result extraction. */ }
+      if (!response.ok) throw new Error(body.message || "The saved subject catalogue could not be checked.");
+      if (!Array.isArray(body.data)) throw new Error("The saved subject catalogue returned an invalid response.");
+      discoveredRegistry = Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
+    } catch (error) {
+      setError(error instanceof Error ? "Gradly could not verify previously identified subjects: " + error.message : "Gradly could not verify previously identified subjects. No result was applied.");
+      setNotice("");
+      return;
+    }
     const mappedRows = sourceRows.map(row => {
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
