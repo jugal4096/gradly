@@ -232,10 +232,10 @@ function getDegreeCreditCategory(subject:Subject):DegreeCreditCategory|null {
   if(/project|seminar|internship|industrial training/.test(combined) || /project|seminar|internship/.test(code)) return "PROJECT";
   if(subject.electiveKind==="OE" || /open elective|\boe\b/.test(type) || /^(IT|CE|ME|EE|ET|CS)OE|^OE/.test(code)) return "OE";
   if(subject.electiveKind==="HS" || /humanit|social science|management course/.test(type) || /^(IT|CE|ME|EE|ET|CS|IN)HS/.test(code)) return "HS";
-  if(/^(IT|CE|ME|EE|ET|CS)PE|professional elective|\\bpe\\b/.test(code+" "+type)) return "PE";
+  if(/^(IT|CE|ME|EE|ET|CS)PE|professional elective|\bpe\b/.test(code+" "+type)) return "PE";
   if(/basic science|\bbs\b/.test(type) || /mathematics|physics|chemistry|biology|environmental science/.test(combined) || /^(IT|CE|ME|EE|ET|CS)BS|^(BS|MA|PH|CH)/.test(code)) return "BS";
   if(/engineering science|\bes\b/.test(type) || /workshop|engineering drawing|engineering mechanics|basic electrical|basic mechanical/.test(combined) || /^(IT|CE|ME|EE|ET|CS)ES|^(ES|WS|ED)/.test(code)) return "ES";
-  if(/professional core|\\bpc\\b|core course/.test(type) || /^(IT|CE|ME|EE|ET|CS)PC/.test(code)) return "PC";
+  if(/professional core|\bpc\b|core course/.test(type) || /^(IT|CE|ME|EE|ET|CS)PC/.test(code)) return "PC";
   return "PC";
 }
 function getDegreeCreditProgress(profile:Profile,records:Record<number,Subject[]>) {
