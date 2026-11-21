@@ -504,7 +504,7 @@ export default function StudentPlatform() {
     return ()=>{cancelled=true;};
   },[section,isGuest,profile.curriculumId,plannerSemester,savedSubjectsBySemester,subjects]);
 
-remove unused what-if total  const whatIfWeighted=whatIfSubjects.filter(subject=>subject.name.trim()&&subject.credits>0&&POINTS[subject.grade]!==undefined).reduce((sum,subject)=>sum+POINTS[subject.grade]*subject.credits,0);
+  const whatIfWeighted=whatIfSubjects.filter(subject=>subject.name.trim()&&subject.credits>0&&POINTS[subject.grade]!==undefined).reduce((sum,subject)=>sum+POINTS[subject.grade]*subject.credits,0);
   const whatIfCountedCredits=whatIfSubjects.filter(subject=>subject.name.trim()&&subject.credits>0).reduce((sum,subject)=>sum+subject.credits,0);
   const whatIfLiveSgpa=whatIfCountedCredits?whatIfWeighted/whatIfCountedCredits:0;
   function updateWhatIfSubject(id:number,patch:Partial<Subject>) {
