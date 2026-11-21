@@ -461,6 +461,10 @@ export default function StudentPlatform() {
             });
             authoritative=[...authoritative,...persistedDiscovered];
           }
+          authoritative=authoritative.map(subject=>{
+            const entry=discoveredByCode.get(normalizeResultCourseCode(subject.courseCode));
+            return entry?{...subject,name:entry.courseName||subject.name,credits:entry.credits,courseType:entry.courseCategory||subject.courseType,courseCategory:entry.courseCategory,isCustom:true}:subject;
+          });
           // An earlier GECA parser build could attach unrelated courses as
           // custom rows. Keep only this semester's curriculum courses plus
           // verified GECA shared subjects and selected department electives.
