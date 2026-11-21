@@ -51,15 +51,32 @@ export default function TesterWorkspace() {
   });
 
   useEffect(() => {
-    const savedToken = sessionStorage.getItem("gradly_tester_access_token") || "";
+    const savedToken = localStorage.getItem("gradly_tester_access_token") || sessionStorage.getItem("gradly_tester_access_token") || "";
     if (!savedToken) { navigate("/tester/login", { replace: true }); return; }
     setToken(savedToken);
-    setTesterId(sessionStorage.getItem("gradly_tester_login_id") || "Tester");
+    // Migrate sessions created before persistent tester sign-in was introduced.
+    localStorage.setItem("gradly_tester_access_token", savedToken);
+    const savedTesterId = localStorage.getItem("gradly_tester_login_id") || sessionStorage.getItem("gradly_tester_login_id") || "Tester";
+    localStorage.setItem("gradly_tester_login_id", savedTesterId);
+    setTesterId(savedTesterId);
     let active = true;
     fetch(API + "/api/tester/me", { headers: { Authorization: "Bearer " + savedToken } })
-      .then(response => { if (!response.ok) throw new Error("Tester access is inactive or expired. Contact your Super Admin."); return response.json(); })
-      .then(data => { if (active) setTesterId(data.tester?.loginId || sessionStorage.getItem("gradly_tester_login_id") || "Tester"); })
-      .catch(reason => { if (!active) return; sessionStorage.removeItem("gradly_tester_access_token"); setError(reason instanceof Error ? reason.message : "Unable to verify tester access."); });
+      .then(async response => {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("gradly_tester_access_token");
+          sessionStorage.removeItem("gradly_tester_access_token");
+          throw new Error("Tester access is inactive or expired. Please contact your Super Admin.");
+        }
+        if (!response.ok) throw new Error("Could not verify tester access right now. Your session has been kept; please retry.");
+        return response.json();
+      })
+      .then(data => { if (active) {
+        const verifiedId = data.tester?.loginId || savedTesterId;
+        localStorage.setItem("gradly_tester_login_id", verifiedId);
+        sessionStorage.setItem("gradly_tester_login_id", verifiedId);
+        setTesterId(verifiedId);
+      } })
+      .catch(reason => { if (!active) return; setError(reason instanceof Error ? reason.message : "Unable to verify tester access. Your session has been kept."); });
     return () => { active = false; };
   }, [navigate]);
 
@@ -161,6 +178,8 @@ export default function TesterWorkspace() {
   function signOutTester() {
     sessionStorage.removeItem("gradly_tester_access_token");
     sessionStorage.removeItem("gradly_tester_login_id");
+    localStorage.removeItem("gradly_tester_access_token");
+    localStorage.removeItem("gradly_tester_login_id");
     navigate("/tester/login", { replace: true });
   }
 
