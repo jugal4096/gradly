@@ -127,17 +127,19 @@ function compactPdfText(value: string): string {
 
 function enrollmentEndInLine(line: TextLine, enrollment: string): number {
   const joined = line.items.map(item => item.text).join(" ");
-  const flexiblePattern = new RegExp(enrollment.toUpperCase().split("").join("[^A-Z0-9]*"), "i");
-  const match = flexiblePattern.exec(joined);
-  return match ? match.index + match[0].length : -1;
+  // Match the complete enrollment token only. A substring match can mistake
+  // another student's longer identifier (or unrelated table text) for this one.
+  const flexibleToken = enrollment.toUpperCase().split("").join("[^A-Z0-9]*");
+  const match = new RegExp("(^|[^A-Z0-9])(" + flexibleToken + ")(?=$|[^A-Z0-9])", "i").exec(joined);
+  if (match) return match.index + match[0].length;
+  // Some PDF exports put the entire enrollment into one isolated text item.
+  return line.items.some(item => compactPdfText(item.text) === compactPdfText(enrollment))
+    ? joined.toUpperCase().indexOf(enrollment.toUpperCase()) + enrollment.length
+    : -1;
 }
 
 function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
-  const joined = line.items.map(item => item.text).join(" ");
-  // PDF text layers sometimes insert punctuation or unusual spacing between
-  // enrollment characters. Compare a compact form as a second reliable path.
-  return enrollmentEndInLine(line, enrollment) >= 0 ||
-    compactPdfText(joined).includes(compactPdfText(enrollment));
+  return enrollmentEndInLine(line, enrollment) >= 0;
 }
 
 function gradeTokensFromItem(item: PositionedItem): string[] {
@@ -517,10 +519,17 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     const lines = groupPdfLines(positioned);
     if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
     allLines.push(...lines);
-    parsed = reExamTargetCourseCode ? { grades: extractReExamSubject(allLines, enrollment, reExamTargetCourseCode), enrollmentFound: allLines.some(line => lineContainsEnrollment(line, enrollment)) } : extractMatchingGrades(allLines, enrollment);
-    // Stop reading the remaining pages once the matching enrollment row and
-    // its grade columns have been found, while retaining earlier page headers.
-    if (parsed.enrollmentFound && parsed.grades.length) break;
+    // Parse each page independently. PDF coordinates restart on every page;
+    // combining pages lets a header at the same Y-coordinate on a previous
+    // page get attached to this student's row and import unrelated subjects.
+    const pageParsed = reExamTargetCourseCode
+      ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
+      : extractMatchingGrades(lines, enrollment);
+    if (pageParsed.enrollmentFound) parsed.enrollmentFound = true;
+    if (pageParsed.grades.length) {
+      parsed = { grades: pageParsed.grades, enrollmentFound: true };
+      break;
+    }
   }
   // Some installed PDF.js builds expose cleanup() but not destroy() on the
   // resolved document proxy. Release resources only when the method exists;
@@ -566,7 +575,10 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     programme: programmeMatch?.[1]?.trim() || null,
     scheme: schemeMatch?.[1]?.toUpperCase() || null,
     semester,
-    grades: parsed.grades.map(row => ({ ...row, courseName: row.courseName || findCourseName(allLines, row.courseCode) })),
+    // Course names are resolved only from the page that supplied this
+    // student's matched grade row; never borrow a similarly positioned title
+    // from another page or another student's result table.
+    grades: parsed.grades.map(row => ({ ...row, courseName: row.courseName || undefined })),
   } : null;
   return { document, enrollmentFound: parsed.enrollmentFound };
 }
