@@ -435,16 +435,26 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         if(recordsResponse.ok && !cancelled && Array.isArray(recordsData.records)) {
           const academicRecords=recordsData.records as AcademicRecordApi[];
           const saved:SemesterResult[]=academicRecords.map((row)=>({id:String(row.id),semester:Number(row.semester_number),sgpa:Number(row.sgpa||0),credits:Number(row.credits_registered||0),savedAt:row.created_at||new Date().toISOString()}));
+          // Keep the original attempt's complete subject list and overlay only
+          // the courses updated by later re-examination attempts.
           const savedSubjects:Record<number,Subject[]>={};
-          academicRecords.forEach(row=>{
+          const coursesBySemester=new Map<number,Map<string,AcademicCourseApi>>();
+          [...academicRecords].sort((a,b)=>Number(a.attempt_number||1)-Number(b.attempt_number||1)).forEach(row=>{
             const semesterNumber=Number(row.semester_number);
-            if(Array.isArray(row.courses)) savedSubjects[semesterNumber]=row.courses.map((course,index)=>{
+            if(!Array.isArray(row.courses)) return;
+            const byCode=coursesBySemester.get(semesterNumber)||new Map<string,AcademicCourseApi>();
+            row.courses.forEach((course,index)=>{
+              const code=String(course.course_code_snapshot||"").trim();
+              const key=normalizeResultCourseCode(code)||("unnamed:"+index);
+              byCode.set(key,course);
+            });
+            coursesBySemester.set(semesterNumber,byCode);
+          });
+          coursesBySemester.forEach((byCode,semesterNumber)=>{
+            savedSubjects[semesterNumber]=[...byCode.values()].map((course,index)=>{
               const code=course.course_code_snapshot||"";
-              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":"Additional course";
-              return {
-                id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),
-                courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined,
-              };
+              const courseType=code==="INHS1020"?"Universal Human Values (UHV)":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":/^ITPE3/.test(code)?"Professional Elective (PE)":"Additional course";
+              return {id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined};
             });
           });
           setResults(saved); setSavedSubjectsBySemester(savedSubjects); studentStorage.setItem("gradly_semester_results",JSON.stringify(saved));
