@@ -28,6 +28,17 @@ function formatCourseCategory(value?:string):string { const labels:Record<string
 // GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
 // elective, while the selected CBCS curriculum stores the same course as CE3008.
 function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="MEOE0031"?"ME4031":code==="CEOE1010"?"CE3008":code; }
+const ROMAN_SEMESTERS:Record<string,number>={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8};
+function resultDocumentSemester(document:ResultDocument):number|null {
+  if(Number.isInteger(document.semester)&&Number(document.semester)>=1&&Number(document.semester)<=8) return Number(document.semester);
+  const title=String(document.title||"").toUpperCase();
+  const suffix=title.match(/\)\s*(VIII|VII|VI|V|IV|III|II|I)\s*(?:REG|BACK|ATKT|RE[\s-]*EXAM)\b/);
+  if(suffix) return ROMAN_SEMESTERS[suffix[1]]||null;
+  const explicit=title.match(/\bSEM(?:ESTER)?\s*[-:]?\s*(VIII|VII|VI|V|IV|III|II|I|[1-8])\b/);
+  if(explicit) return /^\d+$/.test(explicit[1])?Number(explicit[1]):ROMAN_SEMESTERS[explicit[1]]||null;
+  const examSuffix=title.match(/\b(VIII|VII|VI|V|IV|III|II|I)\s+(?:REG|BACK|ATKT)\b/);
+  return examSuffix?ROMAN_SEMESTERS[examSuffix[1]]||null:null;
+}
 
 type Props = {
   apiBase: string;
@@ -151,13 +162,11 @@ export default function TesterOnlineResultSync({
       if (!response.ok) throw new Error(body.message || "Unable to inspect this examination session.");
       setScan(body as MatchResponse);
       const matchedDocuments = (body.matches || []) as ResultDocument[];
-      const matchingDocument = matchedDocuments.find(document => document.semester === selectedSemester);
+      const matchingDocument = matchedDocuments.find(document => resultDocumentSemester(document) === selectedSemester && document.grades.some(row => row.courseCode.trim()));
       if (matchingDocument) await applyDocument(matchingDocument, session.title);
-      else if (matchedDocuments.length === 1) await applyDocument(matchedDocuments[0], session.title);
-
       else if (!body.matches?.length && Number(body.enrollmentHits) > 0) setNotice("Your enrollment was found, but the result could not be read. No grades were applied.");
       else if (!body.matches?.length) setNotice("Your enrollment was not found in this examination session.");
-      else setNotice("A matching result PDF was found, but it belongs to a different semester. No grades were applied.");
+      else setNotice("No usable result for Semester " + selectedSemester + " was found in this examination session. Other-semester PDFs were ignored.");
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === "AbortError")) setError(reason instanceof Error ? reason.message : "Unable to inspect this examination session.");
     } finally {
@@ -167,9 +176,11 @@ export default function TesterOnlineResultSync({
   }
 
   async function applyDocument(document: ResultDocument, sessionTitle: string) {
-    // The enrollment is matched within the selected examination session. If the
-    // PDF parser misreads semester metadata, use the student's selected semester
-    // as a fallback only when the scan returned a single enrollment match.
+    const detectedSemester = resultDocumentSemester(document);
+    if (detectedSemester !== selectedSemester) {
+      setNotice("This PDF is not a verified Semester " + selectedSemester + " result. No grades were changed.");
+      return;
+    }
     const targetSemester = selectedSemester;
 
     const targetCode = canonicalResultCourseCode(reExamTargetCourseCode);
@@ -405,12 +416,12 @@ export default function TesterOnlineResultSync({
       {scan && <div className="sp-online-scan-result">
         
         {!scan.matches.length && <p className="sp-online-result-muted">{scan.enrollmentHits > 0 ? "The enrollment was found, but the result table could not be parsed. No grades have been applied." : "No exact enrollment match was found in this examination session."}</p>}
-        {scan.matches.map(document => {
+        {scan.matches.filter(document => resultDocumentSemester(document) === selectedSemester && document.grades.some(row => row.courseCode.trim())).map(document => {
           const validRows = document.grades.filter(row => row.courseCode.trim() && ["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
           const backlogRows = validRows.filter(row => row.grade.toUpperCase() === "D");
-          const canApply = document.semester === selectedSemester && validRows.length > 0;
+          const canApply = resultDocumentSemester(document) === selectedSemester && validRows.length > 0;
           return <article className="sp-online-match" key={document.url}>
-            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · {document.semester ? "Semester " + document.semester : "Semester not detected"}</small></div><span>{validRows.length} subjects</span></div>
+            <div className="sp-online-match-top"><div><b>{document.title}</b><small>{document.scheme || "Scheme not detected"} · Semester {resultDocumentSemester(document)}</small></div><span>{validRows.length} subjects</span></div>
             <div className="sp-online-result-summary">
               <div><strong>{validRows.length}</strong><span>Official subjects</span></div>
               <div><strong>{validRows.length - backlogRows.length}</strong><span>Cleared</span></div>
