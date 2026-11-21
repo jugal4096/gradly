@@ -152,8 +152,8 @@ type CourseColumn = { courseCode: string; x: number };
 function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn[] {
   // Parse headers from the bounded table window supplied by the enrollment-row
   // caller. Never accumulate course codes across unrelated header windows.
-  // PDF text extraction can split a code across adjacent items, so normalize
-  // and join at most two neighboring items.
+  // PDF text extraction can split a code across up to three adjacent items; normalize
+  // fragments before treating a partial numeric suffix as a complete code.
   const rows: Array<{ y: number; columns: CourseColumn[] }> = [];
   for (const line of lines) {
     const columns: CourseColumn[] = [];
@@ -167,7 +167,7 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
       // also emit a partial code (for example CEOE10) that looks valid alone.
       let token = COURSE_CODE_PATTERN.test(single) ? single : "";
       let consumed = 0;
-      if (nextCompact && /^\\d{2,4}$/.test(nextCompact) && /\\d{1,2}$/.test(single) && single.length < 8) {
+      if (nextCompact && /^\d{2,4}$/.test(nextCompact) && /\d{1,2}$/.test(single) && single.length < 8) {
         const joined = single + nextCompact;
         if (COURSE_CODE_PATTERN.test(joined) && joined.length <= 12) {
           token = joined;
@@ -186,7 +186,7 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
           }
         }
       }
-      if (token && COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
+      if (token && COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
         columns.push({ courseCode: token, x: item.x });
         itemIndex += consumed;
       }
@@ -266,12 +266,12 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
     let positionalGrades: string[] = [];
     if (enrollmentAt >= 0) {
       const compactTail = compactLine.slice(enrollmentAt + compactEnrollment.length);
-      positionalGrades = compactTail.match(/A\\+\\+|A\\+|B\\+|C\\+|AB|[ABCDFP]|-/g) || [];
+      positionalGrades = compactTail.match(/A\+\+|A\+|B\+|C\+|AB|[ABCDFP]|-/g) || [];
     }
     if (positionalGrades.length !== sortedColumns.length) {
       const enrollmentItemIndex = line.items.findIndex(item => compactPdfText(item.text).includes(compactEnrollment));
       const tailItems = enrollmentItemIndex >= 0 ? line.items.slice(enrollmentItemIndex) : line.items;
-      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
+      const sequence = tailItems.flatMap(item => item.text.toUpperCase().split(/[\s|,;]+/).map(token => token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, "")).filter(token => GRADE_TOKEN_PATTERN.test(token)));
       const afterEnrollment = enrollmentItemIndex >= 0 ? sequence.slice(1) : sequence;
       if (afterEnrollment.length === sortedColumns.length) positionalGrades = afterEnrollment;
     }
