@@ -90,7 +90,55 @@ export async function listCurriculum(
        LIMIT 5000`
     );
     const curriculum = result.rows.map((row: Record<string, RawRecord>) => normalizeRecord(row));
-    return res.status(200).json({ success: true, curriculum, count: curriculum.length, limit: 5000 });
+
+    // Discovered result subjects are a shared, first-user-confirmed catalogue.
+    // Surface them in the Super Admin explorer without pretending they are
+    // already official curriculum_subjects or allowing edits through that API.
+    const discoveredResult = await pool.query(
+      `SELECT
+         d.id, d.curriculum_id, d.course_code, d.course_name, d.course_category,
+         d.credits, d.semester_number, d.credit_status,
+         to_jsonb(c) AS curriculum,
+         to_jsonb(b) AS branch,
+         to_jsonb(sp) AS specialization,
+         to_jsonb(sc) AS scheme,
+         to_jsonb(p) AS program,
+         to_jsonb(i) AS institution,
+         to_jsonb(ay) AS "academicYear"
+       FROM public.discovered_result_subjects d
+       JOIN public.curricula c ON c.id = d.curriculum_id
+       LEFT JOIN public.branches b ON b.id = c.branch_id
+       LEFT JOIN public.specializations sp ON sp.id = c.specialization_id
+       LEFT JOIN public.schemes sc ON sc.id = c.scheme_id
+       LEFT JOIN public.programs p ON p.id = c.program_id
+       LEFT JOIN public.institutions i ON i.id = c.institution_id
+       LEFT JOIN public.academic_years ay ON ay.id = c.academic_year_id
+       ORDER BY i.name, p.name, b.name, sc.name, d.semester_number, d.course_code
+       LIMIT 5000`
+    );
+    const discovered = discoveredResult.rows.map((row: Record<string, any>) => ({
+      id: row.id,
+      code: row.course_code,
+      name: row.course_name,
+      credits: row.credits,
+      courseType: row.course_category,
+      semester: row.semester_number,
+      branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
+      specialization: pick([row.specialization || {}], ["name", "code", "specialization_name"]),
+      scheme: pick([row.scheme || {}], ["name", "code", "regulations"]),
+      academicYear: pick([row.academicYear || {}], ["name", "label", "year", "academic_year", "code", "title"]),
+      program: pick([row.program || {}], ["name", "short_name", "level"]),
+      institution: pick([row.institution || {}], ["name", "short_name"]),
+      curriculumId: row.curriculum_id,
+      curriculumVersion: pick([row.curriculum || {}], ["version"]),
+      status: "Discovered catalogue",
+      active: true,
+      mandatory: false,
+      isDiscoveredRegistry: true,
+      creditStatus: row.credit_status,
+    }));
+    const combined = [...curriculum, ...discovered];
+    return res.status(200).json({ success: true, curriculum: combined, count: combined.length, officialCount: curriculum.length, discoveredCount: discovered.length, limit: 10000 });
   } catch (error) {
     console.error("Failed to list curriculum subjects:", error);
     return res.status(500).json({ success: false, message: "Failed to load curriculum subjects from the configured database." });
