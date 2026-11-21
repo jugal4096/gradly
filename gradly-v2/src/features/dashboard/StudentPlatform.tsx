@@ -371,7 +371,8 @@ export default function StudentPlatform() {
             // result courses when rebuilding the grade-entry list.
             "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
             "MEOE0050","MEOE1040","CEOE1010","EE3018","EE4046","ET3033","ET3034","ET3035",
-            "CS2017","OEIT4001",\n            ...(selectedSemester===6?["ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
+            "CS2017","OEIT4001",
+            ...(selectedSemester===6?["ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
           ]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
             const code=normalizeResultCourseCode(subject.courseCode);
