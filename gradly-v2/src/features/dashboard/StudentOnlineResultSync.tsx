@@ -184,7 +184,7 @@ export default function StudentOnlineResultSync({
       counts.set(code, (counts.get(code) || 0) + 1);
     });
     const duplicateCodes = new Set([...counts].filter(([, count]) => count > 1).map(([code]) => code));
-    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "MEOE0050", "ME4031", "INMC2010"]);
+    const knownLegacyCodes = new Set(["MEOE1040", "MEOE0031", "MEOE0050", "ME4031", "INMC2010", "CEOE1010"]);
     const unknownRows = sourceRows.filter(row => {
       const code = canonicalResultCourseCode(row.courseCode);
       return expectedCodes.size && !expectedCodes.has(code) && !knownLegacyCodes.has(code);
@@ -217,6 +217,7 @@ export default function StudentOnlineResultSync({
         "MEOE1040":"Entrepreneurship Development",
         "ME4031":"Renewable Energy Engineering",
         "MEOE0050":"Additive Manufacturing",
+        "CEOE1010":"Disaster Management",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const fallbackCredits = code === "INMC2001" ? 0 : code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3;
