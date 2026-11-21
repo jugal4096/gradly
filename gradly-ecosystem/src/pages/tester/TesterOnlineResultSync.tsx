@@ -265,6 +265,7 @@ export default function TesterOnlineResultSync({
       const inferredCategory = (() => {
         const match = code.match(/^[A-Z]{2}(BSC|ESC|PCC|PEC|MDM|OEC|VSE|AEC|EEM|IKS|VEC|RMC|CEP|PRJ|INT|CCC|HNC|RPR)/);
         if (match) return match[1] === "VSE" ? "VSEC" : match[1] === "OEC" ? "OE" : match[1];
+        if (code === "ME4031") return "OE";
         if (/^ETHS/.test(code)) return "HSSM";
         if (/^CEOE/.test(code)) return "OE";
         if (/^ITPC/.test(code)) return "PCC";
