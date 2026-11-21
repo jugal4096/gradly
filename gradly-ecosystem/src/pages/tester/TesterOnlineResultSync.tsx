@@ -314,7 +314,8 @@ export default function TesterOnlineResultSync({
       ...(row.isNewSubject ? { credits: Number(creditEdits[normalizeCourseCode(row.courseCode)] ?? row.credits ?? 3) } : {}),
     }));
     const missing = grades.filter(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
-    const invalidCredits = grades.filter(row => row.isNewSubject && (!Number.isFinite(Number(row.credits)) || Number(row.credits) <= 0 || Number(row.credits) > 30));\n    if (invalidCredits.length) { setError("Enter a valid credit value (greater than 0 and no more than 30) for: " + invalidCredits.map(row => row.courseName || row.courseCode).join(", ")); return; }
+    const invalidCredits = grades.filter(row => row.isNewSubject && (!Number.isFinite(Number(row.credits)) || Number(row.credits) <= 0 || Number(row.credits) > 30));
+    if (invalidCredits.length) { setError("Enter a valid credit value (greater than 0 and no more than 30) for: " + invalidCredits.map(row => row.courseName || row.courseCode).join(", ")); return; }
     if (missing.length) {
       setError("Enter a grade for every subject before saving. Missing: " + missing.map(row => row.courseName || row.courseCode).join(", "));
       return;

@@ -17,3 +17,9 @@ CREATE TABLE IF NOT EXISTS public.discovered_result_subjects (
 );
 CREATE INDEX IF NOT EXISTS discovered_result_subjects_code_idx
   ON public.discovered_result_subjects (course_code);
+
+-- This table is accessed only through authenticated backend endpoints.
+-- Keep the public Data API closed and use RLS as defense in depth.
+ALTER TABLE public.discovered_result_subjects ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.discovered_result_subjects FROM anon, authenticated;
+GRANT SELECT, INSERT ON TABLE public.discovered_result_subjects TO service_role;
