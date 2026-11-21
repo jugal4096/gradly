@@ -56,6 +56,7 @@ export default function TesterWorkspace() {
     setToken(savedToken);
     // Migrate sessions created before persistent tester sign-in was introduced.
     localStorage.setItem("gradly_tester_access_token", savedToken);
+    sessionStorage.setItem("gradly_tester_access_token", savedToken);
     const savedTesterId = localStorage.getItem("gradly_tester_login_id") || sessionStorage.getItem("gradly_tester_login_id") || "Tester";
     localStorage.setItem("gradly_tester_login_id", savedTesterId);
     setTesterId(savedTesterId);
