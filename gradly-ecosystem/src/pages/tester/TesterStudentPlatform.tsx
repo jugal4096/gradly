@@ -479,7 +479,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
               "CEHS1030","INHS1020","INMC2001","INMC2010",
               "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
               "MEOE0050","MEOE1040","CEOE1010","EE3018","EE4046","ET3033","ET3034","ET3035",
-              "CS2017","OEIT4001",
+              "CS2017","OEIT4001",\n            ...(selectedSemester===6?["ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"]:[]),
             ]);
             const verified=authoritative.filter(subject=>{
               const code=normalizeResultCourseCode(subject.courseCode);
