@@ -301,7 +301,7 @@ export default function TesterOnlineResultSync({
     setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
     setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));
       setCourseNameEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), row.courseName || ""])));
-    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 1});
+    setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: reExamMode ? 2 : 1});
     setNotice("Review fetched grades. Any subject without an online grade needs a manual grade from your grade card before saving." + (unmatchedOfficialCodes.length ? " Official PDF courses outside the selected curriculum are included as separate result subjects: " + unmatchedOfficialCodes.join(", ") + "." : ""));
   }
 
