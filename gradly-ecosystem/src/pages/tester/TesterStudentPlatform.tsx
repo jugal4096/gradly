@@ -485,8 +485,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
               const code=normalizeResultCourseCode(subject.courseCode);
               return curriculumCodes.has(code)||approvedSharedAndOECodes.has(code);
             });
-            const reconciled=dedupeSubjectsByCourseCode(verified.length?verified:authoritative);
-            setSubjects(reconciled);
+            setSubjects(verified.length?verified:authoritative);
             setCurriculumReadySemester(selectedSemester);
             return;
           }
