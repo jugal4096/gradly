@@ -430,6 +430,17 @@ export default function StudentPlatform() {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
+          else {
+            // A previous loader version could overwrite this cache after
+            // filtering out discovered courses. Restore confirmed extra rows
+            // from the saved academic record before applying the safety filter.
+            const cachedCodes=new Set(authoritative.map(subject=>normalizeResultCourseCode(subject.courseCode)).filter(Boolean));
+            const persistedDiscovered=saved.filter(subject=>{
+              const code=normalizeResultCourseCode(subject.courseCode);
+              return Boolean(code)&&!cachedCodes.has(code)&&!subject.curriculumSubjectId&&subject.courseType==="Additional course";
+            });
+            authoritative=[...authoritative,...persistedDiscovered];
+          }
           // An earlier GECA parser build could attach unrelated courses as
           // custom rows. Keep only this semester's curriculum courses plus
           // verified GECA shared subjects and selected department electives.
