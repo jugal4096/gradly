@@ -142,7 +142,7 @@ function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
 
 function gradeTokensFromItem(item: PositionedItem): string[] {
   return item.text.toUpperCase().trim().split(/\s+/).flatMap(token => {
-    const cleaned = token.replace(/^[^A-Z+]+|[^A-Z+]+$/g, "");
+    const cleaned = token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, "");
     return GRADE_TOKEN_PATTERN.test(cleaned) ? [cleaned] : [];
   });
 }
@@ -224,9 +224,9 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
         if (nextDistance < distance) { nearest = column; distance = nextDistance; }
       }
       const verticalDistance = Math.abs(cell.y - enrollmentY);
-      if (nearest && distance < 80 && !["-", "AB", "P"].includes(cell.grade)) {
+      if (nearest && distance < 80 && !["AB", "P"].includes(cell.grade)) {
         const existing = nearestCellByCourse.get(nearest.courseCode);
-        if (!existing || verticalDistance < existing.verticalDistance) nearestCellByCourse.set(nearest.courseCode, { grade: cell.grade, verticalDistance });
+        if (!existing || verticalDistance < existing.verticalDistance) nearestCellByCourse.set(nearest.courseCode, { grade: cell.grade === "-" ? "" : cell.grade, verticalDistance });
       }
     }
     for (const [courseCode, cell] of nearestCellByCourse) mapped.set(courseCode, cell.grade);
@@ -247,7 +247,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
       if (gradeSequence.length === sortedColumns.length) {
         sortedColumns.forEach((column, index) => {
           const grade = gradeSequence[index];
-          if (grade && !["-", "AB", "P"].includes(grade)) mapped.set(column.courseCode, grade);
+          if (grade && !["AB", "P"].includes(grade)) mapped.set(column.courseCode, grade === "-" ? "" : grade);
         });
       }
     }
@@ -260,7 +260,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
       const afterEnrollment = enrollmentItemIndex >= 0 ? sequence.slice(1) : sequence;
       if (afterEnrollment.length === sortedColumns.length) sortedColumns.forEach((column, index) => {
         const grade = afterEnrollment[index];
-        if (grade && !["-", "AB", "P"].includes(grade)) mapped.set(column.courseCode, grade);
+        if (grade && !["AB", "P"].includes(grade)) mapped.set(column.courseCode, grade === "-" ? "" : grade);
       });
     }
   }
@@ -290,10 +290,10 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
     if (!header) continue;
     const grades = lines.filter(line => Math.abs((line.items[0]?.y ?? studentY) - studentY) <= 14)
       .flatMap(line => line.items.flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x }))))
-      .filter(cell => !["-", "AB", "P"].includes(cell.grade))
+      .filter(cell => !["AB", "P"].includes(cell.grade))
       .sort((a, c) => Math.abs(a.x - header.x) - Math.abs(c.x - header.x));
     const grade = grades[0];
-    if (grade && Math.abs(grade.x - header.x) < 85) return [{ courseCode: target, grade: grade.grade }];
+    if (grade && Math.abs(grade.x - header.x) < 85) return [{ courseCode: target, grade: grade.grade === "-" ? "" : grade.grade }];
   }
   return [];
 }
