@@ -620,7 +620,13 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         const mdmSlot:Subject[]=mdmOptions.length?[{id:loadedCurriculumSubjects.length+defaultHsSlot.length+1,name:savedMdm?.name||"",credits:savedMdm?.credits??mdmOptions[0].credits,grade:savedMdm?.grade||"",courseCode:savedMdm?.courseCode||"",courseType:"Multidisciplinary Minor (MDM)",curriculumSubjectId:savedMdm?.curriculumSubjectId,electiveKind:"MDM",electiveSlotCode:"MDM"}]:[];
         let manualCached:Subject[]=[];
         try { const cached=JSON.parse(studentStorage.getItem("gradly_tester_manual_electives_"+profile.curriculumId+"_"+selectedSemester)||"[]"); if(Array.isArray(cached)) manualCached=cached; } catch { /* ignore invalid manual elective cache */ }
-        const customSource=[...saved,...manualCached].filter(subject=>!subject.curriculumSubjectId&&subject.isCustom&&(subject.courseType==="Open Elective (OE)"||subject.courseType==="Humanities & Social Sciences (HS)"||subject.courseType==="Official GECA result · additional course"));
+        // Keep every confirmed result-discovered/custom subject visible, regardless
+        // of its inferred category label (PCC, HSSM, OE, etc.). Tester data stays local.
+        const customSource=[...saved,...manualCached].filter(subject=>!subject.curriculumSubjectId&&(
+          subject.isCustom===true||Boolean(subject.courseCategory)||
+          subject.courseType==="Open Elective (OE)"||subject.courseType==="Humanities & Social Sciences (HS)"||
+          subject.courseType==="Official GECA result"||subject.courseType==="Official GECA result · additional course"
+        ));
         const customUnique=new Map<string,Subject>();
         customSource.forEach(subject=>customUnique.set(String(subject.courseCode||subject.name).trim().toLowerCase(),subject));
         const customSavedSubjects:Subject[]=Array.from(customUnique.values()).map((subject,index)=>({...subject,id:loadedCurriculumSubjects.length+defaultHsSlot.length+mdmSlot.length+index+1,isCustom:true,courseType:subject.courseType||"Additional course"}));
