@@ -539,7 +539,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
         if(cancelled) return;
         const saved=savedSubjectsBySemester[selectedSemester]||[];
         const officialResultKey="gradly_tester_online_result_subjects_"+profile.curriculumId+"_"+selectedSemester;
-        if(studentStorage.getItem("gradly_tester_online_result_source_"+selectedSemester)) {
+        if(studentStorage.getItem("gradly_tester_online_result_source_"+selectedSemester) || studentStorage.getItem(officialResultKey)) {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(studentStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid Tester result cache */ }
           if(!authoritative.length) authoritative=saved;
