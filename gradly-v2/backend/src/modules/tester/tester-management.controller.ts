@@ -46,6 +46,35 @@ export async function setTesterAccountStatus(req: Request, res: Response) {
   }
 }
 
+
+export async function updateTesterCredentials(req: SuperAdminAuthenticatedRequest, res: Response) {
+  const { loginId, password } = req.body ?? {};
+  const hasLoginId = Object.prototype.hasOwnProperty.call(req.body ?? {}, "loginId");
+  const hasPassword = Object.prototype.hasOwnProperty.call(req.body ?? {}, "password");
+  if (!hasLoginId && !hasPassword) return res.status(400).json({ message: "Provide a new tester ID or password." });
+  if (hasLoginId && !validLoginId(loginId)) return res.status(400).json({ message: "Tester ID must be 3–80 characters and use letters, numbers, dots, underscores or hyphens." });
+  if (hasPassword && (typeof password !== "string" || password.length < 10 || password.length > 128)) return res.status(400).json({ message: "Set a password between 10 and 128 characters." });
+  try {
+    const values: unknown[] = [];
+    const updates: string[] = [];
+    if (hasLoginId) { values.push((loginId as string).trim()); updates.push(`login_id=${values.length}`); }
+    if (hasPassword) { values.push(await bcrypt.hash(password as string, 12)); updates.push(`password_hash=${values.length}`); }
+    values.push(req.params.testerId);
+    const result = await pool.query(
+      `UPDATE tester_accounts SET ${updates.join(", ")}, updated_at=NOW()
+       WHERE id=${values.length}
+       RETURNING id,login_id,status,created_at,last_login_at`,
+      values,
+    );
+    if (!result.rowCount) return res.status(404).json({ message: "Tester account not found." });
+    return res.json({ tester: result.rows[0], message: "Tester credentials updated." });
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "23505") return res.status(409).json({ message: "That tester ID is already in use." });
+    console.error("Update tester credentials failed:", error);
+    return res.status(500).json({ message: "Unable to update tester credentials." });
+  }
+}
+
 export async function deleteTesterAccount(req: Request, res: Response) {
   try {
     const result = await pool.query("DELETE FROM tester_accounts WHERE id=$1 RETURNING id,login_id", [req.params.testerId]);
