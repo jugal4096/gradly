@@ -200,7 +200,7 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         // official GECA OE catalogue rather than rejecting a valid OE result.
         ...[...openElectiveCodes].filter(code => code !== "CEOE1010"),
         // CEOE1010 is Disaster Management, an official GECA even-semester OE.
-        ...(semesterNumber === 6 ? ["CEOE1010"] : []),
+        ...(semesterNumber === 6 ? ["CEOE1010", "ITHS1030", "ITPE3005", "ITPE3006", "ITPE3007", "ITPE3008", "ITPE3032", "ITPC3010", "ITPR3002"] : []),
       ]);
       const invalidCodes = [...new Set(normalized
         .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
