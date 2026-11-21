@@ -71,6 +71,7 @@ function electiveKind(code:string, semester:number, name=""):"OE"|"HS"|"PE4"|"PE
     if(/v\b|5th|fifth/.test(slotName)) return "PE5";
   }
   if (/^ITOE/.test(code)) return "OE";
+  if (code === "ITHS1030") return "HS";
   if (/^ITHS/.test(code) && semester>=5) return "HS";
   if (semester===7 && /^ITPE400[135]$/.test(code)) return "PE4";
   if (semester===7 && /^ITPE400[246]$/.test(code)) return "PE4LAB";
