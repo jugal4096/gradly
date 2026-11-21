@@ -103,6 +103,8 @@ export default function TesterOnlineResultSync({
     setSelectedSessionId("");
     setNotice("");
     setError("");
+    // Clicking the tester backlog action should load the archive immediately.
+    void openArchive();
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
