@@ -141,12 +141,12 @@ function getDegreeCreditProgress(profile:Profile,records:Record<number,Subject[]
     const code=String(subject.courseCode||"").trim().toUpperCase();
     const key=code?code.replace(/[^A-Z0-9]/g,""):"SEM"+semester+":"+subject.id;
     if(seen.has(key)) continue;
-    seen.add(key);
     const grade=String(subject.grade||"").trim().toUpperCase();
     const gradePoint=POINTS[grade];
     if(!subject.name?.trim() || !(Number(subject.credits)>0) || gradePoint===undefined || gradePoint<=0) continue;
     const category=getDegreeCreditCategory(subject);
     if(!category) continue;
+    seen.add(key);
     earned[category]+=Number(subject.credits);
     contributors[category].push(subject);
   }
