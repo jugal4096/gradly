@@ -240,7 +240,7 @@ export default function StudentOnlineResultSync({
       const parsedCredits = row.credits == null ? null : Number(row.credits);
       const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };
       const registryEntry = discoveredRegistry[code];
-      const subjectName = registryEntry?.courseName || existing?.name || catalog?.name || knownNames[code] || usableParsedCourseName(row.courseName) || "Uncatalogued subject";
+      const subjectName = registryEntry?.courseName || existing?.name || catalog?.name || knownNames[code] || usableParsedCourseName(row.courseName) || "Subject name not reliably detected in PDF";
       const inferredCategory = (() => {
         const match = code.match(/^[A-Z]{2}(BSC|ESC|PCC|PEC|MDM|OEC|VSE|AEC|EEM|IKS|VEC|RMC|CEP|PRJ|INT|CCC|HNC|RPR)/);
         if (match) return match[1] === "VSE" ? "VSEC" : match[1] === "OEC" ? "OE" : match[1];
@@ -250,7 +250,7 @@ export default function StudentOnlineResultSync({
         if (/^INHS/.test(code)) return "VEC";
         if (/^ITES/.test(code)) return "ESC";
         if (/^MABS/.test(code)) return "BSC";
-        if (/^ITOE/.test(code)) return "OE";
+        if (/^[A-Z]{2}OE/.test(code)) return "OE";
         if (/^ITMD/.test(code)) return "MDM";
         return "UNCLASSIFIED";
       })();
