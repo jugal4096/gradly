@@ -209,6 +209,65 @@ const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6,
 const gradeNames = Object.keys(POINTS);
 function normalizeResultCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
 const isDseAdmission = (admissionMode: string, enrollment: string) => /\bDSE\b|DIRECT\s+SECOND\s+YEAR|SECOND\s+YEAR\s+DIRECT/i.test(admissionMode||"") || String(enrollment||"").trim().toUpperCase().replace(/\s+/g,"")[4] === "S";
+type DegreeCreditCategory = "HS"|"BS"|"ES"|"PC"|"PE"|"OE"|"PROJECT"|"ABL";
+const NEW_CBCS_CREDIT_REQUIREMENTS: Record<"regular"|"dse",Record<DegreeCreditCategory,number>> = {
+  regular:{HS:12,BS:24,ES:23,PC:51,PE:18,OE:15,PROJECT:15,ABL:2},
+  dse:{HS:9,BS:7,ES:4,PC:51,PE:18,OE:15,PROJECT:15,ABL:2},
+};
+const DEGREE_CREDIT_LABELS: Record<DegreeCreditCategory,string> = {
+  HS:"Humanities & Social Sciences",BS:"Basic Sciences",ES:"Engineering Sciences",PC:"Professional Core",
+  PE:"Professional Electives",OE:"Open Electives",PROJECT:"Project, Seminar & Internship",ABL:"Activity Based Learning",
+};
+function isNewCbcsScheme(scheme:string):boolean {
+  return /new[\s_-]*cbcs|cbcs[\s_-]*new/i.test(String(scheme||""));
+}
+function getDegreeCreditCategory(subject:Subject):DegreeCreditCategory|null {
+  const code=String(subject.courseCode||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const type=String(subject.courseType||"").toLowerCase();
+  const name=String(subject.name||"").toLowerCase();
+  const combined=type+" "+name;
+  if(code==="INHS1020" || /universal human values|\buhv\b/.test(combined)) return null;
+  if(/mandatory|environmental studies|induction training/.test(combined)) return null;
+  if(/activity.?based|\babl\b/.test(combined) || /activity.?based|\babl\b/.test(type)) return "ABL";
+  if(/project|seminar|internship|industrial training/.test(combined) || /project|seminar|internship/.test(code)) return "PROJECT";
+  if(subject.electiveKind==="OE" || /open elective|\boe\b/.test(type) || /^(ITOE|OEIT|CEOE|MEOE|EEOE|ETOE|CSOE)/.test(code)) return "OE";
+  if(subject.electiveKind==="HS" || /humanit|social science|management course/.test(type) || /^(ITHS|CEHS|MEHS|EEHS|ETHS|CSHS)/.test(code)) return "HS";
+  if(/^ITPE|professional elective|\bpe\b/.test(code+" "+type)) return "PE";
+  if(/basic science|\bbs\b/.test(type) || /mathematics|physics|chemistry|biology|environmental science/.test(combined) || /^(BS|MA|PH|CH)/.test(code)) return "BS";
+  if(/engineering science|\bes\b/.test(type) || /workshop|engineering drawing|engineering mechanics|basic electrical|basic mechanical/.test(combined) || /^(ES|WS|ED)/.test(code)) return "ES";
+  if(/professional core|\bpc\b|core course/.test(type)) return "PC";
+  return "PC";
+}
+function getDegreeCreditProgress(profile:Profile,records:Record<number,Subject[]>) {
+  if(!isNewCbcsScheme(profile.scheme)) return null;
+  const dse=isDseAdmission(profile.admissionMode,profile.enrollment);
+  const requirements=NEW_CBCS_CREDIT_REQUIREMENTS[dse?"dse":"regular"];
+  const earned:Record<DegreeCreditCategory,number>={HS:0,BS:0,ES:0,PC:0,PE:0,OE:0,PROJECT:0,ABL:0};
+  const contributors:Record<DegreeCreditCategory,Subject[]>={HS:[],BS:[],ES:[],PC:[],PE:[],OE:[],PROJECT:[],ABL:[]};
+  const seen=new Set<string>();
+  for(const [semester,rows] of Object.entries(records)) for(const subject of rows||[]) {
+    const code=String(subject.courseCode||"").trim().toUpperCase();
+    const key=code?code.replace(/[^A-Z0-9]/g,""):"SEM"+semester+":"+subject.id;
+    if(seen.has(key)) continue;
+    seen.add(key);
+    const grade=String(subject.grade||"").trim().toUpperCase();
+    const gradePoint=POINTS[grade];
+    if(!subject.name?.trim() || !(Number(subject.credits)>0) || gradePoint===undefined || gradePoint<=0) continue;
+    const category=getDegreeCreditCategory(subject);
+    if(!category) continue;
+    earned[category]+=Number(subject.credits);
+    contributors[category].push(subject);
+  }
+  const categories=(Object.keys(requirements) as DegreeCreditCategory[]).map(category=>({
+    category,label:DEGREE_CREDIT_LABELS[category],required:requirements[category],earned:earned[category],
+    remaining:Math.max(0,requirements[category]-earned[category]),surplus:Math.max(0,earned[category]-requirements[category]),
+    percent:Math.min(100,earned[category]/requirements[category]*100),status:earned[category]>=requirements[category]?"Met":earned[category]>0?"In progress":"Not started",
+    subjects:contributors[category],
+  }));
+  const required=Object.values(requirements).reduce((sum,value)=>sum+value,0);
+  const earnedTotal=categories.reduce((sum,item)=>sum+item.earned,0);
+  return {path:dse?"DSE":"Regular",required,earned:earnedTotal,remaining:Math.max(0,required-earnedTotal),percent:Math.min(100,earnedTotal/required*100),categories,uhvExcluded:true};
+}
 const emptyProfile: Profile = { institutionId:"", institutionName:"", programId:"", programName:"", branchId:"", branchName:"", curriculumId:"", semester:"", enrollment:"", admissionYear:String(new Date().getFullYear()), admissionMode:"Regular", admissionNumber:"", scheme:"" };
 const nav: { id: Section; label: string; icon: string; group: string }[] = [
   { id:"home",label:"Overview",icon:"⌂",group:"WORKSPACE" },
@@ -384,8 +443,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const handlePlannerClick=()=>{if(!plannerSoundEnabled)return;try{const AudioContextClass=window.AudioContext||(window as Window & {webkitAudioContext?:typeof AudioContext}).webkitAudioContext;if(!AudioContextClass)return;const context=new AudioContextClass();const oscillator=context.createOscillator();const gain=context.createGain();oscillator.type="sine";oscillator.frequency.setValueAtTime(620,context.currentTime);oscillator.frequency.exponentialRampToValueAtTime(880,context.currentTime+0.065);gain.gain.setValueAtTime(0.0001,context.currentTime);gain.gain.exponentialRampToValueAtTime(0.055,context.currentTime+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,context.currentTime+0.11);oscillator.connect(gain);gain.connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+0.12);oscillator.onended=()=>{void context.close();};}catch{/* Audio is optional; planner actions must always work. */}};
   const [plannerLoading,setPlannerLoading] = useState(false);
   const [plannerNotice,setPlannerNotice] = useState("");
-  const [totalCredits,setTotalCredits] = useState("160");
-  const [earnedCredits,setEarnedCredits] = useState("0");
+
   const [messages,setMessages] = useState<ChatMessage[]>([
     {id:1,author:"Gradly Community",body:"Welcome! Share notes, ask questions and help each other prepare.",time:"Today",mine:false},
   ]);
@@ -1205,7 +1263,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     event.preventDefault(); if(!aiInput.trim()) return;
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
-  const remainingCredits=Math.max(0,Number(totalCredits||0)-Number(earnedCredits||0));
+  const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
   const whatIfScenarios=buildSgpaScenarios(Number(whatIf),whatIfSubjects);
@@ -1363,7 +1421,7 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
             <Card><div className="sp-card-head"><div><span>YOUR NEXT MOVE</span><h2>Turn insights into action</h2></div></div><div className="sp-tracker-actions"><div><b>{trackerDelta<0?"Recover your recent dip":trackerDelta>0?"Build on your momentum":"Set your next benchmark"}</b><p>{trackerDelta<0?"Compare the subjects, attendance and preparation pattern from your latest semester with your stronger semesters.":trackerDelta>0?"Identify what worked in your latest semester and repeat those study habits in the next one.":"Use your personal average as a baseline and set a realistic improvement target."}</p></div><button className="sp-primary" onClick={()=>navigate("sgpaWhatIf")}>Open what-if analysis →</button><button className="sp-secondary" onClick={()=>navigate("sgpa")}>Update semester grades</button></div></Card>
           </>:<Card><div className="sp-empty"><span>▥</span><h3>Your academic story starts here</h3><p>Save your first semester SGPA to unlock trend graphs, score distributions, personal bests, semester dips and detailed performance insights.</p><button className="sp-primary" onClick={()=>navigate("sgpa")}>Add first result →</button></div></Card>}
           <Card><div className="sp-card-head"><div><span>PERFORMANCE LOG</span><h2>Saved semester records</h2></div></div>{trackerRows.map(r=><div className="sp-history-row sp-semester-history-row" key={r.id}><b>Semester {r.semester}</b><span>{r.credits} credits</span><strong>{r.sgpa.toFixed(3)} SGPA</strong><strong>{getCgpaThroughSemester(r.semester)?.toFixed(3)??"—"} CGPA</strong><small>{new Date(r.savedAt).toLocaleDateString()}</small>{!isGuest&&<><button type="button" className="sp-download-result" onClick={()=>{setSelectedSemester(r.semester);setSection("sgpa");setNotice("");}}>Edit grades</button><button type="button" className="sp-download-result" onClick={()=>downloadSemesterReport(r)}>Download PDF</button></>}</div>)}</Card></>}
-        {section==="credits"&&<><SectionTitle kicker="ACADEMIC ELIGIBILITY" title="Credit analyser" copy="Understand how many credits you have completed and how many remain against your programme requirement."/><Card><div className="sp-card-head"><div><span>CREDIT COMPLETION</span><h2>Your academic credit progress</h2></div></div><div className="sp-inline-form"><label>Required credits<input type="number" min="1" value={totalCredits} onChange={e=>setTotalCredits(e.target.value)}/></label><label>Earned credits<input type="number" min="0" value={earnedCredits} onChange={e=>setEarnedCredits(e.target.value)}/></label></div><div className="sp-credit-visual"><div><strong>{remainingCredits}</strong><span>credits remaining</span></div><div className="sp-credit-track"><i style={{width:Math.min(100,Number(totalCredits)>0?Number(earnedCredits)/Number(totalCredits)*100:0)+"%"}}/></div><div className="sp-credit-labels"><span>{earnedCredits||0} earned</span><span>{totalCredits||0} required</span></div></div><p className="sp-muted">Enter the credit requirement published by your institution. Eligibility rules, compulsory courses and minimum grade conditions must also be checked before treating this as an official clearance.</p></Card></>}
+        {section==="credits"&&<><SectionTitle kicker="ACADEMIC ELIGIBILITY" title="Credit analyser" copy={degreeCreditProgress?"Track your New CBCS degree-credit requirements, category by category.":"The detailed credit breakdown is currently configured only for the New CBCS scheme."}/>{degreeCreditProgress?<><Card><div className="sp-card-head"><div><span>NEW CBCS · {degreeCreditProgress.path.toUpperCase()} PATH</span><h2>Your degree-credit progress</h2></div><b>{degreeCreditProgress.percent.toFixed(1)}% complete</b></div><div className="sp-credit-visual"><div><strong>{degreeCreditProgress.remaining}</strong><span>credits remaining</span></div><div className="sp-credit-track"><i style={{width:degreeCreditProgress.percent+"%"}}/></div><div className="sp-credit-labels"><span>{degreeCreditProgress.earned} earned</span><span>{degreeCreditProgress.required} required</span></div></div><div className="sp-credit-labels"><span>{degreeCreditProgress.categories.filter(item=>item.status==="Met").length} of {degreeCreditProgress.categories.length} categories met</span><span>{degreeCreditProgress.path==="DSE"?"DSE requirements":"Regular requirements"}</span></div><p className="sp-muted">Only passed, saved subject credits count. UHV is excluded from degree completion, even though its credits continue to count in SGPA/CGPA. Environmental Studies and Induction Training are non-credit mandatory courses.</p></Card><Card><div className="sp-card-head"><div><span>CATEGORY-WISE REQUIREMENTS</span><h2>Where your credits come from</h2></div><b>{degreeCreditProgress.categories.length} categories</b></div><div className="sp-credit-category-list">{degreeCreditProgress.categories.map(item=><details className="sp-credit-category" key={item.category}><summary><div className="sp-credit-category-heading"><strong>{item.label}</strong><span>{item.earned.toFixed(1)} / {item.required} credits · {item.status}</span></div><div className="sp-credit-track"><i style={{width:item.percent+"%"}}/></div><div className="sp-credit-labels"><span>{item.remaining?item.remaining.toFixed(1)+" credits to earn":item.surplus?item.surplus.toFixed(1)+" credits above requirement":"Requirement met"}</span><span>{item.percent.toFixed(0)}%</span></div></summary><div className="sp-credit-subjects">{item.subjects.length?item.subjects.map((subject,index)=><div className="sp-credit-subject" key={subject.courseCode||subject.id+"-"+index}><span><b>{subject.courseCode||"—"}</b> · {subject.name}</span><strong>{Number(subject.credits)} cr</strong></div>):<p className="sp-muted">No passed subjects have been recorded in this category yet.</p>}</div></details>)}</div></Card><Card><div className="sp-card-head"><div><span>NON-CREDIT REQUIREMENTS</span><h2>Mandatory courses</h2></div><b>Not added to totals</b></div><p className="sp-muted">Environmental Studies and Induction Training are non-credit requirements. UHV is also deliberately excluded from this degree-credit structure; its credits remain part of semester SGPA/CGPA only.</p></Card></>:<Card><div className="sp-empty compact"><span>▤</span><h3>New CBCS credit breakdown</h3><p>Select a profile configured with the New CBCS scheme to view the official Regular (160-credit) or DSE (121-credit) structure. Other schemes are left unchanged.</p></div></Card>}</>}
         {section==="community"&&<><SectionTitle kicker="LEARN TOGETHER" title="Community group chat" copy="A shared study space for classmates to exchange questions and learning material."/><div className="sp-two-col"><Card><div className="sp-card-head"><div><span>STUDENT DISCUSSION</span><h2>Group conversation</h2></div><b>Preview</b></div><div className="sp-chat-list">{messages.map(m=><div className={"sp-chat-message "+(m.mine?"mine":"")} key={m.id}><div><b>{m.author}</b><small>{m.time}</small></div><p>{m.body}</p>{m.mine&&<div className="sp-message-actions"><button onClick={()=>{setEditingId(m.id);setMessage(m.body);}}>Edit</button><button onClick={()=>setMessages(cur=>cur.filter(x=>x.id!==m.id))}>Delete</button></div>}</div>)}</div><form className="sp-chat-compose" onSubmit={submitMessage}><input value={message} onChange={e=>setMessage(e.target.value)} placeholder={editingId?"Edit your message…":"Write a message…"}/><button className="sp-primary">{editingId?"Save":"Send"} →</button></form><small className="sp-muted">Frontend preview: messages are currently local to this browser, not shared with other students.</small></Card><Card><div className="sp-card-head"><div><span>STUDY MATERIAL</span><h2>Notes library</h2></div></div><button className="sp-upload" onClick={()=>fileRef.current?.click()}>＋ Upload notes or documents</button><input ref={fileRef} type="file" hidden multiple onChange={e=>setNotes(cur=>[...cur,...Array.from(e.target.files||[]).map(f=>({name:f.name,size:(f.size/1024).toFixed(0)+" KB",file:f}))])}/>{notes.length?notes.map((n,i)=><div className="sp-note-row" key={i}><span>▤</span><div><b>{n.name}</b><small>{n.size}</small></div><button onClick={()=>setNotes(cur=>cur.filter((_,j)=>i!==j))}>Remove</button></div>):<div className="sp-empty compact"><span>▤</span><p>Your uploaded files will appear here in this preview.</p></div>}<small className="sp-muted">Cloud sharing and downloads will activate with the notes-storage API.</small></Card></div></>}
         {section==="events"&&<><SectionTitle kicker="COMMUNITY" title="Upcoming events & holidays" copy="A shared calendar for academic events, campus activities and holidays."/><Card><div className="sp-card-head"><div><span>EVENT CALENDAR</span><h2>What's coming up</h2></div><b>Campus feed</b></div><div className="sp-empty"><span>✦</span><h3>Campus calendar is ready for connection</h3><p>Upcoming events and official holiday lists will appear here once an institution calendar feed is connected. No dates are invented in this preview.</p></div></Card></>}
 
