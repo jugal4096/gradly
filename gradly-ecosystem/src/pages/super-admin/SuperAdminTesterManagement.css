@@ -10,3 +10,10 @@
 .tester-edit-actions button[type=submit]{background:#171717;color:white;border-color:#171717}
 .tester-edit-actions button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:650px){.tester-edit-credentials{grid-template-columns:1fr}.tester-edit-credentials>div:first-child,.tester-edit-actions{grid-column:1}}
+
+.tester-password-field{position:relative;display:flex;align-items:center;width:100%}
+.tester-password-field input{padding-right:44px!important}
+.tester-password-toggle{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:34px;height:32px;display:grid;place-items:center;border:0;border-radius:6px;background:transparent;color:var(--sa-muted,#777);cursor:pointer}
+.tester-password-toggle:hover{background:var(--sa-hover,#f2f2f2);color:inherit}
+.tester-create-card .tester-password-field input{height:42px}
+.tester-row-delete{white-space:nowrap}
