@@ -20,7 +20,9 @@ type MatchResponse = {
   matches: ResultDocument[];
 };
 function normalizeCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
-function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="MEOE0031"?"ME4031":code; }
+// GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
+// elective, while the selected CBCS curriculum stores the same course as CE3008.
+function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="MEOE0031"?"ME4031":code==="CEOE1010"?"CE3008":code; }
 
 type Props = {
   apiBase: string;
@@ -208,6 +210,7 @@ export default function TesterOnlineResultSync({
         "MEOE1040":"Entrepreneurship Development",
         "ME4031":"Renewable Energy Engineering",
         "MEOE0050":"Additive Manufacturing",
+        "CE3008":"Disaster Management",
         "CEOE1010":"Disaster Management",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
