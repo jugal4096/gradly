@@ -208,7 +208,15 @@ export default function StudentOnlineResultSync({
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
     const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
+    // Keep a browser-local mirror of confirmed subjects as a recovery layer.
+    // The authenticated backend remains authoritative, but a transient registry
+    // read must never make a previously confirmed course look newly discovered.
+    const localRegistryKey = "gradly_discovered_result_subjects_" + curriculumId + "_" + normalizeCourseCode(enrollmentNumber);
     let discoveredRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
+    try {
+      const cached = JSON.parse(localStorage.getItem(localRegistryKey) || "{}");
+      if (cached && typeof cached === "object" && !Array.isArray(cached)) discoveredRegistry = cached;
+    } catch { /* Ignore malformed recovery cache and continue with the backend registry. */ }
     try {
       const token = await getIdToken();
       const codes = [...new Set(sourceRows.map(row => canonicalResultCourseCode(row.courseCode)))].join(",");
@@ -216,7 +224,7 @@ export default function StudentOnlineResultSync({
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "The saved subject catalogue could not be checked.");
       if (!Array.isArray(body.data)) throw new Error("The saved subject catalogue returned an invalid response.");
-      discoveredRegistry = Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
+      discoveredRegistry = { ...discoveredRegistry, ...Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }])) };
     } catch (error) {
       setError(error instanceof Error ? "Gradly could not verify previously identified subjects: " + error.message : "Gradly could not verify previously identified subjects. No result was applied.");
       setNotice("");
@@ -360,6 +368,14 @@ export default function StudentOnlineResultSync({
         if (!response.ok) throw new Error(body.message || "Unable to register the newly discovered subject.");
         if (body.data?.credits != null) row.credits = Number(body.data.credits);
         row.creditStatus = "USER_CONFIRMED";
+        // Mirror each successful confirmation immediately. If a later course
+        // or grade save fails, this code must still be recognised next fetch.
+        try {
+          const cache = JSON.parse(localStorage.getItem(localRegistryKey) || "{}");
+          const safeCache = cache && typeof cache === "object" && !Array.isArray(cache) ? cache : {};
+          safeCache[normalizeCourseCode(row.courseCode)] = { courseName: row.courseName, credits: Number(row.credits), courseCategory: row.courseCategory || "UNCLASSIFIED" };
+          localStorage.setItem(localRegistryKey, JSON.stringify(safeCache));
+        } catch { /* Backend confirmation remains durable if local storage is unavailable. */ }
       }
       const result = await onApply(pendingReview.semester, grades, pendingReview.session, pendingReview.document, pendingReview.url, pendingReview.attemptNumber);
       if (result === false) {
