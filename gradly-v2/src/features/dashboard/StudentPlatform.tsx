@@ -11,7 +11,7 @@ type Profile = { institutionId: string; institutionName: string; programId: stri
 type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean };
 type ElectiveOption = { code: string; name: string; credits: number };
 const OE_OPTIONS: ElectiveOption[] = [
-  {code:"CE3008",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
+  {code:"CE3008",name:"Disaster Management",credits:3},{code:"CEOE1010",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
   {code:"ME2022",name:"Total Quality Management",credits:3},{code:"ME4015",name:"Industrial Management",credits:3},{code:"ME4031",name:"Renewable Energy Engineering",credits:3},{code:"ME3027",name:"Quality Management System",credits:3},{code:"MEOE0050",name:"Additive Manufacturing",credits:3},
   {code:"MEOE1040",name:"Entrepreneurship Development",credits:3},{code:"EE3018",name:"Entrepreneurship Development (Electrical Engineering)",credits:3},{code:"EE4046",name:"Energy and Environment",credits:3},
   {code:"ET3033",name:"Consumer Electronics",credits:3},{code:"ET3034",name:"Microcontroller Applications",credits:3},{code:"ET3035",name:"Industrial Automation Applications",credits:3},
@@ -370,7 +370,7 @@ export default function StudentPlatform() {
             // the branch's base curriculum_subjects rows. Keep official
             // result courses when rebuilding the grade-entry list.
             "CE3008","CE2014","CEOE0040","ME2022","ME4015","ME4031","ME3027",
-            "MEOE0050","MEOE1040","EE3018","EE4046","ET3033","ET3034","ET3035",
+            "MEOE0050","MEOE1040","CEOE1010","EE3018","EE4046","ET3033","ET3034","ET3035",
             "CS2017","OEIT4001",
           ]);
           const verifiedAuthoritative=authoritative.filter(subject=>{
