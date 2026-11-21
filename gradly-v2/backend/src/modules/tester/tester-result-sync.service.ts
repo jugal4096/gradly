@@ -161,32 +161,26 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
       const item = line.items[itemIndex];
       const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
       const single = clean(item.text);
-      const next = line.items[itemIndex + 1];
-      const nextCompact = next ? clean(next.text) : "";
-      // PDF.js can split one GECA course code across three text items. It can
-      // also emit a partial code (for example CEOE10) that looks valid alone.
-      let token = COURSE_CODE_PATTERN.test(single) ? single : "";
+      // GECA course codes end in four digits. Requiring the complete suffix
+      // prevents a split fragment such as "CEOE10" from being accepted as a
+      // separate course code.
+      let token = /^[A-Z]{2,6}\\d{4}$/.test(single) ? single : "";
       let consumed = 0;
-      if (nextCompact && /^\d{2,4}$/.test(nextCompact) && /\d{1,2}$/.test(single) && single.length < 8) {
-        const joined = single + nextCompact;
-        if (COURSE_CODE_PATTERN.test(joined) && joined.length <= 12) {
-          token = joined;
-          consumed = 1;
-        }
-      }
       if (!token) {
         let combined = single;
         for (let span = 1; span <= 2 && itemIndex + span < line.items.length; span++) {
-          combined += clean(line.items[itemIndex + span].text);
+          const fragment = clean(line.items[itemIndex + span].text);
+          if (!fragment) break;
+          combined += fragment;
           if (combined.length > 12) break;
-          if (COURSE_CODE_PATTERN.test(combined)) {
+          if (/^[A-Z]{2,6}\\d{4}$/.test(combined)) {
             token = combined;
             consumed = span;
             break;
           }
         }
       }
-      if (token && COURSE_CODE_PATTERN.test(token) && /[A-Z]/.test(token) && /\d/.test(token) && !ENROLLMENT_PATTERN.test(token)) {
+      if (token && !ENROLLMENT_PATTERN.test(token)) {
         columns.push({ courseCode: token, x: item.x });
         itemIndex += consumed;
       }
