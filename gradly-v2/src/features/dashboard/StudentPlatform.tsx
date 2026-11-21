@@ -458,7 +458,7 @@ export default function StudentPlatform() {
             }
           } catch { /* Saved grade entry remains available if the registry is temporarily offline. */ }
         }
-        if(localStorage.getItem("gradly_online_result_source_"+selectedSemester)) {
+        if(localStorage.getItem("gradly_online_result_source_"+selectedSemester) || localStorage.getItem(officialResultKey)) {
           let authoritative:Subject[]=[];
           try { const cached=JSON.parse(localStorage.getItem(officialResultKey)||"null"); if(Array.isArray(cached)) authoritative=cached; } catch { /* ignore invalid official-result cache */ }
           if(!authoritative.length) authoritative=saved;
