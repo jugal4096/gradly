@@ -27,7 +27,7 @@ function usableParsedCourseName(value:unknown):string { const name=String(value|
 function formatCourseCategory(value?:string):string { const labels:Record<string,string>={BSC:"Basic Science",ESC:"Engineering Science",PCC:"Professional Core Course",PEC:"Professional Elective",OE:"Open Elective",MDM:"Multidisciplinary Course",AEC:"Ability Enhancement Course",VEC:"Value Education Course",VSEC:"Value Skill Enhancement Course",INT:"Internship",PRJ:"Project",HSSM:"Humanities & Social Sciences",UNCLASSIFIED:"Needs classification"}; return labels[String(value||"").toUpperCase()] || String(value||"Other"); }
 // GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
 // elective, while the selected CBCS curriculum stores the same course as CE3008.
-function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="MEOE0031"?"ME4031":code==="CEOE1010"?"CE3008":code; }
+function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="ME4031"?"MEOE0031":code==="CEOE1010"?"CE3008":code; }
 const ROMAN_SEMESTERS:Record<string,number>={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8};
 function resultDocumentSemester(document:ResultDocument):number|null {
   if(Number.isInteger(document.semester)&&Number(document.semester)>=1&&Number(document.semester)<=8) return Number(document.semester);
@@ -245,7 +245,7 @@ export default function TesterOnlineResultSync({
         "INHS1020":"Universal Human Values-II: Understanding Harmony",
         "INMC2001":"Environmental Science",
         "MEOE1040":"Entrepreneurship Development",
-        "ME4031":"Renewable Energy Resources",
+        "MEOE0031":"Renewable Energy Resources",
         "MEOE0050":"Additive Manufacturing",
         "CE3008":"Disaster Management",
         "CEOE1010":"Disaster Management",
@@ -265,7 +265,7 @@ export default function TesterOnlineResultSync({
       const inferredCategory = (() => {
         const match = code.match(/^[A-Z]{2}(BSC|ESC|PCC|PEC|MDM|OEC|VSE|AEC|EEM|IKS|VEC|RMC|CEP|PRJ|INT|CCC|HNC|RPR)/);
         if (match) return match[1] === "VSE" ? "VSEC" : match[1] === "OEC" ? "OE" : match[1];
-        if (code === "ME4031") return "OE";
+        if (code === "MEOE0031") return "OE";
         if (/^ETHS/.test(code)) return "HSSM";
         if (/^CEOE/.test(code)) return "OE";
         if (/^ITPC/.test(code)) return "PCC";
