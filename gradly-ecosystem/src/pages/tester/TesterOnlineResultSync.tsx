@@ -60,7 +60,7 @@ export default function TesterOnlineResultSync({
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
   const [courseNameEdits, setCourseNameEdits] = useState<Record<string,string>>({});
   const [testerDiscoveredRegistry, setTesterDiscoveredRegistry] = useState<Record<string,{courseName:string;credits:number;courseCategory:string}>>({});
-  useEffect(() => { setTesterDiscoveredRegistry({}); setCreditEdits({}); }, [curriculumId, enrollmentNumber]);
+  useEffect(() => { setTesterDiscoveredRegistry({}); setCreditEdits({}); setCourseNameEdits({}); }, [curriculumId, enrollmentNumber]);
   
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
