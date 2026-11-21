@@ -183,8 +183,17 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
          WHERE curriculum_id = $1 AND semester_id = $2 AND course_code IS NOT NULL`,
         [resolved.profile.curriculum_id, semesterResult.rows[0].id],
       );
+      const discoveredCodesResult = await client.query(
+        `SELECT course_code AS code
+         FROM public.discovered_result_subjects
+         WHERE curriculum_id = $1 AND semester_number = $2`,
+        [resolved.profile.curriculum_id, semesterNumber],
+      );
       const allowedCodes = new Set<string>([
         ...curriculumCodesResult.rows.map((row: { code: string }) =>
+          String(row.code || "").replace(/[^A-Z0-9]/g, ""),
+        ),
+        ...discoveredCodesResult.rows.map((row: { code: string }) =>
           String(row.code || "").replace(/[^A-Z0-9]/g, ""),
         ),
         // Shared GECA humanities and one-time UHV subjects are not always
