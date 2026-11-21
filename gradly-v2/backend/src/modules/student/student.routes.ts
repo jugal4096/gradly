@@ -7,6 +7,7 @@ import { requestStudentInstitution, listStudentInstitutionRequests } from "./stu
 import { submitEnrollmentGrievance, listMyEnrollmentGrievances } from "./student-enrollment-grievance.controller";
 import { previewEnrollmentController } from "../academic/enrollment-intelligence.controller";
 import { listStudentGecaResultSessions, matchStudentGecaResult } from "./student-result-sync.controller";
+import { listDiscoveredResultSubjects, confirmDiscoveredResultSubject } from "./discovered-result-subject.controller";
 
 const router = Router();
 router.use(authenticateFirebaseToken);
@@ -23,6 +24,8 @@ router.get("/enrollment-grievances", listMyEnrollmentGrievances);
 router.post("/enrollment/preview", previewEnrollmentController);
 router.get("/results/sessions", listStudentGecaResultSessions);
 router.post("/results/sessions/:resultId/match", matchStudentGecaResult);
+router.get("/results/discovered-subjects", listDiscoveredResultSubjects);
+router.post("/results/discovered-subjects", confirmDiscoveredResultSubject);
 router.get("/academic/records", listStudentAcademicRecords);
 router.post("/academic/semesters", saveStudentSemesterResult);
 

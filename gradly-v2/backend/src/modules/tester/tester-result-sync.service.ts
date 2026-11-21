@@ -9,7 +9,7 @@ const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
 const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
 
 export type GecaResultSession = { id: string; title: string; url: string };
-export type GecaMatchedGrade = { courseCode: string; grade: string };
+export type GecaMatchedGrade = { courseCode: string; grade: string; courseName?: string };
 export type GecaMatchedDocument = {
   title: string;
   url: string;
@@ -402,6 +402,25 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   return [];
 }
 
+function findCourseName(lines: TextLine[], courseCode: string): string | undefined {
+  const compactCode = compactPdfText(courseCode);
+  const candidates: string[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!compactPdfText(lines[index].text).includes(compactCode)) continue;
+    for (const candidateLine of [lines[index], lines[index + 1], lines[index - 1]]) {
+      if (!candidateLine) continue;
+      const candidate = candidateLine.text
+        .replace(new RegExp(courseCode, "i"), " ")
+        .replace(/\\b(?:COURSE|CODE|GRADE|CREDIT|RESULT|SUBJECT|SEMESTER|TOTAL|PASS|FAIL)\\b/gi, " ")
+        .replace(/\\b(?:A\\+\\+|A\\+|B\\+|C\\+|A|B|C|D|F|AB|P)\\b/gi, " ")
+        .replace(/\\s+/g, " ").trim();
+      if (candidate.length >= 5 && /[A-Z]{3}/i.test(candidate) && !/^[A-Z0-9\\s-]{1,12}$/.test(candidate)) candidates.push(candidate);
+    }
+  }
+  const best = candidates.sort((a, b) => b.length - a.length)[0];
+  return best && best.length <= 120 ? best : undefined;
+}
+
 function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
   const matches = new Map<string, string>();
   let enrollmentFound = false;
@@ -426,7 +445,7 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
   }
 
   return {
-    grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade })),
+    grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade, courseName: findCourseName(lines, courseCode) })),
     enrollmentFound,
   };
 }
@@ -516,7 +535,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     programme: programmeMatch?.[1]?.trim() || null,
     scheme: schemeMatch?.[1]?.toUpperCase() || null,
     semester,
-    grades: parsed.grades,
+    grades: parsed.grades.map(row => ({ ...row, courseName: row.courseName || findCourseName(allLines, row.courseCode) })),
   } : null;
   return { document, enrollmentFound: parsed.enrollmentFound };
 }
