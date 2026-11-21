@@ -56,7 +56,7 @@ export default function TesterOnlineResultSync({
   
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
-  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*exam|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
+  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*(?:exam|ese)|re[\\s-]*examination|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
 
   useEffect(() => {
     if (!curriculumId || !selectedSemester) { setCatalogue([]); return; }
