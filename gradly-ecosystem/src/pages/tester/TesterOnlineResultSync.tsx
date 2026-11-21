@@ -156,7 +156,7 @@ export default function TesterOnlineResultSync({
       .filter(row => row.courseCode.trim())
       .filter(row => !reExamMode || !targetCode || normalizeCourseCode(row.courseCode) === targetCode);
     const manualGradeCodes = new Set(["MEOE1040","INMC2010","INMC2001","CEHS1030","INHS1020"]);
-    const invalidGradeRows = sourceRows.filter(row => !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
+    const invalidGradeRows = sourceRows.filter(row => row.grade.trim() !== "" && !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()));
     if (invalidGradeRows.length) {
       setError("The PDF contains course rows with grades Gradly could not recognise (" + invalidGradeRows.map(row => row.courseCode + ": " + row.grade).join(", ") + "). No grades were applied; the result needs parser review.");
       setNotice("");
@@ -240,6 +240,12 @@ export default function TesterOnlineResultSync({
 
     setError("");
     setNotice("");
+    if (reExamMode && applicable.some(row => !["A++","A+","A","B+","B","C+","C","D"].includes(row.grade.toUpperCase()))) {
+      setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
+      setPendingReview({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester, attemptNumber: 2});
+      setNotice("GECA has not announced a grade for this subject (shown as “-”). Enter the grade from your official grade card, then confirm and save.");
+      return;
+    }
     if (reExamMode) {
       try {
         const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, 2);
@@ -288,9 +294,12 @@ export default function TesterOnlineResultSync({
         setNotice("The result could not be saved. Your academic profile was not changed.");
         return;
       }
-      setAppliedResult({rows: grades, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url, semester: pendingReview.semester});
       setPendingReview(null);
-      setNotice("Reviewed grades saved successfully. " + grades.length + " subjects were applied.");
+      setError("");
+      setNotice("");
+      setOpen(false);
+      setScan(null);
+      setSelectedSessionId("");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not save the reviewed grades. Please retry.");
       setNotice("");
@@ -361,7 +370,7 @@ export default function TesterOnlineResultSync({
       </div>}
       {notice && <p className="sp-online-result-notice" role="status">{notice}</p>}
       {pendingReview && createPortal(<div style={{position:"fixed",inset:0,zIndex:100020,background:"rgba(8,15,24,.78)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Review official result grades"><section style={{background:"#fff",color:"#17231d",borderRadius:16,padding:22,width:"min(680px,100%)",maxHeight:"88vh",overflowY:"auto",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><small style={{fontWeight:800,color:"#167348"}}>GECA · RESULT REVIEW</small><h2 style={{margin:"8px 0"}}>Review your semester grades</h2><p style={{marginTop:0}}>Check the fetched grades against your official grade card. If GECA has not published a grade online, select it manually here. A missing online grade is not treated as a failure.</p><div style={{borderTop:"1px solid #e4e9e5"}}>{pendingReview.rows.map((row,index)=>{const key=normalizeCourseCode(row.courseCode);const manual=!row.grade;return <div key={key+index} style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) 118px",gap:12,alignItems:"center",padding:"10px 0",borderBottom:"1px solid #e8ece9"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.65}}>{row.courseCode}{manual?" · Manual grade required":""}</small></span><select aria-label={"Grade for "+(row.courseName||row.courseCode)} value={reviewGrades[key]||""} onChange={event=>setReviewGrades(current=>({...current,[key]:event.target.value}))} style={{width:"100%",padding:9,borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}><option value="">Select grade</option>{["A++","A+","A","B+","B","C+","C","D"].map(grade=><option key={grade} value={grade}>{grade}</option>)}</select></div>})}</div>{error&&<p role="alert" style={{color:"#b42318"}}>{error}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:16}}><button type="button" onClick={()=>{setPendingReview(null);setError("");setNotice("Result review cancelled. No grades were saved.");}} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #cbd5ce",background:"#fff",color:"#17231d"}}>Cancel</button><button type="button" onClick={()=>void confirmPendingReview()} disabled={!pendingReview.rows.every(row=>["A++","A+","A","B+","B","C+","C","D"].includes((reviewGrades[normalizeCourseCode(row.courseCode)]||"").toUpperCase()))} style={{padding:"10px 16px",border:0,borderRadius:8,background:"#172d21",color:"#fff",fontWeight:700}}>Confirm and save grades</button></div></section></div>,document.body)}
-      {appliedResult && createPortal(<div style={{position:"fixed",inset:0,zIndex:100010,background:"rgba(8,15,24,.72)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Tester grades saved"><section style={{background:"#fff",color:"#14251c",borderRadius:16,padding:22,width:"min(560px,100%)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><small style={{color:"#14804b",fontWeight:800}}>GRADLY · TESTER RESULT SAVED</small><h2 style={{margin:"8px 0"}}>Grades applied successfully ✓</h2><p>Saved {appliedResult.rows.length} subject grades for Semester {appliedResult.semester}. This is isolated tester data.</p><div style={{borderTop:"1px solid #e0e7e3"}}>{appliedResult.rows.map((row,index)=><div key={(row.courseCode||row.courseName||"row")+index} style={{display:"flex",justifyContent:"space-between",gap:10,padding:"9px 0",borderBottom:"1px solid #e5eae7"}}><span><b>{row.courseName||row.courseCode}</b><small style={{display:"block",opacity:.65}}>{row.courseCode}</small></span><strong>{row.grade}</strong></div>)}</div><button type="button" aria-label="Close result confirmation" onClick={()=>{setAppliedResult(null);setPendingReview(null);setError("");setNotice("");setOpen(false);setScan(null);setSelectedSessionId("");}} style={{display:"block",width:"100%",marginTop:14,padding:12,border:0,borderRadius:10,background:"#15271d",color:"#fff",fontWeight:800,cursor:"pointer",position:"relative",zIndex:2,pointerEvents:"auto"}}>Done</button></section></div>,document.body)}
+      {/* Success is shown once by the parent student workspace. */}
 
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Tester preview · saved only in this isolated browser session</span></div>
     </section>}
