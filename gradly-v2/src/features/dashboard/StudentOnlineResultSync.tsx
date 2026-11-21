@@ -250,6 +250,18 @@ export default function StudentOnlineResultSync({
       try {
         const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, 2);
         if (applyResult === false) { setNotice("The re-examination result could not be applied. Check the message and try again."); return; }
+        // Re-examination success is presented by the parent grade-update dialog.
+        // Do not stack a second confirmation modal over it: that made Done appear
+        // unresponsive because closing this modal revealed the first one again.
+        if (reExamMode) {
+          setAppliedResult(null);
+          setPendingReview(null);
+          setOpen(false);
+          setScan(null);
+          setSelectedSessionId("");
+          setNotice("Re-examination grade applied successfully.");
+          return;
+        }
         setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
         setNotice("Re-examination grades added successfully.");
       } catch (reason) {
