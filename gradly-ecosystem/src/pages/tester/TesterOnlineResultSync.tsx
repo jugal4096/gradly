@@ -222,7 +222,8 @@ export default function TesterOnlineResultSync({
         "ITPR3002":"Mini Project II",
       };
       const parsedCredits = row.credits == null ? null : Number(row.credits);
-      const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };\n      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3);
+      const officialSemesterSixCredits: Record<string,number> = { ITHS1030:3, ITPE3005:3, ITPE3006:1, ITPE3007:3, ITPE3008:1, ITPE3032:3, ITPC3010:1, ITPR3002:2 };
+      const fallbackCredits = code === "INMC2001" ? 0 : officialSemesterSixCredits[code] ?? (code === "INHS1020" ? 3 : code === "CEHS1030" ? 3 : /LAB|PRACTICAL/i.test(code) ? 1 : 3);
       const parsedGrade = String(row.grade || "").trim().toUpperCase();
       const grade = ["A++","A+","A","B+","B","C+","C","D"].includes(parsedGrade) ? parsedGrade : "";
       return { ...row, courseCode: code, grade, courseName: code === "ME4031" ? (existing?.name || catalog?.name || knownNames[code] || row.courseName || row.courseCode) : (row.courseName || knownNames[code] || existing?.name || catalog?.name || row.courseCode), credits: Number(code === "INHS1020" ? 3 : existing?.credits ?? catalog?.credits ?? parsedCredits ?? fallbackCredits) };
