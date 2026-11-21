@@ -305,29 +305,8 @@ export default function StudentOnlineResultSync({
       setNotice("GECA has not announced a grade for this subject (shown as “-”). Enter the grade from your official grade card, then confirm and save.");
       return;
     }
-    if (reExamMode) {
-      try {
-        const applyResult = await onApply(targetSemester, applicable, sessionTitle, document.title, document.url, 2);
-        if (applyResult === false) { setNotice("The re-examination result could not be applied. Check the message and try again."); return; }
-        // Re-examination success is presented by the parent grade-update dialog.
-        // Do not stack a second confirmation modal over it: that made Done appear
-        // unresponsive because closing this modal revealed the first one again.
-        if (reExamMode) {
-          setAppliedResult(null);
-          setPendingReview(null);
-          setOpen(false);
-          setScan(null);
-          setSelectedSessionId("");
-          setNotice("Re-examination grade applied successfully.");
-          return;
-        }
-        setAppliedResult({rows: applicable, session: sessionTitle, document: document.title, url: document.url, semester: targetSemester});
-        setNotice("Re-examination grades added successfully.");
-      } catch (reason) {
-        setError(reason instanceof Error ? reason.message : "Could not save the re-examination grade. Please retry.");
-      }
-      return;
-    }
+    // Regular and re-examination results must both wait for explicit review.
+    // Fetching a PDF is never permission to mutate grades or show a success dialog.
     setReviewGrades(Object.fromEntries(applicable.map(row => [normalizeCourseCode(row.courseCode), row.grade || ""])));
     setCreditEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), String(row.credits ?? 3)])));
       setCourseNameEdits(Object.fromEntries(applicable.filter(row => row.isNewSubject).map(row => [normalizeCourseCode(row.courseCode), row.courseName || ""])));
