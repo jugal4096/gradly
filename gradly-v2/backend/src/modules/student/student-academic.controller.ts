@@ -195,6 +195,10 @@ export async function saveStudentSemesterResult(req: AuthenticatedRequest, res: 
         "INMC2010",
         "MEOE1040",
         "EE3018",
+        // Open Electives are selected per student and are not always rows in
+        // the base branch curriculum_subjects table. Validate against the
+        // official GECA OE catalogue rather than rejecting a valid OE result.
+        ...openElectiveCodes,
       ]);
       const invalidCodes = [...new Set(normalized
         .map(course => course.code.toUpperCase().replace(/[^A-Z0-9]/g, ""))
