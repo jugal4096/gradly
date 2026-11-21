@@ -56,6 +56,7 @@ export default function StudentOnlineResultSync({
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number }[]>([]);
   const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
+  const [appliedResult, setAppliedResult] = useState<{semester:number; count:number; session:string} | null>(null);
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
   const [savingReview, setSavingReview] = useState(false);
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
@@ -360,6 +361,7 @@ export default function StudentOnlineResultSync({
         setNotice("The subject catalogue was updated, but the semester result was not saved. Retry the result save; the courses will now be recognised.");
         return;
       }
+      setAppliedResult({ semester: pendingReview.semester, count: grades.length, session: pendingReview.session });
       setPendingReview(null);
       setError("");
       setNotice("");
@@ -462,6 +464,7 @@ export default function StudentOnlineResultSync({
         <label style={{display:"block"}}>Details (minimum 10 characters)<textarea value={reportDetails} onChange={e=>setReportDetails(e.target.value)} rows={4} placeholder="Explain what should be corrected…" style={{display:"block",width:"100%",boxSizing:"border-box",marginTop:5,padding:10,borderRadius:8}}/></label>
         {reportMessage&&<p role="status" style={{fontSize:13}}>{reportMessage}</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:14}}><button type="button" onClick={()=>{setReportRow(null);setReportMessage("");}}>Cancel</button><button type="button" disabled={reportBusy||reportDetails.trim().length<10} onClick={()=>void submitMismatchReport()}>{reportBusy?"Submitting…":"Submit report"}</button></div>
       </div></div>}
+      {appliedResult && createPortal(<div style={{position:"fixed",inset:0,zIndex:100030,background:"rgba(8,15,24,.76)",display:"grid",placeItems:"center",padding:16}} role="dialog" aria-modal="true" aria-label="Official grades saved successfully"><section style={{background:"#fff",color:"#14251c",borderRadius:18,padding:26,width:"min(420px,100%)",textAlign:"center",boxShadow:"0 25px 80px rgba(0,0,0,.35)"}}><div style={{fontSize:36,color:"#14804b"}}>✓</div><h2 style={{margin:"8px 0"}}>Grades applied successfully</h2><p>Your Semester {appliedResult.semester} grades ({appliedResult.count} subjects) have been saved from {appliedResult.session}.</p><button type="button" onClick={()=>setAppliedResult(null)} style={{display:"block",width:"100%",marginTop:14,padding:12,border:0,borderRadius:10,background:"#15271d",color:"#fff",fontWeight:800}}>Done</button></section></div>,document.body)}
       <div className="sp-online-result-foot"><span>Source: <a href="https://geca.ac.in/result-master.aspx" target="_blank" rel="noreferrer">GECA Examination Result</a></span><span>Official result · one-step profile update</span></div>
     </section>}
     
