@@ -49,7 +49,11 @@ function safeGecaUrl(href: string): string | null {
   }
 }
 
-const GECA_FETCH_ATTEMPTS = 3;
+// Retry transient GECA/network failures indefinitely. A fixed attempt ceiling can
+// incorrectly fail valid result lookups while the college archive is unavailable.
+// Capped exponential backoff prevents repeatedly hammering GECA.
+const GECA_RETRY_INITIAL_DELAY_MS = 1_000;
+const GECA_RETRY_MAX_DELAY_MS = 30_000;
 
 function isRetryableFetchError(error: unknown): boolean {
   const candidate = error as { name?: string; code?: string; cause?: { code?: string } };
@@ -59,12 +63,22 @@ function isRetryableFetchError(error: unknown): boolean {
     candidate instanceof TypeError;
 }
 
+function retryDelay(attempt: number): number {
+  const exponential = Math.min(
+    GECA_RETRY_MAX_DELAY_MS,
+    GECA_RETRY_INITIAL_DELAY_MS * (2 ** Math.min(attempt - 1, 10)),
+  );
+  return Math.round(exponential * (0.8 + Math.random() * 0.4));
+}
+
 async function fetchGecaResponse(url: string, accept: string, timeoutMs: number): Promise<Response> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) throw new Error("The GECA result link is not a trusted college URL.");
 
+  let attempt = 0;
   let lastError: unknown;
-  for (let attempt = 1; attempt <= GECA_FETCH_ATTEMPTS; attempt += 1) {
+  while (true) {
+    attempt += 1;
     try {
       const response = await fetch(safeUrl, {
         signal: AbortSignal.timeout(timeoutMs),
@@ -75,20 +89,33 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
         },
       });
       if (response.ok) return response;
+
       const statusError = new Error("GECA returned HTTP " + response.status + ".");
-      if (response.status < 500 || attempt === GECA_FETCH_ATTEMPTS) throw statusError;
+      // Retry rate limits and transient gateway/server failures. Other 4xx
+      // responses (such as a missing PDF) are permanent for this URL.
+      const retryableStatus = response.status === 408 || response.status === 425 ||
+        response.status === 429 || response.status >= 500;
+      if (!retryableStatus) {
+        try { await response.body?.cancel(); } catch { /* response is unusable */ }
+        throw statusError;
+      }
       lastError = statusError;
       try { await response.body?.cancel(); } catch { /* retry with a fresh request */ }
     } catch (error) {
       lastError = error;
-      const httpStatus = error instanceof Error ? Number(error.message.match(/GECA returned HTTP (\d{3})/)?.[1] || 0) : 0;
-      if ((httpStatus >= 400 && httpStatus < 500) || (!httpStatus && !isRetryableFetchError(error)) || attempt === GECA_FETCH_ATTEMPTS) break;
+      const httpStatus = error instanceof Error
+        ? Number(error.message.match(/GECA returned HTTP (\d{3})/)?.[1] || 0)
+        : 0;
+      if (httpStatus && httpStatus !== 408 && httpStatus !== 425 && httpStatus !== 429 && httpStatus < 500) {
+        throw error;
+      }
+      if (!httpStatus && !isRetryableFetchError(error)) throw error;
     }
-    await new Promise(resolve => setTimeout(resolve, attempt * 450));
-  }
 
-  const detail = lastError instanceof Error ? lastError.message : "unknown network error";
-  throw new Error("GECA request failed after " + GECA_FETCH_ATTEMPTS + " attempts: " + detail);
+    const detail = lastError instanceof Error ? lastError.message : "unknown network error";
+    console.warn("GECA request failed; retrying indefinitely:", safeUrl, "attempt", attempt, detail);
+    await new Promise(resolve => setTimeout(resolve, retryDelay(attempt)));
+  }
 }
 
 async function fetchGecaText(url: string): Promise<string> {
