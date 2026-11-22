@@ -242,7 +242,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
         if (nextDistance < distance) { nearest = column; distance = nextDistance; }
       }
       const verticalDistance = Math.abs(cell.y - enrollmentY);
-      if (nearest && distance < 80 && !["AB", "P"].includes(cell.grade)) {
+      if (nearest && distance < 80) {
         const existing = nearestCellByCourse.get(nearest.courseCode);
         if (!existing || verticalDistance < existing.verticalDistance) nearestCellByCourse.set(nearest.courseCode, { grade: cell.grade === "-" ? "" : cell.grade, verticalDistance });
       }
@@ -268,7 +268,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
       const orderedGrades = [...completeGradeRow[1]].sort((a, b) => a.x - b.x);
       sortedColumns.forEach((column, index) => {
         const grade = orderedGrades[index]?.grade;
-        if (grade && !["AB", "P"].includes(grade) && !mapped.has(column.courseCode)) {
+        if (grade && !mapped.has(column.courseCode)) {
           mapped.set(column.courseCode, grade === "-" ? "" : grade);
         }
       });
@@ -299,7 +299,7 @@ function gradesInEnrollmentRow(line: TextLine, enrollment: string, columns: Cour
     if (positionalGrades.length === sortedColumns.length) {
       sortedColumns.forEach((column, index) => {
         const grade = positionalGrades[index];
-        if (grade && !["AB", "P"].includes(grade) && !mapped.has(column.courseCode)) {
+        if (grade && !mapped.has(column.courseCode)) {
           mapped.set(column.courseCode, grade === "-" ? "" : grade);
         }
       });
@@ -368,7 +368,7 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
         x: item.x,
         y: line.items[0]?.y ?? studentY,
       }))))
-      .filter(cell => !["AB", "P"].includes(cell.grade))
+      
       .map(cell => ({
         ...cell,
         horizontalDistance: Math.abs(cell.x - header.x),
