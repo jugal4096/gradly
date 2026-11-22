@@ -67,11 +67,11 @@ export default function CommunitiesSuperAdminPage() {
     finally{setBusy(false);}
   };
 
-  const changeAdminRole=async(action:"grant"|"revoke")=>{
-    if(!adminCode.trim()) return;
+  const changeAdminRole=async(action:"grant"|"revoke",targetCode=adminCode)=>{
+    if(!targetCode.trim()) return;
     setBusy(true);setError("");
     try {
-      await request("/ecosystem/super-admin/admin-roles",token,{method:"POST",body:JSON.stringify({adminCode:adminCode.trim(),action})});
+      await request("/ecosystem/super-admin/admin-roles",token,{method:"POST",body:JSON.stringify({adminCode:targetCode.trim(),action})});
       setNotice(action==="grant"?"Communities Admin access granted.":"Communities Admin access revoked.");
       setAdminCode("");
       await load();
@@ -109,7 +109,7 @@ export default function CommunitiesSuperAdminPage() {
       <section className="cs-metrics"><article><small>COMMUNITIES ACCOUNTS</small><strong>{loading?"—":overview?.users??0}</strong></article><article><small>ACTIVE GROUPS</small><strong>{loading?"—":overview?.groups??0}</strong></article><article><small>MESSAGES</small><strong>{loading?"—":overview?.messages??0}</strong></article><article><small>OPEN REPORTS</small><strong>{loading?"—":overview?.openReports??0}</strong></article></section>
       <section className="cs-card"><div className="cs-card-title"><div><span>ACCESS CONTROL</span><h2>Communities Platform Admins</h2><p>Grant access using the existing Gradly Admin ID. Access is independent from academic permissions.</p></div></div>
         <form className="cs-grant-form" onSubmit={(e)=>{e.preventDefault();void changeAdminRole("grant");}}><input value={adminCode} onChange={(e)=>setAdminCode(e.target.value)} placeholder="Enter existing Admin ID" required/><button className="primary" disabled={busy}>Grant access</button></form>
-        <div className="cs-admin-list">{admins.map((admin)=><div className="cs-admin-row" key={admin.admin_code}><div><b>{admin.admin_code}</b><small>{admin.role} · {admin.revoked_at?"Revoked":"Active"}</small></div>{!admin.revoked_at&&<button onClick={()=>{setAdminCode(admin.admin_code);void changeAdminRole("revoke");}} disabled={busy}>Revoke</button>}</div>)}{!admins.length&&<p>No Admins have Communities access yet.</p>}</div>
+        <div className="cs-admin-list">{admins.map((admin)=><div className="cs-admin-row" key={admin.admin_code}><div><b>{admin.admin_code}</b><small>{admin.role} · {admin.revoked_at?"Revoked":"Active"}</small></div>{!admin.revoked_at&&<button onClick={()=>void changeAdminRole("revoke",admin.admin_code)} disabled={busy}>Revoke</button>}</div>)}{!admins.length&&<p>No Admins have Communities access yet.</p>}</div>
       </section>
       <section className="cs-card"><div className="cs-card-title"><div><span>PLATFORM POLICY</span><h2>Usage limits</h2><p>Limits are enforced by the Communities service. Media controls take effect when R2 uploads are enabled.</p></div></div>
         <form className="cs-limits-grid" onSubmit={saveLimits}>
