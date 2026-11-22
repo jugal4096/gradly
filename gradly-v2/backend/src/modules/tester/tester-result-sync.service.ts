@@ -89,7 +89,7 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
 }
 
 async function fetchGecaText(url: string): Promise<string> {
-  const response = await fetchGecaResponse(url, "text/html,application/xhtml+xml", 18000);
+  const response = await fetchGecaResponse(url, "text/html,application/xhtml+xml", 12000);
   return response.text();
 }
 
@@ -476,7 +476,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
 }> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) return { document: null, enrollmentFound: false, error: "untrusted-url" };
-  const response = await fetchGecaResponse(safeUrl, "application/pdf,application/octet-stream,*/*", 25000);
+  const response = await fetchGecaResponse(safeUrl, "application/pdf,application/octet-stream,*/*", 18000);
 
   const declaredLength = Number(response.headers.get("content-length") || 0);
   if (declaredLength > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large" };
