@@ -91,7 +91,7 @@ export default function TesterOnlineResultSync({
   useEffect(() => {
     if (!curriculumId || !selectedSemester) { setCatalogue([]); return; }
     let cancelled = false;
-    void fetch(apiBase + "/api/academic/curricula/" + encodeURIComponent(curriculumId) + "/semesters/" + selectedSemester + "/subjects?includeAllBranches=true")
+    void fetch(apiBase + "/api/academic/curricula/" + encodeURIComponent(curriculumId) + "/semesters/" + selectedSemester + "/subjects?includeAllBranches=true&includeAllSemesters=true")
       .then(response => response.json().then(body => ({ response, body })))
       .then(({ response, body }) => {
         if (!cancelled && response.ok && Array.isArray(body.data)) {
