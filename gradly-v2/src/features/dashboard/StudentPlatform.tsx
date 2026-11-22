@@ -228,7 +228,7 @@ function getNepPromotionStatus(profile:Profile,records:Record<number,Subject[]>)
   else if(!dse&&current===6) checkpoint={label:"Promotion to Semester VII",after:6,requirements:[{label:"First Year",semesters:[1,2],credits:40},{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
   if(!checkpoint) return {checkpoint:false,current,dse,status:"not-applicable",label:"No annual promotion checkpoint",message:"The published GECA NEP rules define credit thresholds at the end of each academic year, not for every semester transition."};
   const relevantSemesters=checkpoint.requirements.flatMap(item=>item.semesters);
-  const hasRecords=relevantSemesters.some(semester=>(records[semester]||[]).length>0);
+  const hasRecords=relevantSemesters.some(semester=>(records[semester]||[]).some(subject=>POINTS[String(subject.grade||"").trim().toUpperCase()]!==undefined));
   const seen=new Set<string>();
   const rows:{semester:number;subject:Subject}[]=[];
   for(const [semester,subjects] of Object.entries(records)) for(const subject of subjects||[]) {
