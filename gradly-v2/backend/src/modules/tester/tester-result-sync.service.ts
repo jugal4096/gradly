@@ -601,12 +601,13 @@ export function extractSubjectResultGrades(
       .toLowerCase();
     if (!branchTerms.some(term => branchText.includes(term.toLowerCase()))) continue;
 
-    const codeText = rowItems
-      .filter(item => item.x >= codeX - 35 && item.x < branchX - 5)
-      .map(item => item.text)
-      .join("");
-    const courseCode = normalized(codeText);
-    if (!/^[A-Z]{2,6}\d{4}$/.test(courseCode)) continue;
+    // The code can sit slightly left/right of its header, and the branch
+    // value can overlap the nominal CCODE-to-BRANCH coordinate interval.
+    // Search the complete matched row for a course-code token instead of
+    // concatenating a coordinate slice that may include title/branch text.
+    const compactRowText = normalized(rowItems.map(item => item.text).join(" "));
+    const courseCode = compactRowText.match(/[A-Z]{2,6}\\d{4}/)?.[0] ?? "";
+    if (!courseCode) continue;
 
     const grade = rowItems
       .filter(item => item.x >= gradeX - 2)
