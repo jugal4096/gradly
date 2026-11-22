@@ -20,7 +20,6 @@ async function api(path: string, token?: string, options: RequestInit = {}) {
 
 export default function CommunitiesPanel() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || "");
-  const selectedGroupId = selected?.id;
   const [user, setUser] = useState<User | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -33,6 +32,7 @@ export default function CommunitiesPanel() {
   const [mine, setMine] = useState<Group[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Group | null>(null);
+  const selectedGroupId = selected?.id;
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState("");
