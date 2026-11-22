@@ -199,12 +199,13 @@ export default function CommunitiesPanel() {
         const data = await api(`/groups/${selectedGroupId}/messages?limit=75`, token);
         setMessages(data.messages || []);
       } else if (socketRef.current?.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ type: "message", body }));
+        socketRef.current.send(JSON.stringify({ type: "message", body, replyToId: replyTo?.id || null }));
       } else {
-        const data = await api(`/groups/${selectedGroupId}/messages`, token, { method: "POST", body: JSON.stringify({ body }) });
+        const data = await api(`/groups/${selectedGroupId}/messages`, token, { method: "POST", body: JSON.stringify({ body, replyToId: replyTo?.id || null }) });
         setMessages((current) => [...current, data.message]);
       }
       setDraft("");
+      setReplyTo(null);
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); composerRef.current?.focus(); }
   };
