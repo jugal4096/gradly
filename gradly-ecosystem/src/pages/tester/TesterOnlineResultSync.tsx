@@ -67,6 +67,8 @@ export default function TesterOnlineResultSync({
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number; courseType?: string }[]>([]);
+  const [catalogueLoading, setCatalogueLoading] = useState(true);
+  const [catalogueError, setCatalogueError] = useState("");
   const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
@@ -76,28 +78,33 @@ export default function TesterOnlineResultSync({
   const testerRegistryKey="gradly_tester_discovered_subjects_"+curriculumId;
   const [testerDiscoveredRegistry, setTesterDiscoveredRegistry] = useState<Record<string,{courseName:string;credits:number;courseCategory:string}>>({});
   useEffect(() => {
-    setCreditEdits({});
-    setCourseNameEdits({});
-    try {
-      const saved=JSON.parse(testerStorageGet(testerRegistryKey)||"{}");
-      setTesterDiscoveredRegistry(saved&&typeof saved==="object"&&!Array.isArray(saved)?saved:{});
-    } catch { setTesterDiscoveredRegistry({}); }
-  }, [testerRegistryKey]);
-  
-  const [reExamMode, setReExamMode] = useState(false);
-  const [reExamConfirmed, setReExamConfirmed] = useState(false);
-  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*(?:exam|ese)|re[\\s-]*examination|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
-
-  useEffect(() => {
-    if (!curriculumId || !selectedSemester) { setCatalogue([]); return; }
+    if (!curriculumId || !selectedSemester) {
+      setCatalogue([]);
+      setCatalogueError("Select a valid curriculum and semester before fetching official results.");
+      setCatalogueLoading(false);
+      return;
+    }
     let cancelled = false;
+    setCatalogueLoading(true);
+    setCatalogueError("");
     void fetch(apiBase + "/api/academic/curricula/" + encodeURIComponent(curriculumId) + "/semesters/" + selectedSemester + "/subjects?includeAllBranches=true&includeAllSemesters=true")
-      .then(response => response.json().then(body => ({ response, body })))
-      .then(({ response, body }) => {
-        if (!cancelled && response.ok && Array.isArray(body.data)) {
-          setCatalogue(body.data.map((item: { code?: string | number | null; name?: string | null; credits?: string | number | null; courseType?: string | null; course_type?: string | null }) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0), courseType: String(item.courseType || item.course_type || "").trim() })));
-        }
-      }).catch(() => { if (!cancelled) setCatalogue([]); });
+      .then(async response => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.message || "The curriculum catalogue could not be loaded.");
+        if (!Array.isArray(body.data)) throw new Error("The curriculum catalogue returned an invalid response.");
+        return body.data;
+      })
+      .then(data => {
+        if (cancelled) return;
+        setCatalogue(data.map((item: { code?: string | number | null; name?: string | null; credits?: string | number | null; courseType?: string | null; course_type?: string | null }) => ({ code: String(item.code || ""), name: String(item.name || ""), credits: Number(item.credits || 0), courseType: String(item.courseType || item.course_type || "").trim() })));
+        setCatalogueLoading(false);
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setCatalogue([]);
+        setCatalogueError(error instanceof Error ? error.message : "Unable to load the curriculum catalogue.");
+        setCatalogueLoading(false);
+      });
     return () => { cancelled = true; };
   }, [apiBase, curriculumId, selectedSemester]);
 
@@ -143,6 +150,7 @@ export default function TesterOnlineResultSync({
     // Enforce one examination-session scan at a time, even if rapid clicks bypass
     // React's disabled-button render before state updates.
     if (activeRequest.current || loadingSessionId) return;
+    if (catalogueLoading || catalogueError) { setError(catalogueLoading ? "The curriculum catalogue is still loading. Please wait before scanning results." : "Result review is paused because the curriculum catalogue could not be loaded: " + catalogueError); return; }
     const controller = new AbortController();
     activeRequest.current = controller;
     setShowCancelConfirm(false);
@@ -420,9 +428,9 @@ export default function TesterOnlineResultSync({
       </div>, document.body)}
 {reExamMode && !reExamConfirmed && createPortal(<div className="sp-online-reexam-confirm" role="dialog" aria-modal="true" aria-label="Choose whether to fetch a re-examination result"><span className="sp-online-reexam-icon" aria-hidden="true">↗</span><strong>Are you fetching a re-examination result?</strong><p>Choose Yes only if you have applied for re-examination for this backlog subject. Gradly will then show the GECA re-exam sessions; your existing grade stays untouched unless a matching result is found.</p><div><button type="button" className="sp-online-reexam-no" onClick={() => { onCancelReExam?.(); setReExamMode(false); setReExamConfirmed(false); setOpen(false); }}>No, not now</button><button type="button" className="sp-online-reexam-yes" onClick={() => { setReExamConfirmed(true); void openArchive(); }}>Yes, fetch re-exam</button></div></div>, document.body)}{loadingSessions && <p className="sp-online-result-muted">Loading the current examination list from GECA…</p>}
       {!loadingSessions && reExamMode && sessions.length>0 && visibleSessions.length===0 && <p className="sp-online-result-muted">No re-examination sessions are currently listed in the GECA archive. Regular examination sessions are hidden in this view.</p>}
-      {error && <p className="sp-online-result-error" role="alert">{error}</p>}
+      {error && <p className="sp-online-result-error" role="alert">{error}</p>}{catalogueLoading && <p className="sp-online-result-muted" role="status">Loading your full curriculum catalogue before enabling result review…</p>}{catalogueError && <p className="sp-online-result-error" role="alert">Curriculum catalogue unavailable. Result scanning is paused to prevent existing subjects being incorrectly registered as new: {catalogueError}</p>}
       {(!reExamMode || reExamConfirmed) && visibleSessions.length > 0 && <div className="sp-online-session-list">
-        {visibleSessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId)}>
+        {visibleSessions.map(session => <button type="button" key={session.id} className={"sp-online-session " + (selectedSessionId === session.id ? "active" : "")} onClick={() => void inspectSession(session)} disabled={Boolean(loadingSessionId) || catalogueLoading || Boolean(catalogueError)}>
           <span><b>{session.title}</b><small>GECA examination result</small></span>
           <strong>{loadingSessionId === session.id ? "Scanning PDFs…" : selectedSessionId === session.id ? "Selected" : "Fetch grades →"}</strong>
         </button>)}
