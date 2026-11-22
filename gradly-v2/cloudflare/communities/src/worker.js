@@ -130,6 +130,22 @@ async function sendLoginEmail(env, email, displayName, token) {
   });
   if (!response.ok) throw new Error("Email provider rejected the sign-in email (" + response.status + ").");
 }
+async function sendGroupInviteEmail(env, email, groupName, inviterName, token) {
+  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Group invitations require the Communities email provider to be configured.");
+  const base=env.COMMUNITY_APP_URL||"https://gradly-peach.vercel.app";
+  const link=base.replace(/\/$/,"")+"/community/verify?inviteToken="+encodeURIComponent(token);
+  const response=await fetch("https://api.resend.com/emails",{
+    method:"POST",
+    headers:{"authorization":"Bearer "+env.RESEND_API_KEY,"content-type":"application/json"},
+    body:JSON.stringify({
+      from:env.EMAIL_FROM,
+      to:[email],
+      subject:"You have been invited to a Gradly study group",
+      html:"<div style='font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#171717'><h2>You are invited to "+escapeHtml(groupName)+".</h2><p>"+escapeHtml(inviterName)+" invited you to join this Gradly Communities group.</p><p><a href='"+link+"' style='display:inline-block;background:#171717;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none'>View invitation</a></p><p>This invitation expires in 7 days. You may need to create and verify a Communities account before accepting.</p></div>"
+    })
+  });
+  if(!response.ok) throw new Error("Email provider rejected the invitation ("+response.status+").");
+}
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[char]);
 }
@@ -525,7 +541,28 @@ export default {
         return env.CHAT_ROOMS.getByName(groupId).fetch(new Request(request, { headers }));
       }
 
-      const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests|pins|members))?$/i);
+      if (path==="/groups/invites/accept" && request.method==="POST") {
+        const body=await parseBody(request);
+        const token=String(body?.token||"");
+        if (token.length<32||token.length>128) return fail(request,"Invitation link is invalid or expired.",400);
+        const record=await env.DB.prepare("SELECT i.id,i.group_id,i.invited_email,g.name,g.status AS group_status FROM chat_group_invites i JOIN chat_groups g ON g.id=i.group_id WHERE i.token_hash=? AND i.accepted_at IS NULL AND i.expires_at>?")
+          .bind(await sha256(token),now()).first();
+        if (!record || record.group_status!=="active") return fail(request,"Invitation link is invalid or expired.",400);
+        if (String(record.invited_email).toLowerCase()!==String(user.email).toLowerCase()) return fail(request,"Sign in with the email address this invitation was sent to.",403);
+        const limits=await getLimits(env);
+        const memberships=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE user_id=? AND status='active'").bind(user.id).first();
+        if ((memberships?.total||0)>=limits.maxGroupMemberships) return fail(request,"You have reached your group membership limit.",429);
+        const groupCount=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE group_id=? AND status='active'").bind(record.group_id).first();
+        if ((groupCount?.total||0)>=limits.maxGroupMembers) return fail(request,"This group has reached its member limit.",429);
+        await env.DB.batch([
+          env.DB.prepare("UPDATE chat_group_invites SET accepted_at=? WHERE id=? AND accepted_at IS NULL").bind(now(),record.id),
+          env.DB.prepare("INSERT INTO chat_group_members(group_id,user_id,role,status) VALUES(?,?,'member','active') ON CONFLICT(group_id,user_id) DO UPDATE SET role='member',status='active',joined_at=?").bind(record.group_id,user.id,now())
+        ]);
+        await audit(env,user.id,"group.invite.accepted","group",record.group_id);
+        return reply(request,{success:true,group:{id:record.group_id,name:record.name}});
+      }
+
+      const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests|pins|members|invites))?$/i);
       if (groupMatch) {
         const groupId = groupMatch[1];
         const action = groupMatch[2] || "";
@@ -669,6 +706,23 @@ export default {
           } else return fail(request,"Unsupported member action.");
           await audit(env,user.id,"member."+operation,"user",targetId,"Group moderation",{groupId});
           return reply(request,{success:true});
+        }
+
+        if (action === "invites" && request.method === "POST") {
+          if (!membership || !["owner","admin","moderator"].includes(membership.role)) return fail(request,"Group moderator permission required.",403);
+          if (!env.RESEND_API_KEY || !env.EMAIL_FROM) return fail(request,"Email invitations are not configured yet.",503);
+          const body=await parseBody(request);
+          const email=String(body?.email||"").trim().toLowerCase();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length>254) return fail(request,"Enter a valid invitation email address.");
+          const existingMember=await env.DB.prepare("SELECT 1 FROM chat_group_members m JOIN chat_users u ON u.id=m.user_id WHERE m.group_id=? AND u.email=? AND m.status='active'").bind(groupId,email).first();
+          if (existingMember) return fail(request,"This student is already a member.",409);
+          const token=randomToken();
+          await env.DB.prepare("INSERT INTO chat_group_invites(id,group_id,invited_email,invited_by,token_hash,expires_at) VALUES(?,?,?,?,?,?)")
+            .bind(id(),groupId,email,user.id,await sha256(token),new Date(Date.now()+7*86400_000).toISOString()).run();
+          try { await sendGroupInviteEmail(env,email,group.name,user.display_name,token); }
+          catch(error) { return fail(request,"Invitation saved, but email could not be sent. "+error.message,502); }
+          await audit(env,user.id,"group.invite.sent","group",groupId,"Invite sent to "+email);
+          return reply(request,{success:true,message:"Group invitation sent."},201);
         }
 
         if (action === "reports" && request.method === "POST") {
