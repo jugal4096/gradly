@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { pool } from "../../config/database";
+import { pool, queryWithRetry } from "../../config/database";
 import { createTesterToken } from "../../config/jwt";
 import { previewEnrollment } from "../academic/enrollment-intelligence.service";
 import { TesterAuthenticatedRequest } from "./tester-auth.middleware";
@@ -12,7 +12,7 @@ export async function loginTester(req: Request, res: Response) {
     return res.status(400).json({ message: "Enter a valid tester ID and password." });
   }
   try {
-    const result = await pool.query(
+    const result = await queryWithRetry(
       "SELECT id, login_id, password_hash, status FROM tester_accounts WHERE LOWER(login_id)=LOWER($1) LIMIT 1",
       [loginId.trim()],
     );
@@ -30,7 +30,7 @@ export async function loginTester(req: Request, res: Response) {
 }
 
 async function requireActiveTester(req: TesterAuthenticatedRequest, res: Response): Promise<boolean> {
-  const result = await pool.query("SELECT status FROM tester_accounts WHERE id=$1 LIMIT 1", [req.tester?.testerId]);
+  const result = await queryWithRetry("SELECT status FROM tester_accounts WHERE id=$1 LIMIT 1", [req.tester?.testerId]);
   if (result.rows[0]?.status === "ACTIVE") return true;
   res.status(401).json({ message: "This tester account is no longer active." });
   return false;
@@ -76,9 +76,9 @@ export async function listTesterDiscoveredResultSubjects(req: TesterAuthenticate
     const curriculumId = String(req.query.curriculumId || "");
     const codes = String(req.query.codes || "").split(",").map(value => value.toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean).slice(0, 100);
     if (!curriculumId || !codes.length) return res.json({ success: true, data: [] });
-    const curriculum = await pool.query("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
+    const curriculum = await queryWithRetry("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
     if (!curriculum.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
-    const result = await pool.query(
+    const result = await queryWithRetry(
       `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
        FROM public.discovered_result_subjects WHERE curriculum_id=$1 AND course_code=ANY($2::text[])`,
       [curriculumId, codes],
@@ -115,7 +115,7 @@ export async function confirmTesterDiscoveredResultSubject(req: TesterAuthentica
     if (!curriculumId || !/^[A-Z0-9]{4,16}$/.test(courseCode) || courseName.length < 2 || !Number.isFinite(credits) || credits < 0 || credits > 30 || !Number.isInteger(semesterNumber) || semesterNumber < 1 || semesterNumber > 12) {
       return res.status(400).json({ success: false, message: "Enter a valid curriculum, course code, subject name, semester and credit value." });
     }
-    const curriculum = await pool.query("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
+    const curriculum = await queryWithRetry("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
     if (!curriculum.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
     const inserted = await pool.query(
       `INSERT INTO public.discovered_result_subjects
@@ -125,9 +125,8 @@ export async function confirmTesterDiscoveredResultSubject(req: TesterAuthentica
        RETURNING course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"`,
       [curriculumId, courseCode, courseName, courseCategory, credits, semesterNumber],
     );
-    const row = inserted.rows[0] || (await pool.query(
-      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
-       FROM public.discovered_result_subjects WHERE curriculum_id=$1 AND course_code=$2 LIMIT 1`,
+    const row = inserted.rows[0] || (await queryWithRetry(
+      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"`,
       [curriculumId, courseCode],
     )).rows[0];
     return res.status(inserted.rowCount ? 201 : 200).json({ success: true, created: Boolean(inserted.rowCount), data: row, sharedCatalogue: true, testerProfileIsolated: true });
