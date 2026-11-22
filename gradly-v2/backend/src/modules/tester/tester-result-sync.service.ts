@@ -581,7 +581,16 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     throw error;
   }
 
-  const pdf = await getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true }).promise;
+  // GECA's embedded TrueType fonts can contain unsupported optional
+  // instructions (for example "TT: undefined function: 21"). PDF.js still
+  // extracts the text layer; suppress only its non-fatal warnings.
+  const pdf = await getDocument({
+    data: bytes,
+    useSystemFonts: true,
+    disableFontFace: true,
+    verbosity: 0,
+    stopAtErrors: false,
+  }).promise;
   const allLines: TextLine[] = [];
   let metadataText = "";
   let parsed = { grades: [] as GecaMatchedGrade[], enrollmentFound: false };
@@ -710,7 +719,7 @@ function academicSemesterBeforeLink(markup: string): number | null {
   return semester;
 }
 
-function academicSectionsForEnrollment(enrollment: string, sessionTitle: string, selectedSemester?: number): GecaAcademicSection[] {
+export function academicSectionsForEnrollment(enrollment: string, sessionTitle: string, selectedSemester?: number): GecaAcademicSection[] {
   const sections = new Set<GecaAcademicSection>();
   const admissionYearMatch = enrollment.match(/^(?:BT|BE)(\d{2})/);
   const examYearMatch = sessionTitle.match(/\b(20\d{2})\b/);
@@ -731,6 +740,27 @@ function academicSectionsForEnrollment(enrollment: string, sessionTitle: string,
     if (section) sections.add(section);
   }
   return [...sections];
+}
+
+/**
+ * GECA's year headings are useful for prioritising PDFs, but must never be a
+ * hard exclusion: a portal markup change must not hide an exact enrollment
+ * match in a first-year result PDF.
+ */
+export function selectGecaAcademicDocuments<T extends { academicSection: GecaAcademicSection | null }>(
+  documents: T[],
+  expectedSections: GecaAcademicSection[],
+  pageHasAcademicSections: boolean,
+): { documents: T[]; fallbackUsed: boolean } {
+  if (!pageHasAcademicSections || !expectedSections.length) {
+    return { documents, fallbackUsed: false };
+  }
+  const matching = documents.filter(document =>
+    document.academicSection !== null && expectedSections.includes(document.academicSection),
+  );
+  return matching.length
+    ? { documents: matching, fallbackUsed: false }
+    : { documents, fallbackUsed: true };
 }
 
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
@@ -770,19 +800,15 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
 
   const expectedAcademicSections = academicSectionsForEnrollment(enrollment, session.title, selectedSemester);
   const pageHasAcademicSections = unique.some(item => item.academicSection !== null);
-  let eligibleDocuments = unique;
-  if (pageHasAcademicSections && expectedAcademicSections.length) {
-    eligibleDocuments = unique.filter(item => item.academicSection !== null && expectedAcademicSections.includes(item.academicSection));
-    if (!eligibleDocuments.length) {
-      throw new Error(
-        "GECA lists academic-year result sections, but none match this enrollment and selected semester. Expected: " +
-        expectedAcademicSections.join(", ") + ". Check the admission type, examination session and selected semester.",
-      );
-    }
+  const sectionSelection = selectGecaAcademicDocuments(unique, expectedAcademicSections, pageHasAcademicSections);
+  let eligibleDocuments = sectionSelection.documents.slice(0, MAX_RESULT_PDFS);
+  let academicSectionFallbackUsed = sectionSelection.fallbackUsed;
+  if (academicSectionFallbackUsed) {
+    console.warn(
+      "GECA academic-year headings did not match the enrollment; scanning official result PDFs without the section filter.",
+      { expectedAcademicSections, selectedSemester, linkedResultPdfs: unique.length },
+    );
   }
-  // Apply the safety cap after academic-section selection, so unrelated
-  // department/year links cannot consume the result-PDF scan budget.
-  eligibleDocuments = eligibleDocuments.slice(0, MAX_RESULT_PDFS);
 
   // Branch and semester filtering runs only inside eligible academic-year
   // sections. A miss must never trigger a scan of unrelated year sections.
@@ -847,11 +873,26 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
 
   await scanDocuments(candidates);
 
-  // Filtering is only an optimisation. If it yields no enrollment hit,
-  // inspect every remaining PDF in the eligible academic-year section(s).
-  if (enrollmentHits === 0 && candidates.length < eligibleDocuments.length) {
-    const remaining = eligibleDocuments.filter(item => !scannedUrls.has(item.url));
-    await scanDocuments(remaining);
+  // Section, branch and semester labels are prioritisation hints only. If the
+  // targeted scan has no usable grade document and no download failures, widen
+  // once to the remaining official result PDFs. This recovers first-year data
+  // when GECA moves a link under a different heading or changes its markup.
+  // Keep a hard total scan budget so a large archive cannot hang the request.
+  if (matches.length === 0 && downloadFailures === 0 && scannedUrls.size < MAX_RESULT_PDFS) {
+    const remaining = unique
+      .filter(item => !scannedUrls.has(item.url))
+      .slice(0, MAX_RESULT_PDFS - scannedUrls.size);
+    if (remaining.length) {
+      academicSectionFallbackUsed = academicSectionFallbackUsed || remaining.some(item =>
+        item.academicSection !== null && !expectedAcademicSections.includes(item.academicSection),
+      );
+      console.info("GECA targeted scan found no usable grades; widening to remaining official PDFs.", {
+        selectedSemester,
+        expectedAcademicSections,
+        fallbackDocuments: remaining.length,
+      });
+      await scanDocuments(remaining);
+    }
   }
 
   // Never present a partial scan as a definitive "no result" or allow a
@@ -874,6 +915,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     session,
     documentsScanned: scannedUrls.size,
     expectedAcademicSections,
+    academicSectionFallbackUsed,
     candidateDocuments: eligibleDocuments.length,
     enrollmentHits,
     parseFailures,
