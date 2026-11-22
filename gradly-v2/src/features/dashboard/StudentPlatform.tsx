@@ -1274,7 +1274,8 @@ export default function StudentPlatform() {
     event.preventDefault(); if(!aiInput.trim()) return;
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
-  const nepCreditProgress=getNepCreditProgress(profile,savedSubjectsBySemester);\n  const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
+  const nepCreditProgress=getNepCreditProgress(profile,savedSubjectsBySemester);
+  const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
 
