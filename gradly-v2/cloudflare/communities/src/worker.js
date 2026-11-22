@@ -295,6 +295,29 @@ export default {
         return reply(request, { success: true, group: { id: groupId, name, description, category, visibility, role: "owner", member_count: 1 } }, 201);
       }
 
+      const liveMatch = path.match(/^\\/groups\\/([a-f0-9-]+)\\/live$/i);
+      if (liveMatch && request.method === "GET") {
+        if (request.headers.get("Upgrade") !== "websocket") return fail(request, "WebSocket upgrade required.", 426);
+        const groupId = liveMatch[1];
+        const ticket = url.searchParams.get("ticket") || "";
+        if (ticket.length < 32 || ticket.length > 128) return fail(request, "Socket ticket is invalid or expired.", 401);
+        const ticketHash = await sha256(ticket);
+        const record = await env.DB.prepare(`
+          SELECT id,user_id FROM chat_socket_tickets
+          WHERE token_hash=? AND group_id=? AND consumed_at IS NULL AND expires_at>?
+        `).bind(ticketHash,groupId,now()).first();
+        if (!record) return fail(request, "Socket ticket is invalid or expired.", 401);
+        const consumed = await env.DB.prepare(`
+          UPDATE chat_socket_tickets SET consumed_at=?
+          WHERE id=? AND consumed_at IS NULL AND expires_at>?
+        `).bind(now(),record.id,now()).run();
+        if ((consumed.meta?.changes || 0) !== 1) return fail(request, "Socket ticket has already been used.", 401);
+        const headers = new Headers(request.headers);
+        headers.set("x-chat-user", record.user_id);
+        headers.set("x-chat-group", groupId);
+        return env.CHAT_ROOMS.getByName(groupId).fetch(new Request(request, { headers }));
+      }
+
       const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests))?$/i);
       if (groupMatch) {
         const groupId = groupMatch[1];
