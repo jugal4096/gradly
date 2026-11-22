@@ -13,12 +13,14 @@ const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
 
 export type GecaResultSession = { id: string; title: string; url: string };
 export type GecaMatchedGrade = { courseCode: string; grade: string; courseName?: string };
+export type GecaAcademicSection = "FIRST_YEAR" | "SECOND_YEAR" | "THIRD_YEAR" | "FINAL_YEAR";
 export type GecaMatchedDocument = {
   title: string;
   url: string;
   programme: string | null;
   scheme: string | null;
   semester: number | null;
+  academicSection?: GecaAcademicSection | null;
   grades: GecaMatchedGrade[];
 };
 
@@ -499,7 +501,7 @@ function romanSemester(text: string): number | null {
   return values[match[1].toUpperCase()] ?? null;
 }
 
-async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string): Promise<{
+async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null): Promise<{
   document: GecaMatchedDocument | null;
   enrollmentFound: boolean;
   error?: string;
@@ -584,6 +586,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     programme: programmeMatch?.[1]?.trim() || null,
     scheme: schemeMatch?.[1]?.toUpperCase() || null,
     semester,
+    academicSection: academicSection || null,
     // Course names are resolved only from the page that supplied this
     // student's matched grade row; never borrow a similarly positioned title
     // from another page or another student's result table.
@@ -597,10 +600,63 @@ const BRANCH_NAMES: Record<string, string[]> = {
   "04": ["electronics", "entc"], "05": ["computer", "cse"],
   "06": ["information technology", "information tech"],
 };
+const BRANCH_SUBJECT_PREFIXES: Record<string, string[]> = {
+  "01": ["CEESC", "CEPCC", "CEOE"],
+  "02": ["MEESC", "MEPCC", "MEIKS"],
+  "03": ["EEESC", "EEPCC", "EEIKS"],
+  "04": ["ETESC", "ETPCC"],
+  "05": ["CSESC", "CSPCC"],
+  "06": ["ITPCC", "ITESC", "ITPE"],
+};
+
+const ACADEMIC_SECTION_LABELS: Record<string, GecaAcademicSection> = {
+  FIRST: "FIRST_YEAR", "1ST": "FIRST_YEAR",
+  SECOND: "SECOND_YEAR", "2ND": "SECOND_YEAR",
+  THIRD: "THIRD_YEAR", "3RD": "THIRD_YEAR",
+  FOURTH: "FINAL_YEAR", "4TH": "FINAL_YEAR", FINAL: "FINAL_YEAR",
+};
+
+function academicSectionBeforeLink(markup: string): GecaAcademicSection | null {
+  // Preserve GECA's academic-year grouping instead of flattening all PDF links.
+  const visibleText = plainText(markup
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " "));
+  const pattern = /\b(FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\s+YEAR\b/gi;
+  let latest: GecaAcademicSection | null = null;
+  for (const match of visibleText.matchAll(pattern)) {
+    latest = ACADEMIC_SECTION_LABELS[match[1].toUpperCase()] || latest;
+  }
+  return latest;
+}
+
+function academicSectionsForEnrollment(enrollment: string, sessionTitle: string, selectedSemester?: number): GecaAcademicSection[] {
+  const sections = new Set<GecaAcademicSection>();
+  const admissionYearMatch = enrollment.match(/^(?:BT|BE)(\d{2})/);
+  const examYearMatch = sessionTitle.match(/\b(20\d{2})\b/);
+  if (admissionYearMatch && examYearMatch) {
+    const admissionYear = 2000 + Number(admissionYearMatch[1]);
+    const examYear = Number(examYearMatch[1]);
+    // F = regular entry; S = direct second-year entry in GECA enrollment IDs.
+    const directSecondYearOffset = enrollment[4]?.toUpperCase() === "S" ? 1 : 0;
+    const academicYear = examYear - admissionYear + directSecondYearOffset;
+    const section = (["", "FIRST_YEAR", "SECOND_YEAR", "THIRD_YEAR", "FINAL_YEAR"] as const)[academicYear];
+    if (section) sections.add(section);
+  }
+  // Backlog semester results can remain grouped under the academic year of
+  // that semester, even when the student has since progressed to another year.
+  if (Number.isInteger(selectedSemester) && selectedSemester! >= 1 && selectedSemester! <= 8) {
+    const semesterYear = Math.ceil(selectedSemester! / 2);
+    const section = (["", "FIRST_YEAR", "SECOND_YEAR", "THIRD_YEAR", "FINAL_YEAR"] as const)[semesterYear];
+    if (section) sections.add(section);
+  }
+  return [...sections];
+}
 
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
+  expectedAcademicSections: GecaAcademicSection[];
+  candidateDocuments: number;
   enrollmentHits: number;
   parseFailures: number;
   downloadFailures: number;
@@ -616,35 +672,58 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   if (!session) throw new Error("The selected examination session is no longer available on the GECA portal.");
 
   const html = await fetchGecaText(session.url);
-  const documents: Array<{ title: string; url: string }> = [];
+  const documents: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null }> = [];
   for (const anchor of html.matchAll(/<a\b[^>]*href=["']([^"']+\.pdf(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const url = safeGecaUrl(anchor[1]);
     if (!url) continue;
-    documents.push({ title: plainText(anchor[2]) || decodeURIComponent(url.split("/").pop() || "Result PDF"), url });
+    documents.push({
+      title: plainText(anchor[2]) || decodeURIComponent(url.split("/").pop() || "Result PDF"),
+      url,
+      academicSection: academicSectionBeforeLink(html.slice(0, anchor.index)),
+    });
   }
   const unique = Array.from(new Map(documents.map(item => [item.url, item])).values())
-    // Keep obvious non-result PDFs out of both the initial scan and fallback.
-    // Filter before applying the cap so unrelated links cannot crowd out results.
-    .filter(item => !NON_RESULT_PDF_PATTERN.test(item.title + " " + item.url))
-    .slice(0, MAX_RESULT_PDFS);
+    .filter(item => !NON_RESULT_PDF_PATTERN.test(item.title + " " + item.url));
   if (!unique.length) throw new Error("No examination result PDFs were linked to this GECA session after excluding general college documents.");
 
-  // Narrow the scan to the enrollment's department and selected semester when
-  // the official link titles expose those details. Fall back to all PDFs if
-  // portal naming is ambiguous, so filtering never hides a possible result.
-  let candidates = unique;
+  const expectedAcademicSections = academicSectionsForEnrollment(enrollment, session.title, selectedSemester);
+  const pageHasAcademicSections = unique.some(item => item.academicSection !== null);
+  let eligibleDocuments = unique;
+  if (pageHasAcademicSections && expectedAcademicSections.length) {
+    eligibleDocuments = unique.filter(item => item.academicSection !== null && expectedAcademicSections.includes(item.academicSection));
+    if (!eligibleDocuments.length) {
+      throw new Error(
+        "GECA lists academic-year result sections, but none match this enrollment and selected semester. Expected: " +
+        expectedAcademicSections.join(", ") + ". Check the admission type, examination session and selected semester.",
+      );
+    }
+  }
+
+  // Branch and semester filtering runs only inside eligible academic-year
+  // sections. A miss must never trigger a scan of unrelated year sections.
+  let candidates = eligibleDocuments;
   const branchCode = enrollment.slice(5, 7);
   const branchTerms = BRANCH_NAMES[branchCode] || [];
   if (branchTerms.length) {
-    const branchMatches = unique.filter(item => {
+    const subjectPrefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
+    const branchMatches = eligibleDocuments.filter(item => {
       const label = (item.title + " " + item.url).toLowerCase();
-      return branchTerms.some(term => label.includes(term));
+      const compactTitle = item.title.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      return branchTerms.some(term => label.includes(term)) ||
+        subjectPrefixes.some(prefix => compactTitle.startsWith(prefix));
     });
     if (branchMatches.length) candidates = branchMatches;
   }
   if (selectedSemester && selectedSemester >= 1 && selectedSemester <= 12) {
-    const semesterMatches = candidates.filter(item => romanSemester(item.title + " " + item.url.replace(/%20/gi, " ")) === selectedSemester);
+    const semesterMatches = candidates.filter(item => {
+      const semester = romanSemester(item.title + " " + item.url.replace(/%20/gi, " "));
+      // Subject-specific PDFs often omit semester text from their link label.
+      return semester === selectedSemester || semester === null;
+    });
     if (semesterMatches.length) candidates = semesterMatches;
+  }
+  if (!candidates.length) {
+    throw new Error("No GECA result PDFs match the student's academic-year section, branch and selected semester.");
   }
 
   const matches: GecaMatchedDocument[] = [];
@@ -654,7 +733,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const failedDocuments: string[] = [];
   const scannedUrls = new Set<string>();
 
-  const scanDocuments = async (batch: Array<{ title: string; url: string }>) => {
+  const scanDocuments = async (batch: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null }>) => {
     let cursor = 0;
     const workers = Array.from({ length: Math.min(2, batch.length) }, async () => {
       while (cursor < batch.length) {
@@ -662,7 +741,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
         if (scannedUrls.has(document.url)) continue;
         scannedUrls.add(document.url);
         try {
-          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode);
+          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode, document.academicSection);
           if (parsed.enrollmentFound) enrollmentHits++;
           if (parsed.document) matches.push(parsed.document);
           else if (parsed.enrollmentFound) parseFailures++;
@@ -685,8 +764,8 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
 
   // Filtering is only an optimisation. If it yields no enrollment hit,
   // inspect every remaining PDF in the selected exam before reporting absent.
-  if (enrollmentHits === 0 && candidates.length < unique.length) {
-    const remaining = unique.filter(item => !scannedUrls.has(item.url));
+  if (enrollmentHits === 0 && candidates.length < eligibleDocuments.length) {
+    const remaining = eligibleDocuments.filter(item => !scannedUrls.has(item.url));
     await scanDocuments(remaining);
   }
 
@@ -709,6 +788,8 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   return {
     session,
     documentsScanned: scannedUrls.size,
+    expectedAcademicSections,
+    candidateDocuments: eligibleDocuments.length,
     enrollmentHits,
     parseFailures,
     downloadFailures,
