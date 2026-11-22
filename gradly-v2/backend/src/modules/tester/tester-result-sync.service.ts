@@ -26,6 +26,13 @@ export type GecaMatchedDocument = {
 
 let sessionCache: { expiresAt: number; sessions: GecaResultSession[] } | null = null;
 
+// Official GECA result archive currently lists ESE APRIL-MAY 2026 as resultID 3018.
+// This fallback keeps the picker usable if result-master.aspx alone is unavailable;
+// the result detail page and PDFs are still fetched live before grades are imported.
+const KNOWN_GECA_RESULT_SESSIONS: GecaResultSession[] = [
+  { id: "3018", title: "ESE APRIL-MAY 2026", url: "https://geca.ac.in/result.aspx?resultID=3018" },
+]
+
 function decodeHtml(value: string): string {
   return value
     .replace(/&nbsp;/gi, " ")
@@ -51,50 +58,61 @@ function safeGecaUrl(href: string): string | null {
   }
 }
 
-// Retry transient GECA/network failures indefinitely. A fixed attempt ceiling can
-// incorrectly fail valid result lookups while the college archive is unavailable.
-// Capped exponential backoff prevents repeatedly hammering GECA.
-const GECA_RETRY_INITIAL_DELAY_MS = 1_000;
-const GECA_RETRY_MAX_DELAY_MS = 30_000;
+// Keep GECA outages from hanging a student's result-import request forever.
+// Four short attempts ride out transient resets without tying up an API request for minutes.
+const GECA_RETRY_MAX_ATTEMPTS = 4;
+const GECA_RETRY_DELAYS_MS = [750, 1_500, 3_000];
+
+function fetchErrorDetails(error: unknown): string {
+  const parts: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; depth < 4 && current; depth++) {
+    if (current instanceof Error) {
+      const candidate = current as Error & { code?: string; cause?: unknown };
+      const code = candidate.code ? " [" + candidate.code + "]" : "";
+      const message = candidate.message || candidate.name;
+      if (message && !parts.includes(message + code)) parts.push(message + code);
+      current = candidate.cause;
+    } else {
+      const message = String(current);
+      if (message && !parts.includes(message)) parts.push(message);
+      break;
+    }
+  }
+  return parts.join(" <- ") || "unknown network error";
+}
 
 function isRetryableFetchError(error: unknown): boolean {
   const candidate = error as { name?: string; code?: string; cause?: { code?: string } };
   const code = candidate?.code || candidate?.cause?.code || "";
   return candidate?.name === "TimeoutError" || candidate?.name === "AbortError" ||
-    ["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_SOCKET"].includes(code) ||
+    ["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EAI_AGAIN", "ENOTFOUND", "EHOSTUNREACH",
+      "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_SOCKET", "UND_ERR_HEADERS_TIMEOUT"].includes(code) ||
     candidate instanceof TypeError;
-}
-
-function retryDelay(attempt: number): number {
-  const exponential = Math.min(
-    GECA_RETRY_MAX_DELAY_MS,
-    GECA_RETRY_INITIAL_DELAY_MS * (2 ** Math.min(attempt - 1, 10)),
-  );
-  return Math.round(exponential * (0.8 + Math.random() * 0.4));
 }
 
 async function fetchGecaResponse(url: string, accept: string, timeoutMs: number): Promise<Response> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) throw new Error("The GECA result link is not a trusted college URL.");
 
-  let attempt = 0;
   let lastError: unknown;
-  while (true) {
-    attempt += 1;
+  for (let attempt = 1; attempt <= GECA_RETRY_MAX_ATTEMPTS; attempt++) {
     try {
       const response = await fetch(safeUrl, {
         signal: AbortSignal.timeout(timeoutMs),
+        redirect: "follow",
         headers: {
-          "User-Agent": "Gradly-Result-Sync/1.1",
+          // GECA's legacy ASP.NET host can reject non-browser user agents.
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
           "Accept": accept,
-          "Connection": "keep-alive",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Cache-Control": "no-cache",
+          "Referer": GECA_ORIGIN + "/",
         },
       });
       if (response.ok) return response;
 
       const statusError = new Error("GECA returned HTTP " + response.status + ".");
-      // Retry rate limits and transient gateway/server failures. Other 4xx
-      // responses (such as a missing PDF) are permanent for this URL.
       const retryableStatus = response.status === 408 || response.status === 425 ||
         response.status === 429 || response.status >= 500;
       if (!retryableStatus) {
@@ -114,10 +132,19 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
       if (!httpStatus && !isRetryableFetchError(error)) throw error;
     }
 
-    const detail = lastError instanceof Error ? lastError.message : "unknown network error";
-    console.warn("GECA request failed; retrying indefinitely:", safeUrl, "attempt", attempt, detail);
-    await new Promise(resolve => setTimeout(resolve, retryDelay(attempt)));
+    if (attempt < GECA_RETRY_MAX_ATTEMPTS) {
+      const delay = GECA_RETRY_DELAYS_MS[attempt - 1] ?? 3_000;
+      console.warn("GECA request failed; retrying:", safeUrl, "attempt", attempt, "of", GECA_RETRY_MAX_ATTEMPTS, fetchErrorDetails(lastError));
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+
+  const detail = fetchErrorDetails(lastError);
+  console.error("GECA request exhausted retries:", safeUrl, detail);
+  throw new Error(
+    "GECA's result server is temporarily unreachable after " + GECA_RETRY_MAX_ATTEMPTS +
+    " attempts. " + detail + ". Please retry in a few minutes; manual SGPA entry remains available.",
+  );
 }
 
 async function fetchGecaText(url: string): Promise<string> {
@@ -131,9 +158,14 @@ export async function listGecaResultSessions(): Promise<GecaResultSession[]> {
   try {
     html = await fetchGecaText(RESULT_MASTER_URL);
   } catch (error) {
-    // If GECA is temporarily unreachable, preserve the last known archive list
-    // rather than making the result-fetch feature completely unavailable.
+    // Preserve a cached/known session list if the archive index is unavailable.
+    // The result detail page and PDF are still fetched live before grades are imported.
     if (sessionCache?.sessions.length) return sessionCache.sessions;
+    if (KNOWN_GECA_RESULT_SESSIONS.length) {
+      console.warn("GECA archive index unavailable; using the last-known official session list:", fetchErrorDetails(error));
+      sessionCache = { expiresAt: Date.now() + 5 * 60 * 1000, sessions: KNOWN_GECA_RESULT_SESSIONS };
+      return sessionCache.sessions;
+    }
     throw error;
   }
   const sessions: GecaResultSession[] = [];
