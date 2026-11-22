@@ -38,12 +38,6 @@ function corsHeaders(request) {
 function reply(request, data, status = 200) { return json(data, status, corsHeaders(request)); }
 function fail(request, message, status = 400) { return reply(request, { success: false, error: message }, status); }
 
-async function passwordHash(password, saltHex) {
-  const salt = saltHex ? Uint8Array.from(saltHex.match(/.{2}/g).map((x) => parseInt(x, 16))) : crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256" }, key, 256);
-  return { hash: hex(bits), salt: hex(salt) };
-}
 async function currentUser(request, env) {
   const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
@@ -114,6 +108,22 @@ async function sendVerificationEmail(env, email, displayName, token) {
     })
   });
   if (!response.ok) throw new Error("Email provider rejected the verification email (" + response.status + ").");
+}
+async function sendLoginEmail(env, email, displayName, token) {
+  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Email sign-in is not configured. Add RESEND_API_KEY and EMAIL_FROM Worker secrets.");
+  const base = env.COMMUNITY_APP_URL || "https://gradly-peach.vercel.app";
+  const link = base.replace(/\/$/, "") + "/community/verify?loginToken=" + encodeURIComponent(token);
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "authorization": "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: env.EMAIL_FROM,
+      to: [email],
+      subject: "Your Gradly Communities sign-in link",
+      html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#171717"><h2>Hi ${escapeHtml(displayName)}.</h2><p>Use this secure, one-time link to sign in to Gradly Communities.</p><p><a href="${link}" style="display:inline-block;background:#171717;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none">Sign in to Communities</a></p><p>This link expires in 15 minutes and can only be used once. If you did not request it, ignore this email.</p></div>`
+    })
+  });
+  if (!response.ok) throw new Error("Email provider rejected the sign-in email (" + response.status + ").");
 }
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[char]);
@@ -214,64 +224,84 @@ export default {
         const body = await parseBody(request);
         const email = String(body?.email || "").trim().toLowerCase();
         const displayName = String(body?.displayName || "").trim();
-        const password = String(body?.password || "");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return fail(request, "Enter a valid email address.");
         if (displayName.length < 2 || displayName.length > 60) return fail(request, "Name must be 2–60 characters.");
-        if (password.length < 10 || password.length > 128) return fail(request, "Password must be 10–128 characters.");
         if (!env.RESEND_API_KEY || !env.EMAIL_FROM) return fail(request, "Email verification is not configured yet. The platform administrator must configure the email provider.", 503);
         const existing = await env.DB.prepare("SELECT id,email_verified_at FROM chat_users WHERE email=?").bind(email).first();
         if (existing?.email_verified_at) return fail(request, "An account already exists for this email. Please sign in.", 409);
         const userId = existing?.id || id();
-        const passwordData = await passwordHash(password);
         if (existing) {
-          await env.DB.prepare("UPDATE chat_users SET display_name=?,password_hash=?,password_salt=?,updated_at=? WHERE id=?")
-            .bind(displayName, passwordData.hash, passwordData.salt, now(), userId).run();
+          await env.DB.prepare("UPDATE chat_users SET display_name=?,updated_at=? WHERE id=?").bind(displayName,now(),userId).run();
           await env.DB.prepare("DELETE FROM chat_email_verifications WHERE user_id=?").bind(userId).run();
         } else {
           await env.DB.prepare("INSERT INTO chat_users(id,email,display_name,password_hash,password_salt) VALUES(?,?,?,?,?)")
-            .bind(userId, email, displayName, passwordData.hash, passwordData.salt).run();
+            .bind(userId,email,displayName,randomToken(32),randomToken(16)).run();
         }
         const token = randomToken();
         await env.DB.prepare("INSERT INTO chat_email_verifications(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)")
-          .bind(id(), userId, await sha256(token), addMinutes(30)).run();
+          .bind(id(),userId,await sha256(token),addMinutes(30)).run();
         try {
-          await sendVerificationEmail(env, email, displayName, token);
+          await sendVerificationEmail(env,email,displayName,token);
         } catch (error) {
-          return fail(request, "Account saved, but verification email could not be sent. Please retry registration or contact support. " + error.message, 502);
+          return fail(request,"Account saved, but verification email could not be sent. Please retry registration or contact support. "+error.message,502);
         }
-        return reply(request, { success: true, message: "Verification email sent. Check your inbox." }, 201);
+        return reply(request,{success:true,message:"Verification email sent. Check your inbox."},201);
       }
 
       if (path === "/auth/verify" && request.method === "POST") {
         const body = await parseBody(request);
         const token = String(body?.token || "");
-        if (token.length < 32 || token.length > 128) return fail(request, "Verification link is invalid or expired.", 400);
+        if (token.length < 32 || token.length > 128) return fail(request,"Verification link is invalid or expired.",400);
         const tokenHash = await sha256(token);
-        const record = await env.DB.prepare(`
-          SELECT id,user_id FROM chat_email_verifications
-          WHERE token_hash=? AND consumed_at IS NULL AND expires_at>?
-        `).bind(tokenHash, now()).first();
-        if (!record) return fail(request, "Verification link is invalid or expired.", 400);
+        const record = await env.DB.prepare("SELECT v.id,v.user_id,u.email,u.display_name,u.institution_name,u.branch_name,u.semester FROM chat_email_verifications v JOIN chat_users u ON u.id=v.user_id WHERE v.token_hash=? AND v.consumed_at IS NULL AND v.expires_at>?")
+          .bind(tokenHash,now()).first();
+        if (!record) return fail(request,"Verification link is invalid or expired.",400);
+        const sessionToken=randomToken();
         await env.DB.batch([
-          env.DB.prepare("UPDATE chat_email_verifications SET consumed_at=? WHERE id=? AND consumed_at IS NULL").bind(now(), record.id),
-          env.DB.prepare("UPDATE chat_users SET email_verified_at=?,updated_at=? WHERE id=?").bind(now(), now(), record.user_id)
+          env.DB.prepare("UPDATE chat_email_verifications SET consumed_at=? WHERE id=? AND consumed_at IS NULL").bind(now(),record.id),
+          env.DB.prepare("UPDATE chat_users SET email_verified_at=?,updated_at=? WHERE id=?").bind(now(),now(),record.user_id),
+          env.DB.prepare("INSERT INTO chat_sessions(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)").bind(id(),record.user_id,await sha256(sessionToken),new Date(Date.now()+30*86400_000).toISOString())
         ]);
-        return reply(request, { success: true, message: "Email verified. You can now sign in." });
+        return reply(request,{success:true,token:sessionToken,message:"Email verified. You are signed in.",user:{id:record.user_id,email:record.email,displayName:record.display_name,institutionName:record.institution_name,branchName:record.branch_name,semester:record.semester}});
       }
 
       if (path === "/auth/login" && request.method === "POST") {
-        const body = await parseBody(request);
-        const email = String(body?.email || "").trim().toLowerCase();
-        const password = String(body?.password || "");
-        const user = await env.DB.prepare("SELECT * FROM chat_users WHERE email=?").bind(email).first();
-        if (!user || user.status !== "active") return fail(request, "Email or password is incorrect.", 401);
-        if (!user.email_verified_at) return fail(request, "Please verify your email before signing in.", 403);
-        const candidate = await passwordHash(password, user.password_salt);
-        if (candidate.hash !== user.password_hash) return fail(request, "Email or password is incorrect.", 401);
-        const token = randomToken();
-        await env.DB.prepare("INSERT INTO chat_sessions(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)")
-          .bind(id(), user.id, await sha256(token), new Date(Date.now() + 30 * 86400_000).toISOString()).run();
-        return reply(request, { success: true, token, user: { id: user.id, email: user.email, displayName: user.display_name, institutionName: user.institution_name, branchName: user.branch_name, semester: user.semester } });
+        const body=await parseBody(request);
+        const email=String(body?.email||"").trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length>254) return fail(request,"Enter a valid email address.");
+        if (!env.RESEND_API_KEY || !env.EMAIL_FROM) return fail(request,"Email sign-in is not configured yet. The platform administrator must configure the email provider.",503);
+        const user=await env.DB.prepare("SELECT id,email,display_name,email_verified_at,status FROM chat_users WHERE email=?").bind(email).first();
+        if (!user || user.status!=="active") return reply(request,{success:true,message:"If a verified Communities account exists for this email, a sign-in link has been sent."});
+        if (!user.email_verified_at) {
+          const verifyToken=randomToken();
+          await env.DB.prepare("DELETE FROM chat_email_verifications WHERE user_id=?").bind(user.id).run();
+          await env.DB.prepare("INSERT INTO chat_email_verifications(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)").bind(id(),user.id,await sha256(verifyToken),addMinutes(30)).run();
+          await sendVerificationEmail(env,email,user.display_name,verifyToken);
+          return reply(request,{success:true,message:"Your account still needs email verification. We sent you a fresh verification link."});
+        }
+        const recent=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_login_tokens WHERE user_id=? AND created_at>=?").bind(user.id,new Date(Date.now()-15*60_000).toISOString()).first();
+        if ((recent?.total||0)>=3) return fail(request,"Too many sign-in links requested. Please wait 15 minutes.",429);
+        const loginToken=randomToken();
+        await env.DB.prepare("INSERT INTO chat_login_tokens(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)").bind(id(),user.id,await sha256(loginToken),addMinutes(15)).run();
+        try { await sendLoginEmail(env,email,user.display_name,loginToken); }
+        catch (error) { return fail(request,"Unable to send sign-in link. "+error.message,502); }
+        return reply(request,{success:true,message:"A secure sign-in link has been sent to your email."});
+      }
+
+      if (path === "/auth/login/verify" && request.method === "POST") {
+        const body=await parseBody(request);
+        const token=String(body?.token||"");
+        if (token.length<32||token.length>128) return fail(request,"Sign-in link is invalid or expired.",400);
+        const tokenHash=await sha256(token);
+        const record=await env.DB.prepare("SELECT t.id,t.user_id,u.email,u.display_name,u.institution_name,u.branch_name,u.semester FROM chat_login_tokens t JOIN chat_users u ON u.id=t.user_id WHERE t.token_hash=? AND t.consumed_at IS NULL AND t.expires_at>? AND u.status='active' AND u.email_verified_at IS NOT NULL")
+          .bind(tokenHash,now()).first();
+        if (!record) return fail(request,"Sign-in link is invalid or expired.",400);
+        const sessionToken=randomToken();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE chat_login_tokens SET consumed_at=? WHERE id=? AND consumed_at IS NULL").bind(now(),record.id),
+          env.DB.prepare("INSERT INTO chat_sessions(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)").bind(id(),record.user_id,await sha256(sessionToken),new Date(Date.now()+30*86400_000).toISOString())
+        ]);
+        return reply(request,{success:true,token:sessionToken,user:{id:record.user_id,email:record.email,displayName:record.display_name,institutionName:record.institution_name,branchName:record.branch_name,semester:record.semester}});
       }
 
       if (path === "/auth/logout" && request.method === "POST") {
