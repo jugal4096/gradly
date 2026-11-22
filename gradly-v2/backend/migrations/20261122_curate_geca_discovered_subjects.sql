@@ -43,3 +43,11 @@ DO UPDATE SET course_name=EXCLUDED.course_name,
               source=EXCLUDED.source,
               semester_number=EXCLUDED.semester_number,
               updated_at=now();
+
+UPDATE public.discovered_result_subjects
+SET course_name = CASE course_code
+  WHEN 'ETMDM5003' THEN 'Introduction to IoT'
+  WHEN 'INMDM9003' THEN 'Introduction to Digital Forensics'
+  ELSE course_name
+END, updated_at=now()
+WHERE course_code IN ('ETMDM5003','INMDM9003');
