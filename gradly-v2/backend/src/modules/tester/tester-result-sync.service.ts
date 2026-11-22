@@ -698,6 +698,9 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
       );
     }
   }
+  // Apply the safety cap after academic-section selection, so unrelated
+  // department/year links cannot consume the result-PDF scan budget.
+  eligibleDocuments = eligibleDocuments.slice(0, MAX_RESULT_PDFS);
 
   // Branch and semester filtering runs only inside eligible academic-year
   // sections. A miss must never trigger a scan of unrelated year sections.
@@ -763,7 +766,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   await scanDocuments(candidates);
 
   // Filtering is only an optimisation. If it yields no enrollment hit,
-  // inspect every remaining PDF in the selected exam before reporting absent.
+  // inspect every remaining PDF in the eligible academic-year section(s).
   if (enrollmentHits === 0 && candidates.length < eligibleDocuments.length) {
     const remaining = eligibleDocuments.filter(item => !scannedUrls.has(item.url));
     await scanDocuments(remaining);
