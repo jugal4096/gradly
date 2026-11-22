@@ -46,27 +46,50 @@ function safeGecaUrl(href: string): string | null {
   }
 }
 
-async function fetchGecaText(url: string): Promise<string> {
+const GECA_FETCH_ATTEMPTS = 3;
+
+function isRetryableFetchError(error: unknown): boolean {
+  const candidate = error as { name?: string; code?: string; cause?: { code?: string } };
+  const code = candidate?.code || candidate?.cause?.code || "";
+  return candidate?.name === "TimeoutError" || candidate?.name === "AbortError" ||
+    ["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_SOCKET"].includes(code) ||
+    candidate instanceof TypeError;
+}
+
+async function fetchGecaResponse(url: string, accept: string, timeoutMs: number): Promise<Response> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) throw new Error("The GECA result link is not a trusted college URL.");
 
   let lastError: unknown;
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
+  for (let attempt = 1; attempt <= GECA_FETCH_ATTEMPTS; attempt += 1) {
     try {
       const response = await fetch(safeUrl, {
-        signal: AbortSignal.timeout(20000),
-        headers: { "User-Agent": "Gradly-Result-Sync/1.0", "Accept": "text/html,application/xhtml+xml" },
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: {
+          "User-Agent": "Gradly-Result-Sync/1.1",
+          "Accept": accept,
+          "Connection": "keep-alive",
+        },
       });
-      if (!response.ok) throw new Error("GECA result portal returned HTTP " + response.status + ".");
-      return await response.text();
+      if (response.ok) return response;
+      const statusError = new Error("GECA returned HTTP " + response.status + ".");
+      if (response.status < 500 || attempt === GECA_FETCH_ATTEMPTS) throw statusError;
+      lastError = statusError;
     } catch (error) {
       lastError = error;
-      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1200));
+      const statusMatch = error instanceof Error && /GECA returned HTTP (4\d\d)/.test(error.message);
+      if (statusMatch || !isRetryableFetchError(error) || attempt === GECA_FETCH_ATTEMPTS) break;
     }
+    await new Promise(resolve => setTimeout(resolve, attempt * 450));
   }
 
   const detail = lastError instanceof Error ? lastError.message : "unknown network error";
-  throw new Error("Unable to connect to the GECA result portal after 2 attempts. Check that this backend can reach https://geca.ac.in, then retry. (" + detail + ")");
+  throw new Error("GECA request failed after " + GECA_FETCH_ATTEMPTS + " attempts: " + detail);
+}
+
+async function fetchGecaText(url: string): Promise<string> {
+  const response = await fetchGecaResponse(url, "text/html,application/xhtml+xml", 18000);
+  return response.text();
 }
 
 export async function listGecaResultSessions(): Promise<GecaResultSession[]> {
@@ -452,8 +475,8 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
 }> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) return { document: null, enrollmentFound: false, error: "untrusted-url" };
-  const response = await fetch(safeUrl, { signal: AbortSignal.timeout(35000), headers: { "User-Agent": "Gradly-Result-Sync/1.0" } });
-  if (!response.ok) return { document: null, enrollmentFound: false, error: "http-" + response.status };
+  const response = await fetchGecaResponse(safeUrl, "application/pdf,application/octet-stream,*/*", 25000);
+
   const declaredLength = Number(response.headers.get("content-length") || 0);
   if (declaredLength > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large" };
   const bytes = new Uint8Array(await response.arrayBuffer());
@@ -549,6 +572,9 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   documentsScanned: number;
   enrollmentHits: number;
   parseFailures: number;
+  downloadFailures: number;
+  scanIncomplete: boolean;
+  failedDocuments: string[];
   matches: GecaMatchedDocument[];
 }> {
   if (!/^\d{1,10}$/.test(resultId)) throw new Error("Invalid GECA result session.");
@@ -589,11 +615,13 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const matches: GecaMatchedDocument[] = [];
   let enrollmentHits = 0;
   let parseFailures = 0;
+  let downloadFailures = 0;
+  const failedDocuments: string[] = [];
   const scannedUrls = new Set<string>();
 
   const scanDocuments = async (batch: Array<{ title: string; url: string }>) => {
     let cursor = 0;
-    const workers = Array.from({ length: Math.min(4, batch.length) }, async () => {
+    const workers = Array.from({ length: Math.min(2, batch.length) }, async () => {
       while (cursor < batch.length) {
         const document = batch[cursor++];
         if (scannedUrls.has(document.url)) continue;
@@ -603,8 +631,14 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
           if (parsed.enrollmentFound) enrollmentHits++;
           if (parsed.document) matches.push(parsed.document);
           else if (parsed.enrollmentFound) parseFailures++;
+          if (parsed.error) {
+            downloadFailures++;
+            failedDocuments.push(document.title);
+            console.warn("Unable to inspect one GECA result PDF:", document.title, parsed.error);
+          }
         } catch (error) {
-          parseFailures++;
+          downloadFailures++;
+          failedDocuments.push(document.title);
           console.warn("Unable to inspect one GECA result PDF:", document.title, error);
         }
       }
@@ -621,5 +655,26 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     await scanDocuments(remaining);
   }
 
-  return { session, documentsScanned: scannedUrls.size, enrollmentHits, parseFailures, matches };
+  // Never present a partial scan as a definitive "no result" or allow a
+  // partial official grade set to be applied. Both Student and Tester use this
+  // shared service, so the same fail-closed rule applies to both modes.
+  if (downloadFailures > 0) {
+    const examples = failedDocuments.slice(0, 3).join(", ");
+    throw new Error(
+      "GECA scan incomplete: " + downloadFailures + " result PDF(s) could not be inspected" +
+      (examples ? " (" + examples + ")" : "") +
+      ". No grades were returned. Retry the scan when the GECA portal is stable.",
+    );
+  }
+
+  return {
+    session,
+    documentsScanned: scannedUrls.size,
+    enrollmentHits,
+    parseFailures,
+    downloadFailures,
+    scanIncomplete: false,
+    failedDocuments: [],
+    matches,
+  };
 }
