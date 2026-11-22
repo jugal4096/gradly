@@ -549,6 +549,9 @@ export default {
           .bind(await sha256(token),now()).first();
         if (!record || record.group_status!=="active") return fail(request,"Invitation link is invalid or expired.",400);
         if (String(record.invited_email).toLowerCase()!==String(user.email).toLowerCase()) return fail(request,"Sign in with the email address this invitation was sent to.",403);
+        const prior=await env.DB.prepare("SELECT status FROM chat_group_members WHERE group_id=? AND user_id=?").bind(record.group_id,user.id).first();
+        if (prior?.status==="banned") return fail(request,"You are banned from this group.",403);
+        if (prior?.status==="active") return fail(request,"You are already a member of this group.",409);
         const limits=await getLimits(env);
         const memberships=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE user_id=? AND status='active'").bind(user.id).first();
         if ((memberships?.total||0)>=limits.maxGroupMemberships) return fail(request,"You have reached your group membership limit.",429);
@@ -683,6 +686,9 @@ export default {
             const email=String(body?.email||"").trim().toLowerCase();
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(request,"Enter the registered Communities email address.");
             const invited=await env.DB.prepare("SELECT id,email_verified_at,status FROM chat_users WHERE email=?").bind(email).first();
+            const prior=invited?await env.DB.prepare("SELECT status FROM chat_group_members WHERE group_id=? AND user_id=?").bind(groupId,invited.id).first():null;
+            if (prior?.status==="banned") return fail(request,"This student is banned from the group.",403);
+            if (prior?.status==="active") return fail(request,"This student is already a member.",409);
             if (!invited || !invited.email_verified_at || invited.status!=="active") return fail(request,"That student must first create and verify a Communities account.",404);
             const limits=await getLimits(env);
             const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE group_id=? AND status='active'").bind(groupId).first();
