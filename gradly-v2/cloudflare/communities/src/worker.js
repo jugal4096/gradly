@@ -22,7 +22,8 @@ const allowedOrigins = new Set([
   "https://gradly-peach.vercel.app",
   "https://gradly-v2.vercel.app",
   "https://gradly-ecosystem.vercel.app",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "http://localhost:5174"
 ]);
 function corsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
