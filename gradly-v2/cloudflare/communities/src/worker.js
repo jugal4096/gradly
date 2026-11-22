@@ -61,7 +61,7 @@ async function requireMember(env, groupId, userId) {
   `).bind(groupId, userId).first();
 }
 async function isPlatformAdmin(env, userId) {
-  return env.DB.prepare("SELECT role FROM chat_platform_roles WHERE user_id=? LIMIT 1").bind(userId).first();
+  return env.DB.prepare("SELECT role FROM chat_platform_roles WHERE user_id=? ORDER BY CASE role WHEN 'super_admin' THEN 0 ELSE 1 END LIMIT 1").bind(userId).first();
 }
 async function audit(env, actorId, action, targetType, targetId, reason = "", metadata = {}) {
   await env.DB.prepare(`
