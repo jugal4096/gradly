@@ -18,7 +18,7 @@ export async function listTesterAccounts(_req: Request, res: Response) {
 export async function createTesterAccount(req: SuperAdminAuthenticatedRequest, res: Response) {
   const { loginId, password } = req.body ?? {};
   if (!validLoginId(loginId)) return res.status(400).json({ message: "Tester ID must be 3–80 characters and use letters, numbers, dots, underscores or hyphens." });
-  if (typeof password !== "string" || password.length < 10 || password.length > 128) return res.status(400).json({ message: "Set a password between 10 and 128 characters." });
+  if (typeof password !== "string" || password.length < 4 || password.length > 128) return res.status(400).json({ message: "Set a password between 4 and 128 characters." });
   try {
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await pool.query(
