@@ -27,6 +27,8 @@ export default function CommunitiesPanel() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
+  const [emailConfigured, setEmailConfigured] = useState(false);
+  const [mediaEnabled, setMediaEnabled] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
@@ -65,6 +67,10 @@ export default function CommunitiesPanel() {
       if (refreshed) setSelected(refreshed);
     }
   };
+
+  useEffect(() => {
+    fetch(API + "/health").then((response) => response.json()).then((data) => { setEmailConfigured(!!data.emailConfigured); setMediaEnabled(!!data.mediaStorage); }).catch(() => { setEmailConfigured(false); setMediaEnabled(false); });
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -346,7 +352,7 @@ export default function CommunitiesPanel() {
         </button>
         {notice && <p className="gc-notice">{notice}</p>}
         {error && <p className="gc-error">{error}</p>}
-        <small className="gc-legal">Your Communities account is separate from your Gradly student sign-in. Sign-in uses secure, single-use email links.</small>
+        <small className="gc-legal">Your Communities account is separate from your Gradly student sign-in. Sign-in uses secure, single-use email links. {emailConfigured ? "Email delivery is configured." : "Email delivery is not configured yet, so registration and sign-in are currently unavailable."}</small>
       </div>
     </section>
   );
@@ -389,9 +395,9 @@ export default function CommunitiesPanel() {
             <div className="gc-chat-messages">
               {messages.length ? messages.map((message) => <article key={message.id} className={`gc-message ${message.sender_id === user.id ? "mine" : ""}`}><div className="gc-message-meta"><b>{message.sender_name}</b><time>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{message.edited_at ? " · edited" : ""}</time></div><p>{message.deleted_at ? "This message was deleted." : message.body}</p>{!message.deleted_at && message.attachments && message.attachments.length > 0 && <div className="gc-attachments">{message.attachments.map((attachment) => <button key={attachment.id} onClick={() => void downloadMedia(attachment)}><span>{attachment.media_kind === "video" ? "▶" : attachment.media_kind === "photo" ? "▧" : "📎"}</span><span>{attachment.original_name}</span><small>{Math.round(attachment.size_bytes/1024)} KB</small></button>)}</div>}{!message.deleted_at && <div className="gc-message-actions"><button onClick={() => { setReplyTo(message); setDraft(""); composerRef.current?.focus(); }}>Reply</button><button onClick={() => void reactToMessage(message.id,"👍")}>👍</button><button onClick={() => void reactToMessage(message.id,"❤️")}>❤️</button><button onClick={() => void reactToMessage(message.id,"😂")}>😂</button><button onClick={() => void reportMessage(message.id)}>Report</button>{selected.role && ["owner","admin","moderator"].includes(selected.role) && <button onClick={() => void pinMessage(message.id)}>Pin</button>}{message.sender_id === user.id && <><button onClick={() => { setEditingId(message.id); setDraft(message.body); composerRef.current?.focus(); }}>Edit</button><button onClick={() => void deleteMessage(message.id)}>Delete</button></>}</div>}</article>) : <div className="gc-chat-empty"><span>✳</span><h3>Start the conversation</h3><p>Ask a question, share an idea or help someone understand a topic.</p></div>}
             </div>
-            <div className="gc-upload-row"><label className="gc-attach-button">＋ Attach files<input type="file" multiple disabled={!!editingId} accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf,.docx,.pptx" onChange={(event) => setSelectedFiles(Array.from(event.target.files || []).slice(0,10))}/></label><select value={resourceCategory} onChange={(event) => setResourceCategory(event.target.value)}><option value="">Chat attachments</option><option value="notes">Notes</option><option value="pyqs">Previous year papers</option><option value="assignments">Assignments</option><option value="syllabus">Syllabus</option><option value="lab_manuals">Lab manuals</option><option value="presentations">Presentations</option><option value="other">Other resources</option></select>{selectedFiles.length > 0 && <span>{selectedFiles.length} file(s) selected</span>}</div>
+            <div className="gc-upload-row"><label className="gc-attach-button">＋ Attach files<input type="file" multiple disabled={!mediaEnabled || !!editingId} accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf,.docx,.pptx" onChange={(event) => setSelectedFiles(Array.from(event.target.files || []).slice(0,10))}/></label><select value={resourceCategory} onChange={(event) => setResourceCategory(event.target.value)}><option value="">Chat attachments</option><option value="notes">Notes</option><option value="pyqs">Previous year papers</option><option value="assignments">Assignments</option><option value="syllabus">Syllabus</option><option value="lab_manuals">Lab manuals</option><option value="presentations">Presentations</option><option value="other">Other resources</option></select>{selectedFiles.length > 0 && <span>{selectedFiles.length} file(s) selected</span>}</div>
             <form className="gc-compose" onSubmit={sendMessage}>{replyTo && <div className="gc-replying">Replying to {replyTo.sender_name}<button type="button" onClick={() => setReplyTo(null)}>×</button></div>}<input ref={composerRef} value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={5000} placeholder={editingId ? "Edit your message…" : "Write a message to your group…"} /><button className="gc-primary" disabled={busy || (!draft.trim() && !selectedFiles.length)}>{editingId ? "Save" : "Send"} →</button>{editingId && <button type="button" className="gc-cancel-edit" onClick={() => { setEditingId(""); setDraft(""); }}>Cancel</button>}</form>
-            <div className="gc-storage-note"><b>Media & study resources</b><span>Photo, video and document sharing will be enabled after the private storage bucket is configured.</span></div>
+            <div className="gc-storage-note"><b>Media & study resources</b><span>{mediaEnabled ? "Private media storage is connected." : "Photo, video and document sharing will be enabled after the private R2 bucket is configured."}</span></div>
           </div> : <div className="gc-welcome-card"><div className="gc-welcome-orbit">✳</div><span className="gc-eyebrow">YOUR NEXT CHAPTER, TOGETHER</span><h3>Good ideas grow in good company.</h3><p>Choose one of your groups, discover a community or create a study space for your classmates.</p><button className="gc-primary" onClick={() => setShowCreate(true)}>Create your first group →</button></div>}
         </main>
       </div>
