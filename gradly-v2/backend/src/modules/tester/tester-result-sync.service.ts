@@ -544,6 +544,76 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
   };
 }
 
+
+/**
+ * GECA's individual subject PDFs use a different table layout from the
+ * consolidated semester sheets: REGNO | STUDNAME | CCODE | COURSENAME |
+ * BRANCH | Grade. Read the branch and grade from their own columns so a
+ * generic *_RESULT PDF is accepted only for the matching branch.
+ */
+export function extractSubjectResultGrades(
+  lines: TextLine[],
+  enrollment: string,
+  branchTerms: string[],
+): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
+  const normalized = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const headerRows = lines.flatMap(line => {
+    const labels = new Map<string, number>();
+    for (const item of line.items) {
+      const token = normalized(item.text);
+      for (const label of ["REGNO", "CCODE", "BRANCH", "GRADE"]) {
+        if (token === label || token.includes(label)) labels.set(label, item.x);
+      }
+    }
+    return labels.size === 4
+      ? [{ y: line.items[0]?.y ?? 0, labels }]
+      : [];
+  });
+  if (!headerRows.length) return { grades: [], enrollmentFound: false };
+
+  const found = lines.some(line => lineContainsEnrollment(line, enrollment));
+  const matches = new Map<string, string>();
+  for (const line of lines) {
+    if (!lineContainsEnrollment(line, enrollment)) continue;
+    const rowY = line.items[0]?.y ?? 0;
+    const header = [...headerRows]
+      .sort((a, b) => Math.abs(rowY - a.y) - Math.abs(rowY - b.y))[0];
+    if (!header) continue;
+    const regnoX = header.labels.get("REGNO")!;
+    const codeX = header.labels.get("CCODE")!;
+    const branchX = header.labels.get("BRANCH")!;
+    const gradeX = header.labels.get("GRADE")!;
+    const enrollmentItem = line.items.find(item => normalized(item.text).includes(normalized(enrollment)));
+    const rowItems = line.items.filter(item =>
+      item.x >= (enrollmentItem?.x ?? regnoX) - 2 &&
+      item.x <= gradeX + 120,
+    );
+    const branchText = rowItems
+      .filter(item => item.x >= branchX - 2 && item.x < gradeX)
+      .map(item => item.text)
+      .join(" ")
+      .toLowerCase();
+    if (!branchTerms.some(term => branchText.includes(term.toLowerCase()))) continue;
+
+    const codeText = rowItems
+      .filter(item => item.x >= codeX - 2 && item.x < branchX)
+      .map(item => item.text)
+      .join("");
+    const courseCode = normalized(codeText);
+    if (!/^[A-Z]{2,6}\\d{4}$/.test(courseCode)) continue;
+
+    const grade = rowItems
+      .filter(item => item.x >= gradeX - 2)
+      .flatMap(item => gradeTokensFromItem(item))
+      .find(token => token !== "AB" && token !== "P");
+    if (grade) matches.set(courseCode, grade === "-" ? "" : grade);
+  }
+  return {
+    grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade })),
+    enrollmentFound: found,
+  };
+}
+
 function romanSemester(text: string): number | null {
   const values: Record<string, number> = {
     I:1, FIRST:1, II:2, SECOND:2, III:3, THIRD:3, IV:4, FOURTH:4,
@@ -619,9 +689,12 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     // Parse each page independently. PDF coordinates restart on every page;
     // combining pages lets a header at the same Y-coordinate on a previous
     // page get attached to this student's row and import unrelated subjects.
-    const pageParsed = reExamTargetCourseCode
-      ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
-      : extractMatchingGrades(lines, enrollment);
+    const genericSubjectPdf = /_RESULT(?:\\.PDF)?$/i.test(title.trim()) || /_RESULT\\.pdf(?:\\?|$)/i.test(url);
+    const pageParsed = genericSubjectPdf && !reExamTargetCourseCode
+      ? extractSubjectResultGrades(lines, enrollment, BRANCH_NAMES[enrollment.slice(5, 7)] || [])
+      : reExamTargetCourseCode
+        ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
+        : extractMatchingGrades(lines, enrollment);
     if (pageParsed.enrollmentFound) parsed.enrollmentFound = true;
     if (pageParsed.grades.length) {
       parsed = { grades: pageParsed.grades, enrollmentFound: true };
@@ -815,8 +888,14 @@ export function selectGecaBranchDocuments<T extends { title: string; url: string
   return documents.filter(document => {
     const label = (document.title + " " + document.url).toLowerCase();
     const compactTitle = document.title.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    return branchTerms.some(term => label.includes(term.toLowerCase())) ||
+    const explicitlyNamedBranch = branchTerms.some(term => label.includes(term.toLowerCase())) ||
       subjectPrefixes.some(prefix => compactTitle.startsWith(prefix.toUpperCase()));
+    // Individual subject PDFs do not include a branch in the link name.
+    // They are admitted only as candidates; readResultPdf then requires an
+    // exact enrollment row AND a matching BRANCH column before importing.
+    const genericSubjectResult = /_RESULT(?:\\.PDF)?$/i.test(document.title.trim()) ||
+      /_RESULT\\.pdf(?:\\?|$)/i.test(document.url);
+    return explicitlyNamedBranch || genericSubjectResult;
   });
 }
 
