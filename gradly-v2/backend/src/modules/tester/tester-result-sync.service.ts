@@ -545,10 +545,21 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
 }
 
 function romanSemester(text: string): number | null {
-  const match = text.match(/\b(I{1,3}|IV|V|VI|VII|VIII|IX|X|XI|XII)(?:\s*SEM(?:ESTER)?\b|\s+(?:REGULAR|BACKLOG|ATKT|RE-?EXAM)\b)/i);
-  if (!match) return null;
-  const values: Record<string, number> = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9, X:10, XI:11, XII:12 };
-  return values[match[1].toUpperCase()] ?? null;
+  const values: Record<string, number> = {
+    I:1, FIRST:1, II:2, SECOND:2, III:3, THIRD:3, IV:4, FOURTH:4,
+    V:5, FIFTH:5, VI:6, SIXTH:6, VII:7, SEVENTH:7, VIII:8, EIGHTH:8,
+    IX:9, X:10, XI:11, XII:12,
+  };
+  const token = "(VIII|VII|VI|V|IV|III|II|I|[1-8]|FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH)";
+  const patterns = [
+    new RegExp("\\b" + token + "(?:ST|ND|RD|TH)?\\s*(?:SEM(?:ESTER)?\\b|REGULAR\\b|BACKLOG\\b|ATKT\\b|RE-?EXAM\\b)", "i"),
+    new RegExp("\\bSEM(?:ESTER)?\\s*" + token + "(?:ST|ND|RD|TH)?\\b", "i"),
+  ];
+  const matches = patterns.map(pattern => pattern.exec(text)).filter(Boolean) as RegExpExecArray[];
+  if (!matches.length) return null;
+  matches.sort((a, b) => a.index - b.index);
+  const match = matches[matches.length - 1];
+  return values[match[1].toUpperCase()] ?? Number(match[1]) || null;
 }
 
 async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null): Promise<{
@@ -710,10 +721,14 @@ function academicSemesterBeforeLink(markup: string): number | null {
   const visibleText = plainText(markup
     .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
     .replace(/<style\b[\s\S]*?<\/style>/gi, " "));
-  // GECA headings use forms such as "First Year II SEM April May 2026".
-  const pattern = /\b(?:FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\s+YEAR\s+(VIII|VII|VI|V|IV|III|II|I|[1-8])\s*(?:SEM|SEMESTER)\b/gi;
+  // GECA headings appear in both "First Year II SEM" and "First Year Semester 2" forms.
+  const pattern = /\b(?:FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\s+YEAR\s+(VIII|VII|VI|V|IV|III|II|I|[1-8])\s*(?:ST|ND|RD|TH)?\s*(?:SEM|SEMESTER)\b/gi;
+  const reversePattern = /\b(?:FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\s+YEAR\s+SEM(?:ESTER)?\s+(VIII|VII|VI|V|IV|III|II|I|[1-8])\b/gi;
   let semester: number | null = null;
   for (const match of visibleText.matchAll(pattern)) {
+    semester = /^\d+$/.test(match[1]) ? Number(match[1]) : romanSemester(match[1]);
+  }
+  for (const match of visibleText.matchAll(reversePattern)) {
     semester = /^\d+$/.test(match[1]) ? Number(match[1]) : romanSemester(match[1]);
   }
   return semester;
@@ -755,8 +770,11 @@ export function selectGecaAcademicDocuments<T extends { academicSection: GecaAca
   if (!pageHasAcademicSections || !expectedSections.length) {
     return { documents, fallbackUsed: false };
   }
+  // Keep unlabelled subject-level links in the candidate set. Their semester
+  // is checked independently below; dropping them here can hide valid backlog
+  // PDFs when GECA omits the academic-year label on individual links.
   const matching = documents.filter(document =>
-    document.academicSection !== null && expectedSections.includes(document.academicSection),
+    document.academicSection === null || expectedSections.includes(document.academicSection),
   );
   return matching.length
     ? { documents: matching, fallbackUsed: false }
