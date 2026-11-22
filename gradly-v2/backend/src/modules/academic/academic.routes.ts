@@ -222,6 +222,8 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
     const result = await queryWithRetry(
       `SELECT cs.id, cs.course_code AS code, cs.course_name AS name,
               cs.credits, cs.course_type AS "courseType", cs.mandatory,
+              cs.elective_group AS "electiveGroup",
+              cs.elective_pair_code AS "electivePairCode",
               sem.id AS "semesterId", sem.semester_number AS semester
        FROM public.curriculum_subjects cs
        JOIN public.semesters sem ON sem.id = cs.semester_id
