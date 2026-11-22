@@ -501,7 +501,7 @@ function romanSemester(text: string): number | null {
   return values[match[1].toUpperCase()] ?? null;
 }
 
-async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null): Promise<{
+async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null): Promise<{
   document: GecaMatchedDocument | null;
   enrollmentFound: boolean;
   error?: string;
@@ -579,7 +579,9 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   }
   const schemeMatch = metadataText.match(/\b(NEP|CBCS(?:-NEW)?|NEW CBCS)\b/i);
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
-  const semester = romanSemester(title + " " + metadataText);
+  // Subject-specific GECA links (for example CSESC1005_RESULT) omit the
+  // semester from their filename. Inherit it from their enclosing page section.
+  const semester = romanSemester(title + " " + metadataText) ?? sectionSemester ?? null;
   const document = parsed.grades.length ? {
     title,
     url: safeUrl,
@@ -629,6 +631,19 @@ function academicSectionBeforeLink(markup: string): GecaAcademicSection | null {
   return latest;
 }
 
+function academicSemesterBeforeLink(markup: string): number | null {
+  const visibleText = plainText(markup
+    .replace(/<script\\b[\\s\\S]*?<\\/script>/gi, " ")
+    .replace(/<style\\b[\\s\\S]*?<\\/style>/gi, " "));
+  // GECA headings use forms such as "First Year II SEM April May 2026".
+  const pattern = /\\b(?:FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\\s+YEAR\\s+(VIII|VII|VI|V|IV|III|II|I|[1-8])\\s*(?:SEM|SEMESTER)\\b/gi;
+  let semester: number | null = null;
+  for (const match of visibleText.matchAll(pattern)) {
+    semester = /^\\d+$/.test(match[1]) ? Number(match[1]) : romanSemester(match[1]);
+  }
+  return semester;
+}
+
 function academicSectionsForEnrollment(enrollment: string, sessionTitle: string, selectedSemester?: number): GecaAcademicSection[] {
   const sections = new Set<GecaAcademicSection>();
   const admissionYearMatch = enrollment.match(/^(?:BT|BE)(\d{2})/);
@@ -672,7 +687,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   if (!session) throw new Error("The selected examination session is no longer available on the GECA portal.");
 
   const html = await fetchGecaText(session.url);
-  const documents: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null }> = [];
+  const documents: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null; sectionSemester: number | null }> = [];
   for (const anchor of html.matchAll(/<a\b[^>]*href=["']([^"']+\.pdf(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const url = safeGecaUrl(anchor[1]);
     if (!url) continue;
@@ -680,6 +695,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
       title: plainText(anchor[2]) || decodeURIComponent(url.split("/").pop() || "Result PDF"),
       url,
       academicSection: academicSectionBeforeLink(html.slice(0, anchor.index)),
+      sectionSemester: academicSemesterBeforeLink(html.slice(0, anchor.index)),
     });
   }
   const unique = Array.from(new Map(documents.map(item => [item.url, item])).values())
@@ -736,7 +752,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const failedDocuments: string[] = [];
   const scannedUrls = new Set<string>();
 
-  const scanDocuments = async (batch: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null }>) => {
+  const scanDocuments = async (batch: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null; sectionSemester: number | null }>) => {
     let cursor = 0;
     const workers = Array.from({ length: Math.min(2, batch.length) }, async () => {
       while (cursor < batch.length) {
@@ -744,7 +760,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
         if (scannedUrls.has(document.url)) continue;
         scannedUrls.add(document.url);
         try {
-          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode, document.academicSection);
+          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode, document.academicSection, document.sectionSemester);
           if (parsed.enrollmentFound) enrollmentHits++;
           if (parsed.document) matches.push(parsed.document);
           else if (parsed.enrollmentFound) parseFailures++;
