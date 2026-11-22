@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./CommunitiesSuperAdminPage.css";
 
 const API = "https://gradly-communities-api.jugalpkhr.workers.dev";
-type Overview = { users: number; groups: number; messages: number; openReports: number; storedMediaBytes: number };
+type Overview = { users: number; groups: number; messages: number; openReports: number; storedMediaBytes: number; mediaStorage: boolean; emailConfigured: boolean };
 type AdminRole = { admin_code: string; role: string; granted_at: string; revoked_at?: string | null };
 type Report = { id: string; reason: string; status: string; created_at: string; group_name?: string; reporter_name?: string };
 type Limits = { maxGroupMemberships:number;maxGroupMembers:number;maxMessageLength:number;messagesPerMinute:number;photosPerMessage:number;photoBytes:number;videoBytes:number;videoSeconds:number;pdfBytes:number;officeBytes:number;userStorageBytes:number;uploadsPerDay:number;videosPerDay:number };
@@ -121,7 +121,7 @@ export default function CommunitiesSuperAdminPage() {
         {reports.map((report)=><div className="cs-report-row" key={report.id}><div><b>{report.reason.replaceAll("_"," ")}</b><small>{report.group_name||"Group"} · {report.reporter_name||"Student"} · {new Date(report.created_at).toLocaleString()}</small></div><div><button onClick={()=>void resolveReport(report,"dismissed")} disabled={busy}>Dismiss</button><button className="primary" onClick={()=>void resolveReport(report,"resolved")} disabled={busy}>Resolve</button></div></div>)}
         {!reports.length&&<p className="cs-empty">No open reports.</p>}
       </section>
-      <section className="cs-storage-note"><b>Media storage: not enabled</b><span>R2 has not been activated on this Cloudflare account. Storage uploads remain disabled until billing and the private bucket are configured.</span></section>
+      <section className="cs-storage-note"><b>Media storage: {overview?.mediaStorage ? "R2 connected" : "Not enabled"}</b><span>{overview?.mediaStorage ? "The private R2 binding is active. Uploaded media is stored in the Communities bucket." : "R2 has not been activated on this Cloudflare account. Storage uploads remain disabled until billing and the private bucket are configured."}</span><span>Email delivery: {overview?.emailConfigured ? "Configured" : "Not configured"}</span></section>
     </>}
   </main>;
 }
