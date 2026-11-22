@@ -659,12 +659,16 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   // Never present a partial scan as a definitive "no result" or allow a
   // partial official grade set to be applied. Both Student and Tester use this
   // shared service, so the same fail-closed rule applies to both modes.
-  if (downloadFailures > 0) {
+  // A failure in an unrelated PDF must not discard an already verified
+  // enrollment match. Keep the scan status visible so the client can distinguish
+  // a complete archive scan from a partial one, but return any matched official
+  // result documents. Only report a hard failure when no usable match exists.
+  if (downloadFailures > 0 && matches.length === 0) {
     const examples = failedDocuments.slice(0, 3).join(", ");
     throw new Error(
       "GECA scan incomplete: " + downloadFailures + " result PDF(s) could not be inspected" +
       (examples ? " (" + examples + ")" : "") +
-      ". No grades were returned. Retry the scan when the GECA portal is stable.",
+      ". No verified grades were found. Retry the scan when the GECA portal is stable.",
     );
   }
 
@@ -674,8 +678,8 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     enrollmentHits,
     parseFailures,
     downloadFailures,
-    scanIncomplete: false,
-    failedDocuments: [],
+    scanIncomplete: downloadFailures > 0,
+    failedDocuments,
     matches,
   };
 }
