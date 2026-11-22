@@ -146,12 +146,12 @@ test("individual subject parser imports only the target enrollment row with the 
   const lines = [
     { text: "REGNO STUDNAME CCODE COURSENAME BRANCH Grade", items: [
       { text: "REGNO", x: 20, y: 500 }, { text: "STUDNAME", x: 100, y: 500 },
-      { text: "CCODE", x: 260, y: 500 }, { text: "COURSENAME", x: 340, y: 500 },
+      { text: "CCODE", x: 400, y: 500 }, { text: "COURSENAME", x: 340, y: 500 },
       { text: "BRANCH", x: 520, y: 500 }, { text: "Grade", x: 700, y: 500 },
     ] },
     { text: "BT25F02F001 Student AMESC1001 Engineering Mechanics Mechanical Engineering A+", items: [
       { text: "BT25F02F001", x: 20, y: 480 }, { text: "Student", x: 100, y: 480 },
-      { text: "AMESC1001", x: 260, y: 480 }, { text: "Engineering Mechanics", x: 340, y: 480 },
+      { text: "AMESC1001", x: 400, y: 480 }, { text: "Engineering Mechanics", x: 340, y: 480 },
       { text: "Mechanical Engineering", x: 520, y: 480 }, { text: "A+", x: 700, y: 480 },
     ] },
     { text: "BT25F03F002 Student AMESC1001 Engineering Mechanics Electrical Engineering B", items: [
@@ -168,11 +168,11 @@ test("individual subject parser imports only the target enrollment row with the 
 test("individual subject parser refuses a target enrollment when its branch column conflicts", () => {
   const lines = [
     { text: "REGNO CCODE BRANCH Grade", items: [
-      { text: "REGNO", x: 20, y: 500 }, { text: "CCODE", x: 260, y: 500 },
+      { text: "REGNO", x: 20, y: 500 }, { text: "CCODE", x: 400, y: 500 },
       { text: "COURSENAME", x: 340, y: 500 }, { text: "BRANCH", x: 520, y: 500 }, { text: "Grade", x: 700, y: 500 },
     ] },
     { text: "BT25F02F001 AMESC1001 Electrical Engineering A+", items: [
-      { text: "BT25F02F001", x: 20, y: 480 }, { text: "AMESC1001", x: 260, y: 480 },
+      { text: "BT25F02F001", x: 20, y: 480 }, { text: "AMESC1001", x: 400, y: 480 },
       { text: "Electrical Engineering", x: 520, y: 480 }, { text: "A+", x: 700, y: 480 },
     ] },
   ];
