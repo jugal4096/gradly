@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./CommunitiesPanel.css";
 
 const API = (import.meta as any).env?.VITE_COMMUNITIES_API_URL || "https://gradly-communities-api.jugalpkhr.workers.dev";
 
 export default function CommunitiesVerifyPage() {
+  const started = useRef(false);
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Verifying your email address…");
 
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     const token = new URLSearchParams(window.location.search).get("token");
     if (!token) {
       setState("error");
