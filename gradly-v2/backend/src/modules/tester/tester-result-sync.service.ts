@@ -75,10 +75,11 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
       const statusError = new Error("GECA returned HTTP " + response.status + ".");
       if (response.status < 500 || attempt === GECA_FETCH_ATTEMPTS) throw statusError;
       lastError = statusError;
+      try { await response.body?.cancel(); } catch { /* retry with a fresh request */ }
     } catch (error) {
       lastError = error;
-      const statusMatch = error instanceof Error && /GECA returned HTTP (4\d\d)/.test(error.message);
-      if (statusMatch || !isRetryableFetchError(error) || attempt === GECA_FETCH_ATTEMPTS) break;
+      const httpStatus = error instanceof Error ? Number(error.message.match(/GECA returned HTTP (\d{3})/)?.[1] || 0) : 0;
+      if ((httpStatus >= 400 && httpStatus < 500) || (!httpStatus && !isRetryableFetchError(error)) || attempt === GECA_FETCH_ATTEMPTS) break;
     }
     await new Promise(resolve => setTimeout(resolve, attempt * 450));
   }
