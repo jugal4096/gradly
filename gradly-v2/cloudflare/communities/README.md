@@ -11,7 +11,7 @@ This directory contains the isolated Communities backend and its D1 schema. It d
 
 ## Database migrations
 
-Apply the SQL files in `migrations/` in numeric order to the Communities D1 database. The current account database has both migrations applied.
+Apply the SQL files in `migrations/` in numeric order to the Communities D1 database. The current account database has all three migrations applied.
 
 ## Worker configuration
 
@@ -40,7 +40,9 @@ Never commit these values or paste credentials into chat. The sender domain must
 - `GET /groups/:id/pins`, `POST /groups/:id/pins`, `DELETE /groups/:id/pins/:messageId`
 - `GET /groups/:id/members`, `POST /groups/:id/members` (group moderation)
 - `GET /messages/:id/reactions`, `POST /messages/:id/reactions`
-- `POST /admin/bootstrap` (one-time Super Admin setup), `POST /admin/roles`, `GET /admin/overview`
+- `POST /admin/bootstrap` (standalone Communities account bootstrap), `POST /admin/roles`, `GET /admin/overview`
+- `/ecosystem/admin/*` — existing Gradly Admin JWT bridge for explicitly granted Platform Admins
+- `/ecosystem/super-admin/*` — existing Gradly Super Admin JWT bridge, one-time bootstrap, Admin ID grants/revokes, global limits and moderation
 
 WebSocket tickets are short-lived and single-use. Group membership is rechecked at connection time. Message writes are persisted in D1 before broadcast. A REST polling fallback is available to clients.
 
@@ -49,7 +51,7 @@ WebSocket tickets are short-lived and single-use. Group membership is rechecked 
 - Media and resource uploads are not active yet. R2 is not enabled on the Cloudflare account; enabling it may require a billing/subscription step. Do not activate or upload user content until storage pricing and account billing are reviewed.
 - Email verification cannot send until a verified sender and provider credentials are configured.
 - Platform Admin / Super Admin role grants must be connected to the existing Ecosystem's explicit Communities permission controls before enabling administrative actions. Do not infer admin authority from a user's email or the existing student session.
-- The student UI uses an independent Communities session stored separately from the existing Gradly sign-in. The first Super Admin is established through the one-time bootstrap secret; subsequent Platform Admin and Super Admin grants are explicit and audited.
+- The student UI uses an independent Communities session stored separately from the existing Gradly sign-in. Existing Gradly Super Admin identity can bootstrap once using its existing JWT. The Super Admin then grants Communities access to existing Admin IDs. These permissions are stored separately and every grant/revoke is audited.
 
 ## Initial product limits
 
