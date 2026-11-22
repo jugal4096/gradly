@@ -54,6 +54,14 @@ test("semester filtering uses the enclosing GECA section for subject PDFs withou
   );
 });
 
+test("semester filtering recognizes GECA filenames ending in IV REGULAR", () => {
+  const documents = [
+    { title: "CIVIL ENGINEERING IV REGULAR", url: "https://geca.ac.in/iv-regular.pdf", sectionSemester: null },
+    { title: "CIVIL ENGINEERING V REGULAR", url: "https://geca.ac.in/v-regular.pdf", sectionSemester: null },
+  ];
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 5), [documents[1]]);
+});
+
 test("semester filtering excludes a PDF when its filename and section identify another semester", () => {
   const documents = [
     { title: "Civil Engineering II SEM REGULAR", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 4 },

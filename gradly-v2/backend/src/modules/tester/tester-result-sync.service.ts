@@ -545,7 +545,7 @@ function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades:
 }
 
 function romanSemester(text: string): number | null {
-  const match = text.match(/\b(I{1,3}|IV|V|VI|VII|VIII|IX|X|XI|XII)\s*SEM(?:ESTER)?\b/i);
+  const match = text.match(/\b(I{1,3}|IV|V|VI|VII|VIII|IX|X|XI|XII)(?:\s*SEM(?:ESTER)?\b|\s+(?:REGULAR|BACKLOG|ATKT|RE-?EXAM)\b)/i);
   if (!match) return null;
   const values: Record<string, number> = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9, X:10, XI:11, XII:12 };
   return values[match[1].toUpperCase()] ?? null;
@@ -831,25 +831,29 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     );
   }
 
-  // Branch and semester filtering runs only inside eligible academic-year
-  // sections. A miss must never trigger a scan of unrelated year sections.
-  let candidates = eligibleDocuments;
+  // Apply the same branch + semester constraints to both the targeted scan
+  // and any widening pass. Never widen to unrelated college/research PDFs.
   const branchCode = enrollment.slice(5, 7);
   const branchTerms = BRANCH_NAMES[branchCode] || [];
-  if (branchTerms.length) {
-    const subjectPrefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
-    const branchMatches = eligibleDocuments.filter(item => {
-      const label = (item.title + " " + item.url).toLowerCase();
-      const compactTitle = item.title.toUpperCase().replace(/[^A-Z0-9]/g, "");
-      return branchTerms.some(term => label.includes(term)) ||
-        subjectPrefixes.some(prefix => compactTitle.startsWith(prefix));
-    });
-    if (branchMatches.length) candidates = branchMatches;
-  }
-  candidates = selectGecaSemesterDocuments(candidates, selectedSemester);
+  const subjectPrefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
+  const filterBranchAndSemester = <T extends { title: string; url: string; sectionSemester: number | null }>(items: T[]): T[] => {
+    let branchMatches = items;
+    if (branchTerms.length) {
+      const matches = items.filter(item => {
+        const label = (item.title + " " + item.url).toLowerCase();
+        const compactTitle = item.title.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        return branchTerms.some(term => label.includes(term)) ||
+          subjectPrefixes.some(prefix => compactTitle.startsWith(prefix));
+      });
+      if (matches.length) branchMatches = matches;
+    }
+    return selectGecaSemesterDocuments(branchMatches, selectedSemester);
+  };
+  const candidates = filterBranchAndSemester(eligibleDocuments);
+  const fallbackCandidates = filterBranchAndSemester(unique);
   if (!candidates.length) {
     throw new Error(
-      "No GECA result PDFs match the student's academic-year section, branch and selected semester. " +
+      "No GECA result PDFs match the student's branch and selected semester. " +
       "The linked PDFs are explicitly labelled for different semesters.",
     );
   }
@@ -896,7 +900,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   // when GECA moves a link under a different heading or changes its markup.
   // Keep a hard total scan budget so a large archive cannot hang the request.
   if (matches.length === 0 && downloadFailures === 0 && scannedUrls.size < MAX_RESULT_PDFS) {
-    const remaining = unique
+    const remaining = fallbackCandidates
       .filter(item => !scannedUrls.has(item.url))
       .slice(0, MAX_RESULT_PDFS - scannedUrls.size);
     if (remaining.length) {
