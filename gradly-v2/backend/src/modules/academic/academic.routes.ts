@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { pool } from "../../config/database";
+import { pool, queryWithRetry } from "../../config/database";
 
 const router = Router();
 
@@ -196,7 +196,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
     // Some older production databases may not yet have the optional
     // curriculum_subjects.active column. Detect it before building the query
     // so a schema rollout mismatch cannot make the entire catalogue unavailable.
-    const activeColumn = await pool.query(
+    const activeColumn = await queryWithRetry(
       `SELECT 1
        FROM information_schema.columns
        WHERE table_schema = 'public'
@@ -219,7 +219,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
          )`
       : "";
 
-    const result = await pool.query(
+    const result = await queryWithRetry(
       `SELECT cs.id, cs.course_code AS code, cs.course_name AS name,
               cs.credits, cs.course_type AS "courseType", cs.mandatory,
               sem.id AS "semesterId", sem.semester_number AS semester
