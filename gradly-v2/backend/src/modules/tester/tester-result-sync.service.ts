@@ -559,7 +559,7 @@ function romanSemester(text: string): number | null {
   if (!matches.length) return null;
   matches.sort((a, b) => a.index - b.index);
   const match = matches[matches.length - 1];
-  return values[match[1].toUpperCase()] ?? Number(match[1]) || null;
+  return values[match[1].toUpperCase()] ?? (Number(match[1]) || null);
 }
 
 async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null): Promise<{
