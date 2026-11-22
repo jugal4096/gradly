@@ -187,6 +187,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
   const { curriculumId, semesterNumber } = req.params;
   const number = Number(semesterNumber);
   const includeAllBranches = req.query.includeAllBranches === "true";
+  const includeAllSemesters = req.query.includeAllSemesters === "true";
   if (!Number.isInteger(number) || number < 1 || number > 12) {
     res.status(400).json({ success: false, message: "Invalid semester number." });
     return;
@@ -224,7 +225,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
            )
          )
        ORDER BY cs.course_code, cs.course_name`,
-      [curriculumId, number, includeAllBranches],
+      [curriculumId, number, includeAllBranches, includeAllSemesters],
     );
     res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
