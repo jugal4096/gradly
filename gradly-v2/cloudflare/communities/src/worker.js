@@ -38,6 +38,11 @@ function corsHeaders(request) {
 function reply(request, data, status = 200) { return json(data, status, corsHeaders(request)); }
 function fail(request, message, status = 400) { return reply(request, { success: false, error: message }, status); }
 
+async function getLimits(env) {
+  const defaults={maxGroupMemberships:20,maxGroupMembers:500,maxMessageLength:5000,messagesPerMinute:10,photosPerMessage:10,photoBytes:5242880,videoBytes:26214400,videoSeconds:120,pdfBytes:15728640,officeBytes:10485760,userStorageBytes:104857600,uploadsPerDay:20,videosPerDay:3};
+  const row=await env.DB.prepare("SELECT value_json FROM chat_platform_settings WHERE key='limits'").first();
+  try { return {...defaults,...JSON.parse(row?.value_json||"{}")}; } catch { return defaults; }
+}
 async function currentUser(request, env) {
   const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
@@ -173,11 +178,16 @@ export class ChatRoom extends DurableObject {
       const parent = await this.env.DB.prepare("SELECT id FROM chat_messages WHERE id=? AND group_id=? AND deleted_at IS NULL").bind(String(data.replyToId),groupId).first();
       if (parent) replyToId = parent.id;
     }
+    const limits=await getLimits(this.env);
+    if (body.length > limits.maxMessageLength) {
+      ws.send(JSON.stringify({ type: "error", error: "Messages are limited to " + limits.maxMessageLength + " characters." }));
+      return;
+    }
     const rate = await this.env.DB.prepare(`
       SELECT COUNT(*) AS total FROM chat_messages
       WHERE sender_id=? AND created_at>=?
     `).bind(userId, new Date(Date.now() - 60_000).toISOString()).first();
-    if ((rate?.total || 0) >= 10) {
+    if ((rate?.total || 0) >= limits.messagesPerMinute) {
       ws.send(JSON.stringify({ type: "error", error: "Message limit reached. Please wait a moment." }));
       return;
     }
@@ -477,8 +487,9 @@ export default {
         const visibility = ["public","private","invite_only"].includes(body?.visibility) ? body.visibility : "public";
         if (name.length < 3 || name.length > 70) return fail(request, "Group name must be 3–70 characters.");
         if (description.length > 500) return fail(request, "Description must be 500 characters or less.");
+        const limits=await getLimits(env);
         const memberships = await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE user_id=? AND status='active'").bind(user.id).first();
-        if ((memberships?.total || 0) >= 20) return fail(request, "You have reached the 20-group membership limit.", 429);
+        if ((memberships?.total || 0) >= limits.maxGroupMemberships) return fail(request, "You have reached the "+limits.maxGroupMemberships+"-group membership limit.", 429);
         const groupId = id();
         await env.DB.batch([
           env.DB.prepare(`INSERT INTO chat_groups(id,name,description,category,visibility,institution_name,branch_name,semester,created_by) VALUES(?,?,?,?,?,?,?,?,?)`)
@@ -535,8 +546,11 @@ export default {
           if (membership) return reply(request, { success: true, joined: true });
           const banned = await env.DB.prepare("SELECT 1 FROM chat_group_members WHERE group_id=? AND user_id=? AND status='banned'").bind(groupId,user.id).first();
           if (banned) return fail(request, "You are not allowed to join this group.", 403);
+          const limits=await getLimits(env);
           const total = await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE user_id=? AND status='active'").bind(user.id).first();
-          if ((total?.total || 0) >= 20) return fail(request, "You have reached the 20-group membership limit.", 429);
+          if ((total?.total || 0) >= limits.maxGroupMemberships) return fail(request, "You have reached the "+limits.maxGroupMemberships+"-group membership limit.", 429);
+          const groupCount=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE group_id=? AND status='active'").bind(groupId).first();
+          if ((groupCount?.total || 0) >= limits.maxGroupMembers) return fail(request,"This group has reached its member limit.",429);
           if (group.visibility === "public") {
             await env.DB.prepare("INSERT INTO chat_group_members(group_id,user_id,role) VALUES(?,?,'member')").bind(groupId,user.id).run();
             await audit(env,user.id,"group.joined","group",groupId);
@@ -574,10 +588,11 @@ export default {
           if (membership.muted_until && new Date(membership.muted_until).getTime() > Date.now()) return fail(request,"You are temporarily muted in this group.",403);
           const body = await parseBody(request);
           const text = String(body?.body || "").trim();
-          if (!text || text.length > 5000) return fail(request, "Message must contain 1–5000 characters.");
+          const limits=await getLimits(env);
+          if (!text || text.length > limits.maxMessageLength) return fail(request, "Message must contain 1–"+limits.maxMessageLength+" characters.");
           const rate = await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_messages WHERE sender_id=? AND created_at>=?")
             .bind(user.id,new Date(Date.now()-60_000).toISOString()).first();
-          if ((rate?.total || 0) >= 10) return fail(request, "Message limit reached. Please wait a moment.", 429);
+          if ((rate?.total || 0) >= limits.messagesPerMinute) return fail(request, "Message limit reached. Please wait a moment.", 429);
           let replyToId = null;
           if (body?.replyToId) {
             const parent=await env.DB.prepare("SELECT id FROM chat_messages WHERE id=? AND group_id=? AND deleted_at IS NULL").bind(String(body.replyToId),groupId).first();
@@ -630,8 +645,9 @@ export default {
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(request,"Enter the registered Communities email address.");
             const invited=await env.DB.prepare("SELECT id,email_verified_at,status FROM chat_users WHERE email=?").bind(email).first();
             if (!invited || !invited.email_verified_at || invited.status!=="active") return fail(request,"That student must first create and verify a Communities account.",404);
+            const limits=await getLimits(env);
             const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE group_id=? AND status='active'").bind(groupId).first();
-            if ((count?.total||0)>=500) return fail(request,"This group has reached its member limit.",429);
+            if ((count?.total||0)>=limits.maxGroupMembers) return fail(request,"This group has reached its member limit.",429);
             await env.DB.prepare("INSERT INTO chat_group_members(group_id,user_id,role,status) VALUES(?,?,'member','active') ON CONFLICT(group_id,user_id) DO UPDATE SET role='member',status='active',joined_at=?").bind(groupId,invited.id,now()).run();
             await audit(env,user.id,"member.added","user",invited.id,"Added by group moderator",{groupId});
             return reply(request,{success:true});
