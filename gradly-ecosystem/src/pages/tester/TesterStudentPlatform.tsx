@@ -6,7 +6,7 @@ import "./TesterOnlineResultSync.css";
 
 type Section = "home" | "sgpa" | "sgpaWhatIf" | "sgpaPlanner" | "tracker" | "cgpa" | "cgpaWhatIf" | "planner" | "cgpaTracker" | "community" | "events" | "assistant" | "aiStudyPlanner" | "profile" | "academicManagement" | "settings" | "credits";
 type Profile = { institutionId: string; institutionName: string; programId: string; programName: string; branchId: string; branchName: string; curriculumId: string; semester: string; enrollment: string; admissionYear: string; admissionMode: string; admissionNumber: string; scheme: string };
-type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"MDM"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean; courseCategory?: string };
+type Subject = { id: number; name: string; credits: number; grade: string; courseCode?: string; courseType?: string; curriculumSubjectId?: string; electiveKind?: "OE"|"HS"|"MDM"|"PE4"|"PE4LAB"|"PE5"|"PE6A"|"PE6ALAB"|"PE6B"|"PE6BLAB"|"PE6C"|null; electiveSlotCode?: string; pe4Option?: (typeof PE4_OPTIONS)[number]; isCustom?: boolean; isRegisteredDiscovered?: boolean; courseCategory?: string };
 type ElectiveOption = { code: string; name: string; credits: number; curriculumSubjectId?: string; branchName?: string };
 const OE_OPTIONS: ElectiveOption[] = [
   {code:"CE3008",name:"Disaster Management",credits:3},{code:"CEOE1010",name:"Disaster Management",credits:3},{code:"CE2014",name:"Rural Technology",credits:3},{code:"CEOE0040",name:"Infrastructure Management",credits:3},
@@ -114,7 +114,7 @@ function electiveKind(code:string, semester:number, name="", courseType="", nep=
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
 type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
 type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_snapshot?: string | null; course_name_snapshot?: string | null; credits?: number | string | null; grade_symbol?: string | null; grade_point?: number | string | null };
-type AcademicRecordApi = { id: string | number; semester_number: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
+type AcademicRecordApi = { id: string | number; semester_number: number | string; attempt_number?: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; course_type?: string | null; subjectType?: string | null; branchName?: string | null; id?: string | number | null };
 function isHssmCatalogueRow(item:CurriculumSubjectApi):boolean {
   const type=String(item.courseType||item.course_type||item.subjectType||"").trim().toUpperCase();
@@ -430,8 +430,6 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const [whatIfSubjects,setWhatIfSubjects] = useState<Subject[]>([]);
   const [whatIfLoading,setWhatIfLoading] = useState(false);
   const [whatIfNotice,setWhatIfNotice] = useState("");
-  const [whatIfScenariosSaved,setWhatIfScenariosSaved] = useState<{id:number;name:string;semester:number;sgpa:number;credits:number;subjects:Subject[]}[]>([]);
-  const [whatIfScenarioName,setWhatIfScenarioName] = useState("");
   const [targetSgpa,setTargetSgpa] = useState("9");
   const [trackerChartType,setTrackerChartType] = useState<"line"|"bar"|"histogram">("line");
   const [trackerSelectedSemester,setTrackerSelectedSemester] = useState(0);
@@ -742,14 +740,6 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
     setWhatIfSubjects(current=>current.filter(subject=>subject.id!==id));
     setWhatIfNotice("");
   }
-  function saveWhatIfScenario() {
-    if(!whatIfSubjects.length||whatIfCountedCredits<=0) {setWhatIfNotice("Add at least one subject with credits before saving a test case.");return;}
-    const name=whatIfScenarioName.trim()||`Test case ${whatIfScenariosSaved.length+1}`;
-    setWhatIfScenariosSaved(current=>[...current,{id:Date.now(),name,semester:whatIfSemester,sgpa:whatIfLiveSgpa,credits:whatIfCountedCredits,subjects:whatIfSubjects.map(subject=>({...subject}))}]);
-    setWhatIfScenarioName("");
-    setWhatIfNotice("Test case saved for comparison. Your academic record has not been changed.");
-  }
-
   const weighted = subjects.filter(s=>s.name.trim() && s.credits>0 && POINTS[s.grade]!==undefined).reduce((sum,s)=>sum+(POINTS[s.grade]??0)*s.credits,0);
   const countedCredits = subjects.filter(s=>s.name.trim() && s.credits>0).reduce((sum,s)=>sum+s.credits,0);
   const creditsForSemesterLimit = subjects.filter(s=>s.name.trim() && s.credits>0 && s.courseCode?.toUpperCase()!=="INHS1020").reduce((sum,s)=>sum+s.credits,0);
@@ -1300,7 +1290,6 @@ export default function TesterStudentPlatform({ onExit, onChangeIdentity }: { on
   const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
-  const whatIfScenarios=buildSgpaScenarios(Number(whatIf),whatIfSubjects);
 
   if (onboarding && !isTester) return null;
 
