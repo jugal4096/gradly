@@ -181,8 +181,12 @@ export default function CommunitiesPanel() {
     try {
       const data = await api(`/groups/${group.id}/join`, token, { method: "POST", body: "{}" });
       if (data.requestPending) setNotice("Join request sent. A group moderator must approve it.");
-      else { setNotice("You joined the group."); setSelected(group); }
-      await loadGroups();
+      else {
+        setNotice("You joined the group.");
+        await loadGroups();
+        const joined = await api("/groups/mine", token);
+        setSelected((joined.groups || []).find((item: Group) => item.id === group.id) || { ...group, role: "member" });
+      }
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   };
