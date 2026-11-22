@@ -358,6 +358,25 @@ export default {
           const rows=await env.DB.prepare("SELECT r.*,g.name AS group_name,u.display_name AS reporter_name FROM chat_reports r LEFT JOIN chat_groups g ON g.id=r.group_id JOIN chat_users u ON u.id=r.reporter_id WHERE r.status IN ('open','reviewing') ORDER BY r.created_at ASC LIMIT 300").all();
           return reply(request,{success:true,reports:rows.results||[]});
         }
+
+        const saReportDetail=path.match(/^[/]ecosystem[/]super-admin[/]reports[/]([a-f0-9-]+)$/i);
+        if (saReportDetail && request.method==="GET") {
+          const report=await env.DB.prepare("SELECT * FROM chat_reports WHERE id=?").bind(saReportDetail[1]).first();
+          if (!report) return fail(request,"Report not found.",404);
+          const reportedMessage=report.message_id?await env.DB.prepare("SELECT id,group_id,sender_id,body,created_at,edited_at,deleted_at FROM chat_messages WHERE id=?").bind(report.message_id).first():null;
+          await auditExternal(env,"super_admin",ecosystemSuperAdmin.identityId,"reported_message_viewed","report",report.id,"Access limited to a reported message");
+          return reply(request,{success:true,report,reportedMessage});
+        }
+        const saResolve=path.match(/^[/]ecosystem[/]super-admin[/]reports[/]([a-f0-9-]+)[/]resolve$/i);
+        if (saResolve && request.method==="POST") {
+          const body=await parseBody(request), status=body?.status;
+          if (!["resolved","dismissed"].includes(status)) return fail(request,"Status must be resolved or dismissed.");
+          const reason=String(body?.reason||"").slice(0,500);
+          await env.DB.prepare("UPDATE chat_reports SET status=?,assigned_to=NULL,resolved_at=? WHERE id=? AND status IN ('open','reviewing')").bind(status,now(),saResolve[1]).run();
+          await auditExternal(env,"super_admin",ecosystemSuperAdmin.identityId,"report."+status,"report",saResolve[1],reason);
+          return reply(request,{success:true});
+        }
+
         if (path==="/ecosystem/super-admin/settings" && request.method==="GET") {
           const rows=await env.DB.prepare("SELECT key,value_json,updated_at FROM chat_platform_settings ORDER BY key").all();
           return reply(request,{success:true,settings:rows.results||[]});
