@@ -31,7 +31,7 @@ Never commit these values or paste credentials into chat. The sender domain must
 - `GET /health`
 - `POST /auth/register`, `POST /auth/verify`, `POST /auth/login`, `POST /auth/login/verify`, `POST /auth/logout`, `GET /auth/me`
 - `GET /groups`, `GET /groups/mine`, `POST /groups`
-- `GET /groups/:id`, `POST /groups/:id/join`, `POST /groups/:id/leave`
+- `GET /groups/:id`, `POST /groups/:id/join`, `POST /groups/:id/leave`, `POST /groups/:id/invites`, `POST /groups/invites/accept`
 - `GET /groups/:id/messages`, `POST /groups/:id/messages`
 - `POST /groups/:id/socket-ticket`, `GET /groups/:id/live?ticket=...`
 - `PATCH /messages/:id`, `DELETE /messages/:id`
