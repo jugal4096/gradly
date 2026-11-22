@@ -62,6 +62,7 @@ export default function StudentOnlineResultSync({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showRestrictedSessionNotice, setShowRestrictedSessionNotice] = useState(false);
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number; courseType?: string }[]>([]);
@@ -157,6 +158,14 @@ export default function StudentOnlineResultSync({
   }, [reExamTargetCourseCode]);
 
   async function inspectSession(session: ResultSession) {
+    if (session.id === "3018" && selectedSemester === 2) {
+      setSelectedSessionId(session.id);
+      setScan(null);
+      setError("");
+      setNotice("");
+      setShowRestrictedSessionNotice(true);
+      return;
+    }
     // Enforce one examination-session scan at a time, even if rapid clicks bypass
     // React's disabled-button render before state updates.
     if (activeRequest.current || loadingSessionId) return;
@@ -424,6 +433,7 @@ export default function StudentOnlineResultSync({
   }
 
   return <>
+    {showRestrictedSessionNotice && createPortal(<div className="sp-result-restriction-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setShowRestrictedSessionNotice(false); }}><section className="sp-result-restriction-dialog" role="alertdialog" aria-modal="true" aria-labelledby="sp-result-restriction-title" aria-describedby="sp-result-restriction-description"><div className="sp-result-restriction-symbol" aria-hidden="true"><span>!</span></div><span className="sp-result-restriction-eyebrow">GECA · RESULT AVAILABILITY</span><h3 id="sp-result-restriction-title">Online result fetching unavailable</h3><p id="sp-result-restriction-description">Due to the way GECA has published this result, online fetching is unavailable <strong>only for Semester II of the ESE April–May 2026 examination session.</strong></p><div className="sp-result-restriction-scope"><div><span className="sp-result-scope-check">✓</span><span><strong>Semester I</strong><small>Online fetching remains available</small></span></div><div><span className="sp-result-scope-check">✓</span><span><strong>All other examination sessions</strong><small>Online fetching remains available for every semester</small></span></div><div className="sp-result-scope-manual"><span className="sp-result-scope-manual-icon">Ⅱ</span><span><strong>Semester II · ESE April–May 2026</strong><small>Enter your grades manually. SGPA and CGPA tools remain available.</small></span></div></div><button type="button" className="sp-result-restriction-action" onClick={() => setShowRestrictedSessionNotice(false)}>Got it · Enter grades manually</button></section></div>, document.body)}
     <button type="button" className={"sp-entry-mode " + (open ? "selected" : "")} onClick={() => void openArchive()} aria-expanded={open}>
       <span>ONLINE FETCHING</span>
       <strong>Fetch official results</strong>
