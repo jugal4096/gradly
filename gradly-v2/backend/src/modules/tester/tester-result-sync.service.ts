@@ -589,15 +589,20 @@ export function extractSubjectResultGrades(
       item.x >= (enrollmentItem?.x ?? regnoX) - 2 &&
       item.x <= gradeX + 120,
     );
+    // GECA's header labels and row values are not always left-aligned.
+    // In some PDFs the branch value starts ~25px before the BRANCH header,
+    // while the course title starts exactly at COURSENAME and would be
+    // accidentally concatenated with CCODE if we use that header as a bound.
+    // Anchor extraction around the CCODE column instead.
     const branchText = rowItems
-      .filter(item => item.x >= branchX - 2 && item.x < gradeX)
+      .filter(item => item.x >= branchX - 40 && item.x < gradeX)
       .map(item => item.text)
       .join(" ")
       .toLowerCase();
     if (!branchTerms.some(term => branchText.includes(term.toLowerCase()))) continue;
 
     const codeText = rowItems
-      .filter(item => item.x >= courseNameX - 2 && item.x < branchX)
+      .filter(item => item.x >= codeX - 35 && item.x < branchX - 5)
       .map(item => item.text)
       .join("");
     const courseCode = normalized(codeText);
