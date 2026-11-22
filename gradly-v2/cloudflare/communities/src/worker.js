@@ -55,7 +55,7 @@ async function currentUser(request, env) {
 }
 async function requireMember(env, groupId, userId) {
   return env.DB.prepare(`
-    SELECT m.role,m.status,g.status AS group_status,g.visibility
+    SELECT m.role,m.status,m.muted_until,g.status AS group_status,g.visibility
     FROM chat_group_members m JOIN chat_groups g ON g.id=m.group_id
     WHERE m.group_id=? AND m.user_id=? AND m.status='active' AND g.status='active'
   `).bind(groupId, userId).first();
@@ -124,6 +124,15 @@ export class ChatRoom extends DurableObject {
     const { userId, groupId } = attachment;
     const member = await requireMember(this.env, groupId, userId);
     if (!member) { ws.close(1008, "Membership is no longer active"); return; }
+    if (member.muted_until && new Date(member.muted_until).getTime() > Date.now()) {
+      ws.send(JSON.stringify({ type: "error", error: "You are temporarily muted in this group." }));
+      return;
+    }
+    let replyToId = null;
+    if (data.replyToId) {
+      const parent = await this.env.DB.prepare("SELECT id FROM chat_messages WHERE id=? AND group_id=? AND deleted_at IS NULL").bind(String(data.replyToId),groupId).first();
+      if (parent) replyToId = parent.id;
+    }
     const rate = await this.env.DB.prepare(`
       SELECT COUNT(*) AS total FROM chat_messages
       WHERE sender_id=? AND created_at>=?
@@ -136,7 +145,7 @@ export class ChatRoom extends DurableObject {
     await this.env.DB.prepare(`
       INSERT INTO chat_messages(id,group_id,sender_id,body,reply_to_id)
       VALUES(?,?,?,?,?)
-    `).bind(messageId, groupId, userId, body, data.replyToId || null).run();
+    `).bind(messageId, groupId, userId, body, replyToId).run();
     const saved = await this.env.DB.prepare(`
       SELECT m.id,m.group_id,m.sender_id,m.body,m.reply_to_id,m.edited_at,m.created_at,
              u.display_name AS sender_name
@@ -378,15 +387,21 @@ export default {
 
         if (action === "messages" && request.method === "POST") {
           if (!membership) return fail(request, "Join this group to send messages.", 403);
+          if (membership.muted_until && new Date(membership.muted_until).getTime() > Date.now()) return fail(request,"You are temporarily muted in this group.",403);
           const body = await parseBody(request);
           const text = String(body?.body || "").trim();
           if (!text || text.length > 5000) return fail(request, "Message must contain 1–5000 characters.");
           const rate = await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_messages WHERE sender_id=? AND created_at>=?")
             .bind(user.id,new Date(Date.now()-60_000).toISOString()).first();
           if ((rate?.total || 0) >= 10) return fail(request, "Message limit reached. Please wait a moment.", 429);
+          let replyToId = null;
+          if (body?.replyToId) {
+            const parent=await env.DB.prepare("SELECT id FROM chat_messages WHERE id=? AND group_id=? AND deleted_at IS NULL").bind(String(body.replyToId),groupId).first();
+            if (parent) replyToId=parent.id;
+          }
           const messageId = id();
           await env.DB.prepare("INSERT INTO chat_messages(id,group_id,sender_id,body,reply_to_id) VALUES(?,?,?,?,?)")
-            .bind(messageId,groupId,user.id,text,body?.replyToId || null).run();
+            .bind(messageId,groupId,user.id,text,replyToId).run();
           return reply(request, { success: true, message: { id:messageId,group_id:groupId,sender_id:user.id,sender_name:user.display_name,body:text,reply_to_id:body?.replyToId || null,created_at:now() } }, 201);
         }
 
