@@ -547,6 +547,81 @@ export default {
         return reply(request,{success:true});
       }
 
+
+      if (path === "/admin/bootstrap" && request.method === "POST") {
+        if (!env.COMMUNITIES_BOOTSTRAP_TOKEN) return fail(request,"Communities bootstrap is not configured.",503);
+        const body=await parseBody(request);
+        const supplied=String(body?.bootstrapToken||"");
+        if (supplied.length<32 || supplied!==env.COMMUNITIES_BOOTSTRAP_TOKEN) return fail(request,"Bootstrap token is invalid.",403);
+        const existing=await env.DB.prepare("SELECT user_id FROM chat_platform_roles WHERE role='super_admin' LIMIT 1").first();
+        if (existing) return fail(request,"The initial Super Admin has already been configured.",409);
+        await env.DB.prepare("INSERT INTO chat_platform_roles(user_id,role) VALUES(?,'super_admin')").bind(user.id).run();
+        await audit(env,user.id,"platform.super_admin.bootstrap","user",user.id,"Initial Super Admin bootstrap");
+        return reply(request,{success:true,message:"You are now the Communities Super Admin."});
+      }
+
+      if (path === "/admin/overview" && request.method === "GET") {
+        const role=await isPlatformAdmin(env,user.id);
+        if (!role) return fail(request,"Communities platform administrator permission required.",403);
+        const [users,groups,messages,reports,attachments]=await Promise.all([
+          env.DB.prepare("SELECT COUNT(*) AS total FROM chat_users WHERE status='active'").first(),
+          env.DB.prepare("SELECT COUNT(*) AS total FROM chat_groups WHERE status='active'").first(),
+          env.DB.prepare("SELECT COUNT(*) AS total FROM chat_messages WHERE deleted_at IS NULL").first(),
+          env.DB.prepare("SELECT COUNT(*) AS total FROM chat_reports WHERE status IN ('open','reviewing')").first(),
+          env.DB.prepare("SELECT COALESCE(SUM(size_bytes),0) AS bytes FROM chat_message_attachments WHERE deleted_at IS NULL").first()
+        ]);
+        return reply(request,{success:true,overview:{activeUsers:users?.total||0,activeGroups:groups?.total||0,messages:messages?.total||0,openReports:reports?.total||0,storedMediaBytes:attachments?.bytes||0}});
+      }
+
+      if (path === "/admin/roles" && request.method === "POST") {
+        const role=await isPlatformAdmin(env,user.id);
+        if (role?.role!=="super_admin") return fail(request,"Only the Communities Super Admin can manage platform roles.",403);
+        const body=await parseBody(request);
+        const targetId=String(body?.userId||"");
+        const targetRole=String(body?.role||"");
+        const operation=String(body?.action||"grant");
+        if (!["platform_admin","super_admin"].includes(targetRole) || !["grant","revoke"].includes(operation)) return fail(request,"Invalid role operation.");
+        const target=await env.DB.prepare("SELECT id FROM chat_users WHERE id=? AND status='active'").bind(targetId).first();
+        if (!target) return fail(request,"Communities user not found.",404);
+        if (operation==="grant") {
+          await env.DB.prepare("INSERT OR IGNORE INTO chat_platform_roles(user_id,role,granted_by) VALUES(?,?,?)").bind(targetId,targetRole,user.id).run();
+        } else {
+          if (targetId===user.id && targetRole==="super_admin") {
+            const total=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_platform_roles WHERE role='super_admin'").first();
+            if ((total?.total||0)<=1) return fail(request,"You cannot remove the last Super Admin.",409);
+          }
+          await env.DB.prepare("DELETE FROM chat_platform_roles WHERE user_id=? AND role=?").bind(targetId,targetRole).run();
+        }
+        await audit(env,user.id,"platform.role."+operation,"user",targetId,"Role "+targetRole,{role:targetRole});
+        return reply(request,{success:true});
+      }
+
+      const reportDetail=path.match(/^[/]admin[/]reports[/]([a-f0-9-]+)$/i);
+      if (reportDetail && request.method==="GET") {
+        const role=await isPlatformAdmin(env,user.id);
+        if (!role) return fail(request,"Communities platform administrator permission required.",403);
+        const report=await env.DB.prepare("SELECT * FROM chat_reports WHERE id=?").bind(reportDetail[1]).first();
+        if (!report) return fail(request,"Report not found.",404);
+        let reportedMessage=null;
+        if (report.message_id) {
+          reportedMessage=await env.DB.prepare("SELECT id,group_id,sender_id,body,created_at,edited_at,deleted_at FROM chat_messages WHERE id=?").bind(report.message_id).first();
+        }
+        await audit(env,user.id,"moderation.report_message_viewed","report",report.id,"Access limited to a reported message");
+        return reply(request,{success:true,report,reportedMessage});
+      }
+      const reportResolve=path.match(/^[/]admin[/]reports[/]([a-f0-9-]+)[/]resolve$/i);
+      if (reportResolve && request.method==="POST") {
+        const role=await isPlatformAdmin(env,user.id);
+        if (!role) return fail(request,"Communities platform administrator permission required.",403);
+        const body=await parseBody(request);
+        const status=body?.status;
+        if (!["resolved","dismissed"].includes(status)) return fail(request,"Status must be resolved or dismissed.");
+        const reason=String(body?.reason||"").slice(0,500);
+        await env.DB.prepare("UPDATE chat_reports SET status=?,assigned_to=?,resolved_at=? WHERE id=? AND status IN ('open','reviewing')").bind(status,user.id,now(),reportResolve[1]).run();
+        await audit(env,user.id,"moderation.report."+status,"report",reportResolve[1],reason);
+        return reply(request,{success:true});
+      }
+
       if (path === "/admin/reports" && request.method === "GET") {
         const role=await isPlatformAdmin(env,user.id);
         if (!role) return fail(request,"Communities platform administrator permission required.",403);
