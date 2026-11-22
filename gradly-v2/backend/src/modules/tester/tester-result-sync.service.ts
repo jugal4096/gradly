@@ -633,13 +633,13 @@ function academicSectionBeforeLink(markup: string): GecaAcademicSection | null {
 
 function academicSemesterBeforeLink(markup: string): number | null {
   const visibleText = plainText(markup
-    .replace(/<script\\b[\\s\\S]*?<\\/script>/gi, " ")
-    .replace(/<style\\b[\\s\\S]*?<\\/style>/gi, " "));
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " "));
   // GECA headings use forms such as "First Year II SEM April May 2026".
-  const pattern = /\\b(?:FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\\s+YEAR\\s+(VIII|VII|VI|V|IV|III|II|I|[1-8])\\s*(?:SEM|SEMESTER)\\b/gi;
+  const pattern = /\b(?:FIRST|1ST|SECOND|2ND|THIRD|3RD|FOURTH|4TH|FINAL)\s+YEAR\s+(VIII|VII|VI|V|IV|III|II|I|[1-8])\s*(?:SEM|SEMESTER)\b/gi;
   let semester: number | null = null;
   for (const match of visibleText.matchAll(pattern)) {
-    semester = /^\\d+$/.test(match[1]) ? Number(match[1]) : romanSemester(match[1]);
+    semester = /^\d+$/.test(match[1]) ? Number(match[1]) : romanSemester(match[1]);
   }
   return semester;
 }
