@@ -22,6 +22,7 @@ Email verification uses a Resend-compatible provider. Configure these Worker sec
 - `RESEND_API_KEY` — secret API key from the email provider
 - `EMAIL_FROM` — verified sender, e.g. `Gradly Communities <communities@your-verified-domain>`
 - `COMMUNITY_APP_URL` — optional; defaults to `https://gradly-peach.vercel.app`
+- `COMMUNITIES_BOOTSTRAP_TOKEN` — one-time bootstrap secret (at least 32 characters) used to assign the first Communities Super Admin after account verification
 
 Never commit these values or paste credentials into chat. The sender domain must be verified with the email provider. The verification link is handled by the student app route `/community/verify`.
 
@@ -35,7 +36,11 @@ Never commit these values or paste credentials into chat. The sender domain must
 - `POST /groups/:id/socket-ticket`, `GET /groups/:id/live?ticket=...`
 - `PATCH /messages/:id`, `DELETE /messages/:id`
 - `GET /groups/:id/requests`, `POST /groups/:id/requests`
-- `POST /groups/:id/reports`, `GET /admin/reports`
+- `POST /groups/:id/reports`, `GET /admin/reports`, `GET /admin/reports/:id`, `POST /admin/reports/:id/resolve`
+- `GET /groups/:id/pins`, `POST /groups/:id/pins`, `DELETE /groups/:id/pins/:messageId`
+- `GET /groups/:id/members`, `POST /groups/:id/members` (group moderation)
+- `GET /messages/:id/reactions`, `POST /messages/:id/reactions`
+- `POST /admin/bootstrap` (one-time Super Admin setup), `POST /admin/roles`, `GET /admin/overview`
 
 WebSocket tickets are short-lived and single-use. Group membership is rechecked at connection time. Message writes are persisted in D1 before broadcast. A REST polling fallback is available to clients.
 
@@ -44,7 +49,7 @@ WebSocket tickets are short-lived and single-use. Group membership is rechecked 
 - Media and resource uploads are not active yet. R2 is not enabled on the Cloudflare account; enabling it may require a billing/subscription step. Do not activate or upload user content until storage pricing and account billing are reviewed.
 - Email verification cannot send until a verified sender and provider credentials are configured.
 - Platform Admin / Super Admin role grants must be connected to the existing Ecosystem's explicit Communities permission controls before enabling administrative actions. Do not infer admin authority from a user's email or the existing student session.
-- The student UI uses an independent Communities session stored separately from the existing Gradly sign-in.
+- The student UI uses an independent Communities session stored separately from the existing Gradly sign-in. The first Super Admin is established through the one-time bootstrap secret; subsequent Platform Admin and Super Admin grants are explicit and audited.
 
 ## Initial product limits
 
