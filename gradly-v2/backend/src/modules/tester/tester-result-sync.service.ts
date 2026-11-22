@@ -910,6 +910,11 @@ export function selectGecaBranchDocuments<T extends { title: string; url: string
   });
 }
 
+/** Only GECA resultID 3018 (ESE April–May 2026), Semester II, is manual-entry only. */
+export function isRestrictedGecaResultFetch(session: Pick<GecaResultSession, "id">, selectedSemester?: number): boolean {
+  return session.id === "3018" && selectedSemester === 2;
+}
+
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
@@ -928,6 +933,9 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const sessions = await listGecaResultSessions();
   const session = sessions.find(item => item.id === resultId);
   if (!session) throw new Error("The selected examination session is no longer available on the GECA portal.");
+  if (isRestrictedGecaResultFetch(session, selectedSemester)) {
+    throw new Error("Online result fetching is unavailable only for Semester II of the ESE April–May 2026 examination session. Semester I and all other examination sessions remain available. Please enter Semester II grades manually.");
+  }
 
   const html = await fetchGecaText(session.url);
   const documents: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null; sectionSemester: number | null }> = [];
