@@ -561,11 +561,11 @@ export function extractSubjectResultGrades(
     const labels = new Map<string, number>();
     for (const item of line.items) {
       const token = normalized(item.text);
-      for (const label of ["REGNO", "CCODE", "BRANCH", "GRADE"]) {
+      for (const label of ["REGNO", "CCODE", "COURSENAME", "BRANCH", "GRADE"]) {
         if (token === label || token.includes(label)) labels.set(label, item.x);
       }
     }
-    return labels.size === 4
+    return labels.size === 5
       ? [{ y: line.items[0]?.y ?? 0, labels }]
       : [];
   });
@@ -581,6 +581,7 @@ export function extractSubjectResultGrades(
     if (!header) continue;
     const regnoX = header.labels.get("REGNO")!;
     const codeX = header.labels.get("CCODE")!;
+    const courseNameX = header.labels.get("COURSENAME")!;
     const branchX = header.labels.get("BRANCH")!;
     const gradeX = header.labels.get("GRADE")!;
     const enrollmentItem = line.items.find(item => normalized(item.text).includes(normalized(enrollment)));
@@ -596,7 +597,7 @@ export function extractSubjectResultGrades(
     if (!branchTerms.some(term => branchText.includes(term.toLowerCase()))) continue;
 
     const codeText = rowItems
-      .filter(item => item.x >= codeX - 2 && item.x < branchX)
+      .filter(item => item.x >= codeX - 2 && item.x < courseNameX)
       .map(item => item.text)
       .join("");
     const courseCode = normalized(codeText);
