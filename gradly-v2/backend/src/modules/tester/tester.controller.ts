@@ -126,7 +126,8 @@ export async function confirmTesterDiscoveredResultSubject(req: TesterAuthentica
       [curriculumId, courseCode, courseName, courseCategory, credits, semesterNumber],
     );
     const row = inserted.rows[0] || (await queryWithRetry(
-      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"`,
+      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
+       FROM public.discovered_result_subjects WHERE curriculum_id=$1 AND course_code=$2 LIMIT 1`,
       [curriculumId, courseCode],
     )).rows[0];
     return res.status(inserted.rowCount ? 201 : 200).json({ success: true, created: Boolean(inserted.rowCount), data: row, sharedCatalogue: true, testerProfileIsolated: true });
