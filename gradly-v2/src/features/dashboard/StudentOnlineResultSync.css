@@ -214,3 +214,30 @@
 @keyframes spReexamPromptIn{from{opacity:0;transform:translate(-50%,-47%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @media(max-width:480px){.sp-online-reexam-confirm{padding:20px}.sp-online-reexam-confirm>div{flex-direction:column-reverse}.sp-online-reexam-confirm button{width:100%}}
 @media(prefers-reduced-motion:reduce){.sp-online-reexam-confirm{animation:none}}
+
+
+/* Scoped GECA result-fetch restriction: clear, accessible and mobile-friendly. */
+.sp-result-restriction-backdrop{position:fixed;inset:0;z-index:100060;display:grid;place-items:center;padding:20px;background:rgba(9,16,29,.72);backdrop-filter:blur(9px);animation:spRestrictionFadeIn .18s ease-out}
+.sp-result-restriction-dialog{width:min(470px,100%);padding:26px;border:1px solid rgba(255,255,255,.8);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#f8fafc 100%);color:#172033;box-shadow:0 28px 100px rgba(0,0,0,.34);animation:spRestrictionRise .22s ease-out}
+.sp-result-restriction-symbol{display:grid;place-items:center;width:46px;height:46px;margin-bottom:15px;border:1px solid #f4d4a3;border-radius:15px;background:#fff7e8;color:#a45b08}
+.sp-result-restriction-symbol span{font-size:25px;font-weight:900;line-height:1}
+.sp-result-restriction-eyebrow{font-size:9px;font-weight:900;letter-spacing:1.55px;color:#64748b}
+.sp-result-restriction-dialog h3{margin:7px 0 9px;font-size:21px;line-height:1.2;letter-spacing:-.55px;color:#142033}
+.sp-result-restriction-dialog>p{margin:0;color:#526176;font-size:12px;line-height:1.7}
+.sp-result-restriction-dialog>p strong{color:#25364d}
+.sp-result-restriction-scope{display:grid;gap:9px;margin:18px 0;padding:12px;border:1px solid #e6ebf1;border-radius:14px;background:#fff}
+.sp-result-restriction-scope>div{display:flex;align-items:flex-start;gap:10px;padding:5px 2px}
+.sp-result-restriction-scope>div>span:last-child{display:grid;gap:3px;min-width:0}
+.sp-result-scope-check,.sp-result-scope-manual-icon{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border-radius:8px;font-size:12px;font-weight:900}
+.sp-result-scope-check{background:#eaf7ef;color:#16834b}
+.sp-result-scope-manual-icon{background:#fff3df;color:#a45b08}
+.sp-result-restriction-scope strong{font-size:11px;color:#263449}
+.sp-result-restriction-scope small{font-size:10px;line-height:1.45;color:#738196}
+.sp-result-restriction-scope .sp-result-scope-manual{margin-top:2px;padding:10px;border:1px solid #f2dfbf;border-radius:10px;background:#fffbf3}
+.sp-result-restriction-action{width:100%;min-height:45px;padding:11px 16px;border:0;border-radius:12px;background:#172b43;color:#fff;font-size:12px;font-weight:800;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.sp-result-restriction-action:hover{background:#263f5d;transform:translateY(-1px)}
+.sp-result-restriction-action:focus-visible{outline:3px solid #9dbbe0;outline-offset:3px}
+@keyframes spRestrictionFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spRestrictionRise{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:520px){.sp-result-restriction-backdrop{padding:14px}.sp-result-restriction-dialog{padding:21px;border-radius:19px}.sp-result-restriction-dialog h3{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.sp-result-restriction-backdrop,.sp-result-restriction-dialog{animation:none}.sp-result-restriction-action{transition:none}}
