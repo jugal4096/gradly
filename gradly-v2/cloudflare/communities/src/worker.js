@@ -336,7 +336,7 @@ export default {
     if (path === "/health") {
       try {
         const result = await env.DB.prepare("SELECT COUNT(*) AS tables FROM sqlite_master WHERE type='table' AND name LIKE 'chat_%'").first();
-        return reply(request, { success: true, service: "Gradly Communities API", database: "connected", communityTables: result?.tables || 0 });
+        return reply(request, { success: true, service: "Gradly Communities API", database: "connected", communityTables: result?.tables || 0, mediaStorage: !!env.MEDIA, emailConfigured: !!(env.RESEND_API_KEY && env.EMAIL_FROM) });
       } catch (error) { return fail(request, "Database connection failed: " + error.message, 500); }
     }
 
