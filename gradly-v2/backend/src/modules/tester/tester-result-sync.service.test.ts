@@ -4,7 +4,7 @@ import {
   academicSectionsForEnrollment,
   selectGecaAcademicDocuments,
   selectGecaBranchDocuments,
-  selectGecaSemesterDocuments,
+  selectGecaSemesterDocuments,\n  extractSubjectResultGrades,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
 
@@ -128,4 +128,55 @@ test("branch filtering accepts only known subject-code prefixes for the selected
     selectGecaBranchDocuments(documents, ["civil"], ["CEESC", "CEOE"]),
     [documents[0]],
   );
+});
+
+test("branch filtering admits generic subject result PDFs for in-PDF validation", () => {
+  const documents = [
+    { title: "AMESC1001_RESULT", url: "https://geca.ac.in/AMESC1001_RESULT.pdf" },
+    { title: "MABSC1003_RESULT", url: "https://geca.ac.in/MABSC1003_RESULT.pdf" },
+    { title: "List of PhD Students", url: "https://geca.ac.in/phd.pdf" },
+  ];
+  assert.deepEqual(
+    selectGecaBranchDocuments(documents, ["mechanical"], ["MEESC", "MEPCC", "MEIKS"]),
+    documents.slice(0, 2),
+  );
+});
+
+test("individual subject parser imports only the target enrollment row with the expected branch", () => {
+  const lines = [
+    { text: "REGNO STUDNAME CCODE COURSENAME BRANCH Grade", items: [
+      { text: "REGNO", x: 20, y: 500 }, { text: "STUDNAME", x: 100, y: 500 },
+      { text: "CCODE", x: 260, y: 500 }, { text: "COURSENAME", x: 340, y: 500 },
+      { text: "BRANCH", x: 520, y: 500 }, { text: "Grade", x: 700, y: 500 },
+    ] },
+    { text: "BT25F02F001 Student AMESC1001 Engineering Mechanics Mechanical Engineering A+", items: [
+      { text: "BT25F02F001", x: 20, y: 480 }, { text: "Student", x: 100, y: 480 },
+      { text: "AMESC1001", x: 260, y: 480 }, { text: "Engineering Mechanics", x: 340, y: 480 },
+      { text: "Mechanical Engineering", x: 520, y: 480 }, { text: "A+", x: 700, y: 480 },
+    ] },
+    { text: "BT25F03F002 Student AMESC1001 Engineering Mechanics Electrical Engineering B", items: [
+      { text: "BT25F03F002", x: 20, y: 460 }, { text: "Student", x: 100, y: 460 },
+      { text: "AMESC1001", x: 260, y: 460 }, { text: "Engineering Mechanics", x: 340, y: 460 },
+      { text: "Electrical Engineering", x: 520, y: 460 }, { text: "B", x: 700, y: 460 },
+    ] },
+  ];
+  const parsed = extractSubjectResultGrades(lines, "BT25F02F001", ["mechanical"]);
+  assert.equal(parsed.enrollmentFound, true);
+  assert.deepEqual(parsed.grades, [{ courseCode: "AMESC1001", grade: "A+" }]);
+});
+
+test("individual subject parser refuses a target enrollment when its branch column conflicts", () => {
+  const lines = [
+    { text: "REGNO CCODE BRANCH Grade", items: [
+      { text: "REGNO", x: 20, y: 500 }, { text: "CCODE", x: 260, y: 500 },
+      { text: "BRANCH", x: 520, y: 500 }, { text: "Grade", x: 700, y: 500 },
+    ] },
+    { text: "BT25F02F001 AMESC1001 Electrical Engineering A+", items: [
+      { text: "BT25F02F001", x: 20, y: 480 }, { text: "AMESC1001", x: 260, y: 480 },
+      { text: "Electrical Engineering", x: 520, y: 480 }, { text: "A+", x: 700, y: 480 },
+    ] },
+  ];
+  const parsed = extractSubjectResultGrades(lines, "BT25F02F001", ["mechanical"]);
+  assert.equal(parsed.enrollmentFound, true);
+  assert.deepEqual(parsed.grades, []);
 });
