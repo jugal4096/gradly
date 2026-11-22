@@ -91,14 +91,15 @@ function isRetryableFetchError(error: unknown): boolean {
     candidate instanceof TypeError;
 }
 
-async function fetchGecaResponse(url: string, accept: string, timeoutMs: number): Promise<Response> {
+async function fetchGecaResponse<T>(url: string, accept: string, timeoutMs: number, consume: (response: Response) => Promise<T>): Promise<T> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) throw new Error("The GECA result link is not a trusted college URL.");
 
   let lastError: unknown;
   for (let attempt = 1; attempt <= GECA_RETRY_MAX_ATTEMPTS; attempt++) {
+    let response: Response | null = null;
     try {
-      const response = await fetch(safeUrl, {
+      response = await fetch(safeUrl, {
         signal: AbortSignal.timeout(timeoutMs),
         redirect: "follow",
         headers: {
@@ -110,7 +111,12 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
           "Referer": GECA_ORIGIN + "/",
         },
       });
-      if (response.ok) return response;
+      if (response.ok) {
+        // Consume the body before leaving this retry scope. AbortSignal.timeout()
+        // remains active while the body streams; returning Response here used to
+        // let arrayBuffer()/text() time out outside the retry handler.
+        return await consume(response);
+      }
 
       const statusError = new Error("GECA returned HTTP " + response.status + ".");
       const retryableStatus = response.status === 408 || response.status === 425 ||
@@ -123,6 +129,7 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
       try { await response.body?.cancel(); } catch { /* retry with a fresh request */ }
     } catch (error) {
       lastError = error;
+      try { await response?.body?.cancel(); } catch { /* body may already be consumed */ }
       const httpStatus = error instanceof Error
         ? Number(error.message.match(/GECA returned HTTP (\d{3})/)?.[1] || 0)
         : 0;
@@ -148,8 +155,12 @@ async function fetchGecaResponse(url: string, accept: string, timeoutMs: number)
 }
 
 async function fetchGecaText(url: string): Promise<string> {
-  const response = await fetchGecaResponse(url, "text/html,application/xhtml+xml", 12000);
-  return response.text();
+  return fetchGecaResponse(
+    url,
+    "text/html,application/xhtml+xml",
+    12000,
+    response => response.text(),
+  );
 }
 
 export async function listGecaResultSessions(): Promise<GecaResultSession[]> {
@@ -547,12 +558,28 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
 }> {
   const safeUrl = safeGecaUrl(url);
   if (!safeUrl) return { document: null, enrollmentFound: false, error: "untrusted-url" };
-  const response = await fetchGecaResponse(safeUrl, "application/pdf,application/octet-stream,*/*", 18000);
-
-  const declaredLength = Number(response.headers.get("content-length") || 0);
-  if (declaredLength > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large" };
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > MAX_PDF_BYTES) return { document: null, enrollmentFound: false, error: "pdf-too-large-or-empty" };
+  // GECA's result PDFs can be substantially slower than its HTML pages.
+  // Download the complete body inside fetchGecaResponse so a timeout while
+  // streaming bytes is retried just like a timeout while receiving headers.
+  let bytes: Uint8Array;
+  try {
+    bytes = await fetchGecaResponse(
+      safeUrl,
+      "application/pdf,application/octet-stream,*/*",
+      30000,
+      async response => {
+        const declaredLength = Number(response.headers.get("content-length") || 0);
+        if (declaredLength > MAX_PDF_BYTES) throw new Error("pdf-too-large");
+        const downloaded = new Uint8Array(await response.arrayBuffer());
+        if (!downloaded.length || downloaded.length > MAX_PDF_BYTES) throw new Error("pdf-too-large-or-empty");
+        return downloaded;
+      },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("pdf-too-large")) return { document: null, enrollmentFound: false, error: message };
+    throw error;
+  }
 
   const pdf = await getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true }).promise;
   const allLines: TextLine[] = [];
