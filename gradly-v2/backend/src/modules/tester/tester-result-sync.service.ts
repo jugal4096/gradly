@@ -606,7 +606,7 @@ export function extractSubjectResultGrades(
     // Search the complete matched row for a course-code token instead of
     // concatenating a coordinate slice that may include title/branch text.
     const compactRowText = normalized(rowItems.map(item => item.text).join(" "));
-    const courseCode = compactRowText.match(/[A-Z]{2,6}\\d{4}/)?.[0] ?? "";
+    const courseCode = compactRowText.match(/[A-Z]{2,6}\d{4}/)?.[0] ?? "";
     if (!courseCode) continue;
 
     const grade = rowItems
