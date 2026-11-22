@@ -63,9 +63,9 @@ async function requireMember(env, groupId, userId) {
 }
 
 async function getEcosystemIdentity(request, env, identityType) {
-  const token=(request.headers.get("Authorization")||"").replace(/^Bearer\\s+/i,"").trim();
+  const token=(request.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
   if (!token) return null;
-  const backend=(env.GRADLY_BACKEND_URL||"https://gradly-backend-1q7s.onrender.com").replace(/\\/$/,"");
+  const backend=(env.GRADLY_BACKEND_URL||"https://gradly-backend-1q7s.onrender.com").replace(/\/$/,"");
   const endpoint=identityType==="admin"?"/api/admin/me":"/api/super-admin/me";
   try {
     const response=await fetch(backend+endpoint,{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});
