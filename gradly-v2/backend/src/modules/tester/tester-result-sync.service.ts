@@ -31,7 +31,7 @@ let sessionCache: { expiresAt: number; sessions: GecaResultSession[] } | null = 
 // the result detail page and PDFs are still fetched live before grades are imported.
 const KNOWN_GECA_RESULT_SESSIONS: GecaResultSession[] = [
   { id: "3018", title: "ESE APRIL-MAY 2026", url: "https://geca.ac.in/result.aspx?resultID=3018" },
-]
+];
 
 function decodeHtml(value: string): string {
   return value
@@ -180,7 +180,14 @@ export async function listGecaResultSessions(): Promise<GecaResultSession[]> {
     if (url && id && title) sessions.push({ id, title, url });
   }
   const unique = Array.from(new Map(sessions.map(item => [item.id, item])).values());
-  if (!unique.length) throw new Error("No examination sessions were found on the GECA result archive.");
+  if (!unique.length) {
+    if (KNOWN_GECA_RESULT_SESSIONS.length) {
+      console.warn("GECA archive markup contained no recognizable sessions; using the last-known official session list.");
+      sessionCache = { expiresAt: Date.now() + 5 * 60 * 1000, sessions: KNOWN_GECA_RESULT_SESSIONS };
+      return sessionCache.sessions;
+    }
+    throw new Error("No examination sessions were found on the GECA result archive.");
+  }
   sessionCache = { expiresAt: Date.now() + SESSION_CACHE_MS, sessions: unique };
   return unique;
 }
