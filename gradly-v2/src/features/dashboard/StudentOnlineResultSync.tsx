@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./StudentOnlineResultSync.css";
 
-type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string };
+type StudentSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string; isCustom?: boolean; curriculumSubjectId?: string | null };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean; isNewSubject?: boolean; courseCategory?: string; creditStatus?: string };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
@@ -65,7 +65,6 @@ export default function StudentOnlineResultSync({
   const activeRequest = useRef<AbortController | null>(null);
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number; courseType?: string }[]>([]);
-  const [appliedResult, setAppliedResult] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number} | null>(null);
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
   const [appliedResult, setAppliedResult] = useState<{semester:number; count:number; session:string} | null>(null);
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
@@ -221,7 +220,6 @@ export default function StudentOnlineResultSync({
       return;
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
-    const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
     let discoveredRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
     try {
       const cached = JSON.parse(localStorage.getItem(localRegistryKey) || "{}");
