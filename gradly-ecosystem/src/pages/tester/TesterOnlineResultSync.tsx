@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string };
+type TesterSubject = { name: string; credits: number; grade: string; courseCode?: string; electiveKind?: string | null; electiveSlotCode?: string; isCustom?: boolean; curriculumSubjectId?: string | null };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number; useDefault?: boolean; isNewSubject?: boolean; courseCategory?: string; creditStatus?: string };
 type ResultSession = { id: string; title: string; url: string };
 type ResultDocument = {
@@ -222,7 +222,6 @@ export default function TesterOnlineResultSync({
       return;
     }
     // Keep the official GECA MEOE1040 row and its parsed subject name/grade.
-    const hasMechanicalEntrepreneurshipExamCode = sourceRows.some(row => normalizeCourseCode(row.courseCode) === "MEOE1040");
     // The shared database catalogue is authoritative and keyed by curriculum + course code,
     // never by the tester's temporary enrollment. Local storage is only a cache.
     let persistedTesterRegistry: Record<string,{courseName:string;credits:number;courseCategory:string}> = {};
