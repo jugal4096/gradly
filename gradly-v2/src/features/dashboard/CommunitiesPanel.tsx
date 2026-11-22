@@ -77,7 +77,7 @@ export default function CommunitiesPanel() {
     if (!token || !selectedGroupId) return;
     let stopped = false;
     let pollTimer: number | undefined;
-    let refreshTimer: number | undefined;
+    const refreshTimer: number = window.setInterval(() => { void refresh(); }, 12000);
     let socket: WebSocket | null = null;
     const refresh = async () => {
       try {
@@ -121,7 +121,6 @@ export default function CommunitiesPanel() {
     setSocketState("Connecting");
     void refresh();
     void connect();
-    refreshTimer = window.setInterval(refresh, 12000);
     return () => {
       stopped = true;
       if (pollTimer) window.clearInterval(pollTimer);
