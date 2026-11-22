@@ -24,7 +24,6 @@ export default function CommunitiesPanel() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -148,13 +147,12 @@ export default function CommunitiesPanel() {
     setAuthBusy(true); setError(""); setNotice("");
     try {
       if (authMode === "register") {
-        const data = await api("/auth/register", undefined, { method: "POST", body: JSON.stringify({ displayName: name, email, password }) });
+        const data = await api("/auth/register", undefined, { method: "POST", body: JSON.stringify({ displayName: name, email }) });
         setNotice(data.message || "Check your email to verify your account.");
         setAuthMode("login");
       } else {
-        const data = await api("/auth/login", undefined, { method: "POST", body: JSON.stringify({ email, password }) });
-        localStorage.setItem(TOKEN_KEY, data.token);
-        setToken(data.token); setUser(data.user); setNotice("Welcome to Gradly Communities.");
+        const data = await api("/auth/login", undefined, { method: "POST", body: JSON.stringify({ email }) });
+        setNotice(data.message || "Check your inbox for a secure sign-in link.");
       }
     } catch (e) { setError((e as Error).message); }
     finally { setAuthBusy(false); }
@@ -295,15 +293,15 @@ export default function CommunitiesPanel() {
         <form className="gc-form" onSubmit={handleAuth}>
           {authMode === "register" && <label>Your name<input value={name} onChange={(e) => setName(e.target.value)} minLength={2} maxLength={60} required placeholder="Display name" /></label>}
           <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" /></label>
-          <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={10} maxLength={128} required placeholder="At least 10 characters" /></label>
-          <button className="gc-primary" disabled={authBusy}>{authBusy ? "Please wait…" : authMode === "register" ? "Create account" : "Sign in"} <span>→</span></button>
+          
+          <button className="gc-primary" disabled={authBusy}>{authBusy ? "Please wait…" : authMode === "register" ? "Send verification link" : "Send sign-in link"} <span>→</span></button>
         </form>
         <button className="gc-text-button" onClick={() => { setAuthMode(authMode === "login" ? "register" : "login"); setError(""); setNotice(""); }}>
           {authMode === "login" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
         {notice && <p className="gc-notice">{notice}</p>}
         {error && <p className="gc-error">{error}</p>}
-        <small className="gc-legal">Your Communities account is separate from your Gradly student sign-in. Email verification is required.</small>
+        <small className="gc-legal">Your Communities account is separate from your Gradly student sign-in. Sign-in uses secure, single-use email links.</small>
       </div>
     </section>
   );
