@@ -217,6 +217,49 @@ export default function CommunitiesPanel() {
     } catch (e) { setError((e as Error).message); }
   };
 
+  const reactToMessage = async (messageId: string, reaction: string) => {
+    try {
+      await api(`/messages/${messageId}/reactions`, token, { method: "POST", body: JSON.stringify({ reaction }) });
+      const data = await api(`/messages/${messageId}/reactions`, token);
+      setReactions((current) => ({ ...current, [messageId]: data.reactions || [] }));
+    } catch (e) { setError((e as Error).message); }
+  };
+
+  const pinMessage = async (messageId: string) => {
+    if (!selected) return;
+    try {
+      await api(`/groups/${selected.id}/pins`, token, { method: "POST", body: JSON.stringify({ messageId }) });
+      const data = await api(`/groups/${selected.id}/pins`, token);
+      setPins(data.pins || []);
+    } catch (e) { setError((e as Error).message); }
+  };
+
+  const unpinMessage = async (messageId: string) => {
+    if (!selected) return;
+    try {
+      await api(`/groups/${selected.id}/pins/${messageId}`, token, { method: "DELETE" });
+      setPins((current) => current.filter((pin) => pin.id !== messageId));
+    } catch (e) { setError((e as Error).message); }
+  };
+
+  const reportMessage = async (messageId: string) => {
+    if (!selected) return;
+    const details = window.prompt("Tell the moderators why you are reporting this message (optional):") || "";
+    try {
+      await api(`/groups/${selected.id}/reports`, token, { method: "POST", body: JSON.stringify({ messageId, reason: "inappropriate_content", details }) });
+      setNotice("Report sent to the Communities moderation team.");
+    } catch (e) { setError((e as Error).message); }
+  };
+
+  const moderateMember = async (memberId: string, action: string) => {
+    if (!selected) return;
+    try {
+      await api(`/groups/${selected.id}/members`, token, { method: "POST", body: JSON.stringify({ userId: memberId, action }) });
+      const data = await api(`/groups/${selected.id}/members`, token);
+      setMembers(data.members || []);
+    } catch (e) { setError((e as Error).message); }
+  };
+
   const leaveGroup = async () => {
     if (!selected || !window.confirm("Leave this group?")) return;
     try {
