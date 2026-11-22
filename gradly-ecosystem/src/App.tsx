@@ -25,6 +25,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminWorkspacePage from "./pages/admin/AdminWorkspacePage";
 import AdminRequestCenter from "./pages/admin/AdminRequestCenter";
 import AdminSettings from "./pages/admin/AdminSettings";
+import CommunitiesAdminPage from "./pages/admin/CommunitiesAdminPage";
 import AdminChangePassword from "./pages/admin/AdminChangePassword";
 import StudentSyllabusFeedbackPage from "./pages/student/StudentSyllabusFeedbackPage";
 import StudentNotificationsPage from "./pages/student/StudentNotificationsPage";
@@ -53,6 +54,7 @@ import SuperAdminSecurityAlerts from "./pages/super-admin/SuperAdminSecurityAler
 import SuperAdminAdminMessages from "./pages/super-admin/SuperAdminAdminMessages";
 import SuperAdminRequestCenter from "./pages/super-admin/SuperAdminRequestCenter";
 import SuperAdminTesterManagement from "./pages/super-admin/SuperAdminTesterManagement";
+import CommunitiesSuperAdminPage from "./pages/super-admin/CommunitiesSuperAdminPage";
 
 // =====================================================
 // APPLICATION ROUTER
@@ -92,6 +94,7 @@ function App() {
         <Route path="/admin/department" element={<AdminWorkspacePage />} />
         <Route path="/admin/profile" element={<AdminWorkspacePage />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/communities" element={<CommunitiesAdminPage />} />
         <Route path="/admin/change-password" element={<AdminChangePassword />} />
 
         {/* SUPER ADMIN LOGIN */}
@@ -103,6 +106,7 @@ function App() {
           <Route path="dashboard" element={<SuperAdminDashboard />} />
           <Route path="users" element={<SuperAdminUsers />} />
           <Route path="testers" element={<SuperAdminTesterManagement />} />
+          <Route path="communities" element={<CommunitiesSuperAdminPage />} />
           <Route path="blacklist" element={<Navigate to="/super-admin/settings#account-restrictions" replace />} />
           <Route path="admins" element={<SuperAdminAdmins />} />
           <Route path="admins/:adminId/profile" element={<SuperAdminAdminProfile />} />

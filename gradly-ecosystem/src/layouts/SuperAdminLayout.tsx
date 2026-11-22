@@ -83,6 +83,11 @@ const controlNavigation = [
     icon: BookOpen,
   },
   {
+    label: "Communities",
+    path: "/super-admin/communities",
+    icon: MessageSquare,
+  },
+  {
     label: "Tester Management",
     path: "/super-admin/testers",
     icon: FlaskConical,

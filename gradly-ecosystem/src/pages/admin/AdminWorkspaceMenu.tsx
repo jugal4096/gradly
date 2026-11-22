@@ -12,6 +12,7 @@ const items=[
  {to:"/admin/notifications",label:"Notifications",icon:Bell},
  {to:"/admin/activity",label:"User activity",icon:Users},
  {to:"/admin/feedback",label:"Student feedback",icon:MessageSquareText},
+ {to:"/admin/communities",label:"Communities",icon:MessageSquareText},
  {to:"/admin/department",label:"My assignment",icon:Building2},
  {to:"/admin/settings",label:"Settings",icon:Settings},
  {to:"/admin/change-password",label:"Account security",icon:ShieldCheck},
