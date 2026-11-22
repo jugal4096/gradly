@@ -8,7 +8,7 @@ async function startServer() {
     const database = await testDatabaseConnection();
 
     console.log("✅ PostgreSQL connected");
-    console.log("🕒 Database time:", database.now);
+    console.log("🕒 Database time:", database.current_time);
 
     // Run once at startup, then every six hours. The database predicate uses last_seen_at
     // so active guests are never removed; only sessions idle for more than 30 days expire.
