@@ -66,7 +66,7 @@ export default function StudentOnlineResultSync({
   const loadingSession = sessions.find(session => session.id === loadingSessionId);
   const [catalogue, setCatalogue] = useState<{ code: string; name: string; credits: number; courseType?: string }[]>([]);
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
-  const [appliedResult, setAppliedResult] = useState<{semester:number; count:number; session:string} | null>(null);
+  const [appliedResult, setAppliedResult] = useState<{semester:number; count:number; session:string; document:string; url:string} | null>(null);
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
   const [savingReview, setSavingReview] = useState(false);
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
@@ -372,7 +372,7 @@ export default function StudentOnlineResultSync({
         setNotice("The subject catalogue was updated, but the semester result was not saved. Retry the result save; the courses will now be recognised.");
         return;
       }
-      setAppliedResult({ semester: pendingReview.semester, count: grades.length, session: pendingReview.session });
+      setAppliedResult({ semester: pendingReview.semester, count: grades.length, session: pendingReview.session, document: pendingReview.document, url: pendingReview.url });
       setPendingReview(null);
       setError("");
       setNotice("");
