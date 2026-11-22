@@ -11,13 +11,13 @@ This directory contains the isolated Communities backend and its D1 schema. It d
 
 ## Database migrations
 
-Apply the SQL files in `migrations/` in numeric order to the Communities D1 database. The current account database has all three migrations applied.
+Apply the SQL files in `migrations/` in numeric order to the Communities D1 database. The current account database has all four migrations applied.
 
 ## Worker configuration
 
 The Worker has a D1 binding named `DB` and a Durable Object namespace binding named `CHAT_ROOMS`.
 
-Email verification uses a Resend-compatible provider. Configure these Worker secrets/variables in the Cloudflare dashboard before allowing registrations:
+Communities uses passwordless email verification and one-time sign-in links through a Resend-compatible provider. Configure these Worker secrets/variables in the Cloudflare dashboard before allowing registrations:
 
 - `RESEND_API_KEY` — secret API key from the email provider
 - `EMAIL_FROM` — verified sender, e.g. `Gradly Communities <communities@your-verified-domain>`
@@ -29,7 +29,7 @@ Never commit these values or paste credentials into chat. The sender domain must
 ## Current API surface
 
 - `GET /health`
-- `POST /auth/register`, `POST /auth/verify`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
+- `POST /auth/register`, `POST /auth/verify`, `POST /auth/login`, `POST /auth/login/verify`, `POST /auth/logout`, `GET /auth/me`
 - `GET /groups`, `GET /groups/mine`, `POST /groups`
 - `GET /groups/:id`, `POST /groups/:id/join`, `POST /groups/:id/leave`
 - `GET /groups/:id/messages`, `POST /groups/:id/messages`
@@ -50,8 +50,8 @@ WebSocket tickets are short-lived and single-use. Group membership is rechecked 
 
 - Media and resource uploads are not active yet. R2 is not enabled on the Cloudflare account; enabling it may require a billing/subscription step. Do not activate or upload user content until storage pricing and account billing are reviewed.
 - Email verification cannot send until a verified sender and provider credentials are configured.
-- Platform Admin / Super Admin role grants must be connected to the existing Ecosystem's explicit Communities permission controls before enabling administrative actions. Do not infer admin authority from a user's email or the existing student session.
-- The student UI uses an independent Communities session stored separately from the existing Gradly sign-in. Existing Gradly Super Admin identity can bootstrap once using its existing JWT. The Super Admin then grants Communities access to existing Admin IDs. These permissions are stored separately and every grant/revoke is audited.
+- Existing Gradly Admin and Super Admin JWTs are verified through the Render backend. Super Admin bootstraps once, then explicitly grants Communities Platform Admin access by existing Admin ID. These permissions are separate from academic permissions and all grants, revocations and reported-message inspections are audited.
+- The student UI uses a passwordless, independent Communities session stored separately from the existing Gradly sign-in. Existing Gradly Super Admin identity can bootstrap once using its existing JWT. The Super Admin then grants Communities access to existing Admin IDs. These permissions are stored separately and every grant/revoke is audited.
 
 ## Initial product limits
 
