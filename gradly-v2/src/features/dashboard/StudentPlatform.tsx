@@ -444,7 +444,7 @@ export default function StudentPlatform() {
               const curriculumByCode=new Set((Array.isArray(data.data)?data.data:[]).map((item:CurriculumSubjectApi)=>normalizeResultCourseCode(item.code)).filter(Boolean));
               const registryRows:Subject[]=registryBody.data
                 .filter((item:{courseCode:string})=>!savedByCode.has(normalizeResultCourseCode(item.courseCode))&&!curriculumByCode.has(normalizeResultCourseCode(item.courseCode)))
-                .map((item:{courseCode:string;courseName:string;courseCategory:string;credits:number},index)=>({
+                .map((item:{courseCode:string;courseName:string;courseCategory:string;credits:number},index:number)=>({
                   id:Math.max(0,...saved.map(subject=>subject.id))+index+1,
                   name:String(item.courseName||item.courseCode),credits:Number(item.credits)||0,grade:"",
                   courseCode:String(item.courseCode||"").trim().toUpperCase(),
