@@ -81,7 +81,6 @@ function electiveKind(code:string, semester:number, name=""):"OE"|"HS"|"PE4"|"PE
 }
 
 type SemesterResult = { id: string; semester: number; sgpa: number; credits: number; savedAt: string };
-type ChatMessage = { id: number; author: string; body: string; time: string; mine: boolean };
 type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_snapshot?: string | null; course_name_snapshot?: string | null; credits?: number | string | null; grade_symbol?: string | null; grade_point?: number | string | null };
 type AcademicRecordApi = { id: string | number; semester_number: number | string; attempt_number?: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; id?: string | number | null };
@@ -327,17 +326,10 @@ export default function StudentPlatform() {
   const [plannerLoading,setPlannerLoading] = useState(false);
   const [plannerNotice,setPlannerNotice] = useState("");
 
-  const [messages,setMessages] = useState<ChatMessage[]>([
-    {id:1,author:"Gradly Community",body:"Welcome! Share notes, ask questions and help each other prepare.",time:"Today",mine:false},
-  ]);
-  const [message,setMessage] = useState("");
-  const [editingId,setEditingId] = useState<number|null>(null);
-  const [notes,setNotes] = useState<{name:string;size:string;file:File}[]>([]);
   const [aiInput,setAiInput] = useState("");
   const [aiMessages,setAiMessages] = useState<{role:"assistant"|"user";text:string}[]>([
     {role:"assistant",text:"Hi! I’m Gradly AI. I can help explain academic concepts and organise your study questions. Institution-specific answers will become available when your college rules are connected."},
   ]);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isGuest) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
@@ -1124,12 +1116,6 @@ export default function StudentPlatform() {
       ["gradly_guest_id","gradly_guest_session_token","gradly_guest_institute","gradly_guest_subjects","gradly_guest_semester_results","gradly_guest_institute_request_token"].forEach(key=>localStorage.removeItem(key));
       await signOut();
     } catch(error) { setNotice(error instanceof Error?error.message:"Guest ID could not be deleted."); }
-  }
-  function submitMessage(event:FormEvent) {
-    event.preventDefault(); if(!message.trim()) return;
-    if(editingId!==null) setMessages(current=>current.map(item=>item.id===editingId?{...item,body:message.trim()}:item));
-    else setMessages(current=>[...current,{id:Date.now(),author:user?.displayName||"You",body:message.trim(),time:"Just now",mine:true}]);
-    setMessage("");setEditingId(null);
   }
   async function promoteSemester() {
     if (!user || semesterPromotion) return;
