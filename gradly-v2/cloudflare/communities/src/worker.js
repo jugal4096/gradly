@@ -485,11 +485,3 @@ export default {
     }
   }
 };
-
-async function requireMember(env, groupId, userId) {
-  return env.DB.prepare(`
-    SELECT m.role,m.status,g.status AS group_status,g.visibility
-    FROM chat_group_members m JOIN chat_groups g ON g.id=m.group_id
-    WHERE m.group_id=? AND m.user_id=? AND m.status='active' AND g.status='active'
-  `).bind(groupId,userId).first();
-}
