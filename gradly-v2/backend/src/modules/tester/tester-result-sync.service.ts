@@ -896,7 +896,11 @@ export function selectGecaBranchDocuments<T extends { title: string; url: string
     // exact enrollment row AND a matching BRANCH column before importing.
     const genericSubjectResult = /_RESULT(?:\.PDF)?$/i.test(document.title.trim()) ||
       document.url.toLowerCase().split("?")[0].endsWith("_result.pdf");
-    return explicitlyNamedBranch || genericSubjectResult;
+    const knownOtherBranchCode = Object.values(BRANCH_SUBJECT_PREFIXES).flat().some(prefix =>
+      compactTitle.startsWith(prefix.toUpperCase()) &&
+      !subjectPrefixes.some(selectedPrefix => compactTitle.startsWith(selectedPrefix.toUpperCase())),
+    );
+    return explicitlyNamedBranch || (genericSubjectResult && !knownOtherBranchCode);
   });
 }
 
