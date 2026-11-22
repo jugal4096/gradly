@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   academicSectionsForEnrollment,
   selectGecaAcademicDocuments,
+  selectGecaBranchDocuments,
   selectGecaSemesterDocuments,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
@@ -50,7 +51,7 @@ test("semester filtering uses the enclosing GECA section for subject PDFs withou
   ];
   assert.deepEqual(
     selectGecaSemesterDocuments(documents, 2),
-    [documents[0], documents[1], documents[3]],
+    [documents[0], documents[1]],
   );
 });
 
@@ -66,6 +67,7 @@ test("semester filtering excludes a PDF when its filename and section identify a
   const documents = [
     { title: "Civil Engineering II SEM REGULAR", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 4 },
     { title: "Civil Engineering IV SEM REGULAR", url: "https://geca.ac.in/sem4.pdf", sectionSemester: 2 },
+    { title: "CEESC1005_RESULT", url: "https://geca.ac.in/unknown.pdf", sectionSemester: null },
   ];
   assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0]]);
 });
@@ -75,4 +77,32 @@ test("semester filtering leaves all documents untouched when no semester is sele
     { title: "CEESC1003_RESULT", url: "https://geca.ac.in/subject.pdf", sectionSemester: 2 },
   ];
   assert.deepEqual(selectGecaSemesterDocuments(documents), documents);
+});
+
+
+test("branch filtering never falls back to unrelated PDFs when no branch label matches", () => {
+  const documents = [
+    { title: "CIVIL ENGINEERING V REGULAR", url: "https://geca.ac.in/civil-v.pdf" },
+    { title: "Mechanical Engineering V REGULAR", url: "https://geca.ac.in/mech-v.pdf" },
+    { title: "List of PhD Students", url: "https://geca.ac.in/phd.pdf" },
+  ];
+  assert.deepEqual(
+    selectGecaBranchDocuments(documents, ["civil"], ["CEESC", "CEOE"]),
+    [documents[0]],
+  );
+  assert.deepEqual(
+    selectGecaBranchDocuments(documents.slice(1), ["civil"], ["CEESC", "CEOE"]),
+    [],
+  );
+});
+
+test("branch filtering accepts only known subject-code prefixes for the selected branch", () => {
+  const documents = [
+    { title: "CEESC1005_RESULT", url: "https://geca.ac.in/subject.pdf" },
+    { title: "CSESC1005_RESULT", url: "https://geca.ac.in/cse.pdf" },
+  ];
+  assert.deepEqual(
+    selectGecaBranchDocuments(documents, ["civil"], ["CEESC", "CEOE"]),
+    [documents[0]],
+  );
 });
