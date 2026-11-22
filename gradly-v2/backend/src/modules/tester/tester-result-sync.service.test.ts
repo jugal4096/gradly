@@ -4,7 +4,8 @@ import {
   academicSectionsForEnrollment,
   selectGecaAcademicDocuments,
   selectGecaBranchDocuments,
-  selectGecaSemesterDocuments,\n  extractSubjectResultGrades,
+  selectGecaSemesterDocuments,
+  extractSubjectResultGrades,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
 
