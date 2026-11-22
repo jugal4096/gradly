@@ -441,6 +441,17 @@ export default {
           const operation=String(body?.action||"");
           const target=await env.DB.prepare("SELECT role,status FROM chat_group_members WHERE group_id=? AND user_id=?").bind(groupId,targetId).first();
           if (!target || target.status!=="active") return fail(request,"Group member not found.",404);
+          if (operation==="add") {
+            const email=String(body?.email||"").trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(request,"Enter the registered Communities email address.");
+            const invited=await env.DB.prepare("SELECT id,email_verified_at,status FROM chat_users WHERE email=?").bind(email).first();
+            if (!invited || !invited.email_verified_at || invited.status!=="active") return fail(request,"That student must first create and verify a Communities account.",404);
+            const count=await env.DB.prepare("SELECT COUNT(*) AS total FROM chat_group_members WHERE group_id=? AND status='active'").bind(groupId).first();
+            if ((count?.total||0)>=500) return fail(request,"This group has reached its member limit.",429);
+            await env.DB.prepare("INSERT INTO chat_group_members(group_id,user_id,role,status) VALUES(?,?,'member','active') ON CONFLICT(group_id,user_id) DO UPDATE SET role='member',status='active',joined_at=?").bind(groupId,invited.id,now()).run();
+            await audit(env,user.id,"member.added","user",invited.id,"Added by group moderator",{groupId});
+            return reply(request,{success:true});
+          }
           if (target.role==="owner") return fail(request,"The group owner cannot be changed through member moderation.",409);
           if (membership.role==="moderator" && ["admin","moderator"].includes(target.role)) return fail(request,"Moderators cannot manage group administrators.",403);
           if (operation==="make_moderator" || operation==="make_admin") {
