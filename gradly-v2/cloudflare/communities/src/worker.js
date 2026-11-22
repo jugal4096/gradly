@@ -798,7 +798,8 @@ export default {
           const allowedCategories=["notes","pyqs","assignments","syllabus","lab_manuals","presentations","other"];
           if (category&&!allowedCategories.includes(category)) return fail(request,"Invalid study resource category.");
           const inspected=[];
-          for (const file of files) inspected.push(await inspectCommunityUpload(file,limits));
+          try { for (const file of files) inspected.push(await inspectCommunityUpload(file,limits)); }
+          catch(error) { return fail(request,error.message||"One of the selected files is invalid.",400); }
           const photos=inspected.filter((item)=>item.kind==="photo").length;
           const videos=inspected.filter((item)=>item.kind==="video").length;
           if (photos>limits.photosPerMessage) return fail(request,"Too many photos in one message.");
