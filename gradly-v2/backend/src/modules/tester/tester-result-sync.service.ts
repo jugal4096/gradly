@@ -596,8 +596,8 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
 }
 
 const BRANCH_NAMES: Record<string, string[]> = {
-  "01": ["civil"], "02": ["mechanical"], "03": ["electrical"],
-  "04": ["electronics", "entc"], "05": ["computer", "cse"],
+  "01": ["civil", "ce"], "02": ["mechanical", "me"], "03": ["electrical", "ee"],
+  "04": ["electronics", "entc", "ete"], "05": ["computer", "cse"],
   "06": ["information technology", "information tech"],
 };
 
@@ -647,6 +647,8 @@ function academicSectionsForEnrollment(enrollment: string, sessionTitle: string,
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
+  expectedAcademicSections: GecaAcademicSection[];
+  candidateDocuments: number;
   enrollmentHits: number;
   parseFailures: number;
   downloadFailures: number;
