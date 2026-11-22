@@ -744,7 +744,14 @@ export default {
             WHERE m.group_id=? AND (? IS NULL OR m.created_at<?)
             ORDER BY m.created_at DESC LIMIT ?
           `).bind(groupId,before,before,limit).all();
-          return reply(request, { success: true, messages: (rows.results || []).reverse() });
+          const messages=(rows.results||[]).reverse();
+          const attachments=await env.DB.prepare("SELECT id,message_id,original_name,mime_type,size_bytes,media_kind,duration_seconds,resource_category FROM chat_message_attachments WHERE group_id=? AND deleted_at IS NULL ORDER BY created_at").bind(groupId).all();
+          const byMessage={};
+          for(const attachment of attachments.results||[]) {
+            if(!byMessage[attachment.message_id]) byMessage[attachment.message_id]=[];
+            byMessage[attachment.message_id].push(attachment);
+          }
+          return reply(request, { success: true, messages: messages.map((message)=>({...message,attachments:byMessage[message.id]||[]})) });
         }
 
         if (action === "messages" && request.method === "POST") {
