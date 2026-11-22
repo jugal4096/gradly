@@ -780,7 +780,25 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
       document.title + " " + document.url.replace(/%20/gi, " "),
     );
     const semester = document.sectionSemester ?? titleSemester;
-    return semester === null || semester === selectedSemester;
+    // Fail closed: an unlabeled PDF cannot be proven to belong to the
+    // selected semester. Subject-level links inherit sectionSemester when
+    // GECA provides a year/semester heading.
+    return semester === selectedSemester;
+  });
+}
+
+/** Keep only documents explicitly identified as belonging to the student's branch. */
+export function selectGecaBranchDocuments<T extends { title: string; url: string }>(
+  documents: T[],
+  branchTerms: string[],
+  subjectPrefixes: string[],
+): T[] {
+  if (!branchTerms.length && !subjectPrefixes.length) return [];
+  return documents.filter(document => {
+    const label = (document.title + " " + document.url).toLowerCase();
+    const compactTitle = document.title.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return branchTerms.some(term => label.includes(term.toLowerCase())) ||
+      subjectPrefixes.some(prefix => compactTitle.startsWith(prefix.toUpperCase()));
   });
 }
 
@@ -837,16 +855,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const branchTerms = BRANCH_NAMES[branchCode] || [];
   const subjectPrefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
   const filterBranchAndSemester = <T extends { title: string; url: string; sectionSemester: number | null }>(items: T[]): T[] => {
-    let branchMatches = items;
-    if (branchTerms.length) {
-      const matches = items.filter(item => {
-        const label = (item.title + " " + item.url).toLowerCase();
-        const compactTitle = item.title.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        return branchTerms.some(term => label.includes(term)) ||
-          subjectPrefixes.some(prefix => compactTitle.startsWith(prefix));
-      });
-      if (matches.length) branchMatches = matches;
-    }
+    const branchMatches = selectGecaBranchDocuments(items, branchTerms, subjectPrefixes);
     return selectGecaSemesterDocuments(branchMatches, selectedSemester);
   };
   const candidates = filterBranchAndSemester(eligibleDocuments);
@@ -894,10 +903,9 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
 
   await scanDocuments(candidates);
 
-  // Section, branch and semester labels are prioritisation hints only. If the
-  // targeted scan has no usable grade document and no download failures, widen
-  // once to the remaining official result PDFs. This recovers first-year data
-  // when GECA moves a link under a different heading or changes its markup.
+  // Academic-section labels may be wrong after portal markup changes, but
+  // branch and semester identity are mandatory safety filters. Widen only
+  // within the already validated branch + semester candidate set.
   // Keep a hard total scan budget so a large archive cannot hang the request.
   if (matches.length === 0 && downloadFailures === 0 && scannedUrls.size < MAX_RESULT_PDFS) {
     const remaining = fallbackCandidates
