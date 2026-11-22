@@ -488,7 +488,7 @@ export default {
             env.DB.prepare("SELECT COUNT(*) AS total FROM chat_reports WHERE status IN ('open','reviewing')").first(),
             env.DB.prepare("SELECT COALESCE(SUM(size_bytes),0) AS bytes FROM chat_message_attachments WHERE deleted_at IS NULL").first()
           ]);
-          return reply(request,{success:true,superAdmin:ecosystemSuperAdmin,overview:{users:users?.total||0,groups:groups?.total||0,messages:messages?.total||0,openReports:reports?.total||0,storedMediaBytes:media?.bytes||0}});
+          return reply(request,{success:true,superAdmin:ecosystemSuperAdmin,overview:{users:users?.total||0,groups:groups?.total||0,messages:messages?.total||0,openReports:reports?.total||0,storedMediaBytes:media?.bytes||0,mediaStorage:!!env.MEDIA,emailConfigured:!!(env.RESEND_API_KEY&&env.EMAIL_FROM)}});
         }
         if (path==="/ecosystem/super-admin/admin-roles" && request.method==="GET") {
           const rows=await env.DB.prepare("SELECT identity_id AS admin_code,role,granted_at,revoked_at FROM chat_external_roles WHERE identity_type='admin' ORDER BY granted_at DESC").all();
