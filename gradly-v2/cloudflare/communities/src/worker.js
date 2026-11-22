@@ -660,6 +660,33 @@ export default {
         return reply(request,{success:true,group:{id:record.group_id,name:record.name}});
       }
 
+      const mediaMatch=path.match(/^[/]media[/]([a-f0-9-]+)$/i);
+      if (mediaMatch) {
+        if (!env.MEDIA) return fail(request,"Media storage is not enabled yet.",503);
+        const attachment=await env.DB.prepare("SELECT id,group_id,uploader_id,object_key,original_name,mime_type,deleted_at FROM chat_message_attachments WHERE id=?").bind(mediaMatch[1]).first();
+        if (!attachment||attachment.deleted_at) return fail(request,"Media not found.",404);
+        const member=await requireMember(env,attachment.group_id,user.id);
+        if (!member) return fail(request,"Group membership required.",403);
+        if (request.method==="GET") {
+          const object=await env.MEDIA.get(attachment.object_key);
+          if (!object) return fail(request,"Media object is unavailable.",404);
+          const disposition=attachment.mime_type.startsWith("image/")||attachment.mime_type.startsWith("video/")?"inline":"attachment";
+          const headers=new Headers(corsHeaders(request));
+          headers.set("Content-Type",attachment.mime_type);
+          headers.set("Content-Disposition",disposition+"; filename*=UTF-8''"+encodeURIComponent(attachment.original_name));
+          headers.set("Cache-Control","private, max-age=300");
+          headers.set("X-Content-Type-Options","nosniff");
+          headers.set("Access-Control-Expose-Headers","Content-Disposition, Content-Type");
+          return new Response(object.body,{headers});
+        }
+        if (request.method==="DELETE") {
+          if (attachment.uploader_id!==user.id&&!["owner","admin","moderator"].includes(member.role)) return fail(request,"Only the uploader or a group moderator can remove this file.",403);
+          await env.DB.prepare("UPDATE chat_message_attachments SET deleted_at=? WHERE id=? AND deleted_at IS NULL").bind(now(),attachment.id).run();
+          await audit(env,user.id,"media.deleted","attachment",attachment.id,"Soft-deleted; retained for recovery period",{groupId:attachment.group_id});
+          return reply(request,{success:true});
+        }
+      }
+
       const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests|pins|members|invites|uploads|resources))?$/i);
       if (groupMatch) {
         const groupId = groupMatch[1];
