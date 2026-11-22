@@ -113,6 +113,7 @@ export async function listCurriculum(
        LEFT JOIN public.programs p ON p.id = c.program_id
        LEFT JOIN public.institutions i ON i.id = c.institution_id
        LEFT JOIN public.academic_years ay ON ay.id = c.academic_year_id
+       WHERE d.publication_status <> 'PUBLISHED'
        ORDER BY i.name, p.name, b.name, sc.name, d.semester_number, d.course_code
        LIMIT 5000`
     );
