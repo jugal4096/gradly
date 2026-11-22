@@ -268,3 +268,76 @@ export async function updateCurriculumSubject(
     client.release();
   }
 }
+
+
+/** Updates curriculum-level metadata (separate from individual subject mappings). */
+export async function updateCurriculumDetails(
+  req: SuperAdminAuthenticatedRequest,
+  res: Response
+) {
+  const id = String(req.params.id || "").trim();
+  if (!id) return res.status(400).json({ success: false, message: "A curriculum ID is required." });
+
+  const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
+  const allowed: Array<{ api: string; column: string; kind: "text" | "integer" | "number" | "nullableNumber" }> = [
+    { api: "version", column: "version", kind: "text" },
+    { api: "totalSemesters", column: "total_semesters", kind: "integer" },
+    { api: "totalCredits", column: "total_credits", kind: "nullableNumber" },
+    { api: "status", column: "status", kind: "text" },
+  ];
+  const requested = allowed.filter(field => Object.prototype.hasOwnProperty.call(body, field.api));
+  if (!requested.length) return res.status(400).json({ success: false, message: "No curriculum fields were provided." });
+
+  const client = await pool.connect();
+  try {
+    const metadata = await client.query(
+      `SELECT column_name, data_type
+         FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'curricula'`
+    );
+    const columns = new Map<string, string>(metadata.rows.map((row: { column_name: string; data_type: string }) => [row.column_name, row.data_type]));
+    const updates: Array<{ column: string; value: unknown }> = [];
+
+    for (const field of requested) {
+      if (!columns.has(field.column)) {
+        return res.status(400).json({ success: false, message: `This database does not expose the ${field.api} field on curricula.` });
+      }
+      let value = body[field.api];
+      if (field.kind === "text") {
+        if (typeof value !== "string" || !value.trim()) {
+          return res.status(400).json({ success: false, message: `${field.api} must be non-empty text.` });
+        }
+        value = value.trim();
+      } else if (field.kind === "integer") {
+        value = Number(value);
+        if (!Number.isInteger(value) || Number(value) < 1 || Number(value) > 12) {
+          return res.status(400).json({ success: false, message: "Total semesters must be a whole number from 1 to 12." });
+        }
+      } else if (field.kind === "nullableNumber") {
+        if (value === null || value === "") value = null;
+        else {
+          value = Number(value);
+          if (!Number.isFinite(value) || Number(value) < 0) {
+            return res.status(400).json({ success: false, message: "Total credits must be a valid non-negative number." });
+          }
+        }
+      }
+      updates.push({ column: field.column, value });
+    }
+
+    const setSql = updates.map((item, index) => `"${item.column}" = $${index + 1}`).join(", ");
+    const values = updates.map(item => item.value);
+    values.push(id);
+    const result = await client.query(
+      `UPDATE public.curricula SET ${setSql} WHERE id::text = $${values.length} RETURNING id`,
+      values
+    );
+    if (!result.rowCount) return res.status(404).json({ success: false, message: "Curriculum was not found. Refresh and try again." });
+    return res.status(200).json({ success: true, message: "Curriculum details updated.", id: result.rows[0].id });
+  } catch (error) {
+    console.error("Failed to update curriculum details:", error);
+    return res.status(500).json({ success: false, message: "Could not update this curriculum in the database." });
+  } finally {
+    client.release();
+  }
+}
