@@ -165,6 +165,53 @@ test("individual subject parser imports only the target enrollment row with the 
   assert.deepEqual(parsed.grades, [{ courseCode: "AMESC1001", grade: "A+" }]);
 });
 
+test("individual subject parser handles GECA tables with optional SEM and shifted row columns", () => {
+  const enrollment = "BT25F01F004";
+  const civil = ["civil engineering"];
+  const layouts = [
+    {
+      // CEPCC-style: SEM is present; row branch starts left of BRANCH header.
+      header: [
+        { text: "REGNO", x: 130, y: 749 }, { text: "STUDNAME", x: 189, y: 749 },
+        { text: "SEM", x: 387, y: 749 }, { text: "COURSENAME", x: 460, y: 749 },
+        { text: "CCODE", x: 574, y: 749 }, { text: "BRANCH", x: 657, y: 749 },
+        { text: "Grade", x: 744, y: 749 },
+      ],
+      row: [
+        { text: enrollment, x: 116, y: 652 }, { text: "Student Name", x: 189, y: 652 },
+        { text: "2", x: 394, y: 652 }, { text: "Engineering Geology", x: 438, y: 652 },
+        { text: "CEPCC1001", x: 564, y: 652 }, { text: "Civil Engineering", x: 632, y: 652 },
+        { text: "A", x: 754, y: 652 },
+      ],
+      expected: [{ courseCode: "CEPCC1001", grade: "A" }],
+    },
+    {
+      // CHBSC-style: no SEM column; title begins at the COURSENAME header.
+      header: [
+        { text: "REGNO", x: 327, y: 814 }, { text: "STUDNAME", x: 372, y: 814 },
+        { text: "COURSENAME", x: 516, y: 814 }, { text: "CCODE", x: 695, y: 814 },
+        { text: "BRANCH", x: 735, y: 814 }, { text: "Grade", x: 868, y: 814 },
+      ],
+      row: [
+        { text: enrollment, x: 327, y: 771 }, { text: "Student Name", x: 372, y: 771 },
+        { text: "Battery Science, Lubricant and Green Chemistry", x: 516, y: 771 },
+        { text: "CHBSC1002", x: 695, y: 771 }, { text: "Civil Engineering", x: 735, y: 771 },
+        { text: "A+", x: 873, y: 771 },
+      ],
+      expected: [{ courseCode: "CHBSC1002", grade: "A+" }],
+    },
+  ];
+
+  for (const layout of layouts) {
+    const parsed = extractSubjectResultGrades([
+      { text: layout.header.map(item => item.text).join(" "), items: layout.header },
+      { text: layout.row.map(item => item.text).join(" "), items: layout.row },
+    ], enrollment, civil);
+    assert.equal(parsed.enrollmentFound, true);
+    assert.deepEqual(parsed.grades, layout.expected);
+  }
+});
+
 test("individual subject parser refuses a target enrollment when its branch column conflicts", () => {
   const lines = [
     { text: "REGNO CCODE BRANCH Grade", items: [
