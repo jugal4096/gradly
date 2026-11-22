@@ -1,4 +1,3 @@
-
 import pg from "pg";
 import { env } from "./env";
 
@@ -11,12 +10,12 @@ export const pool = new Pool({
     rejectUnauthorized: false,
   },
 
-  // Keep the pool deliberately small and retire long-lived sockets so a
-  // Supabase pooler/network idle timeout does not leave stale clients around.
-  max: 5,
-  idleTimeoutMillis: 10000,
+  // Supabase shared session mode has a finite client limit. Keep each
+  // application process small and avoid periodic socket churn.
+  max: 2,
+  idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
-  maxLifetimeSeconds: 300,
+  // Leave maxLifetimeSeconds at pg-pool's default (0 = no forced rotation).
   keepAlive: true,
   keepAliveInitialDelayMillis: 5000,
 });
@@ -32,9 +31,10 @@ pool.on("error", (error) => {
 const TRANSIENT_DATABASE_CODES = new Set([
   "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE", "ENOTFOUND",
   "EAI_AGAIN", "08000", "08003", "08006", "08001", "57P01", "57P02", "57P03",
+  "EMAXCONNSESSION",
 ]);
 
-/** pg-pool can wrap a socket error in a timeout error, so inspect the full cause chain. */
+/** pg-pool can wrap a socket or Supavisor error, so inspect the full cause chain. */
 function isTransientDatabaseError(error: unknown): boolean {
   const pending: unknown[] = [error];
   const visited = new Set<unknown>();
@@ -47,8 +47,10 @@ function isTransientDatabaseError(error: unknown): boolean {
     const candidate = current as { code?: unknown; message?: unknown; cause?: unknown };
     const code = String(candidate.code || "");
     const message = String(candidate.message || "");
-    if (TRANSIENT_DATABASE_CODES.has(code) ||
-        /connection terminated due to connection timeout|connection terminated unexpectedly|timeout expired|connection timed out|socket hang up/i.test(message)) {
+    if (
+      TRANSIENT_DATABASE_CODES.has(code) ||
+      /connection terminated due to connection timeout|connection terminated unexpectedly|timeout expired|connection timed out|socket hang up|max clients reached in session mode|too many clients|remaining connection slots are reserved/i.test(message)
+    ) {
       return true;
     }
     if (candidate.cause) pending.push(candidate.cause);
@@ -69,7 +71,8 @@ export async function queryWithRetry(text: string, values?: unknown[]) {
     } catch (error) {
       lastError = error;
       if (!isTransientDatabaseError(error) || attempt === 3) throw error;
-      await new Promise(resolve => setTimeout(resolve, attempt * 300));
+      // Back off instead of immediately adding more connection pressure.
+      await new Promise(resolve => setTimeout(resolve, attempt * 1000));
     }
   }
   throw lastError;
