@@ -77,7 +77,6 @@ export default function CommunitiesPanel() {
     if (!token || !selectedGroupId) return;
     let stopped = false;
     let pollTimer: number | undefined;
-    const refreshTimer: number = window.setInterval(() => { void refresh(); }, 12000);
     let socket: WebSocket | null = null;
     const refresh = async () => {
       try {
@@ -87,6 +86,7 @@ export default function CommunitiesPanel() {
         if (!stopped) setError((e as Error).message);
       }
     };
+    const refreshTimer: number = window.setInterval(() => { void refresh(); }, 12000);
     const connect = async () => {
       try {
         const result = await api(`/groups/${selectedGroupId}/socket-ticket`, token, { method: "POST", body: "{}" });
