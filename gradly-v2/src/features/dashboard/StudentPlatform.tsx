@@ -132,6 +132,122 @@ function getDegreeCreditCategory(subject:Subject):DegreeCreditCategory|null {
   if(/professional core|\bpc\b|core course/.test(type) || /^(IT|CE|ME|EE|ET|CS)PC/.test(code)) return "PC";
   return "PC";
 }
+type NepCreditCategory = "BSC"|"ESC"|"PCC"|"PEC"|"MDM"|"OE"|"VSEC"|"AEC"|"EEM"|"IKS"|"VEC"|"RMC"|"CEP"|"PRJ"|"INT"|"CCC";
+type NepCreditGroup = "FOUNDATION"|"MAJOR"|"MULTIDISCIPLINARY"|"SKILL"|"HSSM"|"EXPERIENTIAL"|"LIBERAL";
+const NEP_CREDIT_LABELS:Record<NepCreditCategory,string> = {
+  BSC:"Basic Science Courses",ESC:"Engineering Science Courses",PCC:"Programme Core Courses",PEC:"Programme Elective Courses",
+  MDM:"Multidisciplinary Minor",OE:"Open Electives",VSEC:"Vocational & Skill Enhancement",AEC:"Ability Enhancement",
+  EEM:"Entrepreneurship / Economics / Management",IKS:"Indian Knowledge System",VEC:"Value Education",
+  RMC:"Research Methodology",CEP:"Community / Field Project",PRJ:"Project",INT:"Internship / OJT",CCC:"Co-curricular Courses",
+};
+const NEP_CREDIT_REQUIREMENTS:Record<"regular"|"dse",Partial<Record<NepCreditCategory,number>>> = {
+  regular:{BSC:16,ESC:14,PCC:50,PEC:20,MDM:14,OE:8,VSEC:8,AEC:4,EEM:4,IKS:2,VEC:4,RMC:2,CEP:2,PRJ:6,INT:12,CCC:4},
+  dse:{PCC:50,PEC:20,MDM:14,OE:8,VSEC:4,AEC:2,EEM:4,VEC:4,RMC:2,CEP:2,PRJ:6,INT:12},
+};
+const NEP_CREDIT_GROUPS:{id:NepCreditGroup;label:string;categories:NepCreditCategory[]}[] = [
+  {id:"FOUNDATION",label:"Foundation · BSC + ESC",categories:["BSC","ESC"]},
+  {id:"MAJOR",label:"Major · PCC + PEC",categories:["PCC","PEC"]},
+  {id:"MULTIDISCIPLINARY",label:"Multidisciplinary · MDM + OE",categories:["MDM","OE"]},
+  {id:"SKILL",label:"Vocational & Skill · VSEC",categories:["VSEC"]},
+  {id:"HSSM",label:"Humanities, Social Science & Management",categories:["AEC","EEM","IKS","VEC"]},
+  {id:"EXPERIENTIAL",label:"Experiential Learning",categories:["RMC","CEP","PRJ","INT"]},
+  {id:"LIBERAL",label:"Liberal Learning · CCC",categories:["CCC"]},
+];
+function isNepScheme(scheme:string):boolean { return /\bNEP\b|NEP[\s_-]*2020/i.test(String(scheme||"")); }
+function getNepCreditCategory(subject:Subject):NepCreditCategory|null {
+  const type=String(subject.courseType||"").toUpperCase().replace(/[^A-Z0-9]+/g," ");
+  const category=String(subject.courseCategory||"").toUpperCase().replace(/[^A-Z0-9]+/g," ");
+  const code=String(subject.courseCode||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const hints=category+" "+type;
+  const exact=(key:string)=>new RegExp("(^|\\s)"+key+"($|\\s)").test(hints);
+  if(exact("BSC")||/BASIC SCIENCE/.test(hints)) return "BSC";
+  if(exact("ESC")||/ENGINEERING SCIENCE/.test(hints)) return "ESC";
+  if(exact("PCC")||/PROGRAMME CORE|PROGRAM CORE/.test(hints)||/PCC/.test(code)) return "PCC";
+  if(exact("PEC")||/PROGRAMME ELECTIVE|PROGRAM ELECTIVE/.test(hints)||/PEC/.test(code)) return "PEC";
+  if(exact("MDM")||/MULTIDISCIPLINARY MINOR/.test(hints)||/MDM/.test(code)) return "MDM";
+  if(exact("OE")||/OPEN ELECTIVE/.test(hints)||/OE/.test(code)) return "OE";
+  if(exact("VSEC")||exact("VSE")||/VOCATIONAL|SKILL ENHANCEMENT/.test(hints)||/VSEC|VSE/.test(code)) return "VSEC";
+  if(exact("AEC")||/ABILITY ENHANCEMENT/.test(hints)||/AEC/.test(code)) return "AEC";
+  if(exact("EEM")||/ENTREPRENEURSHIP|ECONOMICS|MANAGEMENT COURSE/.test(hints)||/EEM/.test(code)) return "EEM";
+  if(exact("IKS")||/INDIAN KNOWLEDGE/.test(hints)||/IKS/.test(code)) return "IKS";
+  if(exact("VEC")||/VALUE EDUCATION/.test(hints)||/VEC/.test(code)) return "VEC";
+  if(exact("RMC")||/RESEARCH METHODOLOGY/.test(hints)||/RMC/.test(code)) return "RMC";
+  if(exact("CEP")||exact("FP")||/COMMUNITY ENGAGEMENT|FIELD PROJECT/.test(hints)||/CEP|FP/.test(code)) return "CEP";
+  if(exact("PRJ")||/PROJECT/.test(hints)||/PRJ/.test(code)) return "PRJ";
+  if(exact("INT")||exact("OJT")||/INTERNSHIP|ON JOB TRAINING/.test(hints)||/OJT|INT/.test(code)) return "INT";
+  if(exact("CCC")||/CO.?CURRICULAR|LIBERAL LEARNING/.test(hints)||/CCC/.test(code)) return "CCC";
+  return null;
+}
+function getNepCreditProgress(profile:Profile,records:Record<number,Subject[]>) {
+  if(!isNepScheme(profile.scheme)) return null;
+  const dse=isDseAdmission(profile.admissionMode,profile.enrollment);
+  const requirements=NEP_CREDIT_REQUIREMENTS[dse?"dse":"regular"];
+  const earned:Record<NepCreditCategory,number>={BSC:0,ESC:0,PCC:0,PEC:0,MDM:0,OE:0,VSEC:0,AEC:0,EEM:0,IKS:0,VEC:0,RMC:0,CEP:0,PRJ:0,INT:0,CCC:0};
+  const contributors:Record<NepCreditCategory,Subject[]>={BSC:[],ESC:[],PCC:[],PEC:[],MDM:[],OE:[],VSEC:[],AEC:[],EEM:[],IKS:[],VEC:[],RMC:[],CEP:[],PRJ:[],INT:[],CCC:[]};
+  const seen=new Set<string>();
+  let unmappedEarned=0;
+  for(const [semester,rows] of Object.entries(records)) for(const subject of rows||[]) {
+    const code=String(subject.courseCode||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+    const key=code||"SEM"+semester+":"+subject.id;
+    if(seen.has(key)) continue;
+    const grade=String(subject.grade||"").trim().toUpperCase();
+    const gradePoint=POINTS[grade];
+    if(!subject.name?.trim()||!(Number(subject.credits)>0)||gradePoint===undefined||gradePoint<=0) continue;
+    seen.add(key);
+    const category=getNepCreditCategory(subject);
+    if(!category||requirements[category]===undefined) {unmappedEarned+=Number(subject.credits);continue;}
+    earned[category]+=Number(subject.credits);
+    contributors[category].push(subject);
+  }
+  const categories=(Object.keys(requirements) as NepCreditCategory[]).map(category=>({
+    category,label:NEP_CREDIT_LABELS[category],required:requirements[category]||0,earned:earned[category],
+    remaining:Math.max(0,(requirements[category]||0)-earned[category]),
+    percent:(requirements[category]||0)>0?Math.min(100,earned[category]/(requirements[category]||1)*100):0,
+    status:earned[category]>=(requirements[category]||0)?"Met":earned[category]>0?"In progress":"Not started",
+    subjects:contributors[category],
+  }));
+  const required=Object.values(requirements).reduce((sum,value)=>sum+(value||0),0);
+  const earnedTotal=categories.reduce((sum,item)=>sum+item.earned,0);
+  const groups=NEP_CREDIT_GROUPS.map(group=>{
+    const applicable=group.categories.filter(category=>requirements[category]!==undefined);
+    const groupRequired=applicable.reduce((sum,category)=>sum+(requirements[category]||0),0);
+    const groupEarned=applicable.reduce((sum,category)=>sum+earned[category],0);
+    return {id:group.id,label:group.label,required:groupRequired,earned:groupEarned,percent:groupRequired?Math.min(100,groupEarned/groupRequired*100):0};
+  }).filter(group=>group.required>0);
+  return {path:dse?"DSE":"Regular",required,earned:earnedTotal,remaining:Math.max(0,required-earnedTotal),percent:required?Math.min(100,earnedTotal/required*100):0,categories,groups,unmappedEarned,degreeMinimum:dse?134:176,structureTotal:dse?128:170};
+}
+function getNepPromotionStatus(profile:Profile,records:Record<number,Subject[]>) {
+  if(!isNepScheme(profile.scheme)) return null;
+  const current=Math.max(1,Number(profile.semester)||1);
+  const dse=isDseAdmission(profile.admissionMode,profile.enrollment);
+  let checkpoint:{label:string;after:number;requirements:{label:string;semesters:number[];credits:number}[]}|null=null;
+  if(dse&&current===5) checkpoint={label:"Third year (Semester V)",after:4,requirements:[{label:"Second Year",semesters:[3,4],credits:26}]};
+  else if(dse&&current===7) checkpoint={label:"Final year (Semester VII)",after:6,requirements:[{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
+  else if(!dse&&current===3) checkpoint={label:"Second year (Semester III)",after:2,requirements:[{label:"First Year",semesters:[1,2],credits:26}]};
+  else if(!dse&&current===5) checkpoint={label:"Third year (Semester V)",after:4,requirements:[{label:"First Year",semesters:[1,2],credits:36},{label:"Second Year",semesters:[3,4],credits:26}]};
+  else if(!dse&&current===7) checkpoint={label:"Final year (Semester VII)",after:6,requirements:[{label:"First Year",semesters:[1,2],credits:40},{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
+  if(!checkpoint) return {checkpoint:false,current,dse,status:"not-applicable",label:"No annual promotion checkpoint",message:"The published GECA NEP rules define credit thresholds at the end of each academic year, not for every semester transition."};
+  const relevantSemesters=checkpoint.requirements.flatMap(item=>item.semesters);
+  const hasRecords=relevantSemesters.some(semester=>(records[semester]||[]).length>0);
+  const seen=new Set<string>();
+  const rows:{semester:number;subject:Subject}[]=[];
+  for(const [semester,subjects] of Object.entries(records)) for(const subject of subjects||[]) {
+    const code=String(subject.courseCode||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+    const key=code||"SEM"+semester+":"+subject.id;
+    if(seen.has(key)) continue;
+    const grade=String(subject.grade||"").trim().toUpperCase();
+    const gradePoint=POINTS[grade];
+    if(!subject.name?.trim()||!(Number(subject.credits)>0)||gradePoint===undefined||gradePoint<=0) continue;
+    seen.add(key);rows.push({semester:Number(semester),subject});
+  }
+  const checks=checkpoint.requirements.map(item=>{
+    const earned=rows.filter(row=>item.semesters.includes(row.semester)).reduce((sum,row)=>sum+Number(row.subject.credits),0);
+    return {...item,earned,remaining:Math.max(0,item.credits-earned),passed:earned>=item.credits};
+  });
+  const complete=checks.every(item=>item.passed);
+  return {checkpoint:true,current,dse,after:checkpoint.after,label:checkpoint.label,checks,hasRecords,status:!hasRecords?"pending":complete?"eligible":"not-eligible",eligible:hasRecords&&complete};
+}
+
 function getDegreeCreditProgress(profile:Profile,records:Record<number,Subject[]>) {
   if(!isNewCbcsScheme(profile.scheme)) return null;
   const dse=isDseAdmission(profile.admissionMode,profile.enrollment);
@@ -1195,6 +1311,8 @@ export default function StudentPlatform() {
     const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
   const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
+  const nepCreditProgress=getNepCreditProgress(profile,savedSubjectsBySemester);
+  const nepPromotionStatus=getNepPromotionStatus(profile,savedSubjectsBySemester);
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
 
@@ -1292,10 +1410,18 @@ export default function StudentPlatform() {
           <section className="sp-user-stats" aria-label="Academic summary">
             <article className="sp-user-stat sp-user-stat-lilac"><span className="sp-user-stat-icon">◈</span><small>YOUR CGPA</small><strong>{results.length?cgpaValue.toFixed(3):"—"}</strong><p>{results.length?"Across "+results.length+" saved semesters":"Save your first semester result"}</p>{results.length>0&&<small className="sp-cgpa-standing">{cgpaStanding}</small>}</article>
             <article className="sp-user-stat sp-user-stat-mint"><span className="sp-user-stat-icon">∑</span><small>LATEST SGPA</small><strong>{results.length?results[results.length-1].sgpa.toFixed(3):"—"}</strong><p>{results.length?"Your latest saved performance":"Ready when you are"}</p></article>
-            <article className="sp-user-stat sp-user-stat-peach"><span className="sp-user-stat-icon">▤</span><small>CREDITS EARNED</small><strong>{degreeCreditProgress?.earned??"—"}</strong><p>New CBCS degree credits earned</p></article>
+            <article className="sp-user-stat sp-user-stat-peach"><span className="sp-user-stat-icon">▤</span><small>CREDITS EARNED</small><strong>{isNepScheme(profile.scheme)?(nepCreditProgress?.earned.toFixed(1)??"0"):(degreeCreditProgress?.earned??"—")}</strong><p>{isNepScheme(profile.scheme)?"NEP programme credits earned":degreeCreditProgress?"New CBCS degree credits earned":"Credit progress available for NEP and New CBCS"}</p></article>
             <article className="sp-user-stat sp-user-stat-blue"><span className="sp-user-stat-icon">✦</span><small>PROFILE STATUS</small><strong>{profile.institutionName?"Ready":"Setup"}</strong><p>{profile.institutionName?"Your academic profile is active":"Complete your academic profile"}</p></article>
           </section>
 
+          {nepPromotionStatus&&<section className={"sp-nep-promotion-card "+(nepPromotionStatus.status==="eligible"?"is-eligible":nepPromotionStatus.status==="not-eligible"?"is-not-eligible":"is-pending")}>
+            <div className="sp-nep-promotion-head"><div><span>GECA · NEP PROMOTION CHECK</span><h2>{nepPromotionStatus.checkpoint?nepPromotionStatus.label:"Your next-semester progress"}</h2></div>
+              <strong>{nepPromotionStatus.status==="eligible"?"ELIGIBLE":nepPromotionStatus.status==="not-eligible"?"NOT ELIGIBLE YET":nepPromotionStatus.status==="pending"?"AWAITING RESULTS":"YEAR-END CHECKPOINTS"}</strong></div>
+            {nepPromotionStatus.checkpoint?<><p>{nepPromotionStatus.status==="eligible"?"Your recorded passed credits meet every published credit threshold for this promotion checkpoint.":nepPromotionStatus.status==="not-eligible"?"Your currently recorded passed credits are below one or more required thresholds.": "Save your completed semester results to calculate your promotion standing. No pass/fail decision is made without recorded results."}</p>
+              <div className="sp-nep-promotion-checks">{nepPromotionStatus.checks.map(check=><div key={check.label}><span>{check.label}</span><b>{check.earned.toFixed(1)} / {check.credits} credits</b><small>{check.passed?"Threshold met":check.remaining.toFixed(1)+" credits still needed"}</small></div>)}</div>
+              <small className="sp-nep-promotion-note">Based on saved passed subjects only. The GECA NEP regulation specifies these credit checkpoints at year-end; it does not publish a separate credit threshold for every semester-to-semester transition.</small>
+            </>:<p>{nepPromotionStatus.message}</p>}
+          </section>}
           <section className="sp-user-tools-section">
             <div className="sp-user-section-heading"><div><span>MADE FOR YOUR PROGRESS</span><h2>What would you like to do?</h2><p>Your most useful academic tools, just a click away.</p></div><span className="sp-user-section-mark">YOUR TOOLKIT <b>✦</b></span></div>
             <div className="sp-user-tools-grid">
@@ -1402,7 +1528,17 @@ export default function StudentPlatform() {
             <Card><div className="sp-card-head"><div><span>YOUR NEXT MOVE</span><h2>Turn insights into action</h2></div></div><div className="sp-tracker-actions"><div><b>{trackerDelta<0?"Recover your recent dip":trackerDelta>0?"Build on your momentum":"Set your next benchmark"}</b><p>{trackerDelta<0?"Compare the subjects, attendance and preparation pattern from your latest semester with your stronger semesters.":trackerDelta>0?"Identify what worked in your latest semester and repeat those study habits in the next one.":"Use your personal average as a baseline and set a realistic improvement target."}</p></div><button className="sp-primary" onClick={()=>navigate("sgpaWhatIf")}>Open what-if analysis →</button><button className="sp-secondary" onClick={()=>navigate("sgpa")}>Update semester grades</button></div></Card>
           </>:<Card><div className="sp-empty"><span>▥</span><h3>Your academic story starts here</h3><p>Save your first semester SGPA to unlock trend graphs, score distributions, personal bests, semester dips and detailed performance insights.</p><button className="sp-primary" onClick={()=>navigate("sgpa")}>Add first result →</button></div></Card>}
           <Card><div className="sp-card-head"><div><span>PERFORMANCE LOG</span><h2>Saved semester records</h2></div></div>{trackerRows.map(r=><div className="sp-history-row sp-semester-history-row" key={r.id}><b>Semester {r.semester}</b><span>{r.credits} credits</span><strong>{r.sgpa.toFixed(3)} SGPA</strong><strong>{getCgpaThroughSemester(r.semester)?.toFixed(3)??"—"} CGPA</strong><small>{new Date(r.savedAt).toLocaleDateString()}</small>{!isGuest&&<><button type="button" className="sp-download-result" onClick={()=>{setSelectedSemester(r.semester);setSection("sgpa");setNotice("");}}>Edit grades</button><button type="button" className="sp-download-result" onClick={()=>downloadSemesterReport(r)}>Download PDF</button></>}</div>)}</Card></>}
-        {section==="credits"&&<div className="sp-credit-experience" onClick={handlePlannerClick}><SectionTitle kicker="YOUR DEGREE · YOUR PROGRESS" title="Credit analyser" copy={degreeCreditProgress?"Every credit counts. Track your degree journey, category by category.":"The detailed credit analyser is available for the New CBCS scheme."}/>{degreeCreditProgress?<><div className="sp-credit-hero"><div className="sp-credit-hero-top"><div><span className="sp-credit-eyebrow">NEW CBCS · {degreeCreditProgress.path.toUpperCase()} TRACK</span><h2>Your degree, in progress.</h2><p>You’re building towards your graduation milestone. Keep the momentum going.</p></div><button type="button" className="sp-credit-sound" aria-pressed={plannerSoundEnabled} onClick={()=>setPlannerSoundEnabled(value=>!value)}>{plannerSoundEnabled?"♫ Sound on":"♪ Sound off"}</button></div><div className="sp-credit-progress-layout"><div className="sp-credit-ring" style={{background:"conic-gradient(#19b99a 0deg,#19b99a "+(degreeCreditProgress.percent*3.6)+"deg,#ffffff2c "+(degreeCreditProgress.percent*3.6)+"deg,#ffffff2c 360deg)"}}><div><strong>{degreeCreditProgress.percent.toFixed(1)}<small>%</small></strong><span>ACHIEVED</span></div></div><div className="sp-credit-hero-stats"><div className="sp-credit-stat sp-credit-stat-earned"><span>✦ CREDITS ACHIEVED</span><strong>{degreeCreditProgress.earned.toFixed(1)} <small>/ {degreeCreditProgress.required}</small></strong><p>{degreeCreditProgress.percent.toFixed(1)}% of your degree requirement completed</p></div><div className="sp-credit-stat sp-credit-stat-left"><span>◷ CREDITS LEFT</span><strong>{degreeCreditProgress.remaining.toFixed(1)}</strong><p>{(100-degreeCreditProgress.percent).toFixed(1)}% remaining to reach your target</p></div></div></div><div className="sp-credit-hero-footer"><span>{degreeCreditProgress.categories.filter(item=>item.status==="Met").length} / {degreeCreditProgress.categories.length} categories completed</span><span>{degreeCreditProgress.remaining.toFixed(1)} credits to graduation</span></div></div><div className="sp-credit-section-heading"><div><span>YOUR CREDIT BREAKDOWN</span><h2>Every category. Every milestone.</h2></div><span>{degreeCreditProgress.categories.length} CATEGORIES</span></div><div className="sp-credit-category-list">{degreeCreditProgress.categories.map((item,index)=><details className={"sp-credit-category sp-credit-category-"+item.category.toLowerCase()} key={item.category}><summary><div className="sp-credit-category-top"><div className="sp-credit-category-title"><span className="sp-credit-category-index">{String(index+1).padStart(2,"0")}</span><div><strong>{item.label}</strong><small>{item.status==="Met"?"Requirement achieved":item.earned>0?"Keep going — you're making progress":"Your next milestone"}</small></div></div><div className="sp-credit-category-numbers"><strong>{item.earned.toFixed(1)} <small>/ {item.required}</small></strong><span>{item.percent.toFixed(1)}% achieved</span></div></div><div className="sp-credit-category-track"><i style={{width:item.percent+"%"}}/></div><div className="sp-credit-category-footer"><span className="sp-credit-status">{item.status==="Met"?"✓ Requirement met":item.remaining.toFixed(1)+" credits left"}</span><span>{item.remaining.toFixed(1)} remaining</span></div></summary><div className="sp-credit-subjects">{item.subjects.length?item.subjects.map((subject,index)=><div className="sp-credit-subject" key={subject.courseCode||subject.id+"-"+index}><span><b>{subject.courseCode||"—"}</b> · {subject.name}</span><strong>{Number(subject.credits)} cr</strong></div>):<p className="sp-muted">No passed subjects have been recorded in this category yet.</p>}</div></details>)}</div><div className="sp-credit-footnote"><span>ⓘ</span><p>Only passed, saved subjects count towards degree completion. UHV credits remain included in SGPA/CGPA calculations but are excluded from this degree-credit total. Environmental Studies and Induction Training are non-credit mandatory requirements.</p></div></>:<Card><div className="sp-empty compact"><span>▤</span><h3>New CBCS credit breakdown</h3><p>Select a profile configured with the New CBCS scheme to view the Regular (160-credit) or DSE (121-credit) structure. Other schemes are left unchanged.</p></div></Card>}</div>}
+        {section==="credits"&&isNepScheme(profile.scheme)&&<div className="sp-credit-experience sp-nep-credit-experience"><SectionTitle kicker="YOUR DEGREE · NEP PROGRESS" title="Credit analyser" copy="Track your earned credits against the GECA NEP programme structure, with a clear category-wise breakdown."/>
+          {nepCreditProgress?<><div className="sp-credit-hero"><div className="sp-credit-hero-top"><div><span className="sp-credit-eyebrow">NEP · {nepCreditProgress.path.toUpperCase()} TRACK</span><h2>Your degree, in progress.</h2><p>Passed and saved subjects contribute to your earned-credit total.</p></div></div>
+            <div className="sp-credit-progress-layout"><div className="sp-credit-ring" style={{background:"conic-gradient(#19b99a 0deg,#19b99a "+(nepCreditProgress.percent*3.6)+"deg,#ffffff2c "+(nepCreditProgress.percent*3.6)+"deg,#ffffff2c 360deg)"}}><div><strong>{nepCreditProgress.percent.toFixed(1)}<small>%</small></strong><span>ACHIEVED</span></div></div>
+              <div className="sp-credit-hero-stats"><div className="sp-credit-stat sp-credit-stat-earned"><span>✦ CREDITS ACQUIRED</span><strong>{nepCreditProgress.earned.toFixed(1)} <small>/ {nepCreditProgress.required}</small></strong><p>{nepCreditProgress.percent.toFixed(1)}% of the NEP programme structure completed</p></div><div className="sp-credit-stat sp-credit-stat-left"><span>◷ CREDITS REMAINING</span><strong>{nepCreditProgress.remaining.toFixed(1)}</strong><p>Credits still required within the category-wise programme structure</p></div></div></div>
+            <div className="sp-credit-hero-footer"><span>{nepCreditProgress.categories.filter(item=>item.status==="Met").length} / {nepCreditProgress.categories.length} categories completed</span><span>{nepCreditProgress.earned.toFixed(1)} of {nepCreditProgress.structureTotal} programme credits acquired</span></div></div>
+            <div className="sp-credit-section-heading"><div><span>PROGRAMME CREDIT DISTRIBUTION</span><h2>Where your credits belong</h2></div><span>{nepCreditProgress.path.toUpperCase()} · {nepCreditProgress.categories.length} CATEGORIES</span></div>
+            <div className="sp-nep-credit-groups">{nepCreditProgress.groups.map(group=><div className="sp-nep-credit-group" key={group.id}><span>{group.label}</span><strong>{group.earned.toFixed(1)} <small>/ {group.required} cr</small></strong><i><b style={{width:group.percent+"%"}}/></i></div>)}</div>
+            <div className="sp-credit-category-list">{nepCreditProgress.categories.map((item,index)=><details className={"sp-credit-category sp-credit-category-"+item.category.toLowerCase()} key={item.category}><summary><div className="sp-credit-category-top"><div className="sp-credit-category-title"><span className="sp-credit-category-index">{String(index+1).padStart(2,"0")}</span><div><strong>{item.label}</strong><small>{item.status==="Met"?"Requirement achieved":item.earned>0?"Keep going — you're making progress":"Your next milestone"}</small></div></div><div className="sp-credit-category-numbers"><strong>{item.earned.toFixed(1)} <small>/ {item.required}</small></strong><span>{item.percent.toFixed(1)}% achieved</span></div></div><div className="sp-credit-category-track"><i style={{width:item.percent+"%"}}/></div><div className="sp-credit-category-footer"><span className="sp-credit-status">{item.status==="Met"?"✓ Requirement met":item.remaining.toFixed(1)+" credits left"}</span><span>{item.remaining.toFixed(1)} remaining</span></div></summary><div className="sp-credit-subjects">{item.subjects.length?item.subjects.map((subject,index)=><div className="sp-credit-subject" key={subject.courseCode||subject.id+"-"+index}><span><b>{subject.courseCode||"—"}</b> · {subject.name}</span><strong>{Number(subject.credits)} cr</strong></div>):<p className="sp-muted">No passed subjects have been recorded in this category yet.</p>}</div></details>)}</div>
+            <div className="sp-credit-footnote"><span>ⓘ</span><p>Only passed, saved subjects count as acquired credits. The A3.1 programme structure totals {nepCreditProgress.structureTotal} credits ({nepCreditProgress.path}); A4.1.1 separately states an institute-level minimum of {nepCreditProgress.degreeMinimum} credits. The regulation does not allocate the additional 6 credits to the A3.1 categories, so they are shown separately rather than assigned to a category. {nepCreditProgress.unmappedEarned>0?nepCreditProgress.unmappedEarned.toFixed(1)+" passed credits could not yet be mapped to a NEP category; review their course type/category mapping.":""}</p></div>
+          </>:<Card><div className="sp-empty compact"><span>▤</span><h3>NEP credit progress is not ready</h3><p>Complete your academic profile and save passed subject grades to start tracking your NEP credits.</p></div></Card>}</div>}
+        {section==="credits"&&!isNepScheme(profile.scheme)&&<div className="sp-credit-experience" onClick={handlePlannerClick}><SectionTitle kicker="YOUR DEGREE · YOUR PROGRESS" title="Credit analyser" copy={degreeCreditProgress?"Every credit counts. Track your degree journey, category by category.":"The detailed credit analyser is available for the New CBCS scheme."}/>{degreeCreditProgress?<><div className="sp-credit-hero"><div className="sp-credit-hero-top"><div><span className="sp-credit-eyebrow">NEW CBCS · {degreeCreditProgress.path.toUpperCase()} TRACK</span><h2>Your degree, in progress.</h2><p>You’re building towards your graduation milestone. Keep the momentum going.</p></div><button type="button" className="sp-credit-sound" aria-pressed={plannerSoundEnabled} onClick={()=>setPlannerSoundEnabled(value=>!value)}>{plannerSoundEnabled?"♫ Sound on":"♪ Sound off"}</button></div><div className="sp-credit-progress-layout"><div className="sp-credit-ring" style={{background:"conic-gradient(#19b99a 0deg,#19b99a "+(degreeCreditProgress.percent*3.6)+"deg,#ffffff2c "+(degreeCreditProgress.percent*3.6)+"deg,#ffffff2c 360deg)"}}><div><strong>{degreeCreditProgress.percent.toFixed(1)}<small>%</small></strong><span>ACHIEVED</span></div></div><div className="sp-credit-hero-stats"><div className="sp-credit-stat sp-credit-stat-earned"><span>✦ CREDITS ACHIEVED</span><strong>{degreeCreditProgress.earned.toFixed(1)} <small>/ {degreeCreditProgress.required}</small></strong><p>{degreeCreditProgress.percent.toFixed(1)}% of your degree requirement completed</p></div><div className="sp-credit-stat sp-credit-stat-left"><span>◷ CREDITS LEFT</span><strong>{degreeCreditProgress.remaining.toFixed(1)}</strong><p>{(100-degreeCreditProgress.percent).toFixed(1)}% remaining to reach your target</p></div></div></div><div className="sp-credit-hero-footer"><span>{degreeCreditProgress.categories.filter(item=>item.status==="Met").length} / {degreeCreditProgress.categories.length} categories completed</span><span>{degreeCreditProgress.remaining.toFixed(1)} credits to graduation</span></div></div><div className="sp-credit-section-heading"><div><span>YOUR CREDIT BREAKDOWN</span><h2>Every category. Every milestone.</h2></div><span>{degreeCreditProgress.categories.length} CATEGORIES</span></div><div className="sp-credit-category-list">{degreeCreditProgress.categories.map((item,index)=><details className={"sp-credit-category sp-credit-category-"+item.category.toLowerCase()} key={item.category}><summary><div className="sp-credit-category-top"><div className="sp-credit-category-title"><span className="sp-credit-category-index">{String(index+1).padStart(2,"0")}</span><div><strong>{item.label}</strong><small>{item.status==="Met"?"Requirement achieved":item.earned>0?"Keep going — you're making progress":"Your next milestone"}</small></div></div><div className="sp-credit-category-numbers"><strong>{item.earned.toFixed(1)} <small>/ {item.required}</small></strong><span>{item.percent.toFixed(1)}% achieved</span></div></div><div className="sp-credit-category-track"><i style={{width:item.percent+"%"}}/></div><div className="sp-credit-category-footer"><span className="sp-credit-status">{item.status==="Met"?"✓ Requirement met":item.remaining.toFixed(1)+" credits left"}</span><span>{item.remaining.toFixed(1)} remaining</span></div></summary><div className="sp-credit-subjects">{item.subjects.length?item.subjects.map((subject,index)=><div className="sp-credit-subject" key={subject.courseCode||subject.id+"-"+index}><span><b>{subject.courseCode||"—"}</b> · {subject.name}</span><strong>{Number(subject.credits)} cr</strong></div>):<p className="sp-muted">No passed subjects have been recorded in this category yet.</p>}</div></details>)}</div><div className="sp-credit-footnote"><span>ⓘ</span><p>Only passed, saved subjects count towards degree completion. UHV credits remain included in SGPA/CGPA calculations but are excluded from this degree-credit total. Environmental Studies and Induction Training are non-credit mandatory requirements.</p></div></>:<Card><div className="sp-empty compact"><span>▤</span><h3>New CBCS credit breakdown</h3><p>Select a profile configured with the New CBCS scheme to view the Regular (160-credit) or DSE (121-credit) structure. Other schemes are left unchanged.</p></div></Card>}</div>}
         {section==="community"&&<><SectionTitle kicker="LEARN TOGETHER" title="Community group chat" copy="A shared study space for classmates to exchange questions and learning material."/><div className="sp-two-col"><Card><div className="sp-card-head"><div><span>STUDENT DISCUSSION</span><h2>Group conversation</h2></div><b>Preview</b></div><div className="sp-chat-list">{messages.map(m=><div className={"sp-chat-message "+(m.mine?"mine":"")} key={m.id}><div><b>{m.author}</b><small>{m.time}</small></div><p>{m.body}</p>{m.mine&&<div className="sp-message-actions"><button onClick={()=>{setEditingId(m.id);setMessage(m.body);}}>Edit</button><button onClick={()=>setMessages(cur=>cur.filter(x=>x.id!==m.id))}>Delete</button></div>}</div>)}</div><form className="sp-chat-compose" onSubmit={submitMessage}><input value={message} onChange={e=>setMessage(e.target.value)} placeholder={editingId?"Edit your message…":"Write a message…"}/><button className="sp-primary">{editingId?"Save":"Send"} →</button></form><small className="sp-muted">Frontend preview: messages are currently local to this browser, not shared with other students.</small></Card><Card><div className="sp-card-head"><div><span>STUDY MATERIAL</span><h2>Notes library</h2></div></div><button className="sp-upload" onClick={()=>fileRef.current?.click()}>＋ Upload notes or documents</button><input ref={fileRef} type="file" hidden multiple onChange={e=>setNotes(cur=>[...cur,...Array.from(e.target.files||[]).map(f=>({name:f.name,size:(f.size/1024).toFixed(0)+" KB",file:f}))])}/>{notes.length?notes.map((n,i)=><div className="sp-note-row" key={i}><span>▤</span><div><b>{n.name}</b><small>{n.size}</small></div><button onClick={()=>setNotes(cur=>cur.filter((_,j)=>i!==j))}>Remove</button></div>):<div className="sp-empty compact"><span>▤</span><p>Your uploaded files will appear here in this preview.</p></div>}<small className="sp-muted">Cloud sharing and downloads will activate with the notes-storage API.</small></Card></div></>}
         {section==="events"&&<><SectionTitle kicker="COMMUNITY" title="Upcoming events & holidays" copy="A shared calendar for academic events, campus activities and holidays."/><Card><div className="sp-card-head"><div><span>EVENT CALENDAR</span><h2>What's coming up</h2></div><b>Campus feed</b></div><div className="sp-empty"><span>✦</span><h3>Campus calendar is ready for connection</h3><p>Upcoming events and official holiday lists will appear here once an institution calendar feed is connected. No dates are invented in this preview.</p></div></Card></>}
 
