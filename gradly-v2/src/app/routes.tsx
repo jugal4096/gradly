@@ -4,6 +4,7 @@ import LoginPage from "../features/auth/LoginPage";
 import LegalPage from "../features/legal/LegalPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import StudentPlatform from "../features/dashboard/StudentPlatform";
+import CommunitiesVerifyPage from "../features/dashboard/CommunitiesVerifyPage";
 import AcademicSetupPage from "../features/dashboard/AcademicSetupPage";
 import { useAuth } from "../features/auth/AuthContext";
 
@@ -30,6 +31,7 @@ export default function AppRoutes() {
     <Route path="/login" element={<Navigate to="/" replace />} />
     <Route path="/terms" element={<LegalPage type="terms" />} />
     <Route path="/privacy" element={<LegalPage type="privacy" />} />
+    <Route path="/community/verify" element={<CommunitiesVerifyPage />} />
     <Route path="/academic-setup" element={<ProtectedRoute><AcademicSetupPage /></ProtectedRoute>} />
     <Route path="/exam-profile" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><StudentPlatform /></ProtectedRoute>} />
