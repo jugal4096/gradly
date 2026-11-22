@@ -267,7 +267,8 @@ export default {
       if (path === "/groups/mine" && request.method === "GET") {
         const rows = await env.DB.prepare(`
           SELECT g.id,g.name,g.description,g.category,g.visibility,g.created_at,m.role,
-            (SELECT COUNT(*) FROM chat_group_members x WHERE x.group_id=g.id AND x.status='active') AS member_count
+            (SELECT COUNT(*) FROM chat_group_members x WHERE x.group_id=g.id AND x.status='active') AS member_count,
+            (SELECT COUNT(*) FROM chat_messages x WHERE x.group_id=g.id AND x.sender_id<>m.user_id AND x.created_at>COALESCE(m.last_read_at,m.joined_at)) AS unread_count
           FROM chat_group_members m JOIN chat_groups g ON g.id=m.group_id
           WHERE m.user_id=? AND m.status='active' AND g.status='active'
           ORDER BY g.updated_at DESC
@@ -318,7 +319,7 @@ export default {
         return env.CHAT_ROOMS.getByName(groupId).fetch(new Request(request, { headers }));
       }
 
-      const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests))?$/i);
+      const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests|pins|members))?$/i);
       if (groupMatch) {
         const groupId = groupMatch[1];
         const action = groupMatch[2] || "";
@@ -363,6 +364,7 @@ export default {
 
         if (action === "messages" && request.method === "GET") {
           if (!membership) return fail(request, "Join this group to view its messages.", 403);
+          await env.DB.prepare("UPDATE chat_group_members SET last_read_at=? WHERE group_id=? AND user_id=?").bind(now(),groupId,user.id).run();
           const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 50));
           const before = url.searchParams.get("before");
           const rows = await env.DB.prepare(`
@@ -394,6 +396,51 @@ export default {
           await env.DB.prepare("INSERT INTO chat_socket_tickets(id,user_id,group_id,token_hash,expires_at) VALUES(?,?,?,?,?)")
             .bind(id(),user.id,groupId,await sha256(ticket),addMinutes(1)).run();
           return reply(request, { success: true, ticket, expiresInSeconds: 60 });
+        }
+
+
+        if (action === "pins" && request.method === "GET") {
+          if (!membership) return fail(request, "Join this group to view pinned messages.", 403);
+          const rows = await env.DB.prepare("SELECT p.created_at AS pinned_at,m.id,m.body,m.sender_id,m.created_at,u.display_name AS sender_name FROM chat_pinned_messages p JOIN chat_messages m ON m.id=p.message_id JOIN chat_users u ON u.id=m.sender_id WHERE p.group_id=? AND m.deleted_at IS NULL ORDER BY p.created_at DESC LIMIT 100").bind(groupId).all();
+          return reply(request,{success:true,pins:rows.results||[]});
+        }
+        if (action === "pins" && request.method === "POST") {
+          if (!membership || !["owner","admin","moderator"].includes(membership.role)) return fail(request,"Group moderator permission required.",403);
+          const body=await parseBody(request);
+          const messageId=String(body?.messageId||"");
+          const target=await env.DB.prepare("SELECT id FROM chat_messages WHERE id=? AND group_id=? AND deleted_at IS NULL").bind(messageId,groupId).first();
+          if (!target) return fail(request,"Message not found.",404);
+          await env.DB.prepare("INSERT OR IGNORE INTO chat_pinned_messages(group_id,message_id,pinned_by) VALUES(?,?,?)").bind(groupId,messageId,user.id).run();
+          await audit(env,user.id,"message.pinned","message",messageId);
+          return reply(request,{success:true});
+        }
+        if (action === "members" && request.method === "GET") {
+          if (!membership) return fail(request,"Join this group to view members.",403);
+          const rows=await env.DB.prepare("SELECT u.id,u.display_name,u.avatar_url,m.role,m.joined_at,m.muted_until FROM chat_group_members m JOIN chat_users u ON u.id=m.user_id WHERE m.group_id=? AND m.status='active' ORDER BY CASE m.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'moderator' THEN 2 ELSE 3 END,u.display_name LIMIT 500").bind(groupId).all();
+          return reply(request,{success:true,members:rows.results||[]});
+        }
+        if (action === "members" && request.method === "POST") {
+          if (!membership || !["owner","admin","moderator"].includes(membership.role)) return fail(request,"Group moderator permission required.",403);
+          const body=await parseBody(request);
+          const targetId=String(body?.userId||"");
+          const operation=String(body?.action||"");
+          const target=await env.DB.prepare("SELECT role,status FROM chat_group_members WHERE group_id=? AND user_id=?").bind(groupId,targetId).first();
+          if (!target || target.status!=="active") return fail(request,"Group member not found.",404);
+          if (target.role==="owner") return fail(request,"The group owner cannot be changed through member moderation.",409);
+          if (membership.role==="moderator" && ["admin","moderator"].includes(target.role)) return fail(request,"Moderators cannot manage group administrators.",403);
+          if (operation==="make_moderator" || operation==="make_admin") {
+            if (operation==="make_admin" && membership.role!=="owner") return fail(request,"Only the group owner can appoint an administrator.",403);
+            if (operation==="make_moderator" && !["owner","admin"].includes(membership.role)) return fail(request,"Only an owner or administrator can appoint moderators.",403);
+            await env.DB.prepare("UPDATE chat_group_members SET role=? WHERE group_id=? AND user_id=?").bind(operation==="make_admin"?"admin":"moderator",groupId,targetId).run();
+          } else if (operation==="remove" || operation==="ban") {
+            await env.DB.prepare("UPDATE chat_group_members SET status=? WHERE group_id=? AND user_id=?").bind(operation==="ban"?"banned":"removed",groupId,targetId).run();
+          } else if (operation==="mute") {
+            await env.DB.prepare("UPDATE chat_group_members SET muted_until=? WHERE group_id=? AND user_id=?").bind(addMinutes(24*60),groupId,targetId).run();
+          } else if (operation==="unmute") {
+            await env.DB.prepare("UPDATE chat_group_members SET muted_until=NULL WHERE group_id=? AND user_id=?").bind(groupId,targetId).run();
+          } else return fail(request,"Unsupported member action.");
+          await audit(env,user.id,"member."+operation,"user",targetId,"Group moderation",{groupId});
+          return reply(request,{success:true});
         }
 
         if (action === "reports" && request.method === "POST") {
@@ -440,6 +487,40 @@ export default {
           }
           await audit(env,user.id,"group.join_request."+decision,"join_request",requestId);
           return reply(request,{success:true});
+        }
+      }
+
+
+      const unpinMatch=path.match(/^[/]groups[/]([a-f0-9-]+)[/]pins[/]([a-f0-9-]+)$/i);
+      if (unpinMatch && request.method==="DELETE") {
+        const groupId=unpinMatch[1],messageId=unpinMatch[2];
+        const member=await requireMember(env,groupId,user.id);
+        if (!member || !["owner","admin","moderator"].includes(member.role)) return fail(request,"Group moderator permission required.",403);
+        await env.DB.prepare("DELETE FROM chat_pinned_messages WHERE group_id=? AND message_id=?").bind(groupId,messageId).run();
+        await audit(env,user.id,"message.unpinned","message",messageId);
+        return reply(request,{success:true});
+      }
+
+
+      const reactionMatch = path.match(/^[/]messages[/]([a-f0-9-]+)[/]reactions$/i);
+      if (reactionMatch) {
+        const messageId=reactionMatch[1];
+        const message=await env.DB.prepare("SELECT group_id FROM chat_messages WHERE id=? AND deleted_at IS NULL").bind(messageId).first();
+        if (!message) return fail(request,"Message not found.",404);
+        const member=await requireMember(env,message.group_id,user.id);
+        if (!member) return fail(request,"Group membership required.",403);
+        if (request.method==="GET") {
+          const rows=await env.DB.prepare("SELECT reaction,COUNT(*) AS total FROM chat_message_reactions WHERE message_id=? GROUP BY reaction").bind(messageId).all();
+          return reply(request,{success:true,reactions:rows.results||[]});
+        }
+        if (request.method==="POST") {
+          const body=await parseBody(request);
+          const reaction=String(body?.reaction||"");
+          if (!["👍","❤️","😂","😮","😢","🎉"].includes(reaction)) return fail(request,"Unsupported reaction.");
+          const existing=await env.DB.prepare("SELECT 1 FROM chat_message_reactions WHERE message_id=? AND user_id=? AND reaction=?").bind(messageId,user.id,reaction).first();
+          if (existing) await env.DB.prepare("DELETE FROM chat_message_reactions WHERE message_id=? AND user_id=? AND reaction=?").bind(messageId,user.id,reaction).run();
+          else await env.DB.prepare("INSERT INTO chat_message_reactions(message_id,user_id,reaction) VALUES(?,?,?)").bind(messageId,user.id,reaction).run();
+          return reply(request,{success:true,added:!existing});
         }
       }
 
