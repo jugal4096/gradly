@@ -143,7 +143,7 @@ export class ChatRoom extends DurableObject {
       FROM chat_messages m JOIN chat_users u ON u.id=m.sender_id WHERE m.id=?
     `).bind(messageId).first();
     const event = JSON.stringify({ type: "message", message: saved });
-    for (const socket of this.ctx.getWebSockets("group:" + groupId)) {
+    for (const socket of this.ctx.getWebSockets(["group:" + groupId])) {
       if (socket.readyState === WebSocket.OPEN) {
         try { socket.send(event); } catch {}
       }
