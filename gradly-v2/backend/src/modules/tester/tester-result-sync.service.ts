@@ -4,6 +4,9 @@ const RESULT_MASTER_URL = "https://geca.ac.in/result-master.aspx";
 const GECA_ORIGIN = "https://geca.ac.in";
 const SESSION_CACHE_MS = 30 * 60 * 1000;
 const MAX_RESULT_PDFS = 100;
+// GECA result-session pages can also link general college PDFs. These are not
+// examination result sheets and should never consume download/parse time.
+const NON_RESULT_PDF_PATTERN = /\\b(?:policy|directory|stipend)\\b/i;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
 const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
@@ -592,8 +595,12 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     if (!url) continue;
     documents.push({ title: plainText(anchor[2]) || decodeURIComponent(url.split("/").pop() || "Result PDF"), url });
   }
-  const unique = Array.from(new Map(documents.map(item => [item.url, item])).values()).slice(0, MAX_RESULT_PDFS);
-  if (!unique.length) throw new Error("No result PDFs were linked to this GECA examination session.");
+  const unique = Array.from(new Map(documents.map(item => [item.url, item])).values())
+    // Keep obvious non-result PDFs out of both the initial scan and fallback.
+    // Filter before applying the cap so unrelated links cannot crowd out results.
+    .filter(item => !NON_RESULT_PDF_PATTERN.test(item.title + " " + item.url))
+    .slice(0, MAX_RESULT_PDFS);
+  if (!unique.length) throw new Error("No examination result PDFs were linked to this GECA session after excluding general college documents.");
 
   // Narrow the scan to the enrollment's department and selected semester when
   // the official link titles expose those details. Fall back to all PDFs if
