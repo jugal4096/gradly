@@ -85,8 +85,16 @@ export default function CommunitiesPanel() {
     let socket: WebSocket | null = null;
     const refresh = async () => {
       try {
-        const data = await api(`/groups/${selectedGroupId}/messages?limit=75`, token);
-        if (!stopped) setMessages(data.messages || []);
+        const [data,pinData,memberData] = await Promise.all([
+          api(`/groups/${selectedGroupId}/messages?limit=75`, token),
+          api(`/groups/${selectedGroupId}/pins`, token),
+          api(`/groups/${selectedGroupId}/members`, token)
+        ]);
+        if (!stopped) {
+          setMessages(data.messages || []);
+          setPins(pinData.pins || []);
+          setMembers(memberData.members || []);
+        }
       } catch (e) {
         if (!stopped) setError((e as Error).message);
       }
