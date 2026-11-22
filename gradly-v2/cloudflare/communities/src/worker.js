@@ -640,8 +640,8 @@ export default {
           const body=await parseBody(request);
           const targetId=String(body?.userId||"");
           const operation=String(body?.action||"");
-          const target=await env.DB.prepare("SELECT role,status FROM chat_group_members WHERE group_id=? AND user_id=?").bind(groupId,targetId).first();
-          if (!target || target.status!=="active") return fail(request,"Group member not found.",404);
+          const target=operation==="add"?null:await env.DB.prepare("SELECT role,status FROM chat_group_members WHERE group_id=? AND user_id=?").bind(groupId,targetId).first();
+          if (operation!=="add" && (!target || target.status!=="active")) return fail(request,"Group member not found.",404);
           if (operation==="add") {
             const email=String(body?.email||"").trim().toLowerCase();
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail(request,"Enter the registered Communities email address.");
