@@ -295,7 +295,7 @@ export default {
         return reply(request, { success: true, group: { id: groupId, name, description, category, visibility, role: "owner", member_count: 1 } }, 201);
       }
 
-      const liveMatch = path.match(/^\\/groups\\/([a-f0-9-]+)\\/live$/i);
+      const liveMatch = path.match(/^\/groups\/([a-f0-9-]+)\/live$/i);
       if (liveMatch && request.method === "GET") {
         if (request.headers.get("Upgrade") !== "websocket") return fail(request, "WebSocket upgrade required.", 426);
         const groupId = liveMatch[1];
