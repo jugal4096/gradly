@@ -221,11 +221,11 @@ function getNepPromotionStatus(profile:Profile,records:Record<number,Subject[]>)
   const current=Math.max(1,Number(profile.semester)||1);
   const dse=isDseAdmission(profile.admissionMode,profile.enrollment);
   let checkpoint:{label:string;after:number;requirements:{label:string;semesters:number[];credits:number}[]}|null=null;
-  if(dse&&current===5) checkpoint={label:"Third year (Semester V)",after:4,requirements:[{label:"Second Year",semesters:[3,4],credits:26}]};
-  else if(dse&&current===7) checkpoint={label:"Final year (Semester VII)",after:6,requirements:[{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
-  else if(!dse&&current===3) checkpoint={label:"Second year (Semester III)",after:2,requirements:[{label:"First Year",semesters:[1,2],credits:26}]};
-  else if(!dse&&current===5) checkpoint={label:"Third year (Semester V)",after:4,requirements:[{label:"First Year",semesters:[1,2],credits:36},{label:"Second Year",semesters:[3,4],credits:26}]};
-  else if(!dse&&current===7) checkpoint={label:"Final year (Semester VII)",after:6,requirements:[{label:"First Year",semesters:[1,2],credits:40},{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
+  if(dse&&current===4) checkpoint={label:"Promotion to Semester V",after:4,requirements:[{label:"Second Year",semesters:[3,4],credits:26}]};
+  else if(dse&&current===6) checkpoint={label:"Promotion to Semester VII",after:6,requirements:[{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
+  else if(!dse&&current===2) checkpoint={label:"Promotion to Semester III",after:2,requirements:[{label:"First Year",semesters:[1,2],credits:26}]};
+  else if(!dse&&current===4) checkpoint={label:"Promotion to Semester V",after:4,requirements:[{label:"First Year",semesters:[1,2],credits:36},{label:"Second Year",semesters:[3,4],credits:26}]};
+  else if(!dse&&current===6) checkpoint={label:"Promotion to Semester VII",after:6,requirements:[{label:"First Year",semesters:[1,2],credits:40},{label:"Second Year",semesters:[3,4],credits:36},{label:"Third Year",semesters:[5,6],credits:26}]};
   if(!checkpoint) return {checkpoint:false,current,dse,status:"not-applicable",label:"No annual promotion checkpoint",message:"The published GECA NEP rules define credit thresholds at the end of each academic year, not for every semester transition."};
   const relevantSemesters=checkpoint.requirements.flatMap(item=>item.semesters);
   const hasRecords=relevantSemesters.some(semester=>(records[semester]||[]).length>0);
