@@ -32,7 +32,7 @@ Never commit these values or paste credentials into chat. The sender domain must
 - `POST /auth/register`, `POST /auth/verify`, `POST /auth/login`, `POST /auth/login/verify`, `POST /auth/logout`, `GET /auth/me`
 - `GET /groups`, `GET /groups/mine`, `POST /groups`
 - `GET /groups/:id`, `POST /groups/:id/join`, `POST /groups/:id/leave`, `POST /groups/:id/invites`, `POST /groups/invites/accept`
-- `GET /groups/:id/messages`, `POST /groups/:id/messages`
+- `GET /groups/:id/messages`, `POST /groups/:id/messages`, `POST /groups/:id/uploads`, `GET /groups/:id/resources`, `GET /media/:id`, `DELETE /media/:id`
 - `POST /groups/:id/socket-ticket`, `GET /groups/:id/live?ticket=...`
 - `PATCH /messages/:id`, `DELETE /messages/:id`
 - `GET /groups/:id/requests`, `POST /groups/:id/requests`
@@ -48,7 +48,7 @@ WebSocket tickets are short-lived and single-use. Group membership is rechecked 
 
 ## Remaining infrastructure gates
 
-- Media and resource uploads are not active yet. R2 is not enabled on the Cloudflare account; enabling it may require a billing/subscription step. Do not activate or upload user content until storage pricing and account billing are reviewed.
+- Media and resource uploads are implemented but return a safe 503 until the private R2 bucket is enabled and bound to the Worker as `MEDIA`. R2 activation may require a billing/subscription step; review pricing before enabling it. The API validates file signatures, video duration, per-file caps, per-user quota and daily limits.
 - Email verification cannot send until a verified sender and provider credentials are configured.
 - Existing Gradly Admin and Super Admin JWTs are verified through the Render backend. Super Admin bootstraps once, then explicitly grants Communities Platform Admin access by existing Admin ID. These permissions are separate from academic permissions and all grants, revocations and reported-message inspections are audited.
 - The student UI uses a passwordless, independent Communities session stored separately from the existing Gradly sign-in. Existing Gradly Super Admin identity can bootstrap once using its existing JWT. The Super Admin then grants Communities access to existing Admin IDs. These permissions are stored separately and every grant/revoke is audited.
