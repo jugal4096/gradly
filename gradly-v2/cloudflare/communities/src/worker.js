@@ -162,8 +162,8 @@ export class ChatRoom extends DurableObject {
     try { data = JSON.parse(message); } catch { return; }
     if (data.type !== "message") return;
     const body = typeof data.body === "string" ? data.body.trim() : "";
-    if (!body || body.length > 5000) {
-      ws.send(JSON.stringify({ type: "error", error: "Messages must contain 1–5000 characters." }));
+    if (!body) {
+      ws.send(JSON.stringify({ type: "error", error: "Messages cannot be empty." }));
       return;
     }
     const { userId, groupId } = attachment;
@@ -430,6 +430,8 @@ export default {
           if (body.key==="limits") {
             const numeric=["maxGroupMemberships","maxGroupMembers","maxMessageLength","messagesPerMinute","photosPerMessage","photoBytes","videoBytes","videoSeconds","pdfBytes","officeBytes","userStorageBytes","uploadsPerDay","videosPerDay"];
             for (const key of numeric) if (!Number.isInteger(value[key]) || value[key]<1) return fail(request,"All limit values must be positive integers.");
+            const ceilings={maxGroupMemberships:100,maxGroupMembers:500,maxMessageLength:5000,messagesPerMinute:60,photosPerMessage:10,photoBytes:5242880,videoBytes:26214400,videoSeconds:120,pdfBytes:15728640,officeBytes:10485760,userStorageBytes:104857600,uploadsPerDay:100,videosPerDay:3};
+            for (const key of numeric) if (value[key]>ceilings[key]) return fail(request,"The "+key+" limit cannot exceed the platform maximum.");
           }
           await env.DB.prepare("INSERT INTO chat_platform_settings(key,value_json,updated_by) VALUES(?,?,NULL) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=?")
             .bind(body.key,JSON.stringify(value),now()).run();
