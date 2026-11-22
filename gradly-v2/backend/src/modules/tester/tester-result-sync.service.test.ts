@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   academicSectionsForEnrollment,
   selectGecaAcademicDocuments,
+  selectGecaSemesterDocuments,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
 
@@ -38,4 +39,32 @@ test("matching academic-section headings retain the targeted first-year scan", (
   const selection = selectGecaAcademicDocuments(documents, ["FIRST_YEAR"], true);
   assert.equal(selection.fallbackUsed, false);
   assert.deepEqual(selection.documents, [documents[0]]);
+});
+
+test("semester filtering uses the enclosing GECA section for subject PDFs without semester in filename", () => {
+  const documents = [
+    { title: "CEESC1003_RESULT", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 2 },
+    { title: "CIVIL ENGINEERING II SEM REGULAR", url: "https://geca.ac.in/sem2-regular.pdf", sectionSemester: null },
+    { title: "CIVIL ENGINEERING IV SEM REGULAR", url: "https://geca.ac.in/sem4-regular.pdf", sectionSemester: null },
+    { title: "CEESC1005_RESULT", url: "https://geca.ac.in/unknown.pdf", sectionSemester: null },
+  ];
+  assert.deepEqual(
+    selectGecaSemesterDocuments(documents, 2),
+    [documents[0], documents[1], documents[3]],
+  );
+});
+
+test("semester filtering excludes a PDF when its filename and section identify another semester", () => {
+  const documents = [
+    { title: "Civil Engineering II SEM REGULAR", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 4 },
+    { title: "Civil Engineering IV SEM REGULAR", url: "https://geca.ac.in/sem4.pdf", sectionSemester: 2 },
+  ];
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0]]);
+});
+
+test("semester filtering leaves all documents untouched when no semester is selected", () => {
+  const documents = [
+    { title: "CEESC1003_RESULT", url: "https://geca.ac.in/subject.pdf", sectionSemester: 2 },
+  ];
+  assert.deepEqual(selectGecaSemesterDocuments(documents), documents);
 });

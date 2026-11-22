@@ -763,6 +763,27 @@ export function selectGecaAcademicDocuments<T extends { academicSection: GecaAca
     : { documents, fallbackUsed: true };
 }
 
+/**
+ * Keep PDFs whose explicit semester matches the requested semester, plus
+ * subject-level PDFs that carry no semester label. The page-section semester
+ * is essential for GECA subject PDFs whose filenames contain only course codes.
+ */
+export function selectGecaSemesterDocuments<T extends { title: string; url: string; sectionSemester: number | null }>(
+  documents: T[],
+  selectedSemester?: number,
+): T[] {
+  if (!Number.isInteger(selectedSemester) || selectedSemester! < 1 || selectedSemester! > 12) {
+    return documents;
+  }
+  return documents.filter(document => {
+    const titleSemester = romanSemester(
+      document.title + " " + document.url.replace(/%20/gi, " "),
+    );
+    const semester = document.sectionSemester ?? titleSemester;
+    return semester === null || semester === selectedSemester;
+  });
+}
+
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
@@ -825,16 +846,12 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     });
     if (branchMatches.length) candidates = branchMatches;
   }
-  if (selectedSemester && selectedSemester >= 1 && selectedSemester <= 12) {
-    const semesterMatches = candidates.filter(item => {
-      const semester = romanSemester(item.title + " " + item.url.replace(/%20/gi, " "));
-      // Subject-specific PDFs often omit semester text from their link label.
-      return semester === selectedSemester || semester === null;
-    });
-    if (semesterMatches.length) candidates = semesterMatches;
-  }
+  candidates = selectGecaSemesterDocuments(candidates, selectedSemester);
   if (!candidates.length) {
-    throw new Error("No GECA result PDFs match the student's academic-year section, branch and selected semester.");
+    throw new Error(
+      "No GECA result PDFs match the student's academic-year section, branch and selected semester. " +
+      "The linked PDFs are explicitly labelled for different semesters.",
+    );
   }
 
   const matches: GecaMatchedDocument[] = [];
@@ -916,7 +933,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
     documentsScanned: scannedUrls.size,
     expectedAcademicSections,
     academicSectionFallbackUsed,
-    candidateDocuments: eligibleDocuments.length,
+    candidateDocuments: candidates.length,
     enrollmentHits,
     parseFailures,
     downloadFailures,

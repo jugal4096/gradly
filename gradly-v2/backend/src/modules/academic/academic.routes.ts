@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { pool, queryWithRetry } from "../../config/database";
+import { queryWithRetry } from "../../config/database";
 
 const router = Router();
 
@@ -19,7 +19,7 @@ router.get("/institutions/search", async (req: Request, res: Response): Promise<
   const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
   if (query.length < 2) { res.status(200).json({ success: true, data: [] }); return; }
   try {
-    const result = await pool.query(
+    const result = await queryWithRetry(
       `SELECT i.id AS institution_id, i.name AS institution_name,
               b.id AS branch_id, b.name AS branch_name, b.code AS branch_code,
               p.id AS program_id, p.name AS program_name, p.level AS program_level
@@ -50,7 +50,7 @@ router.get(
   "/institutions",
   async (_req: Request, res: Response): Promise<void> => {
     try {
-      const result = await pool.query(`
+      const result = await queryWithRetry(`
         SELECT
           i.id AS institution_id,
           i.name AS institution_name,
@@ -139,7 +139,7 @@ router.get("/curricula", async (req: Request, res: Response): Promise<void> => {
     return;
   }
   try {
-    const result = await pool.query(
+    const result = await queryWithRetry(
       `SELECT c.id, c.version, c.status, c.total_semesters, c.total_credits,
               c.scheme_id, sc.name AS scheme_name, sc.code AS scheme_code,
               COUNT(DISTINCT sem.id)::int AS configured_semesters
@@ -166,7 +166,7 @@ router.get("/admission-modes", async (req: Request, res: Response): Promise<void
     return;
   }
   try {
-    const result = await pool.query(
+    const result = await queryWithRetry(
       `SELECT DISTINCT ON (mode_code) id, mode_code, mode_name, entry_semester
        FROM enrollment_admission_modes
        WHERE (institution_id = $1 OR institution_id IS NULL)
