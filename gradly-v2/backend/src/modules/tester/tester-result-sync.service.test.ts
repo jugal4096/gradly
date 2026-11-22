@@ -6,8 +6,17 @@ import {
   selectGecaBranchDocuments,
   selectGecaSemesterDocuments,
   extractSubjectResultGrades,
+  isRestrictedGecaResultFetch,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
+
+test("only Semester II of GECA ESE April-May 2026 is restricted", () => {
+  assert.equal(isRestrictedGecaResultFetch({ id: "3018" }, 2), true);
+  assert.equal(isRestrictedGecaResultFetch({ id: "3018" }, 1), false);
+  assert.equal(isRestrictedGecaResultFetch({ id: "3018" }, 3), false);
+  assert.equal(isRestrictedGecaResultFetch({ id: "3017" }, 2), false);
+  assert.equal(isRestrictedGecaResultFetch({ id: "9999" }, 2), false);
+});
 
 test("regular BT25 Semester II resolves to the first-year GECA section", () => {
   assert.deepEqual(
