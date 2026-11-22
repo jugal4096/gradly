@@ -15,6 +15,7 @@ import userManagementRoutes from "./user-management.routes";
 import { getAdminAuditActions, getAdminAuditEvents } from "./admin-audit.controller";
 import { listFeedbackRequests } from "./superAdmin-feedback.controller";
 import { listCurriculum, updateCurriculumSubject, updateCurriculumDetails } from "./superAdmin-curriculum.controller";
+import { updateDiscoveredSubject, publishDiscoveredSubject } from "./superAdmin-discovered-subject.controller";
 import { acknowledgeSecurityNotification, listSecurityNotifications, revokeAccountLockout } from "./security-notifications.controller";
 import { createAdminWorkspaceNotification, listAdminSubjectChangeRequestsForSuperAdmin, reviewAdminSubjectChangeRequest } from "../admin/admin-workspace.controller";
 import { listForwardedStudentSyllabusFeedback } from "../admin/admin-privacy.controller";
@@ -85,6 +86,8 @@ router.get("/student-syllabus-feedback", authenticateSuperAdminToken, listForwar
 router.get("/curriculum", authenticateSuperAdminToken, listCurriculum);
 router.patch("/curriculum/:id", authenticateSuperAdminToken, updateCurriculumSubject);
 router.patch("/curriculum/:id/details", authenticateSuperAdminToken, updateCurriculumDetails);
+router.patch("/curriculum/discovered/:id", authenticateSuperAdminToken, updateDiscoveredSubject);
+router.post("/curriculum/discovered/:id/publish", authenticateSuperAdminToken, publishDiscoveredSubject);
 router.get("/security-notifications", authenticateSuperAdminToken, listSecurityNotifications);
 router.post("/admin-workspace-notifications", authenticateSuperAdminToken, createAdminWorkspaceNotification);
 router.get("/admin-subject-change-requests", authenticateSuperAdminToken, listAdminSubjectChangeRequestsForSuperAdmin);
