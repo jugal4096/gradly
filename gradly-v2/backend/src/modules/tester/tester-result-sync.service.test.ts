@@ -72,6 +72,29 @@ test("semester filtering excludes a PDF when its filename and section identify a
   assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0]]);
 });
 
+
+test("semester filtering recognizes Arabic and ordinal semester labels", () => {
+  const documents = [
+    { title: "CIVIL ENGINEERING SEMESTER 2 REGULAR", url: "https://geca.ac.in/sem2.pdf", sectionSemester: null },
+    { title: "CIVIL ENGINEERING 2ND SEMESTER", url: "https://geca.ac.in/2nd-sem.pdf", sectionSemester: null },
+    { title: "CIVIL ENGINEERING SEMESTER 4", url: "https://geca.ac.in/sem4.pdf", sectionSemester: null },
+  ];
+  assert.deepEqual(
+    selectGecaSemesterDocuments(documents, 2),
+    [documents[0], documents[1]],
+  );
+});
+
+test("academic section prioritization retains unlabelled links for semester validation", () => {
+  const documents: Array<{ title: string; academicSection: GecaAcademicSection | null }> = [
+    { title: "First-year result PDF", academicSection: "FIRST_YEAR" },
+    { title: "Subject result PDF", academicSection: null },
+    { title: "Third-year result PDF", academicSection: "THIRD_YEAR" },
+  ];
+  const selection = selectGecaAcademicDocuments(documents, ["FIRST_YEAR"], true);
+  assert.deepEqual(selection.documents, [documents[0], documents[1]]);
+});
+
 test("semester filtering leaves all documents untouched when no semester is selected", () => {
   const documents = [
     { title: "CEESC1003_RESULT", url: "https://geca.ac.in/subject.pdf", sectionSemester: 2 },
