@@ -128,7 +128,7 @@ async function inspectCommunityUpload(file, limits) {
     kind="document"; expectedMime="application/pdf"; maxBytes=limits.pdfBytes;
   } else if(ext==="docx"||ext==="pptx") {
     const zip=starts([0x50,0x4b,0x03,0x04]);
-    const text=readAscii(bytes,0,Math.min(bytes.length,bytes.length));
+    const text=new TextDecoder().decode(bytes);
     const valid=zip&&(ext==="docx"?text.includes("word/document.xml"):text.includes("ppt/presentation.xml"));
     if(!valid) throw new Error("Only valid DOCX and PPTX files are accepted.");
     kind="document"; expectedMime=ext==="docx"?"application/vnd.openxmlformats-officedocument.wordprocessingml.document":"application/vnd.openxmlformats-officedocument.presentationml.presentation"; maxBytes=limits.officeBytes;
@@ -660,7 +660,7 @@ export default {
         return reply(request,{success:true,group:{id:record.group_id,name:record.name}});
       }
 
-      const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests|pins|members|invites))?$/i);
+      const groupMatch = path.match(/^\/groups\/([a-f0-9-]+)(?:\/(join|leave|messages|socket-ticket|reports|requests|pins|members|invites|uploads|resources))?$/i);
       if (groupMatch) {
         const groupId = groupMatch[1];
         const action = groupMatch[2] || "";
@@ -750,6 +750,72 @@ export default {
         }
 
 
+        if (action === "uploads" && request.method === "POST") {
+          if (!env.MEDIA) return fail(request,"Media storage is not enabled yet. Configure the private R2 bucket binding named MEDIA.",503);
+          if (!membership) return fail(request,"Join this group to upload media.",403);
+          if (membership.muted_until && new Date(membership.muted_until).getTime()>Date.now()) return fail(request,"You are temporarily muted in this group.",403);
+          const form=await request.formData();
+          const files=form.getAll("files").filter((item)=>item&&typeof item==="object"&&typeof item.arrayBuffer==="function");
+          const limits=await getLimits(env);
+          if (!files.length||files.length>10) return fail(request,"Attach between 1 and 10 files per message.");
+          const body=String(form.get("body")||"").trim();
+          if (body.length>limits.maxMessageLength) return fail(request,"Message text exceeds the configured character limit.");
+          const category=String(form.get("resourceCategory")||"").trim();
+          const allowedCategories=["notes","pyqs","assignments","syllabus","lab_manuals","presentations","other"];
+          if (category&&!allowedCategories.includes(category)) return fail(request,"Invalid study resource category.");
+          const inspected=[];
+          for (const file of files) inspected.push(await inspectCommunityUpload(file,limits));
+          const photos=inspected.filter((item)=>item.kind==="photo").length;
+          const videos=inspected.filter((item)=>item.kind==="video").length;
+          if (photos>limits.photosPerMessage) return fail(request,"Too many photos in one message.");
+          if (videos>1) return fail(request,"Only one video can be shared in a message.");
+          const dayStart=new Date().toISOString().slice(0,10)+"T00:00:00.000Z";
+          const [daily,total,videosToday]=await Promise.all([
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_message_attachments WHERE uploader_id=? AND created_at>=? AND deleted_at IS NULL").bind(user.id,dayStart).first(),
+            env.DB.prepare("SELECT COALESCE(SUM(size_bytes),0) AS total FROM chat_message_attachments WHERE uploader_id=? AND deleted_at IS NULL").bind(user.id).first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_message_attachments WHERE uploader_id=? AND media_kind='video' AND created_at>=? AND deleted_at IS NULL").bind(user.id,dayStart).first()
+          ]);
+          if ((daily?.total||0)+inspected.length>limits.uploadsPerDay) return fail(request,"Daily upload limit reached.",429);
+          if ((videosToday?.total||0)+videos>limits.videosPerDay) return fail(request,"Daily video upload limit reached.",429);
+          const uploadBytes=inspected.reduce((sum,item)=>sum+item.size,0);
+          if ((total?.total||0)+uploadBytes>limits.userStorageBytes) return fail(request,"Your Communities media storage quota is full.",413);
+          let replyToId=null;
+          const requestedReply=String(form.get("replyToId")||"");
+          if(requestedReply) {
+            const parent=await env.DB.prepare("SELECT id FROM chat_messages WHERE id=? AND group_id=? AND deleted_at IS NULL").bind(requestedReply,groupId).first();
+            if(parent) replyToId=parent.id;
+          }
+          const messageId=id();
+          const messageBody=body||(category?"Shared a study resource":"Shared "+inspected.length+" attachment(s)");
+          const uploadedKeys=[];
+          const attachmentRows=[];
+          try {
+            for(const item of inspected) {
+              const attachmentId=id();
+              const safeName=item.name.replace(/[^A-Za-z0-9._-]/g,"_").slice(0,100)||"file";
+              const objectKey="communities/"+groupId+"/"+user.id+"/"+attachmentId+"-"+safeName;
+              await env.MEDIA.put(objectKey,item.buffer,{httpMetadata:{contentType:item.mime,cacheControl:"private, max-age=3600"}});
+              uploadedKeys.push(objectKey);
+              attachmentRows.push({id:attachmentId,objectKey,name:item.name,mime:item.mime,size:item.size,kind:item.kind,duration:item.duration});
+            }
+            const statements=[
+              env.DB.prepare("INSERT INTO chat_messages(id,group_id,sender_id,body,reply_to_id) VALUES(?,?,?,?,?)").bind(messageId,groupId,user.id,messageBody,replyToId),
+              ...attachmentRows.map((item)=>env.DB.prepare("INSERT INTO chat_message_attachments(id,message_id,group_id,uploader_id,object_key,original_name,mime_type,size_bytes,media_kind,duration_seconds,resource_category) VALUES(?,?,?,?,?,?,?,?,?,?,?)").bind(item.id,messageId,groupId,user.id,item.objectKey,item.name,item.mime,item.size,item.kind,item.duration,category||null))
+            ];
+            await env.DB.batch(statements);
+          } catch(error) {
+            await Promise.all(uploadedKeys.map((key)=>env.MEDIA.delete(key).catch(()=>null)));
+            throw error;
+          }
+          await audit(env,user.id,"media.uploaded","message",messageId,"Group media uploaded",{groupId,attachmentCount:attachmentRows.length,totalBytes:uploadBytes});
+          const message={id:messageId,group_id:groupId,sender_id:user.id,sender_name:user.display_name,body:messageBody,reply_to_id:replyToId,created_at:now(),attachments:attachmentRows.map((item)=>({id:item.id,original_name:item.name,mime_type:item.mime,size_bytes:item.size,media_kind:item.kind,duration_seconds:item.duration,resource_category:category||null}))};
+          return reply(request,{success:true,message},201);
+        }
+        if (action === "resources" && request.method === "GET") {
+          if (!membership) return fail(request,"Join this group to view its resources.",403);
+          const rows=await env.DB.prepare("SELECT a.id,a.message_id,a.original_name,a.mime_type,a.size_bytes,a.media_kind,a.resource_category,a.created_at,u.display_name AS uploader_name FROM chat_message_attachments a JOIN chat_users u ON u.id=a.uploader_id WHERE a.group_id=? AND a.resource_category IS NOT NULL AND a.deleted_at IS NULL ORDER BY a.created_at DESC LIMIT 300").bind(groupId).all();
+          return reply(request,{success:true,resources:rows.results||[]});
+        }
         if (action === "pins" && request.method === "GET") {
           if (!membership) return fail(request, "Join this group to view pinned messages.", 403);
           const rows = await env.DB.prepare("SELECT p.created_at AS pinned_at,m.id,m.body,m.sender_id,m.created_at,u.display_name AS sender_name FROM chat_pinned_messages p JOIN chat_messages m ON m.id=p.message_id JOIN chat_users u ON u.id=m.sender_id WHERE p.group_id=? AND m.deleted_at IS NULL ORDER BY p.created_at DESC LIMIT 100").bind(groupId).all();
