@@ -31,8 +31,31 @@ pool.on("error", (error) => {
 
 const TRANSIENT_DATABASE_CODES = new Set([
   "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE", "ENOTFOUND",
-  "08000", "08003", "08006", "08001", "57P01", "57P02", "57P03",
+  "EAI_AGAIN", "08000", "08003", "08006", "08001", "57P01", "57P02", "57P03",
 ]);
+
+/** pg-pool can wrap a socket error in a timeout error, so inspect the full cause chain. */
+function isTransientDatabaseError(error: unknown): boolean {
+  const pending: unknown[] = [error];
+  const visited = new Set<unknown>();
+
+  while (pending.length) {
+    const current = pending.shift();
+    if (!current || typeof current !== "object" || visited.has(current)) continue;
+    visited.add(current);
+
+    const candidate = current as { code?: unknown; message?: unknown; cause?: unknown };
+    const code = String(candidate.code || "");
+    const message = String(candidate.message || "");
+    if (TRANSIENT_DATABASE_CODES.has(code) ||
+        /connection terminated due to connection timeout|connection terminated unexpectedly|timeout expired|connection timed out|socket hang up/i.test(message)) {
+      return true;
+    }
+    if (candidate.cause) pending.push(candidate.cause);
+  }
+
+  return false;
+}
 
 /**
  * Retry idempotent database reads after transient pool/network failures.
@@ -45,10 +68,7 @@ export async function queryWithRetry(text: string, values?: unknown[]) {
       return await pool.query(text, values as any[] | undefined);
     } catch (error) {
       lastError = error;
-      const code = error && typeof error === "object" && "code" in error
-        ? String((error as { code?: unknown }).code || "")
-        : "";
-      if (!TRANSIENT_DATABASE_CODES.has(code) || attempt === 3) throw error;
+      if (!isTransientDatabaseError(error) || attempt === 3) throw error;
       await new Promise(resolve => setTimeout(resolve, attempt * 300));
     }
   }
