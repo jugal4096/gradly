@@ -57,12 +57,12 @@ export async function updateTesterCredentials(req: SuperAdminAuthenticatedReques
   try {
     const values: unknown[] = [];
     const updates: string[] = [];
-    if (hasLoginId) { values.push((loginId as string).trim()); updates.push(`login_id=${values.length}`); }
-    if (hasPassword) { values.push(await bcrypt.hash(password as string, 12)); updates.push(`password_hash=${values.length}`); }
+    if (hasLoginId) { values.push((loginId as string).trim()); updates.push(`login_id=$${values.length}`); }
+    if (hasPassword) { values.push(await bcrypt.hash(password as string, 12)); updates.push(`password_hash=$${values.length}`); }
     values.push(req.params.testerId);
     const result = await pool.query(
       `UPDATE tester_accounts SET ${updates.join(", ")}, updated_at=NOW()
-       WHERE id=${values.length}
+       WHERE id=$${values.length}
        RETURNING id,login_id,status,created_at,last_login_at`,
       values,
     );
