@@ -600,7 +600,7 @@ export function extractSubjectResultGrades(
       .map(item => item.text)
       .join("");
     const courseCode = normalized(codeText);
-    if (!/^[A-Z]{2,6}\\d{4}$/.test(courseCode)) continue;
+    if (!/^[A-Z]{2,6}\d{4}$/.test(courseCode)) continue;
 
     const grade = rowItems
       .filter(item => item.x >= gradeX - 2)
@@ -689,7 +689,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     // Parse each page independently. PDF coordinates restart on every page;
     // combining pages lets a header at the same Y-coordinate on a previous
     // page get attached to this student's row and import unrelated subjects.
-    const genericSubjectPdf = /_RESULT(?:\\.PDF)?$/i.test(title.trim()) || /_RESULT\\.pdf(?:\\?|$)/i.test(url);
+    const genericSubjectPdf = /_RESULT(?:\.PDF)?$/i.test(title.trim()) || /_RESULT\.pdf(?:\\?|$)/i.test(url);
     const pageParsed = genericSubjectPdf && !reExamTargetCourseCode
       ? extractSubjectResultGrades(lines, enrollment, BRANCH_NAMES[enrollment.slice(5, 7)] || [])
       : reExamTargetCourseCode
@@ -893,8 +893,8 @@ export function selectGecaBranchDocuments<T extends { title: string; url: string
     // Individual subject PDFs do not include a branch in the link name.
     // They are admitted only as candidates; readResultPdf then requires an
     // exact enrollment row AND a matching BRANCH column before importing.
-    const genericSubjectResult = /_RESULT(?:\\.PDF)?$/i.test(document.title.trim()) ||
-      /_RESULT\\.pdf(?:\\?|$)/i.test(document.url);
+    const genericSubjectResult = /_RESULT(?:\.PDF)?$/i.test(document.title.trim()) ||
+      /_RESULT\.pdf(?:\\?|$)/i.test(document.url);
     return explicitlyNamedBranch || genericSubjectResult;
   });
 }
