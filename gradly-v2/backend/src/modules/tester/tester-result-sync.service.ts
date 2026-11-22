@@ -6,7 +6,7 @@ const SESSION_CACHE_MS = 30 * 60 * 1000;
 const MAX_RESULT_PDFS = 100;
 // GECA result-session pages can also link general college PDFs. These are not
 // examination result sheets and should never consume download/parse time.
-const NON_RESULT_PDF_PATTERN = /\\b(?:policy|directory|stipend)\\b/i;
+const NON_RESULT_PDF_PATTERN = /\b(?:policy|directory|stipend)\b/i;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
 const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
