@@ -97,7 +97,7 @@ export async function listCurriculum(
     const discoveredResult = await pool.query(
       `SELECT
          d.id, d.curriculum_id, d.course_code, d.course_name, d.course_category,
-         d.credits, d.semester_number, d.credit_status,
+         d.credits, d.semester_number, d.credit_status, d.publication_status, d.published_at,
          to_jsonb(c) AS curriculum,
          to_jsonb(b) AS branch,
          to_jsonb(sp) AS specialization,
@@ -131,7 +131,9 @@ export async function listCurriculum(
       institution: pick([row.institution || {}], ["name", "short_name"]),
       curriculumId: row.curriculum_id,
       curriculumVersion: pick([row.curriculum || {}], ["version"]),
-      status: "Discovered catalogue",
+      status: row.publication_status === "PUBLISHED" ? "Published" : "Discovered catalogue",
+      publicationStatus: row.publication_status || "DISCOVERED",
+      publishedAt: row.published_at,
       active: true,
       mandatory: false,
       isDiscoveredRegistry: true,
