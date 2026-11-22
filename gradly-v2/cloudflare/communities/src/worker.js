@@ -318,7 +318,7 @@ export default {
   
       // Existing Ecosystem Admin and Super Admin identities are verified against
       // the existing Gradly backend. Communities permissions remain explicit in D1.
-      const ecosystemAdmin = await getEcosystemIdentity(request,env,"admin");
+      const ecosystemAdmin = path.startsWith("/ecosystem/admin/") ? await getEcosystemIdentity(request,env,"admin") : null;
       if (path.startsWith("/ecosystem/admin/")) {
         if (!ecosystemAdmin) return fail(request,"Valid Gradly Admin session required.",401);
         const permission=await hasExternalRole(env,"admin",ecosystemAdmin.identityId,"platform_admin");
