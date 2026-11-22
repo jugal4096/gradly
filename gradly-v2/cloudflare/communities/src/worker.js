@@ -43,6 +43,101 @@ async function getLimits(env) {
   const row=await env.DB.prepare("SELECT value_json FROM chat_platform_settings WHERE key='limits'").first();
   try { return {...defaults,...JSON.parse(row?.value_json||"{}")}; } catch { return defaults; }
 }
+
+function readAscii(bytes,start,length) {
+  let out="";
+  for(let i=0;i<length&&start+i<bytes.length;i++) out+=String.fromCharCode(bytes[start+i]);
+  return out;
+}
+function mp4Duration(buffer) {
+  const view=new DataView(buffer), end=buffer.byteLength;
+  let position=0;
+  while(position+8<=end) {
+    let size=view.getUint32(position);
+    const type=readAscii(new Uint8Array(buffer),position+4,4);
+    let header=8;
+    if(size===1 && position+16<=end) { size=Number(view.getBigUint64(position+8)); header=16; }
+    if(size===0) size=end-position;
+    if(size<header || position+size>end) break;
+    if(type==="moov") {
+      let child=position+header, childEnd=position+size;
+      while(child+8<=childEnd) {
+        let childSize=view.getUint32(child), childType=readAscii(new Uint8Array(buffer),child+4,4), childHeader=8;
+        if(childSize===1 && child+16<=childEnd) { childSize=Number(view.getBigUint64(child+8)); childHeader=16; }
+        if(childSize===0) childSize=childEnd-child;
+        if(childSize<childHeader || child+childSize>childEnd) break;
+        if(childType==="mvhd") {
+          const version=view.getUint8(child+childHeader);
+          const scaleOffset=version===1?child+childHeader+20:child+childHeader+12;
+          const durationOffset=version===1?child+childHeader+24:child+childHeader+16;
+          const scale=view.getUint32(scaleOffset);
+          const duration=version===1?Number(view.getBigUint64(durationOffset)):view.getUint32(durationOffset);
+          if(scale>0 && duration>0) return duration/scale;
+        }
+        child+=childSize;
+      }
+    }
+    position+=size;
+  }
+  return null;
+}
+function webmDuration(bytes) {
+  let scale=1000000, duration=null;
+  for(let i=0;i<bytes.length-12;i++) {
+    if(bytes[i]===0x2a&&bytes[i+1]===0xd7&&bytes[i+2]===0xb1) {
+      const size=bytes[i+3]&0x7f;
+      if(size>0&&size<=4&&i+4+size<=bytes.length) {
+        scale=0;
+        for(let j=0;j<size;j++) scale=scale*256+bytes[i+4+j];
+      }
+    }
+    if(bytes[i]===0x44&&bytes[i+1]===0x89) {
+      const first=bytes[i+2], sizeLength=first&0x80?1:first&0x40?2:first&0x20?3:first&0x10?4:0;
+      if(!sizeLength) continue;
+      let size=first&(0xff>>sizeLength);
+      for(let j=1;j<sizeLength;j++) size=size*256+bytes[i+2+j];
+      const start=i+2+sizeLength;
+      if((size===4||size===8)&&start+size<=bytes.length) {
+        const view=new DataView(bytes.buffer,bytes.byteOffset+start,size);
+        duration=size===8?view.getFloat64(0):view.getFloat32(0);
+      }
+    }
+  }
+  return duration!==null&&scale>0?duration*scale/1e9:null;
+}
+async function inspectCommunityUpload(file, limits) {
+  const name=String(file.name||"file").slice(0,180);
+  const ext=name.toLowerCase().split(".").pop();
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  const mime=String(file.type||"").toLowerCase();
+  const starts=(arr)=>arr.every((value,index)=>bytes[index]===value);
+  let kind="",expectedMime="",duration=null,maxBytes=0;
+  if(["jpg","jpeg","png","webp"].includes(ext)) {
+    const valid=(ext==="jpg"||ext==="jpeg")?starts([0xff,0xd8,0xff]):ext==="png"?starts([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]):readAscii(bytes,0,4)==="RIFF"&&readAscii(bytes,8,4)==="WEBP";
+    if(!valid) throw new Error("Image signature does not match its file extension.");
+    kind="photo"; expectedMime=ext==="png"?"image/png":ext==="webp"?"image/webp":"image/jpeg"; maxBytes=limits.photoBytes;
+  } else if(ext==="mp4"||ext==="webm") {
+    const valid=ext==="mp4"?readAscii(bytes,4,4)==="ftyp":starts([0x1a,0x45,0xdf,0xa3]);
+    if(!valid) throw new Error("Video signature does not match its file extension.");
+    kind="video"; expectedMime=ext==="mp4"?"video/mp4":"video/webm"; maxBytes=limits.videoBytes;
+    duration=ext==="mp4"?mp4Duration(bytes.buffer):webmDuration(bytes);
+    if(!duration||!Number.isFinite(duration)) throw new Error("The video duration could not be verified. Please export as a standard MP4 or WebM file.");
+    if(duration>limits.videoSeconds) throw new Error("Videos must be "+limits.videoSeconds+" seconds or shorter.");
+  } else if(ext==="pdf") {
+    if(readAscii(bytes,0,5)!=="%PDF-") throw new Error("PDF signature is invalid.");
+    kind="document"; expectedMime="application/pdf"; maxBytes=limits.pdfBytes;
+  } else if(ext==="docx"||ext==="pptx") {
+    const zip=starts([0x50,0x4b,0x03,0x04]);
+    const text=readAscii(bytes,0,Math.min(bytes.length,bytes.length));
+    const valid=zip&&(ext==="docx"?text.includes("word/document.xml"):text.includes("ppt/presentation.xml"));
+    if(!valid) throw new Error("Only valid DOCX and PPTX files are accepted.");
+    kind="document"; expectedMime=ext==="docx"?"application/vnd.openxmlformats-officedocument.wordprocessingml.document":"application/vnd.openxmlformats-officedocument.presentationml.presentation"; maxBytes=limits.officeBytes;
+  } else {
+    throw new Error("Unsupported file type. Share JPG, PNG, WebP, MP4, WebM, PDF, DOCX or PPTX.");
+  }
+  if(file.size<1||file.size>maxBytes) throw new Error(name+" exceeds its allowed file size.");
+  return {name,mime:expectedMime,kind,duration:duration?Math.ceil(duration):null,size:file.size,buffer};
+}
 async function currentUser(request, env) {
   const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
