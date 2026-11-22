@@ -56,16 +56,6 @@ export default function CommunitiesPanel() {
   };
 
   useEffect(() => {
-    const verifyToken = new URLSearchParams(window.location.search).get("token");
-    if (verifyToken) {
-      api("/auth/verify", undefined, { method: "POST", body: JSON.stringify({ token: verifyToken }) })
-        .then(() => setNotice("Email verified. You can now sign in to Gradly Communities."))
-        .catch((e) => setError(e.message));
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
-
-  useEffect(() => {
     if (!token) return;
     let cancelled = false;
     api("/auth/me", token)
@@ -271,7 +261,7 @@ export default function CommunitiesPanel() {
             <div className="gc-card-heading"><div><span className="gc-eyebrow">START SOMETHING GOOD</span><h3>Create a community</h3></div><button type="button" onClick={() => setShowCreate(false)}>×</button></div>
             <label>Group name<input value={groupName} onChange={(e) => setGroupName(e.target.value)} required minLength={3} maxLength={70} placeholder="e.g. GECA IT · Semester 7" /></label>
             <label>Description<textarea value={groupDescription} onChange={(e) => setGroupDescription(e.target.value)} maxLength={500} rows={2} placeholder="What will this group be about?" /></label>
-            <div className="gc-inline-fields"><label>Category<select value={groupCategory} onChange={(e) => setGroupCategory(e.target.value)}><option value="study">Study group</option><option value="college">College</option><option value="department">Department</option><option value="semester">Semester</option><option value="subject">Subject</option><option value="other">Other</option></select></label><label>Privacy<select value={groupVisibility} onChange={(e) => setGroupVisibility(e.target.value)}><option value="public">Public</option><option value="private">Private · approval required</option><option value="invite_only">Invite only</option></select></label></div>
+            <div className="gc-inline-fields"><label>Category<select value={groupCategory} onChange={(e) => setGroupCategory(e.target.value)}><option value="study">Study group</option><option value="college">College</option><option value="department">Department</option><option value="semester">Semester</option><option value="subject">Subject</option><option value="other">Other</option></select></label><label>Privacy<select value={groupVisibility} onChange={(e) => setGroupVisibility(e.target.value)}><option value="public">Public</option><option value="private">Private · approval required</option></select></label></div>
             <button className="gc-primary" disabled={busy}>{busy ? "Creating…" : "Create group →"}</button>
           </form>}
 
