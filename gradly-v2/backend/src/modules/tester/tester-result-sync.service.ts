@@ -597,7 +597,7 @@ export function extractSubjectResultGrades(
     if (!branchTerms.some(term => branchText.includes(term.toLowerCase()))) continue;
 
     const codeText = rowItems
-      .filter(item => item.x >= codeX - 2 && item.x < courseNameX)
+      .filter(item => item.x >= courseNameX - 2 && item.x < branchX)
       .map(item => item.text)
       .join("");
     const courseCode = normalized(codeText);
