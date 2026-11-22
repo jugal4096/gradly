@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import "./CommunitiesPanel.css";
 
-const API = (import.meta as any).env?.VITE_COMMUNITIES_API_URL || "https://gradly-communities-api.jugalpkhr.workers.dev";
+const API = import.meta.env.VITE_COMMUNITIES_API_URL || "https://gradly-communities-api.jugalpkhr.workers.dev";
 const TOKEN_KEY = "gradly_communities_session";
 
 type User = { id: string; email: string; displayName: string };
@@ -20,6 +20,7 @@ async function api(path: string, token?: string, options: RequestInit = {}) {
 
 export default function CommunitiesPanel() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || "");
+  const selectedGroupId = selected?.id;
   const [user, setUser] = useState<User | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -73,14 +74,14 @@ export default function CommunitiesPanel() {
   }, [token, user]);
 
   useEffect(() => {
-    if (!token || !selected) return;
+    if (!token || !selectedGroupId) return;
     let stopped = false;
     let pollTimer: number | undefined;
     let refreshTimer: number | undefined;
     let socket: WebSocket | null = null;
     const refresh = async () => {
       try {
-        const data = await api(`/groups/${selected.id}/messages?limit=75`, token);
+        const data = await api(`/groups/${selectedGroupId}/messages?limit=75`, token);
         if (!stopped) setMessages(data.messages || []);
       } catch (e) {
         if (!stopped) setError((e as Error).message);
@@ -88,9 +89,9 @@ export default function CommunitiesPanel() {
     };
     const connect = async () => {
       try {
-        const result = await api(`/groups/${selected.id}/socket-ticket`, token, { method: "POST", body: "{}" });
+        const result = await api(`/groups/${selectedGroupId}/socket-ticket`, token, { method: "POST", body: "{}" });
         if (stopped) return;
-        const wsUrl = API.replace(/^http/, "ws") + `/groups/${selected.id}/live?ticket=${encodeURIComponent(result.ticket)}`;
+        const wsUrl = API.replace(/^http/, "ws") + `/groups/${selectedGroupId}/live?ticket=${encodeURIComponent(result.ticket)}`;
         socket = new WebSocket(wsUrl);
         socketRef.current = socket;
         socket.onopen = () => { if (!stopped) setSocketState("Live"); };
@@ -128,7 +129,7 @@ export default function CommunitiesPanel() {
       socket?.close();
       socketRef.current = null;
     };
-  }, [token, selected?.id]);
+  }, [token, selectedGroupId]);
 
   const handleAuth = async (event: FormEvent) => {
     event.preventDefault();
@@ -183,12 +184,12 @@ export default function CommunitiesPanel() {
       if (editingId) {
         await api(`/messages/${editingId}`, token, { method: "PATCH", body: JSON.stringify({ body }) });
         setEditingId("");
-        const data = await api(`/groups/${selected.id}/messages?limit=75`, token);
+        const data = await api(`/groups/${selectedGroupId}/messages?limit=75`, token);
         setMessages(data.messages || []);
       } else if (socketRef.current?.readyState === WebSocket.OPEN) {
         socketRef.current.send(JSON.stringify({ type: "message", body }));
       } else {
-        const data = await api(`/groups/${selected.id}/messages`, token, { method: "POST", body: JSON.stringify({ body }) });
+        const data = await api(`/groups/${selectedGroupId}/messages`, token, { method: "POST", body: JSON.stringify({ body }) });
         setMessages((current) => [...current, data.message]);
       }
       setDraft("");
@@ -207,7 +208,7 @@ export default function CommunitiesPanel() {
   const leaveGroup = async () => {
     if (!selected || !window.confirm("Leave this group?")) return;
     try {
-      await api(`/groups/${selected.id}/leave`, token, { method: "POST", body: "{}" });
+      await api(`/groups/${selectedGroupId}/leave`, token, { method: "POST", body: "{}" });
       setSelected(null); setMessages([]); await loadGroups();
     } catch (e) { setError((e as Error).message); }
   };
