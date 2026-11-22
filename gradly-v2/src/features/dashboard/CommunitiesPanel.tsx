@@ -5,8 +5,8 @@ const API = import.meta.env.VITE_COMMUNITIES_API_URL || "https://gradly-communit
 const TOKEN_KEY = "gradly_communities_session";
 
 type User = { id: string; email: string; displayName: string };
-type Group = { id: string; name: string; description: string; category: string; visibility: string; member_count?: number; is_member?: number; role?: string };
-type Message = { id: string; group_id: string; sender_id: string; sender_name: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null };
+type Group = { id: string; name: string; description: string; category: string; visibility: string; member_count?: number; unread_count?: number; is_member?: number; role?: string };
+type Message = { id: string; group_id: string; sender_id: string; sender_name: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null; reply_to_id?: string | null };
 
 async function api(path: string, token?: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers || {});
@@ -34,6 +34,11 @@ export default function CommunitiesPanel() {
   const [selected, setSelected] = useState<Group | null>(null);
   const selectedGroupId = selected?.id;
   const [messages, setMessages] = useState<Message[]>([]);
+  const [pins, setPins] = useState<{id:string;body:string;sender_name:string}[]>([]);
+  const [members, setMembers] = useState<{id:string;display_name:string;role:string;muted_until?:string|null}[]>([]);
+  const [showMembers, setShowMembers] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [reactions, setReactions] = useState<Record<string,{reaction:string;total:number}[]>>({});
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState("");
   const [socketState, setSocketState] = useState("Connecting");
