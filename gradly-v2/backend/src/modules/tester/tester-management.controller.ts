@@ -53,7 +53,7 @@ export async function updateTesterCredentials(req: SuperAdminAuthenticatedReques
   const hasPassword = Object.prototype.hasOwnProperty.call(req.body ?? {}, "password");
   if (!hasLoginId && !hasPassword) return res.status(400).json({ message: "Provide a new tester ID or password." });
   if (hasLoginId && !validLoginId(loginId)) return res.status(400).json({ message: "Tester ID must be 3–80 characters and use letters, numbers, dots, underscores or hyphens." });
-  if (hasPassword && (typeof password !== "string" || password.length < 10 || password.length > 128)) return res.status(400).json({ message: "Set a password between 10 and 128 characters." });
+  if (hasPassword && (typeof password !== "string" || password.length < 4 || password.length > 128)) return res.status(400).json({ message: "Set a password between 4 and 128 characters." });
   try {
     const values: unknown[] = [];
     const updates: string[] = [];
