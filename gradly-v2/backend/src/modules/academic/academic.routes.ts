@@ -211,7 +211,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
            )
          )
          AND sem.curriculum_id = source_curriculum.id
-         AND sem.semester_number = $2
+         AND ($4::boolean IS TRUE OR sem.semester_number = $2)
          AND (
            cs.active IS TRUE
            OR NOT EXISTS (
