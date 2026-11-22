@@ -73,7 +73,7 @@ export default function TesterOnlineResultSync({
   const [pendingReview, setPendingReview] = useState<{rows: ResultGrade[]; session: string; document: string; url: string; semester: number; attemptNumber: number} | null>(null);
   const [reExamMode, setReExamMode] = useState(false);
   const [reExamConfirmed, setReExamConfirmed] = useState(false);
-  const visibleSessions = reExamMode ? sessions.filter(session => /re[\\s-]*(?:exam|ese)|re[\\s-]*examination|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
+  const visibleSessions = reExamMode ? sessions.filter(session => /re[\s-]*(?:exam|ese)|re[\s-]*examination|supplementary|backlog|atkt|additional examination/i.test(session.title)) : sessions;
   const [reviewGrades, setReviewGrades] = useState<Record<string,string>>({});
   const [savingReview, setSavingReview] = useState(false);
   const [creditEdits, setCreditEdits] = useState<Record<string,string>>({});
