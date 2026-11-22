@@ -169,7 +169,7 @@ test("individual subject parser refuses a target enrollment when its branch colu
   const lines = [
     { text: "REGNO CCODE BRANCH Grade", items: [
       { text: "REGNO", x: 20, y: 500 }, { text: "CCODE", x: 260, y: 500 },
-      { text: "BRANCH", x: 520, y: 500 }, { text: "Grade", x: 700, y: 500 },
+      { text: "COURSENAME", x: 340, y: 500 }, { text: "BRANCH", x: 520, y: 500 }, { text: "Grade", x: 700, y: 500 },
     ] },
     { text: "BT25F02F001 AMESC1001 Electrical Engineering A+", items: [
       { text: "BT25F02F001", x: 20, y: 480 }, { text: "AMESC1001", x: 260, y: 480 },
