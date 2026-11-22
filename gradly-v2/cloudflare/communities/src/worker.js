@@ -21,6 +21,7 @@ const parseBody = async (request) => {
 const allowedOrigins = new Set([
   "https://gradly-peach.vercel.app",
   "https://gradly-v2.vercel.app",
+  "https://gradly-ecosystem.vercel.app",
   "http://localhost:5173"
 ]);
 function corsHeaders(request) {
@@ -60,6 +61,34 @@ async function requireMember(env, groupId, userId) {
     WHERE m.group_id=? AND m.user_id=? AND m.status='active' AND g.status='active'
   `).bind(groupId, userId).first();
 }
+
+async function getEcosystemIdentity(request, env, identityType) {
+  const token=(request.headers.get("Authorization")||"").replace(/^Bearer\\s+/i,"").trim();
+  if (!token) return null;
+  const backend=(env.GRADLY_BACKEND_URL||"https://gradly-backend-1q7s.onrender.com").replace(/\\/$/,"");
+  const endpoint=identityType==="admin"?"/api/admin/me":"/api/super-admin/me";
+  try {
+    const response=await fetch(backend+endpoint,{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});
+    if (!response.ok) return null;
+    const data=await response.json();
+    const identity=identityType==="admin"?(data.admin||data.data?.admin):(data.superAdmin||data.data?.superAdmin);
+    const identityId=identityType==="admin"?(identity?.admin_code||identity?.adminCode):(identity?.adminCode||identity?.admin_code);
+    if (!identityId) return null;
+    return { identityId:String(identityId), displayName:String(identity?.full_name||identity?.fullName||identityId), email:String(identity?.email||"") };
+  } catch (error) {
+    console.error("Ecosystem identity verification failed",error);
+    return null;
+  }
+}
+async function hasExternalRole(env, identityType, identityId, requiredRole) {
+  return env.DB.prepare("SELECT role FROM chat_external_roles WHERE identity_type=? AND identity_id=? AND role=? AND revoked_at IS NULL")
+    .bind(identityType,identityId,requiredRole).first();
+}
+async function auditExternal(env, identityType, identityId, action, targetType, targetId, reason="", metadata={}) {
+  await env.DB.prepare("INSERT INTO chat_audit_logs(id,actor_id,action,target_type,target_id,reason,metadata_json) VALUES(?,NULL,?,?,?,?,?)")
+    .bind(id(),"ecosystem."+identityType+"."+action,targetType,targetId||null,reason,JSON.stringify({identityType,identityId,...metadata})).run();
+}
+
 async function isPlatformAdmin(env, userId) {
   return env.DB.prepare("SELECT role FROM chat_platform_roles WHERE user_id=? ORDER BY CASE role WHEN 'super_admin' THEN 0 ELSE 1 END LIMIT 1").bind(userId).first();
 }
@@ -245,7 +274,112 @@ export default {
       }
 
       if (path === "/auth/logout" && request.method === "POST") {
-        const user = await currentUser(request, env);
+  
+      // Existing Ecosystem Admin and Super Admin identities are verified against
+      // the existing Gradly backend. Communities permissions remain explicit in D1.
+      const ecosystemAdmin = await getEcosystemIdentity(request,env,"admin");
+      if (path.startsWith("/ecosystem/admin/")) {
+        if (!ecosystemAdmin) return fail(request,"Valid Gradly Admin session required.",401);
+        const permission=await hasExternalRole(env,"admin",ecosystemAdmin.identityId,"platform_admin");
+        if (!permission) return fail(request,"Your Gradly Admin account has not been granted Communities access.",403);
+        if (path==="/ecosystem/admin/overview" && request.method==="GET") {
+          const [users,groups,messages,reports]=await Promise.all([
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_users WHERE status='active'").first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_groups WHERE status='active'").first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_messages WHERE deleted_at IS NULL").first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_reports WHERE status IN ('open','reviewing')").first()
+          ]);
+          return reply(request,{success:true,admin:ecosystemAdmin,overview:{activeUsers:users?.total||0,activeGroups:groups?.total||0,messages:messages?.total||0,openReports:reports?.total||0}});
+        }
+        if (path==="/ecosystem/admin/reports" && request.method==="GET") {
+          const rows=await env.DB.prepare("SELECT r.id,r.reason,r.details,r.status,r.created_at,g.name AS group_name,u.display_name AS reporter_name FROM chat_reports r LEFT JOIN chat_groups g ON g.id=r.group_id JOIN chat_users u ON u.id=r.reporter_id WHERE r.status IN ('open','reviewing') ORDER BY r.created_at ASC LIMIT 200").all();
+          return reply(request,{success:true,reports:rows.results||[]});
+        }
+        const detail=path.match(/^[/]ecosystem[/]admin[/]reports[/]([a-f0-9-]+)$/i);
+        if (detail && request.method==="GET") {
+          const report=await env.DB.prepare("SELECT * FROM chat_reports WHERE id=?").bind(detail[1]).first();
+          if (!report) return fail(request,"Report not found.",404);
+          const reportedMessage=report.message_id?await env.DB.prepare("SELECT id,group_id,sender_id,body,created_at,edited_at,deleted_at FROM chat_messages WHERE id=?").bind(report.message_id).first():null;
+          await auditExternal(env,"admin",ecosystemAdmin.identityId,"reported_message_viewed","report",report.id,"Access limited to a reported message");
+          return reply(request,{success:true,report,reportedMessage});
+        }
+        const resolve=path.match(/^[/]ecosystem[/]admin[/]reports[/]([a-f0-9-]+)[/]resolve$/i);
+        if (resolve && request.method==="POST") {
+          const body=await parseBody(request), status=body?.status;
+          if (!["resolved","dismissed"].includes(status)) return fail(request,"Status must be resolved or dismissed.");
+          const reason=String(body?.reason||"").slice(0,500);
+          await env.DB.prepare("UPDATE chat_reports SET status=?,assigned_to=NULL,resolved_at=? WHERE id=? AND status IN ('open','reviewing')").bind(status,now(),resolve[1]).run();
+          await auditExternal(env,"admin",ecosystemAdmin.identityId,"report."+status,"report",resolve[1],reason);
+          return reply(request,{success:true});
+        }
+        return fail(request,"Ecosystem Admin Communities route not found.",404);
+      }
+
+      if (path.startsWith("/ecosystem/super-admin/")) {
+        const ecosystemSuperAdmin=await getEcosystemIdentity(request,env,"super_admin");
+        if (!ecosystemSuperAdmin) return fail(request,"Valid Gradly Super Admin session required.",401);
+        if (path==="/ecosystem/super-admin/bootstrap" && request.method==="POST") {
+          const existing=await env.DB.prepare("SELECT identity_id FROM chat_external_roles WHERE identity_type='super_admin' AND role='super_admin' AND revoked_at IS NULL LIMIT 1").first();
+          if (existing && existing.identity_id!==ecosystemSuperAdmin.identityId) return fail(request,"Communities Super Admin has already been bootstrapped.",409);
+          await env.DB.prepare("INSERT INTO chat_external_roles(identity_type,identity_id,role,granted_by_type,granted_by_id) VALUES('super_admin',?,'super_admin','ecosystem_super_admin',?) ON CONFLICT(identity_type,identity_id) DO UPDATE SET role='super_admin',revoked_at=NULL,revoked_by_id=NULL")
+            .bind(ecosystemSuperAdmin.identityId,ecosystemSuperAdmin.identityId).run();
+          await auditExternal(env,"super_admin",ecosystemSuperAdmin.identityId,"bootstrap","super_admin",ecosystemSuperAdmin.identityId,"Existing Gradly Super Admin identity bootstrap");
+          return reply(request,{success:true,message:"Your existing Gradly Super Admin identity is now enabled for Communities."});
+        }
+        const permission=await hasExternalRole(env,"super_admin",ecosystemSuperAdmin.identityId,"super_admin");
+        if (!permission) return fail(request,"Complete the one-time Communities bootstrap first.",403);
+        if (path==="/ecosystem/super-admin/overview" && request.method==="GET") {
+          const [users,groups,messages,reports,media]=await Promise.all([
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_users").first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_groups WHERE status='active'").first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_messages WHERE deleted_at IS NULL").first(),
+            env.DB.prepare("SELECT COUNT(*) AS total FROM chat_reports WHERE status IN ('open','reviewing')").first(),
+            env.DB.prepare("SELECT COALESCE(SUM(size_bytes),0) AS bytes FROM chat_message_attachments WHERE deleted_at IS NULL").first()
+          ]);
+          return reply(request,{success:true,superAdmin:ecosystemSuperAdmin,overview:{users:users?.total||0,groups:groups?.total||0,messages:messages?.total||0,openReports:reports?.total||0,storedMediaBytes:media?.bytes||0}});
+        }
+        if (path==="/ecosystem/super-admin/admin-roles" && request.method==="GET") {
+          const rows=await env.DB.prepare("SELECT identity_id AS admin_code,role,granted_at,revoked_at FROM chat_external_roles WHERE identity_type='admin' ORDER BY granted_at DESC").all();
+          return reply(request,{success:true,admins:rows.results||[]});
+        }
+        if (path==="/ecosystem/super-admin/admin-roles" && request.method==="POST") {
+          const body=await parseBody(request), adminCode=String(body?.adminCode||"").trim(), action=String(body?.action||"grant");
+          if (!/^[A-Za-z0-9_-]{3,40}$/.test(adminCode) || !["grant","revoke"].includes(action)) return fail(request,"Enter a valid Admin ID and grant/revoke action.");
+          if (action==="grant") {
+            await env.DB.prepare("INSERT INTO chat_external_roles(identity_type,identity_id,role,granted_by_type,granted_by_id) VALUES('admin',?,'platform_admin','super_admin',?) ON CONFLICT(identity_type,identity_id) DO UPDATE SET role='platform_admin',granted_by_id=excluded.granted_by_id,granted_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),revoked_at=NULL,revoked_by_id=NULL")
+              .bind(adminCode,ecosystemSuperAdmin.identityId).run();
+          } else {
+            await env.DB.prepare("UPDATE chat_external_roles SET revoked_at=?,revoked_by_id=? WHERE identity_type='admin' AND identity_id=?").bind(now(),ecosystemSuperAdmin.identityId,adminCode).run();
+          }
+          await auditExternal(env,"super_admin","admin_role."+action,"admin",adminCode,"Communities Admin access "+action);
+          return reply(request,{success:true});
+        }
+        if (path==="/ecosystem/super-admin/reports" && request.method==="GET") {
+          const rows=await env.DB.prepare("SELECT r.*,g.name AS group_name,u.display_name AS reporter_name FROM chat_reports r LEFT JOIN chat_groups g ON g.id=r.group_id JOIN chat_users u ON u.id=r.reporter_id WHERE r.status IN ('open','reviewing') ORDER BY r.created_at ASC LIMIT 300").all();
+          return reply(request,{success:true,reports:rows.results||[]});
+        }
+        if (path==="/ecosystem/super-admin/settings" && request.method==="GET") {
+          const rows=await env.DB.prepare("SELECT key,value_json,updated_at FROM chat_platform_settings ORDER BY key").all();
+          return reply(request,{success:true,settings:rows.results||[]});
+        }
+        if (path==="/ecosystem/super-admin/settings" && request.method==="PATCH") {
+          const body=await parseBody(request);
+          if (!body || !["limits","features"].includes(String(body.key))) return fail(request,"Only supported Communities settings can be updated.");
+          const value=body.value;
+          if (!value || typeof value!=="object" || Array.isArray(value)) return fail(request,"Settings value must be an object.");
+          if (body.key==="limits") {
+            const numeric=["maxGroupMemberships","maxGroupMembers","maxMessageLength","messagesPerMinute","photosPerMessage","photoBytes","videoBytes","videoSeconds","pdfBytes","officeBytes","userStorageBytes","uploadsPerDay","videosPerDay"];
+            for (const key of numeric) if (!Number.isInteger(value[key]) || value[key]<1) return fail(request,"All limit values must be positive integers.");
+          }
+          await env.DB.prepare("INSERT INTO chat_platform_settings(key,value_json,updated_by) VALUES(?,?,NULL) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=?")
+            .bind(body.key,JSON.stringify(value),now()).run();
+          await auditExternal(env,"super_admin","settings.updated","setting",body.key,"Communities global settings updated");
+          return reply(request,{success:true});
+        }
+        return fail(request,"Ecosystem Super Admin Communities route not found.",404);
+      }
+
+      const user = await currentUser(request, env);
         if (!user) return fail(request, "Sign in required.", 401);
         await env.DB.prepare("UPDATE chat_sessions SET revoked_at=? WHERE id=?").bind(now(), user.session_id).run();
         return reply(request, { success: true });
