@@ -193,14 +193,40 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
     return;
   }
   try {
+    // Some older production databases may not yet have the optional
+    // curriculum_subjects.active column. Detect it before building the query
+    // so a schema rollout mismatch cannot make the entire catalogue unavailable.
+    const activeColumn = await pool.query(
+      `SELECT 1
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = 'curriculum_subjects'
+         AND column_name = 'active'
+       LIMIT 1`,
+    );
+    const activeFilter = activeColumn.rowCount
+      ? `AND (
+           cs.active IS TRUE
+           OR NOT EXISTS (
+             SELECT 1
+             FROM curriculum_subjects active_cs
+             JOIN semesters active_sem ON active_sem.id = active_cs.semester_id
+             WHERE active_cs.curriculum_id = source_curriculum.id
+               AND active_sem.curriculum_id = source_curriculum.id
+               AND active_sem.semester_number = $2
+               AND active_cs.active IS TRUE
+           )
+         )`
+      : "";
+
     const result = await pool.query(
       `SELECT cs.id, cs.course_code AS code, cs.course_name AS name,
               cs.credits, cs.course_type AS "courseType", cs.mandatory,
               sem.id AS "semesterId", sem.semester_number AS semester
-       FROM curriculum_subjects cs
-       JOIN semesters sem ON sem.id = cs.semester_id
-       JOIN curricula source_curriculum ON source_curriculum.id = cs.curriculum_id
-       JOIN curricula selected_curriculum ON selected_curriculum.id = $1
+       FROM public.curriculum_subjects cs
+       JOIN public.semesters sem ON sem.id = cs.semester_id
+       JOIN public.curricula source_curriculum ON source_curriculum.id = cs.curriculum_id
+       JOIN public.curricula selected_curriculum ON selected_curriculum.id = $1
        WHERE (
            source_curriculum.id = $1
            OR (
@@ -212,18 +238,7 @@ router.get("/curricula/:curriculumId/semesters/:semesterNumber/subjects", async 
          )
          AND sem.curriculum_id = source_curriculum.id
          AND ($4::boolean IS TRUE OR sem.semester_number = $2)
-         AND (
-           cs.active IS TRUE
-           OR NOT EXISTS (
-             SELECT 1
-             FROM curriculum_subjects active_cs
-             JOIN semesters active_sem ON active_sem.id = active_cs.semester_id
-             WHERE active_cs.curriculum_id = source_curriculum.id
-               AND active_sem.curriculum_id = source_curriculum.id
-               AND active_sem.semester_number = $2
-               AND active_cs.active IS TRUE
-           )
-         )
+         ${activeFilter}
        ORDER BY cs.course_code, cs.course_name`,
       [curriculumId, number, includeAllBranches, includeAllSemesters],
     );
