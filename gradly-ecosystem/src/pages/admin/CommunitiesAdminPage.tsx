@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminWorkspaceMenu from "./AdminWorkspaceMenu";
+import "./AdminDashboard.css";
 import "./CommunitiesAdminPage.css";
 
 const API = "https://gradly-communities-api.jugalpkhr.workers.dev";
@@ -68,7 +70,7 @@ export default function CommunitiesAdminPage() {
     finally { setBusyId(""); }
   };
 
-  return <main className="ca-page">
+  return <><AdminWorkspaceMenu/><main className="ca-page">
     <header className="ca-header"><div><span>GRADLY ECOSYSTEM / ADMIN</span><h1>Communities management</h1><p>Review reported content and keep student study spaces safe.</p></div><button onClick={() => void load()} disabled={loading}>↻ Refresh</button></header>
     {error && <div className="ca-alert">{error}</div>}
     {forbidden ? <section className="ca-empty"><h2>Communities access is not enabled</h2><p>Your existing Admin account needs an explicit Communities Platform Admin permission from the Super Admin.</p></section> : <>
@@ -83,5 +85,5 @@ export default function CommunitiesAdminPage() {
       </section>
       {selected && <section className="ca-detail"><div className="ca-card-heading"><div><span>REPORTED CASE</span><h2>{selected.report.reason.replaceAll("_"," ")}</h2></div><button onClick={() => setSelected(null)}>Close</button></div><p>{selected.report.details || "No additional details were provided."}</p>{selected.reportedMessage && <blockquote>{selected.reportedMessage.body}</blockquote>}<div className="ca-actions"><button onClick={() => void resolveReport("dismissed")} disabled={!!busyId}>Dismiss report</button><button className="primary" onClick={() => void resolveReport("resolved")} disabled={!!busyId}>Resolve report</button></div><small>Message content is displayed only because it is part of this reported case. Access is recorded in the audit log.</small></section>}
     </>}
-  </main>;
+  </main></>;
 }
