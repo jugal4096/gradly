@@ -91,21 +91,21 @@ export async function listTesterDiscoveredResultSubjects(req: TesterAuthenticate
     const result = await queryWithRetry(
       `WITH candidates AS (
          SELECT cs.course_code AS "courseCode", cs.course_name AS "courseName",
-                cs.credits, 1 AS priority, 'CURRICULUM'::text AS source
+                cs.credits, CASE WHEN cs.curriculum_id=$3::uuid THEN 1 ELSE 2 END AS priority, 'CURRICULUM'::text AS source
          FROM public.curriculum_subjects cs
          JOIN public.curricula c ON c.id=cs.curriculum_id
          WHERE c.institution_id=$1
            AND regexp_replace(upper(cs.course_code),'[^A-Z0-9]','','g')=ANY($2::text[])
          UNION ALL
          SELECT drs.course_code AS "courseCode", drs.course_name AS "courseName",
-                drs.credits, 2 AS priority, 'DISCOVERED'::text AS source
+                drs.credits, CASE WHEN drs.curriculum_id=$3::uuid THEN 3 ELSE 4 END AS priority, 'DISCOVERED'::text AS source
          FROM public.discovered_result_subjects drs
          JOIN public.curricula c ON c.id=drs.curriculum_id
          WHERE c.institution_id=$1
            AND regexp_replace(upper(drs.course_code),'[^A-Z0-9]','','g')=ANY($2::text[])
          UNION ALL
          SELECT s.canonical_code AS "courseCode", s.canonical_name AS "courseName",
-                NULL::numeric AS credits, 3 AS priority, 'SUBJECT'::text AS source
+                NULL::numeric AS credits, 5 AS priority, 'SUBJECT'::text AS source
          FROM public.subjects s
          WHERE s.institution_id=$1
            AND regexp_replace(upper(s.canonical_code),'[^A-Z0-9]','','g')=ANY($2::text[])
@@ -114,7 +114,7 @@ export async function listTesterDiscoveredResultSubjects(req: TesterAuthenticate
               "courseCode", "courseName", credits, source
        FROM candidates
        ORDER BY regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'), priority ASC, "courseName" ASC`,
-      [institutionId, codes],
+      [institutionId, codes, curriculumId],
     );
     return res.json({ success: true, data: result.rows, sharedCatalogue: true, catalogueScope: "INSTITUTION", testerProfileIsolated: true });
   } catch (error) {
