@@ -32,7 +32,7 @@ export default function TesterUltraTesting() {
   const [discoverySessionId, setDiscoverySessionId] = useState("3018");
   const [discoveryProgramme, setDiscoveryProgramme] = useState("BT");
   const [discoveryAdmissionYear, setDiscoveryAdmissionYear] = useState("2025");
-  const [discoveryAdmissionMode, setDiscoveryAdmissionMode] = useState("F");
+  const [discoveryAdmissionMode, setDiscoveryAdmissionMode] = useState("S");
   const [discoveryBranchCode, setDiscoveryBranchCode] = useState("01");
   const [discoverySemester, setDiscoverySemester] = useState("4");
   const [discoveryLimit, setDiscoveryLimit] = useState("60");
