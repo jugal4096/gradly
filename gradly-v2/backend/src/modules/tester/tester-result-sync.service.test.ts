@@ -222,6 +222,29 @@ test("individual subject parser handles GECA tables with optional SEM and shifte
   }
 });
 
+test("individual subject parser supports split headers and a separate grade baseline", () => {
+  const enrollment = "BT24F01F001";
+  const lines = [
+    { text: "REGNO STUDNAME COURSENAME", items: [
+      { text: "REGNO", x: 20, y: 810 }, { text: "STUDNAME", x: 100, y: 810 },
+      { text: "COURSENAME", x: 300, y: 810 },
+    ] },
+    { text: "CCODE BRANCH Grade", items: [
+      { text: "CCODE", x: 450, y: 800 }, { text: "BRANCH", x: 540, y: 800 },
+      { text: "Grade", x: 700, y: 800 },
+    ] },
+    { text: "BT24F01F001 Student Engineering Mathematics INMDM1002 Civil Engineering", items: [
+      { text: enrollment, x: 20, y: 700 }, { text: "Student", x: 100, y: 700 },
+      { text: "Engineering Mathematics", x: 300, y: 700 }, { text: "INMDM1002", x: 450, y: 700 },
+      { text: "Civil Engineering", x: 540, y: 700 },
+    ] },
+    { text: "A+", items: [{ text: "A+", x: 700, y: 695 }] },
+  ];
+  const parsed = extractSubjectResultGrades(lines, enrollment, ["civil"]);
+  assert.equal(parsed.enrollmentFound, true);
+  assert.deepEqual(parsed.grades, [{ courseCode: "INMDM1002", grade: "A+" }]);
+});
+
 test("individual subject parser refuses a target enrollment when its branch column conflicts", () => {
   const lines = [
     { text: "REGNO CCODE BRANCH Grade", items: [
