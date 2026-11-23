@@ -259,7 +259,7 @@ const NEP_CREDIT_GROUPS:{id:NepCreditGroup;label:string;categories:NepCreditCate
   {id:"EXPERIENTIAL",label:"Experiential Learning",categories:["RMC","CEP","PRJ","INT"]},
   {id:"LIBERAL",label:"Liberal Learning · CCC",categories:["CCC"]},
 ];
-function isNepScheme(scheme:string):boolean { return /\bNEP\b|NEP[\s_-]*2020/i.test(String(scheme||"")); }
+function isNepSchemeLabel(scheme:string):boolean { return /\bNEP\b|NEP[\s_-]*2020/i.test(String(scheme||"")); }
 function getNepCreditCategory(subject:Subject):NepCreditCategory|null {
   const type=String(subject.courseType||"").toUpperCase().replace(/[^A-Z0-9]+/g," ");
   const category=String(subject.courseCategory||"").toUpperCase().replace(/[^A-Z0-9]+/g," ");
@@ -285,7 +285,7 @@ function getNepCreditCategory(subject:Subject):NepCreditCategory|null {
   return null;
 }
 function getNepCreditProgress(profile:Profile,records:Record<number,Subject[]>) {
-  if(!isNepScheme(profile.scheme)) return null;
+  if(!isNepSchemeLabel(profile.scheme)) return null;
   const dse=isDseAdmission(profile.admissionMode,profile.enrollment);
   const requirements=NEP_CREDIT_REQUIREMENTS[dse?"dse":"regular"];
   const earned:Record<NepCreditCategory,number>={BSC:0,ESC:0,PCC:0,PEC:0,MDM:0,OE:0,VSEC:0,AEC:0,EEM:0,IKS:0,VEC:0,RMC:0,CEP:0,PRJ:0,INT:0,CCC:0};
