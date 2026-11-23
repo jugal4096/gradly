@@ -11,7 +11,9 @@ import {
 
 import EcosystemEntry from "./pages/entry/EcosystemEntry";
 import TesterLogin from "./pages/tester/TesterLogin";
-import TesterWorkspace from "./pages/tester/TesterWorkspace";\nimport TesterModeSelect from "./pages/tester/TesterModeSelect";\nimport TesterUltraTesting from "./pages/tester/TesterUltraTesting";
+import TesterWorkspace from "./pages/tester/TesterWorkspace";
+import TesterModeSelect from "./pages/tester/TesterModeSelect";
+import TesterUltraTesting from "./pages/tester/TesterUltraTesting";
 
 // =====================================================
 // ADMIN
