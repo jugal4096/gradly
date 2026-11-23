@@ -949,9 +949,13 @@ export async function discoverGecaEnrollmentCandidates(input: {
   const semesterDocs = selectGecaSemesterDocuments(branchDocs, semester);
   const sessionYear = Number(session.title.match(/\b(20\d{2})\b/)?.[1] || 0);
   const academicYear = sessionYear - admissionYear + (admissionMode === "S" ? 1 : 0);
-  const expectedSection = (["", "FIRST_YEAR", "SECOND_YEAR", "THIRD_YEAR", "FINAL_YEAR"] as const)[academicYear] || null;
-  const selectedDocs = expectedSection
-    ? semesterDocs.filter(item=>item.academicSection===null || item.academicSection===expectedSection)
+  const expectedSections = new Set<GecaAcademicSection>();
+  const currentSection = (["", "FIRST_YEAR", "SECOND_YEAR", "THIRD_YEAR", "FINAL_YEAR"] as const)[academicYear];
+  const semesterSection = (["", "FIRST_YEAR", "SECOND_YEAR", "THIRD_YEAR", "FINAL_YEAR"] as const)[Math.ceil(semester / 2)];
+  if (currentSection) expectedSections.add(currentSection);
+  if (semesterSection) expectedSections.add(semesterSection);
+  const selectedDocs = expectedSections.size
+    ? semesterDocs.filter(item=>item.academicSection===null || expectedSections.has(item.academicSection!))
     : semesterDocs;
   if (!selectedDocs.length) throw new Error("No official result PDFs match the selected branch and semester.");
   const pattern = new RegExp(programme+String(admissionYear).slice(-2)+admissionMode+branchCode+"F\\d{3}","g");
@@ -996,7 +1000,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
     }
   });
   await Promise.all(workers);
-  return {session,enrollments:[...found].sort(),documentsScanned:cursor,scanIncomplete:failedDocuments.length>0,failedDocuments};
+  return {session,enrollments:[...found].sort().slice(0,limit),documentsScanned:cursor,scanIncomplete:failedDocuments.length>0,failedDocuments};
 }
 
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
