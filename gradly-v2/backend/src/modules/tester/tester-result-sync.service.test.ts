@@ -65,6 +65,18 @@ test("semester filtering uses the enclosing GECA section for subject PDFs withou
   );
 });
 
+test("semester filtering recognizes GECA's abbreviated IV REG and IV BACK labels", () => {
+  const documents = [
+    { title: "INFORMATION TECHNOLOGY-2021-22 ( CBCS-NEW ) IV REG", url: "https://geca.ac.in/it-iv-reg.pdf", sectionSemester: null },
+    { title: "INFORMATION TECHNOLOGY-2021-22 ( CBCS-NEW ) IV BACK", url: "https://geca.ac.in/it-iv-back.pdf", sectionSemester: null },
+    { title: "INFORMATION TECHNOLOGY-2021-22 ( CBCS-NEW ) VI REG", url: "https://geca.ac.in/it-vi-reg.pdf", sectionSemester: null },
+  ];
+  assert.deepEqual(
+    selectGecaSemesterDocuments(documents, 4),
+    [documents[0], documents[1]],
+  );
+});
+
 test("semester filtering recognizes GECA filenames ending in IV REGULAR", () => {
   const documents = [
     { title: "CIVIL ENGINEERING IV REGULAR", url: "https://geca.ac.in/iv-regular.pdf", sectionSemester: null },
