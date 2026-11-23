@@ -32,14 +32,14 @@ test("direct-second-year BT25 Semester III resolves to the second-year GECA sect
   );
 });
 
-test("academic-section mismatch falls back to all official result documents", () => {
+test("unlabelled subject PDFs remain candidates when academic-section headings mismatch", () => {
   const documents: Array<{ title: string; academicSection: GecaAcademicSection | null }> = [
     { title: "CSE first-year PDF", academicSection: "SECOND_YEAR" },
     { title: "CSE individual subject PDF", academicSection: null },
   ];
   const selection = selectGecaAcademicDocuments(documents, ["FIRST_YEAR"], true);
-  assert.equal(selection.fallbackUsed, true);
-  assert.deepEqual(selection.documents, documents);
+  assert.equal(selection.fallbackUsed, false);
+  assert.deepEqual(selection.documents, [documents[1]]);
 });
 
 test("matching academic-section headings retain the targeted first-year scan", () => {
