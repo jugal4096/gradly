@@ -25,7 +25,13 @@ function usableParsedCourseName(value:unknown):string { const name=String(value|
 function formatCourseCategory(value?:string):string { const labels:Record<string,string>={BSC:"Basic Science",ESC:"Engineering Science",PCC:"Professional Core Course",PEC:"Professional Elective",OE:"Open Elective",MDM:"Multidisciplinary Course",AEC:"Ability Enhancement Course",VEC:"Value Education Course",VSEC:"Value Skill Enhancement Course",INT:"Internship",PRJ:"Project",HSSM:"Humanities & Social Sciences",EEM:"Economics & Management",UNCLASSIFIED:"Needs classification"}; return labels[String(value||"").toUpperCase()] || String(value||"Other"); }
 // GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
 // elective, while the selected CBCS curriculum stores the same course as CE3008.
-function canonicalResultCourseCode(value:unknown):string { const code=normalizeCourseCode(value); return code==="ME4031"?"MEOE0031":code==="CEOE1010"?"CE3008":code; }
+function canonicalResultCourseCode(value:unknown):string {
+  const code=normalizeCourseCode(value);
+  // Some curriculum exports append the HSSM category to the actual course
+  // code (for example ITHS1030HSSM). GECA result PDFs use the base code.
+  const categoryStripped=code.replace(/^([A-Z]{2}HS[A-Z0-9]{4})HSSM$/,"$1");
+  return categoryStripped==="ME4031"?"MEOE0031":categoryStripped==="CEOE1010"?"CE3008":categoryStripped;
+}
 const ROMAN_SEMESTERS:Record<string,number>={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8};
 function resultDocumentSemester(document:ResultDocument):number|null {
   if(Number.isInteger(document.semester)&&Number(document.semester)>=1&&Number(document.semester)<=8) return Number(document.semester);
@@ -216,7 +222,7 @@ export default function StudentOnlineResultSync({
       .filter(row => row.courseCode.trim())
       .filter(row => !reExamMode || !targetCode || canonicalResultCourseCode(row.courseCode) === targetCode);
     const manualGradeCodes = new Set(["MEOE1040","INMC2010","INMC2001","CEHS1030","INHS1020"]);
-    const invalidGradeRows = sourceRows.filter(row => row.grade.trim() !== "" && !manualGradeCodes.has(normalizeCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D","F","AB","P"].includes(row.grade.toUpperCase()));
+    const invalidGradeRows = sourceRows.filter(row => row.grade.trim() !== "" && !manualGradeCodes.has(canonicalResultCourseCode(row.courseCode)) && !["A++","A+","A","B+","B","C+","C","D","F","AB","P"].includes(row.grade.toUpperCase()));
     if (invalidGradeRows.length) {
       setError("The PDF contains course rows with grades Gradly could not recognise (" + invalidGradeRows.map(row => row.courseCode + ": " + row.grade).join(", ") + "). No grades were applied; the result needs parser review.");
       setNotice("");
@@ -227,8 +233,8 @@ export default function StudentOnlineResultSync({
     // already registered in the discovered-result database is still outside the
     // student's selected curriculum and must remain explicitly identified as such.
     const subjectCodes = subjects.filter(subject => !subject.isCustom || Boolean(subject.curriculumSubjectId))
-      .map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    const expectedCodes = new Set([...subjectCodes, ...catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean), "CEHS1030", "INHS1020", "INMC2001"]);
+      .map(subject => canonicalResultCourseCode(subject.courseCode)).filter(Boolean);
+    const expectedCodes = new Set([...subjectCodes, ...catalogue.map(item => canonicalResultCourseCode(item.code)).filter(Boolean), "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = canonicalResultCourseCode(row.courseCode);
@@ -262,7 +268,8 @@ export default function StudentOnlineResultSync({
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "The saved subject catalogue could not be checked.");
       if (!Array.isArray(body.data)) throw new Error("The saved subject catalogue returned an invalid response.");
-      discoveredRegistry = { ...discoveredRegistry, ...Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }])) };
+      const discoveredSubjects = body.data as { courseCode?: unknown; courseName?: unknown; credits?: unknown; courseCategory?: unknown }[];
+      discoveredRegistry = { ...discoveredRegistry, ...Object.fromEntries(discoveredSubjects.map(item => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }])) };
       try { localStorage.setItem(localRegistryKey, JSON.stringify(discoveredRegistry)); } catch { /* The backend registry remains the durable source. */ }
     } catch (error) {
       setError(error instanceof Error ? "Gradly could not verify previously identified subjects: " + error.message : "Gradly could not verify previously identified subjects. No result was applied.");
@@ -273,8 +280,8 @@ export default function StudentOnlineResultSync({
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
       const code = canonicalCode === "INMC2010" ? "INMC2001" : canonicalCode;
-      const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
-      const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
+      const existing = subjects.find(subject => canonicalResultCourseCode(subject.courseCode) === code);
+      const catalog = catalogue.find(item => canonicalResultCourseCode(item.code) === code);
       const knownNames: Record<string,string> = {
         "CEHS1030":"Constitution of India and Professional Ethics",
         "ETHS0020":"Foreign Language - German",

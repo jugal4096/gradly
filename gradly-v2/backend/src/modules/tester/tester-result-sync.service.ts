@@ -9,7 +9,6 @@ const MAX_RESULT_PDFS = 100;
 const NON_RESULT_PDF_PATTERN = /\b(?:policy|directory|stipend)\b/i;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
-const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
 
 export type GecaResultSession = { id: string; title: string; url: string };
 export type GecaMatchedGrade = { courseCode: string; grade: string; courseName?: string };
@@ -588,13 +587,12 @@ export function extractSubjectResultGrades(
   }
 
   const enrollmentLines = lines
-    .map((line, index) => ({ line, index }))
-    .filter(({ line }) => lineContainsEnrollment(line, enrollment));
+    .filter(line => lineContainsEnrollment(line, enrollment));
   if (!enrollmentLines.length) return { grades: [], enrollmentFound: false };
   if (!headerRows.length) return { grades: [], enrollmentFound: true };
 
   const matches = new Map<string, string>();
-  for (const { line, index } of enrollmentLines) {
+  for (const line of enrollmentLines) {
     const rowY = line.items[0]?.y ?? 0;
     const header = [...headerRows].sort((a, b) =>
       Math.abs(rowY - a.y) - Math.abs(rowY - b.y),
@@ -777,7 +775,11 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
   // Subject-specific GECA links (for example CSESC1005_RESULT) omit the
   // semester from their filename. Inherit it from their enclosing page section.
-  const semester = romanSemester(title + " " + metadataText) ?? sectionSemester ?? null;
+  // An explicit semester in the linked PDF name/URL outranks inherited archive
+  // headings. PDF text is the next source, and the enclosing section is only a
+  // fallback for subject PDFs whose links carry no semester label.
+  const semester = romanSemester(title) ?? romanSemester(url.replace(/%20/gi, " ")) ??
+    romanSemester(metadataText) ?? sectionSemester ?? null;
   const document = parsed.grades.length ? {
     title,
     url: safeUrl,
@@ -872,7 +874,11 @@ export function academicSectionsForEnrollment(enrollment: string, sessionTitle: 
  * hard exclusion: a portal markup change must not hide an exact enrollment
  * match in a first-year result PDF.
  */
-export function selectGecaAcademicDocuments<T extends { academicSection: GecaAcademicSection | null }>(
+export function selectGecaAcademicDocuments<T extends {
+  academicSection: GecaAcademicSection | null;
+  title?: string;
+  url?: string;
+}>(
   documents: T[],
   expectedSections: GecaAcademicSection[],
   pageHasAcademicSections: boolean,
@@ -880,12 +886,17 @@ export function selectGecaAcademicDocuments<T extends { academicSection: GecaAca
   if (!pageHasAcademicSections || !expectedSections.length) {
     return { documents, fallbackUsed: false };
   }
-  // Keep unlabelled subject-level links in the candidate set. Their semester
-  // is checked independently below; dropping them here can hide valid backlog
-  // PDFs when GECA omits the academic-year label on individual links.
-  const matching = documents.filter(document =>
-    document.academicSection === null || expectedSections.includes(document.academicSection),
-  );
+  // Explicit semester labels on individual PDFs are stronger than a possibly
+  // stale enclosing academic-year heading. Keep those links for the independent
+  // semester filter below; unlabelled links still use the expected year section.
+  const matching = documents.filter(document => {
+    const explicitSemester = romanSemester(
+      String(document.title || "") + " " + String(document.url || "").replace(/%20/gi, " "),
+    );
+    return document.academicSection === null ||
+      expectedSections.includes(document.academicSection) ||
+      explicitSemester !== null;
+  });
   return matching.length
     ? { documents: matching, fallbackUsed: false }
     : { documents, fallbackUsed: true };
@@ -904,13 +915,13 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
     return documents;
   }
   return documents.filter(document => {
-    const titleSemester = romanSemester(
-      document.title + " " + document.url.replace(/%20/gi, " "),
-    );
-    const semester = document.sectionSemester ?? titleSemester;
-    // Fail closed: an unlabeled PDF cannot be proven to belong to the
-    // selected semester. Subject-level links inherit sectionSemester when
-    // GECA provides a year/semester heading.
+    const titleSemester = romanSemester(document.title);
+    const urlSemester = romanSemester(document.url.replace(/%20/gi, " "));
+    // Explicit labels on an individual PDF link are more specific than a
+    // potentially stale/inherited archive heading. Only unlabeled subject
+    // links inherit sectionSemester; never admit a PDF labelled for another
+    // semester.
+    const semester = titleSemester ?? urlSemester ?? document.sectionSemester;
     return semester === selectedSemester;
   });
 }
@@ -1074,7 +1085,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const expectedAcademicSections = academicSectionsForEnrollment(enrollment, session.title, selectedSemester);
   const pageHasAcademicSections = unique.some(item => item.academicSection !== null);
   const sectionSelection = selectGecaAcademicDocuments(unique, expectedAcademicSections, pageHasAcademicSections);
-  let eligibleDocuments = sectionSelection.documents.slice(0, MAX_RESULT_PDFS);
+  const eligibleDocuments = sectionSelection.documents.slice(0, MAX_RESULT_PDFS);
   let academicSectionFallbackUsed = sectionSelection.fallbackUsed;
   if (academicSectionFallbackUsed) {
     console.warn(

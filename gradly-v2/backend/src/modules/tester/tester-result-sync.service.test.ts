@@ -52,6 +52,16 @@ test("matching academic-section headings retain the targeted first-year scan", (
   assert.deepEqual(selection.documents, [documents[0]]);
 });
 
+test("explicit semester labels override stale academic-year headings before semester filtering", () => {
+  const documents = [
+    { title: "Information Technology IV SEM REGULAR", url: "https://geca.ac.in/it-iv.pdf", academicSection: "FIRST_YEAR" as const },
+    { title: "Information Technology V SEM REGULAR", url: "https://geca.ac.in/it-v.pdf", academicSection: "THIRD_YEAR" as const },
+    { title: "Unlabelled IT subject result", url: "https://geca.ac.in/it-subject.pdf", academicSection: null },
+  ];
+  const selection = selectGecaAcademicDocuments(documents, ["SECOND_YEAR"], true);
+  assert.deepEqual(selection.documents, [documents[0], documents[1], documents[2]]);
+});
+
 test("semester filtering uses the enclosing GECA section for subject PDFs without semester in filename", () => {
   const documents = [
     { title: "CEESC1003_RESULT", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 2 },
@@ -73,11 +83,19 @@ test("semester filtering recognizes GECA filenames ending in IV REGULAR", () => 
   assert.deepEqual(selectGecaSemesterDocuments(documents, 5), [documents[1]]);
 });
 
-test("semester filtering excludes a PDF when its filename and section identify another semester", () => {
+test("explicit PDF semester labels take precedence over stale inherited archive headings", () => {
   const documents = [
     { title: "Civil Engineering II SEM REGULAR", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 4 },
     { title: "Civil Engineering IV SEM REGULAR", url: "https://geca.ac.in/sem4.pdf", sectionSemester: 2 },
     { title: "CEESC1005_RESULT", url: "https://geca.ac.in/unknown.pdf", sectionSemester: null },
+  ];
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[1]]);
+});
+
+test("an explicit semester in a PDF URL takes precedence over its inherited archive heading", () => {
+  const documents = [
+    { title: "IT_RESULT", url: "https://geca.ac.in/Information%20Technology%20IV%20REGULAR.pdf", sectionSemester: 2 },
+    { title: "IT_RESULT", url: "https://geca.ac.in/Information%20Technology%20V%20REGULAR.pdf", sectionSemester: 4 },
   ];
   assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0]]);
 });

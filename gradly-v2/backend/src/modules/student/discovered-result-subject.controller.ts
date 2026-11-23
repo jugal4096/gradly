@@ -21,21 +21,98 @@ export async function listDiscoveredResultSubjects(req: AuthenticatedRequest, re
     const curriculumId = String(req.query.curriculumId || "");
     if (curriculumId !== profile.curriculumId) return res.status(403).json({ success: false, message: "The requested curriculum does not match your confirmed academic profile." });
     const codes = String(req.query.codes || "").split(",").map(value => value.toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean).slice(0, 100);
+    // Keep legacy GECA result-PDF codes searchable when the student app has
+    // already canonicalized them to the current curriculum code.
+    const lookupCodes = [...new Set(codes.flatMap(code => ({
+      MEOE0031: ["MEOE0031", "ME4031"],
+      CE3008: ["CE3008", "CEOE1010"],
+      INMC2001: ["INMC2001", "INMC2010"],
+    } as Record<string, string[]>)[code] || [code]))];
     const semesterNumber = Number(req.query.semesterNumber);
     const hasSemester = Number.isInteger(semesterNumber) && semesterNumber >= 1 && semesterNumber <= 12;
     if (!codes.length && !hasSemester) return res.json({ success: true, data: [] });
+
+    const selected = await pool.query(
+      `SELECT id, institution_id, program_id, scheme_id
+       FROM public.curricula WHERE id = $1 LIMIT 1`,
+      [curriculumId],
+    );
+    if (!selected.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
+    const selectedCurriculum = selected.rows[0];
+
+    // The student app must resolve the same institution-wide subject catalogue
+    // as Tester mode. Published discoveries are promoted into curriculum_subjects,
+    // so looking only in discovered_result_subjects makes those courses look new
+    // again after publication (and when they were published under another branch).
     const result = codes.length
       ? await pool.query(
-          `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
-           FROM public.discovered_result_subjects WHERE curriculum_id = $1 AND course_code = ANY($2::text[])`,
-          [curriculumId, codes],
+          `WITH candidates AS (
+             SELECT cs.course_code AS "courseCode", cs.course_name AS "courseName",
+                    cs.credits, cs.course_type AS "courseCategory",
+                    NULL::text AS "creditStatus", sem.semester_number AS "semesterNumber",
+                    CASE WHEN c.id = $3::uuid THEN 1
+                         WHEN c.program_id = $4 AND c.scheme_id IS NOT DISTINCT FROM $5 THEN 2
+                         ELSE 3 END AS priority
+             FROM public.curriculum_subjects cs
+             JOIN public.semesters sem ON sem.id = cs.semester_id
+             JOIN public.curricula c ON c.id = cs.curriculum_id
+             WHERE c.institution_id = $1
+               AND regexp_replace(upper(cs.course_code),'[^A-Z0-9]','','g') = ANY($2::text[])
+             UNION ALL
+             SELECT drs.course_code AS "courseCode", drs.course_name AS "courseName",
+                    drs.credits, drs.course_category AS "courseCategory",
+                    drs.credit_status AS "creditStatus", drs.semester_number AS "semesterNumber",
+                    CASE WHEN drs.curriculum_id = $3::uuid THEN 4
+                         WHEN c.program_id = $4 AND c.scheme_id IS NOT DISTINCT FROM $5 THEN 5
+                         ELSE 6 END AS priority
+             FROM public.discovered_result_subjects drs
+             JOIN public.curricula c ON c.id = drs.curriculum_id
+             WHERE c.institution_id = $1
+               AND regexp_replace(upper(drs.course_code),'[^A-Z0-9]','','g') = ANY($2::text[])
+             UNION ALL
+             SELECT s.canonical_code AS "courseCode", s.canonical_name AS "courseName",
+                    NULL::numeric AS credits, NULL::text AS "courseCategory",
+                    NULL::text AS "creditStatus", NULL::integer AS "semesterNumber", 7 AS priority
+             FROM public.subjects s
+             WHERE s.institution_id = $1
+               AND regexp_replace(upper(s.canonical_code),'[^A-Z0-9]','','g') = ANY($2::text[])
+           )
+           SELECT DISTINCT ON (regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'))
+                  "courseCode", "courseName", credits, "courseCategory", "creditStatus", "semesterNumber"
+           FROM candidates
+           ORDER BY regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'), priority ASC, "courseName" ASC`,
+          [selectedCurriculum.institution_id, lookupCodes, curriculumId, selectedCurriculum.program_id, selectedCurriculum.scheme_id],
         )
       : await pool.query(
-          `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
-           FROM public.discovered_result_subjects WHERE curriculum_id = $1 AND semester_number = $2 ORDER BY course_code`,
-          [curriculumId, semesterNumber],
+          `WITH candidates AS (
+             SELECT cs.course_code AS "courseCode", cs.course_name AS "courseName",
+                    cs.credits, cs.course_type AS "courseCategory",
+                    NULL::text AS "creditStatus", sem.semester_number AS "semesterNumber",
+                    CASE WHEN c.id = $3::uuid THEN 1 ELSE 2 END AS priority
+             FROM public.curriculum_subjects cs
+             JOIN public.semesters sem ON sem.id = cs.semester_id
+             JOIN public.curricula c ON c.id = cs.curriculum_id
+             WHERE c.institution_id = $1
+               AND (c.id = $3::uuid OR (c.program_id = $4 AND c.scheme_id IS NOT DISTINCT FROM $5))
+               AND sem.semester_number = $2
+             UNION ALL
+             SELECT drs.course_code AS "courseCode", drs.course_name AS "courseName",
+                    drs.credits, drs.course_category AS "courseCategory",
+                    drs.credit_status AS "creditStatus", drs.semester_number AS "semesterNumber",
+                    CASE WHEN drs.curriculum_id = $3::uuid THEN 3 ELSE 4 END AS priority
+             FROM public.discovered_result_subjects drs
+             JOIN public.curricula c ON c.id = drs.curriculum_id
+             WHERE c.institution_id = $1
+               AND (c.id = $3::uuid OR (c.program_id = $4 AND c.scheme_id IS NOT DISTINCT FROM $5))
+               AND drs.semester_number = $2
+           )
+           SELECT DISTINCT ON (regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'))
+                  "courseCode", "courseName", credits, "courseCategory", "creditStatus", "semesterNumber"
+           FROM candidates
+           ORDER BY regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'), priority ASC, "courseName" ASC`,
+          [selectedCurriculum.institution_id, semesterNumber, curriculumId, selectedCurriculum.program_id, selectedCurriculum.scheme_id],
         );
-    return res.json({ success: true, data: result.rows });
+    return res.json({ success: true, data: result.rows, sharedCatalogue: true, catalogueScope: "INSTITUTION" });
   } catch (error) {
     console.error("Discovered result subject lookup failed:", error);
     return res.status(500).json({ success: false, message: "Unable to load the discovered subject catalogue." });

@@ -4,6 +4,10 @@ import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admi
 
 type RawRecord = Record<string, unknown>;
 
+function asRecord(value: unknown): RawRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as RawRecord : {};
+}
+
 function pick(records: RawRecord[], keys: string[]): unknown {
   for (const record of records) {
     const normalized = new Map(Object.entries(record || {}).map(([key, value]) => [key.toLowerCase(), value]));
@@ -117,21 +121,21 @@ export async function listCurriculum(
        ORDER BY i.name, p.name, b.name, sc.name, d.semester_number, d.course_code
        LIMIT 5000`
     );
-    const discovered = discoveredResult.rows.map((row: Record<string, any>) => ({
+    const discovered = discoveredResult.rows.map((row: RawRecord) => ({
       id: row.id,
       code: row.course_code,
       name: row.course_name,
       credits: row.credits,
       courseType: row.course_category,
       semester: row.semester_number,
-      branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
-      specialization: pick([row.specialization || {}], ["name", "code", "specialization_name"]),
-      scheme: pick([row.scheme || {}], ["name", "code", "regulations"]),
-      academicYear: pick([row.academicYear || {}], ["name", "label", "year", "academic_year", "code", "title"]),
-      program: pick([row.program || {}], ["name", "short_name", "level"]),
-      institution: pick([row.institution || {}], ["name", "short_name"]),
+      branch: pick([asRecord(row.branch)], ["name", "branch_name", "department_name"]),
+      specialization: pick([asRecord(row.specialization)], ["name", "code", "specialization_name"]),
+      scheme: pick([asRecord(row.scheme)], ["name", "code", "regulations"]),
+      academicYear: pick([asRecord(row.academicYear)], ["name", "label", "year", "academic_year", "code", "title"]),
+      program: pick([asRecord(row.program)], ["name", "short_name", "level"]),
+      institution: pick([asRecord(row.institution)], ["name", "short_name"]),
       curriculumId: row.curriculum_id,
-      curriculumVersion: pick([row.curriculum || {}], ["version"]),
+      curriculumVersion: pick([asRecord(row.curriculum)], ["version"]),
       status: row.publication_status === "PUBLISHED" ? "Published" : "Discovered catalogue",
       publicationStatus: row.publication_status || "DISCOVERED",
       source: row.source,
