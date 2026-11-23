@@ -20,6 +20,7 @@ const normalizeCode = (value: unknown) => String(value || "").toUpperCase().repl
 const normalizeName = (value: unknown) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
+const normalizeResultSessions = (value: unknown): ResultSession[] => Array.isArray(value) ? value.filter((item: any) => item && item.id != null).map((item: any) => ({ id: String(item.id), title: String(item.title || item.name || "Untitled examination session"), url: String(item.url || "") })) : [];
 
 export default function TesterUltraTesting() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function TesterUltraTesting() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [enrollmentText, setEnrollmentText] = useState("");
-  const [discoverySessionId, setDiscoverySessionId] = useState("3018");
+  const [discoverySessionId, setDiscoverySessionId] = useState("");
   const [discoveryProgramme, setDiscoveryProgramme] = useState("BT");
   const [discoveryAdmissionYear, setDiscoveryAdmissionYear] = useState("2025");
   const [discoveryAdmissionMode, setDiscoveryAdmissionMode] = useState("S");
@@ -76,7 +77,7 @@ export default function TesterUltraTesting() {
     setLoadingSessions(true);
     fetch(API + "/api/tester/results/sessions", { headers: { Authorization: "Bearer " + token }, signal: controller.signal })
       .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.message || "Unable to load GECA examination sessions."); return body; })
-      .then(body => setSessions(Array.isArray(body.sessions) ? body.sessions : []))
+      .then(body => { const loaded = normalizeResultSessions(body.sessions); setSessions(loaded); setDiscoverySessionId(current => loaded.some(item => item.id === current) ? current : (loaded[0]?.id || "")); })
       .catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Unable to load examination sessions."); })
       .finally(() => { if (!controller.signal.aborted) setLoadingSessions(false); });
     return () => controller.abort();
@@ -371,7 +372,7 @@ export default function TesterUltraTesting() {
         <div className="tester-ultra-discovery">
           <div className="tester-ultra-discovery-heading"><div><span>ENROLLMENT DISCOVERY</span><h3>Find students from official result records</h3><p>Scans the selected GECA examination PDFs and extracts only enrollment numbers that actually appear in them. No serial numbers are fabricated.</p></div><span className="tester-ultra-discovery-cap">MAX 60 FOUND</span></div>
           <div className="tester-ultra-discovery-fields">
-            <label>EXAM SESSION<select value={discoverySessionId} onChange={event=>setDiscoverySessionId(event.target.value)}>{sessions.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+            <label>EXAM SESSION<select value={discoverySessionId} onChange={event=>setDiscoverySessionId(event.target.value)} disabled={loadingSessions||sessions.length===0}><option value="">{loadingSessions?"Loading examination sessions…":sessions.length?"Choose an exam session":"No sessions available"}</option>{sessions.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select><small>{loadingSessions?"Fetching the official GECA session list…":sessions.length?`${sessions.length} official sessions available`:"Use Refresh sessions to try loading the archive again."}</small></label>
             <label>PROGRAMME<select value={discoveryProgramme} onChange={event=>setDiscoveryProgramme(event.target.value)}><option value="BT">B.Tech · NEP</option><option value="BE">B.E. · New CBCS (legacy eligibility)</option></select></label>
             <label>ADMISSION YEAR<input type="number" min="2000" max="2099" value={discoveryAdmissionYear} onChange={event=>setDiscoveryAdmissionYear(event.target.value)}/></label>
             <label>ADMISSION TYPE<select value={discoveryAdmissionMode} onChange={event=>setDiscoveryAdmissionMode(event.target.value)}><option value="F">Regular</option><option value="S">DSE</option></select></label>
