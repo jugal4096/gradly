@@ -28,7 +28,7 @@ export default function TesterLogin() {
       sessionStorage.setItem("gradly_tester_access_token", data.token);
       localStorage.setItem("gradly_tester_login_id", data.tester?.loginId || loginId.trim());
       sessionStorage.setItem("gradly_tester_login_id", data.tester?.loginId || loginId.trim());
-      navigate("/tester/workspace", { replace: true });
+      navigate("/tester/mode", { replace: true });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to connect to Gradly.");
     } finally { setBusy(false); }
