@@ -127,8 +127,8 @@ export default function TesterUltraTesting() {
 
 
   async function discoverEnrollments() {
-    if (!institution || !supportedInstitution || !discoverySessionId || !token) {
-      setCandidateError("Select GECA and an examination session first.");
+    if (!discoverySessionId || !token) {
+      setCandidateError("Wait for the tester session and select an examination session first.");
       return;
     }
     setCandidateBusy(true); setCandidateError(""); setCandidateMessage(""); setCandidateEnrollments([]);
@@ -380,7 +380,7 @@ export default function TesterUltraTesting() {
             <label>SEMESTER<select value={discoverySemester} onChange={event=>setDiscoverySemester(event.target.value)}>{Array.from({length:8},(_,i)=>i+1).map(value=><option key={value} value={value}>Semester {value}</option>)}</select></label>
             <label>MAXIMUM RESULTS<input type="number" min="1" max="60" step="1" value={discoveryLimit} onChange={event=>setDiscoveryLimit(event.target.value)} onBlur={()=>setDiscoveryLimit(value=>{if(value.trim()==="")return "60";const parsed=Number(value);return String(Math.min(60,Math.max(1,Number.isFinite(parsed)?Math.trunc(parsed):60)));})}/><small>Enter any number from 1 to 60. You can clear and replace the value while editing.</small></label>
           </div>
-          <div className="tester-ultra-discovery-actions"><button type="button" onClick={()=>void discoverEnrollments()} disabled={candidateBusy||!institution||!supportedInstitution||!sessions.length}><Search size={15}/>{candidateBusy?"Scanning official PDFs…":"Discover eligible enrollments"}</button>{candidateEnrollments.length>0&&<button type="button" onClick={addDiscoveredEnrollments}><Users size={15}/> Add {candidateEnrollments.length} to batch</button>}</div>
+          <div className="tester-ultra-discovery-actions"><button type="button" onClick={()=>void discoverEnrollments()} disabled={candidateBusy||!token||!sessions.length||!discoverySessionId}><Search size={15}/>{candidateBusy?"Scanning official PDFs…":"Discover eligible enrollments"}</button>{candidateEnrollments.length>0&&<button type="button" onClick={addDiscoveredEnrollments}><Users size={15}/> Add {candidateEnrollments.length} to batch</button>}</div>
           {candidateError&&<p className="tester-ultra-error" role="alert">{candidateError}</p>}
           {candidateMessage&&<p className="tester-ultra-discovery-message" role="status">{candidateMessage}</p>}
           {candidateEnrollments.length>0&&<div className="tester-ultra-discovery-results"><div><strong>{candidateEnrollments.length} verified enrollment tokens found</strong><span>Source: {sessions.find(item=>item.id===discoverySessionId)?.title || "Selected GECA session"}</span></div><textarea readOnly rows={Math.min(8,candidateEnrollments.length)} value={candidateEnrollments.join("\n")}/></div>}
