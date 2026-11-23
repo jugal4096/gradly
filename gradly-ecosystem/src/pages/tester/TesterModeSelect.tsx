@@ -4,7 +4,7 @@ import { Activity, ArrowRight, BarChart3, FlaskConical, GraduationCap, ShieldChe
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
-const API = API_BASE_URL.replace(/\\/+$/, "");
+const API = API_BASE_URL.replace(/\/+$/, "");
 
 export default function TesterModeSelect() {
   const navigate = useNavigate();
