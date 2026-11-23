@@ -339,12 +339,33 @@ export default function TesterUltraTesting() {
     });
     return [...groups.entries()].map(([branch,value])=>({branch,...value,average:value.sum/value.count})).sort((a,b)=>b.average-a.average);
   },[analyticsRows,analyticsSemester,analyticsMetric]);
-  const selectedSemesterValues=analyticsRows.map(row=>{const sem=row.semesters.find(item=>item.semester===analyticsSemester);return analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;}).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
+  const selectedSemesterRows=analyticsRows.map(row=>({row,sem:row.semesters.find(item=>item.semester===analyticsSemester)}));
+  const selectedSemesterValues=selectedSemesterRows.map(({sem})=>analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
   const selectedSemesterStats=selectedSemesterValues.length?{average:selectedSemesterValues.reduce((sum,value)=>sum+value,0)/selectedSemesterValues.length,min:Math.min(...selectedSemesterValues),max:Math.max(...selectedSemesterValues),count:selectedSemesterValues.length}:null;
+  const batchScoreValues=analyticsRows.flatMap(row=>row.semesters.filter(sem=>sem.status==="VERIFIED").map(sem=>analyticsMetric==="sgpa"?sem.sgpa:sem.cgpa)).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
+  const batchScoreStats=batchScoreValues.length?{average:batchScoreValues.reduce((sum,value)=>sum+value,0)/batchScoreValues.length,min:Math.min(...batchScoreValues),max:Math.max(...batchScoreValues),count:batchScoreValues.length}:null;
   const intraRows=analyticsRows.map(row=>{const sem=row.semesters.find(item=>item.semester===analyticsSemester);const value=analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;const branchAverage=branchStats.find(item=>item.branch===row.branch)?.average;return {enrollment:row.enrollment,branch:row.branch,value,branchAverage,delta:value===null||value===undefined||branchAverage===undefined?null:value-branchAverage};}).filter((item):item is {enrollment:string;branch:string;value:number;branchAverage:number;delta:number}=>item.value!==null&&item.value!==undefined&&item.branchAverage!==undefined&&item.delta!==null).sort((a,b)=>a.branch.localeCompare(b.branch)||b.value-a.value);
+  const studentScoreRows=selectedSemesterRows.map(({row,sem})=>({enrollment:row.enrollment,branch:row.branch,scheme:row.scheme,admissionMode:row.admissionMode,sgpa:sem?.sgpa??null,cgpa:sem?.cgpa??null,credits:sem?.credits??0,subjects:sem?.subjects??0,status:sem?.status??"NOT AUDITED",issue:sem?.error||row.errors.find(detail=>detail.includes("Semester "+analyticsSemester))||""})).sort((a,b)=>(b.sgpa??-1)-(a.sgpa??-1)||a.enrollment.localeCompare(b.enrollment));
+  const exportAnalyticsCsv=()=>{const lines=[["Enrollment","Branch","Scheme","Admission type","Semester","SGPA","CGPA","Credits","Subjects","Status","Issue"]];studentScoreRows.forEach(item=>lines.push([item.enrollment,item.branch,item.scheme,item.admissionMode,String(analyticsSemester),item.sgpa===null?"":item.sgpa.toFixed(3),item.cgpa===null?"":item.cgpa.toFixed(3),String(item.credits),String(item.subjects),item.status,item.issue]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\\r\\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-student-analytics-semester-"+analyticsSemester+".csv";anchor.click();URL.revokeObjectURL(url);};
   const exportFindingsCsv=()=>{const lines=[["Subject","Course code","Finding","Semesters","Occurrences","Branches","Affected enrollments","Source document"]];globalFindings.forEach(item=>lines.push([item.name,item.code,item.kind,item.semesters.join("; "),String(item.occurrences),item.branchNames.join("; "),item.enrollments.join("; "),item.document]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-subject-findings.csv";anchor.click();URL.revokeObjectURL(url);};
   const issueCount = rows.reduce((sum,row)=>sum+row.errors.length+row.findings.length+row.semesters.filter(sem=>Boolean(sem.error)).length,0);
-  const issueRows=rows.flatMap(student=>[...student.errors.map(detail=>({enrollment:student.enrollment,branch:student.branch,semester:"—",severity:/failed|incomplete|parse|could not/i.test(detail)?"HIGH":"MEDIUM",detail})),...student.semesters.filter(sem=>Boolean(sem.error)).map(sem=>({enrollment:student.enrollment,branch:student.branch,semester:String(sem.semester),severity:sem.status==="MANUAL ONLY"?"INFO":"MEDIUM",detail:sem.error||sem.status}))]);
+  const issueMap=new Map<string,{enrollment:string;branch:string;semester:string;severity:string;detail:string}>();
+  rows.forEach(student=>{
+    student.errors.forEach(raw=>{
+      const match=raw.match(/^Semester\\s+(\\d+)\\s*:\\s*(.*)$/i);
+      const semester=match?.[1]||"—";
+      const detail=match?.[2]||raw;
+      const severity=/failed|incomplete|parse|could not/i.test(detail)?"HIGH":"MEDIUM";
+      issueMap.set([student.enrollment,semester,detail.toLowerCase()].join("|"),{enrollment:student.enrollment,branch:student.branch,semester,severity,detail});
+    });
+    student.semesters.filter(sem=>Boolean(sem.error)).forEach(sem=>{
+      const detail=sem.error||sem.status;
+      const key=[student.enrollment,String(sem.semester),detail.toLowerCase()].join("|");
+      const severity=sem.status==="MANUAL ONLY"?"INFO":/failed|incomplete|parse|could not/i.test(detail)?"HIGH":"MEDIUM";
+      if(!issueMap.has(key)) issueMap.set(key,{enrollment:student.enrollment,branch:student.branch,semester:String(sem.semester),severity,detail});
+    });
+  });
+  const issueRows=[...issueMap.values()];
 
   return <main className="tester-ultra-page">
     <header className="tester-ultra-header"><button type="button" onClick={()=>navigate("/tester/mode")}><ArrowLeft size={17}/> Testing modes</button><div className="tester-ultra-brand"><span>G</span><div>GRADLY <small>ULTRA TESTING</small></div></div><div className="tester-ultra-user"><span><i/> {testerId}</span><button type="button" onClick={()=>{localStorage.removeItem("gradly_tester_access_token");sessionStorage.removeItem("gradly_tester_access_token");navigate("/tester/login");}}>Sign out</button></div></header>
