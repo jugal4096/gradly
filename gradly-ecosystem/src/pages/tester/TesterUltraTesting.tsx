@@ -16,7 +16,7 @@ type ResultDocument = { title: string; url: string; semester: number | null; gra
 type SubjectFinding = { code: string; name: string; grade: string; credits: number | null; kind: "NEW" | "NAME_MISMATCH" | "CREDIT_MISMATCH"; semester: number; document: string };
 type SemesterAudit = { semester: number; sgpa: number | null; cgpa: number | null; credits: number; subjects: number; status: string; findings: SubjectFinding[]; error?: string };
 type StudentAudit = { enrollment: string; status: "queued" | "processing" | "completed" | "partial" | "failed"; branch: string; scheme: string; admissionMode: string; curriculumId: string; semesters: SemesterAudit[]; errors: string[]; findings: SubjectFinding[]; cgpa: number | null };
-type GlobalFinding = SubjectFinding & { occurrences: number; enrollments: string[]; branchNames: string[] };
+type GlobalFinding = Omit<SubjectFinding, "semester"> & { semesters: number[]; occurrences: number; enrollments: string[]; branchNames: string[] };
 const normalizeCode = (value: unknown) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 const normalizeName = (value: unknown) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
@@ -37,7 +37,7 @@ export default function TesterUltraTesting() {
   const [searchingInstitutions, setSearchingInstitutions] = useState(false);
   const [running, setRunning] = useState(false);
   const [rows, setRows] = useState<StudentAudit[]>([]);
-  const [activeTab, setActiveTab] = useState<"students" | "subjects" | "branches">("students");
+  const [activeTab, setActiveTab] = useState<"students" | "subjects" | "branches">("students");\n  const [analyticsSemester, setAnalyticsSemester] = useState(1);\n  const [analyticsMetric, setAnalyticsMetric] = useState<"sgpa" | "cgpa">("sgpa");
   const [filter, setFilter] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -94,7 +94,7 @@ export default function TesterUltraTesting() {
       if (existing) { existing.occurrences++; if (!existing.enrollments.includes(student.enrollment)) existing.enrollments.push(student.enrollment); if (student.branch && !existing.branchNames.includes(student.branch)) existing.branchNames.push(student.branch); }
       else grouped.set(key, { ...item, occurrences: 1, enrollments: [student.enrollment], branchNames: student.branch ? [student.branch] : [] });
     }));
-    return [...grouped.values()].sort((a,b) => b.occurrences - a.occurrences || a.name.localeCompare(b.name));
+    return [...grouped.values()].map(item=>({...item,semesters:item.semesters.sort((a,b)=>a-b)})).sort((a,b) => b.occurrences - a.occurrences || a.name.localeCompare(b.name));
   }, [rows]);
   const completedCount = rows.filter(row => row.status === "completed" || row.status === "partial" || row.status === "failed").length;
   const successfulCount = rows.filter(row => row.status === "completed").length;
@@ -236,14 +236,19 @@ export default function TesterUltraTesting() {
 
   const branchStats = useMemo(() => {
     const groups = new Map<string, { count:number; sum:number; min:number; max:number }>();
-    rows.forEach(row=>row.semesters.forEach(sem=>{
-      if(sem.sgpa===null) return;
+    rows.forEach(row=>{
+      const sem=row.semesters.find(item=>item.semester===analyticsSemester);
+      const value=analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;
+      if(value===null||value===undefined||!Number.isFinite(value)) return;
       const current=groups.get(row.branch)||{count:0,sum:0,min:10,max:0};
-      current.count++; current.sum+=sem.sgpa; current.min=Math.min(current.min,sem.sgpa); current.max=Math.max(current.max,sem.sgpa);
+      current.count++; current.sum+=value; current.min=Math.min(current.min,value); current.max=Math.max(current.max,value);
       groups.set(row.branch,current);
-    }));
+    });
     return [...groups.entries()].map(([branch,value])=>({branch,...value,average:value.sum/value.count})).sort((a,b)=>b.average-a.average);
-  },[rows]);
+  },[rows,analyticsSemester,analyticsMetric]);
+  const selectedSemesterValues=rows.map(row=>{const sem=row.semesters.find(item=>item.semester===analyticsSemester);return analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;}).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
+  const selectedSemesterStats=selectedSemesterValues.length?{average:selectedSemesterValues.reduce((sum,value)=>sum+value,0)/selectedSemesterValues.length,min:Math.min(...selectedSemesterValues),max:Math.max(...selectedSemesterValues),count:selectedSemesterValues.length}:null;
+  const exportFindingsCsv=()=>{const lines=[["Subject","Course code","Finding","Semesters","Occurrences","Branches","Affected enrollments","Source document"]];globalFindings.forEach(item=>lines.push([item.name,item.code,item.kind,item.semesters.join("; "),String(item.occurrences),item.branchNames.join("; "),item.enrollments.join("; "),item.document]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\\r\\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-subject-findings.csv";anchor.click();URL.revokeObjectURL(url);};
   const issueCount = rows.reduce((sum,row)=>sum+row.errors.length+row.findings.length,0);
 
   return <main className="tester-ultra-page">
@@ -268,7 +273,7 @@ export default function TesterUltraTesting() {
 
       {(rows.length>0)&&<>
         <section className="tester-ultra-results">
-          <div className="tester-ultra-section-heading"><div><span>02 · BATCH PERFORMANCE</span><h2>Audit overview</h2></div><div className="tester-ultra-result-actions"><span>{completedCount} / {rows.length} processed</span><button type="button" onClick={exportCsv} disabled={!rows.length}><Download size={15}/> Export CSV</button></div></div>
+          <div className="tester-ultra-section-heading"><div><span>02 · BATCH PERFORMANCE</span><h2>Audit overview</h2></div><div className="tester-ultra-result-actions"><span>{completedCount} / {rows.length} processed</span><button type="button" onClick={exportCsv} disabled={!rows.length}><Download size={15}/> Student CSV</button><button type="button" onClick={exportFindingsCsv} disabled={!globalFindings.length}><Download size={15}/> Findings CSV</button></div></div>
           <div className="tester-ultra-progress"><i style={{width:(rows.length?completedCount/rows.length*100:0)+"%"}}/></div>
           <div className="tester-ultra-metrics">
             <article><span>ENROLLMENTS</span><strong>{rows.length}</strong><small>In this batch</small></article>
@@ -280,7 +285,7 @@ export default function TesterUltraTesting() {
           <nav className="tester-ultra-tabs"><button className={activeTab==="students"?"active":""} onClick={()=>setActiveTab("students")}><Users size={15}/> Student reports</button><button className={activeTab==="subjects"?"active":""} onClick={()=>setActiveTab("subjects")}><BookOpen size={15}/> Global subject registry <b>{globalFindings.length}</b></button><button className={activeTab==="branches"?"active":""} onClick={()=>setActiveTab("branches")}><BarChart3 size={15}/> Branch analytics</button></nav>
           {activeTab==="students"&&<div className="tester-ultra-table-wrap"><div className="tester-ultra-table-toolbar"><strong>Individual enrollment reports</strong><div><Search size={14}/><input value={filter} onChange={event=>setFilter(event.target.value)} placeholder="Find enrollment or branch"/></div></div><table className="tester-ultra-table"><thead><tr><th>ENROLLMENT</th><th>BRANCH / SCHEME</th><th>SEMESTER SGPA</th><th>CGPA</th><th>FINDINGS</th><th>STATUS</th></tr></thead><tbody>{visibleRows.map(row=><tr key={row.enrollment}><td><strong>{row.enrollment}</strong><small>{row.admissionMode}</small></td><td>{row.branch||"—"}<small>{row.scheme}</small></td><td><div className="tester-ultra-semester-pills">{row.semesters.map(sem=><span key={sem.semester} title={sem.status+" · CGPA "+(sem.cgpa===null?"—":sem.cgpa.toFixed(2))}>S{sem.semester}: {sem.sgpa===null?"—":sem.sgpa.toFixed(2)}</span>)}</div></td><td><strong>{row.cgpa===null?"—":row.cgpa.toFixed(2)}</strong></td><td><span className="tester-ultra-finding-count">{row.findings.length} subjects · {row.errors.length} errors</span>{row.errors.slice(0,1).map((item,index)=><small key={index} className="tester-ultra-row-error">{item}</small>)}</td><td><span className={"tester-ultra-status "+row.status}>{row.status}</span></td></tr>)}</tbody></table>{visibleRows.length===0&&<p className="tester-ultra-empty">No enrollments match this search.</p>}</div>}
           {activeTab==="subjects"&&<div className="tester-ultra-table-wrap"><div className="tester-ultra-table-toolbar"><strong>Consolidated new subjects & mismatches</strong><span>{globalFindings.length} unique findings · duplicates merged</span></div><table className="tester-ultra-table"><thead><tr><th>SUBJECT / CODE</th><th>FINDING</th><th>SEMESTER</th><th>OCCURRENCES</th><th>BRANCHES</th><th>AFFECTED ENROLLMENTS</th></tr></thead><tbody>{globalFindings.map((item,index)=><tr key={item.code+item.kind+item.semester+index}><td><strong>{item.name}</strong><small>{item.code}</small></td><td><span className={"tester-ultra-finding-kind "+item.kind.toLowerCase()}>{item.kind.replace("_"," ")}</span></td><td>{item.semester}</td><td><strong>{item.occurrences}</strong></td><td>{item.branchNames.join(", ")||"—"}</td><td><small>{item.enrollments.join(", ")}</small></td></tr>)}</tbody></table>{globalFindings.length===0&&<p className="tester-ultra-empty">No new subjects or catalogue mismatches have been discovered in this batch.</p>}</div>}
-          {activeTab==="branches"&&<div className="tester-ultra-branch-panel"><div className="tester-ultra-table-toolbar"><strong>Intra-branch & inter-branch SGPA analysis</strong><span>Based on verified semester results only</span></div>{branchStats.length?branchStats.map(item=><div className="tester-ultra-branch-row" key={item.branch}><div><strong>{item.branch}</strong><small>{item.count} verified semester observations · min {item.min.toFixed(2)} · max {item.max.toFixed(2)}</small></div><div className="tester-ultra-branch-track"><i style={{width:(item.average*10)+"%"}}/></div><b>{item.average.toFixed(2)}</b></div>):<p className="tester-ultra-empty">Branch analytics will appear as verified semester results arrive.</p>}<p className="tester-ultra-branch-note">Intra-branch comparison groups students within the same branch. Inter-branch comparison ranks branch averages for the selected batch. Scheme and semester filters should be applied before interpreting comparisons.</p></div>}
+          {activeTab==="branches"&&<div className="tester-ultra-branch-panel"><div className="tester-ultra-analytics-controls"><label>SEMESTER<select value={analyticsSemester} onChange={event=>setAnalyticsSemester(Number(event.target.value))}>{Array.from({length:8},(_,i)=>i+1).map(value=><option key={value} value={value}>Semester {value}</option>)}</select></label><label>METRIC<select value={analyticsMetric} onChange={event=>setAnalyticsMetric(event.target.value as "sgpa"|"cgpa")}><option value="sgpa">SGPA</option><option value="cgpa">Cumulative CGPA</option></select></label></div><div className="tester-ultra-analytics-summary">{selectedSemesterStats?<><div><small>BATCH AVERAGE</small><strong>{selectedSemesterStats.average.toFixed(2)}</strong></div><div><small>MINIMUM</small><strong>{selectedSemesterStats.min.toFixed(2)}</strong></div><div><small>MAXIMUM</small><strong>{selectedSemesterStats.max.toFixed(2)}</strong></div><div><small>VALID STUDENTS</small><strong>{selectedSemesterStats.count}</strong></div></>:<p className="tester-ultra-empty">No verified {analyticsMetric.toUpperCase()} values for Semester {analyticsSemester} yet.</p>}</div><div className="tester-ultra-table-toolbar"><strong>Inter-branch comparison · {analyticsMetric.toUpperCase()}</strong><span>Branch average, minimum and maximum</span></div>{branchStats.length?branchStats.map(item=><div className="tester-ultra-branch-row" key={item.branch}><div><strong>{item.branch}</strong><small>{item.count} students · min {item.min.toFixed(2)} · max {item.max.toFixed(2)}</small></div><div className="tester-ultra-branch-track"><i style={{width:(item.average*10)+"%"}}/></div><b>{item.average.toFixed(2)}</b></div>):<p className="tester-ultra-empty">Branch analytics will appear as verified semester results arrive.</p>}<p className="tester-ultra-branch-note">Intra-branch analysis compares each student with the average, minimum and maximum for their own branch. Inter-branch analysis compares branch averages for the selected semester and metric. Only verified results are included; missing results are never treated as zero.</p></div>}
         </section>
       </>}
       {notice&&<p className="tester-ultra-notice" role="status">{notice}</p>}
