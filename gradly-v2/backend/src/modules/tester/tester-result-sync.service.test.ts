@@ -176,7 +176,7 @@ test("consolidated NEP parser extracts the official GECA IV result row for BT24F
   ];
   const grades = ["A+", "A", "A+", "A", "A", "B", "A++", "A+", "C+", "A", "A+", "A+"];
   const header = codes.map((code, index) => ({
-    text: code + "\\nSubject title " + (index + 1),
+    text: code + "\nSubject title " + (index + 1),
     x: 200 + index * 70,
     y: 500,
   }));
