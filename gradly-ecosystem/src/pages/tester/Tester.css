@@ -218,3 +218,33 @@
 .tester-ultra-discovery-results textarea{width:100%;resize:vertical;border:1px solid #e3eae5;border-radius:7px;padding:10px;background:#f9fbfa;color:#20372a;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:760px){.tester-ultra-discovery-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.tester-ultra-discovery-heading{flex-direction:column}.tester-ultra-discovery-results>div{flex-direction:column}}
 @media(max-width:420px){.tester-ultra-discovery-fields{grid-template-columns:1fr}}
+
+
+/* Ultra Testing — clearer cohort sorting and a more polished discovery workspace */
+.tester-ultra-discovery{position:relative;overflow:hidden;border:1px solid #d9e7de;background:radial-gradient(ellipse at 92% 0%,rgba(54,151,104,.12),transparent 36%),linear-gradient(145deg,#fbfdfb 0%,#f1f7f3 100%);box-shadow:0 12px 34px rgba(28,72,47,.055)}
+.tester-ultra-discovery:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#2b9b69,#a4d5b7)}
+.tester-ultra-discovery-heading h3{font-size:21px;letter-spacing:-.035em}
+.tester-ultra-discovery-heading p{max-width:700px}
+.tester-ultra-discovery-fields{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.tester-ultra-discovery-fields label{font-size:9px;letter-spacing:.09em}
+.tester-ultra-discovery-fields select,.tester-ultra-discovery-fields input{min-height:42px;border-radius:10px;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.tester-ultra-discovery-fields select:hover,.tester-ultra-discovery-fields input:hover{border-color:#a9cdb7}
+.tester-ultra-discovery-actions button{min-height:42px;border-radius:10px;box-shadow:0 4px 12px rgba(21,66,43,.12);transition:transform .16s ease,box-shadow .16s ease}
+.tester-ultra-discovery-actions button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 7px 18px rgba(21,66,43,.16)}
+.tester-ultra-discovery-cap{border:1px solid #cde7d6;background:rgba(222,244,230,.85)}
+.tester-ultra-sort-summary{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:13px;color:#63756a;font-size:10px}
+.tester-ultra-sort-summary>span{margin-right:4px}
+.tester-ultra-sort-summary b{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid #dce9e0;border-radius:999px;background:rgba(255,255,255,.8);color:#3b5144;font-size:10px}
+.tester-ultra-sort-summary i{display:grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:#e5f2e9;color:#23764e;font-style:normal;font-size:9px}
+.tester-ultra-sort-button{margin-top:9px;padding:0;border:0;background:transparent;color:#26774f;font-size:11px;font-weight:800;cursor:pointer}
+.tester-ultra-sort-button:hover{text-decoration:underline}
+.tester-ultra-sort-button:disabled{opacity:.4;cursor:not-allowed}
+.tester-ultra-discovery-results{border-color:#d8e9dd;box-shadow:0 5px 18px rgba(25,68,44,.04)}
+.tester-ultra-discovery-results textarea{min-height:100px;max-height:240px}
+.tester-ultra-table-toolbar input{min-width:240px}
+.tester-ultra-table tbody tr{transition:background .12s ease}
+.tester-ultra-table tbody tr:hover{background:#f7faf8}
+.tester-ultra-tabs button{transition:background .15s ease,color .15s ease,transform .15s ease}
+.tester-ultra-tabs button:hover{transform:translateY(-1px)}
+@media(max-width:760px){.tester-ultra-discovery-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.tester-ultra-sort-summary{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.tester-ultra-discovery-fields select,.tester-ultra-discovery-fields input,.tester-ultra-discovery-actions button,.tester-ultra-tabs button,.tester-ultra-table tbody tr{transition:none}}
