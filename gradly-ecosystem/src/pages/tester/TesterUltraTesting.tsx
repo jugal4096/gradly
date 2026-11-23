@@ -312,7 +312,7 @@ export default function TesterUltraTesting() {
   // Keep the input cohort ordered by the same fixed enrollment-number positions
   // used by the academic identity decoder: prefix, YY, F/S, branch, fixed F, serial.
   const enrollmentSortParts = (value: string) => {
-    const match = /^(BE|BT|MC|ME|MT)(\\d{2})([FS])(\\d{2})F(\\d{3})$/.exec(value);
+    const match = /^(BE|BT|MC|ME|MT)(\d{2})([FS])(\d{2})F(\d{3})$/.exec(value);
     if (!match) return { scheme: 9, prefix: "ZZ", year: 9999, mode: "Z", branch: "ZZ", serial: 9999 };
     const scheme = match[1] === "BE" || match[1] === "ME" ? 0
       : match[1] === "BT" || match[1] === "MT" ? 1 : 2;
