@@ -76,14 +76,47 @@ export async function listTesterDiscoveredResultSubjects(req: TesterAuthenticate
     const curriculumId = String(req.query.curriculumId || "");
     const codes = String(req.query.codes || "").split(",").map(value => value.toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean).slice(0, 100);
     if (!curriculumId || !codes.length) return res.json({ success: true, data: [] });
-    const curriculum = await queryWithRetry("SELECT id FROM public.curricula WHERE id=$1 LIMIT 1", [curriculumId]);
-    if (!curriculum.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
-    const result = await queryWithRetry(
-      `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
-       FROM public.discovered_result_subjects WHERE curriculum_id=$1 AND course_code=ANY($2::text[])`,
-      [curriculumId, codes],
+    const curriculum = await queryWithRetry(
+      "SELECT id, institution_id FROM public.curricula WHERE id=$1 LIMIT 1",
+      [curriculumId],
     );
-    return res.json({ success: true, data: result.rows, sharedCatalogue: true, testerProfileIsolated: true });
+    if (!curriculum.rows.length) return res.status(404).json({ success: false, message: "Selected curriculum was not found." });
+    const institutionId = curriculum.rows[0].institution_id;
+    // Compare result-PDF subjects against the institution-wide catalogue, not
+    // only discoveries attached to this one curriculum. A subject such as
+    // INMDM1002 may already be known through another GECA programme/curriculum.
+    // Keep the selected curriculum's own rows highest priority, then other
+    // GECA curriculum rows, then the shared discovered registry and canonical
+    // institution subject catalogue.
+    const result = await queryWithRetry(
+      `WITH candidates AS (
+         SELECT cs.course_code AS "courseCode", cs.course_name AS "courseName",
+                cs.credits, 1 AS priority, 'CURRICULUM'::text AS source
+         FROM public.curriculum_subjects cs
+         JOIN public.curricula c ON c.id=cs.curriculum_id
+         WHERE c.institution_id=$1
+           AND regexp_replace(upper(cs.course_code),'[^A-Z0-9]','','g')=ANY($2::text[])
+         UNION ALL
+         SELECT drs.course_code AS "courseCode", drs.course_name AS "courseName",
+                drs.credits, 2 AS priority, 'DISCOVERED'::text AS source
+         FROM public.discovered_result_subjects drs
+         JOIN public.curricula c ON c.id=drs.curriculum_id
+         WHERE c.institution_id=$1
+           AND regexp_replace(upper(drs.course_code),'[^A-Z0-9]','','g')=ANY($2::text[])
+         UNION ALL
+         SELECT s.canonical_code AS "courseCode", s.canonical_name AS "courseName",
+                NULL::numeric AS credits, 3 AS priority, 'SUBJECT'::text AS source
+         FROM public.subjects s
+         WHERE s.institution_id=$1
+           AND regexp_replace(upper(s.canonical_code),'[^A-Z0-9]','','g')=ANY($2::text[])
+       )
+       SELECT DISTINCT ON (regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'))
+              "courseCode", "courseName", credits, source
+       FROM candidates
+       ORDER BY regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'), priority ASC, "courseName" ASC`,
+      [institutionId, codes],
+    );
+    return res.json({ success: true, data: result.rows, sharedCatalogue: true, catalogueScope: "INSTITUTION", testerProfileIsolated: true });
   } catch (error) {
     console.error("Tester discovered subject lookup failed:", error);
     return res.status(500).json({ success: false, message: "Unable to load the shared discovered subject catalogue." });
