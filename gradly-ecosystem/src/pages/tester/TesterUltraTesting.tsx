@@ -165,9 +165,9 @@ export default function TesterUltraTesting() {
                 });
                 const docs = Array.isArray(matchBody.matches) ? matchBody.matches as ResultDocument[] : [];
                 const match = docs.find(document => Number(document.semester) === semester && Array.isArray(document.grades) && document.grades.length > 0);
-                if (match) { found = match; if (semesterError) allErrors.push("Semester " + semester + ": " + semesterError); break; }
                 if (matchBody.scanIncomplete || Number(matchBody.parseFailures || 0) > 0) semesterError = "Result scan diagnostics: " + Number(matchBody.documentsScanned || 0) + " PDFs scanned, " + Number(matchBody.parseFailures || 0) + " parse failures, " + Number(matchBody.downloadFailures || 0) + " download failures.";
                 else if (Number(matchBody.enrollmentHits) > 0) semesterError = "Enrollment was found in a PDF, but its subject grades could not be parsed.";
+                if (match) { found = match; if (semesterError) allErrors.push("Semester " + semester + ": " + semesterError); break; }
               } catch (reason) {
                 const message = reason instanceof Error ? reason.message : "Result fetch failed.";
                 semesterError = message;
