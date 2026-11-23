@@ -954,7 +954,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
     ? semesterDocs.filter(item=>item.academicSection===null || item.academicSection===expectedSection)
     : semesterDocs;
   if (!selectedDocs.length) throw new Error("No official result PDFs match the selected branch and semester.");
-  const pattern = new RegExp("\\b"+programme+String(admissionYear).slice(-2)+admissionMode+branchCode+"F\\d{3}\\b","g");
+  const pattern = new RegExp(programme+String(admissionYear).slice(-2)+admissionMode+branchCode+"F\\d{3}","g");
   const found = new Set<string>();
   const failedDocuments: string[] = [];
   let cursor = 0;
@@ -979,7 +979,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
             return [{text:(raw as {str:string}).str.trim(),x:Number(transform[4]||0),y:Number(transform[5]||0)}];
           });
           for(const line of groupPdfLines(positioned)){
-            const compact=line.text.toUpperCase().replace(/[^A-Z0-9]/g," ");
+            const compact=line.text.toUpperCase().replace(/[^A-Z0-9]/g,"");
             for(const match of compact.matchAll(pattern)){
               const enrollment=match[0];
               if(enrollment.length===11) found.add(enrollment);
