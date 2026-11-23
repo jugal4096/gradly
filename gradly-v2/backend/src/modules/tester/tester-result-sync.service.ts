@@ -557,67 +557,97 @@ export function extractSubjectResultGrades(
   branchTerms: string[],
 ): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
   const normalized = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const headerRows = lines.flatMap(line => {
-    const labels = new Map<string, number>();
-    for (const item of line.items) {
-      const token = normalized(item.text);
-      for (const label of ["REGNO", "CCODE", "COURSENAME", "BRANCH", "GRADE"]) {
-        if (token === label || token.includes(label)) labels.set(label, item.x);
+  const labels = ["REGNO", "CCODE", "COURSENAME", "BRANCH", "GRADE"] as const;
+  type Header = { y: number; labels: Map<string, number> };
+  const headerRows: Header[] = [];
+
+  // PDF.js may place the five column labels on slightly different baselines.
+  // Build a local header cluster instead of requiring every label on one line.
+  for (let index = 0; index < lines.length; index++) {
+    const anchorY = lines[index].items[0]?.y ?? 0;
+    const cluster = lines.filter(candidate =>
+      Math.abs((candidate.items[0]?.y ?? anchorY) - anchorY) <= 16,
+    );
+    const positions = new Map<string, number>();
+    for (const candidate of cluster) {
+      for (const item of candidate.items) {
+        const token = normalized(item.text);
+        for (const label of labels) {
+          if ((token === label || token.includes(label)) && !positions.has(label)) {
+            positions.set(label, item.x);
+          }
+        }
       }
     }
-    return labels.size === 5
-      ? [{ y: line.items[0]?.y ?? 0, labels }]
-      : [];
-  });
-  if (!headerRows.length) return { grades: [], enrollmentFound: false };
+    if (labels.every(label => positions.has(label))) {
+      const key = labels.map(label => Math.round(positions.get(label)!)).join("|");
+      if (!headerRows.some(header => labels.map(label => Math.round(header.labels.get(label)!)).join("|") === key)) {
+        headerRows.push({ y: anchorY, labels: positions });
+      }
+    }
+  }
 
-  const found = lines.some(line => lineContainsEnrollment(line, enrollment));
+  const enrollmentLines = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => lineContainsEnrollment(line, enrollment));
+  if (!enrollmentLines.length) return { grades: [], enrollmentFound: false };
+  if (!headerRows.length) return { grades: [], enrollmentFound: true };
+
   const matches = new Map<string, string>();
-  for (const line of lines) {
-    if (!lineContainsEnrollment(line, enrollment)) continue;
+  for (const { line, index } of enrollmentLines) {
     const rowY = line.items[0]?.y ?? 0;
-    const header = [...headerRows]
-      .sort((a, b) => Math.abs(rowY - a.y) - Math.abs(rowY - b.y))[0];
+    const header = [...headerRows].sort((a, b) =>
+      Math.abs(rowY - a.y) - Math.abs(rowY - b.y),
+    )[0];
     if (!header) continue;
     const regnoX = header.labels.get("REGNO")!;
     const codeX = header.labels.get("CCODE")!;
     const courseNameX = header.labels.get("COURSENAME")!;
     const branchX = header.labels.get("BRANCH")!;
     const gradeX = header.labels.get("GRADE")!;
-    const enrollmentItem = line.items.find(item => normalized(item.text).includes(normalized(enrollment)));
-    const rowItems = line.items.filter(item =>
-      item.x >= (enrollmentItem?.x ?? regnoX) - 2 &&
-      item.x <= gradeX + 120,
+
+    // Course/branch/grade values can be split over adjacent baselines. Keep
+    // this window tightly anchored to the target enrollment row so we never
+    // borrow another student's grade.
+    const rowLines = lines.filter(candidate =>
+      Math.abs((candidate.items[0]?.y ?? rowY) - rowY) <= 9,
     );
-    // GECA's header labels and row values are not always left-aligned.
-    // In some PDFs the branch value starts ~25px before the BRANCH header,
-    // while the course title starts exactly at COURSENAME and would be
-    // accidentally concatenated with CCODE if we use that header as a bound.
-    // Anchor extraction around the CCODE column instead.
-    const branchText = rowItems
-      .filter(item => item.x >= branchX - 40 && item.x < gradeX)
+    const rowItems = rowLines.flatMap(candidate => candidate.items);
+    const enrollmentItem = rowItems.find(item =>
+      normalized(item.text).includes(normalized(enrollment)),
+    );
+    const startX = enrollmentItem?.x ?? regnoX;
+    const localItems = rowItems.filter(item => item.x >= startX - 2 && item.x <= gradeX + 120);
+    const branchText = localItems
+      .filter(item => item.x >= Math.min(branchX, courseNameX) - 20 && item.x < gradeX + 2)
       .map(item => item.text)
       .join(" ")
       .toLowerCase();
     if (!branchTerms.some(term => branchText.includes(term.toLowerCase()))) continue;
 
-    // The code can sit slightly left/right of its header, and the branch
-    // value can overlap the nominal CCODE-to-BRANCH coordinate interval.
-    // Search the complete matched row for a course-code token instead of
-    // concatenating a coordinate slice that may include title/branch text.
-    const compactRowText = normalized(rowItems.map(item => item.text).join(" "));
-    const courseCode = compactRowText.match(/[A-Z]{2,6}\d{4}/)?.[0] ?? "";
+    // Prefer a code near the CCODE column, but tolerate GECA's shifted and
+    // split text items by checking the complete target-row text as fallback.
+    const codeCandidates = localItems
+      .filter(item => Math.abs(item.x - codeX) < 180)
+      .map(item => normalized(item.text).match(/[A-Z]{2,6}\d{4}/)?.[0])
+      .filter((value): value is string => Boolean(value));
+    const courseCode = codeCandidates[0] ||
+      localItems.map(item => normalized(item.text)).join("").match(/[A-Z]{2,6}\d{4}/)?.[0] || "";
     if (!courseCode) continue;
 
-    const grade = rowItems
-      .filter(item => item.x >= gradeX - 2)
+    const gradeCandidates = localItems
+      .filter(item => item.x >= gradeX - 24)
       .flatMap(item => gradeTokensFromItem(item))
-      .find(token => token !== "AB" && token !== "P");
+      .filter(token => token !== "AB" && token !== "P");
+    // A grade is accepted only from the grade column; do not infer it from
+    // names, branch labels, or unrelated tokens in the row.
+    const grade = gradeCandidates[0];
     if (grade) matches.set(courseCode, grade === "-" ? "" : grade);
   }
+
   return {
     grades: Array.from(matches, ([courseCode, grade]) => ({ courseCode, grade })),
-    enrollmentFound: found,
+    enrollmentFound: true,
   };
 }
 
