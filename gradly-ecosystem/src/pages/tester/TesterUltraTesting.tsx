@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, ArrowLeft, BarChart3, BookOpen, CheckCircle2, Download, FileWarning, FlaskConical, Play, RefreshCw, Search, ShieldCheck, Square, Users, XCircle } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play, RefreshCw, Search, ShieldCheck, Square, Users } from "lucide-react";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
@@ -107,7 +107,7 @@ export default function TesterUltraTesting() {
   const visibleRows = rows.filter(row => !filter || row.enrollment.toLowerCase().includes(filter.toLowerCase()) || row.branch.toLowerCase().includes(filter.toLowerCase()));
 
   async function fetchJson(url: string, init: RequestInit = {}) {
-    const response = await fetch(url, { ...init, headers: { ...(init.headers || {}), Authorization: "Bearer " + token } });
+    const headers = new Headers(init.headers);\n    headers.set("Authorization", "Bearer " + token);\n    const response = await fetch(url, { ...init, headers });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.message || "The audit request failed.");
     return body;
@@ -160,7 +160,7 @@ export default function TesterUltraTesting() {
                 });
                 const docs = Array.isArray(matchBody.matches) ? matchBody.matches as ResultDocument[] : [];
                 const match = docs.find(document => Number(document.semester) === semester && Array.isArray(document.grades) && document.grades.length > 0);
-                if (match) { found = match; matchedSession = session.title; break; }
+                if (match) { found = match; break; }
                 if (matchBody.scanIncomplete) semesterError = "Partial scan: " + Number(matchBody.downloadFailures || 0) + " PDF(s) could not be inspected.";
                 else if (Number(matchBody.enrollmentHits) > 0) semesterError = "Enrollment was found in a PDF, but its subject grades could not be parsed.";
               } catch (reason) {
