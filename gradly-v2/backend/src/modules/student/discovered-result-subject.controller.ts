@@ -21,6 +21,13 @@ export async function listDiscoveredResultSubjects(req: AuthenticatedRequest, re
     const curriculumId = String(req.query.curriculumId || "");
     if (curriculumId !== profile.curriculumId) return res.status(403).json({ success: false, message: "The requested curriculum does not match your confirmed academic profile." });
     const codes = String(req.query.codes || "").split(",").map(value => value.toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean).slice(0, 100);
+    // Keep legacy GECA result-PDF codes searchable when the student app has
+    // already canonicalized them to the current curriculum code.
+    const lookupCodes = [...new Set(codes.flatMap(code => ({
+      MEOE0031: ["MEOE0031", "ME4031"],
+      CE3008: ["CE3008", "CEOE1010"],
+      INMC2001: ["INMC2001", "INMC2010"],
+    } as Record<string, string[]>)[code] || [code]))];
     const semesterNumber = Number(req.query.semesterNumber);
     const hasSemester = Number.isInteger(semesterNumber) && semesterNumber >= 1 && semesterNumber <= 12;
     if (!codes.length && !hasSemester) return res.json({ success: true, data: [] });
@@ -74,7 +81,7 @@ export async function listDiscoveredResultSubjects(req: AuthenticatedRequest, re
                   "courseCode", "courseName", credits, "courseCategory", "creditStatus", "semesterNumber"
            FROM candidates
            ORDER BY regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'), priority ASC, "courseName" ASC`,
-          [selectedCurriculum.institution_id, codes, curriculumId, selectedCurriculum.program_id, selectedCurriculum.scheme_id],
+          [selectedCurriculum.institution_id, lookupCodes, curriculumId, selectedCurriculum.program_id, selectedCurriculum.scheme_id],
         )
       : await pool.query(
           `WITH candidates AS (
