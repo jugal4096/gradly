@@ -37,7 +37,8 @@ export default function TesterUltraTesting() {
   const [searchingInstitutions, setSearchingInstitutions] = useState(false);
   const [running, setRunning] = useState(false);
   const [rows, setRows] = useState<StudentAudit[]>([]);
-  const [activeTab, setActiveTab] = useState<"students" | "subjects" | "branches">("students");\n  const [analyticsSemester, setAnalyticsSemester] = useState(1);\n  const [analyticsMetric, setAnalyticsMetric] = useState<"sgpa" | "cgpa">("sgpa");
+  const [activeTab, setActiveTab] = useState<"students" | "subjects" | "branches">("students");
+  const [analyticsSemester, setAnalyticsSemester] = useState(1);\n  const [analyticsMetric, setAnalyticsMetric] = useState<"sgpa" | "cgpa">("sgpa");
   const [filter, setFilter] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -140,7 +141,8 @@ export default function TesterUltraTesting() {
           const previewBody = await fetchJson(API + "/api/tester/enrollment/preview", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ institutionId: institution.id, enrollmentNumber: enrollment }), signal:controller.signal });
           const preview = previewBody.data as Preview;
           if (!preview?.recognized || preview.requiresConfirmation || !preview.curriculumId) throw new Error(preview?.message || "Enrollment could not be confidently resolved to a curriculum.");
-          const entrySemester = Math.max(1, Number(preview.entrySemester || 1));\n          const catalogue = await getCatalogue(preview.curriculumId, entrySemester);
+          const entrySemester = Math.max(1, Number(preview.entrySemester || 1));
+          const catalogue = await getCatalogue(preview.curriculumId, entrySemester);
           const semesterAudits: SemesterAudit[] = [];
           const allFindings: SubjectFinding[] = [];
           const allErrors: string[] = [];
@@ -175,7 +177,8 @@ export default function TesterUltraTesting() {
               const unavailable = semesterError.includes("unavailable only for Semester II");
               const issue = semesterError || "No matching result was found in the selected examination sessions.";
               allErrors.push("Semester " + semester + ": " + issue);
-              cumulativeComplete = false;\n              semesterAudits.push({ semester, sgpa:null, cgpa:null, credits:0, subjects:0, status:unavailable?"MANUAL ONLY":"NOT FOUND", findings:[], error:issue });
+              cumulativeComplete = false;
+              semesterAudits.push({ semester, sgpa:null, cgpa:null, credits:0, subjects:0, status:unavailable?"MANUAL ONLY":"NOT FOUND", findings:[], error:issue });
               continue;
             }
             const findings: SubjectFinding[] = [];
@@ -250,8 +253,7 @@ export default function TesterUltraTesting() {
   },[rows,analyticsSemester,analyticsMetric]);
   const selectedSemesterValues=rows.map(row=>{const sem=row.semesters.find(item=>item.semester===analyticsSemester);return analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;}).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
   const selectedSemesterStats=selectedSemesterValues.length?{average:selectedSemesterValues.reduce((sum,value)=>sum+value,0)/selectedSemesterValues.length,min:Math.min(...selectedSemesterValues),max:Math.max(...selectedSemesterValues),count:selectedSemesterValues.length}:null;
-  const exportFindingsCsv=()=>{const lines=[["Subject","Course code","Finding","Semesters","Occurrences","Branches","Affected enrollments","Source document"]];globalFindings.forEach(item=>lines.push([item.name,item.code,item.kind,item.semesters.join("; "),String(item.occurrences),item.branchNames.join("; "),item.enrollments.join("; "),item.document]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\\r
-")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-subject-findings.csv";anchor.click();URL.revokeObjectURL(url);};
+  const exportFindingsCsv=()=>{const lines=[["Subject","Course code","Finding","Semesters","Occurrences","Branches","Affected enrollments","Source document"]];globalFindings.forEach(item=>lines.push([item.name,item.code,item.kind,item.semesters.join("; "),String(item.occurrences),item.branchNames.join("; "),item.enrollments.join("; "),item.document]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-subject-findings.csv";anchor.click();URL.revokeObjectURL(url);};
   const issueCount = rows.reduce((sum,row)=>sum+row.errors.length+row.findings.length,0);
 
   return <main className="tester-ultra-page">
