@@ -98,6 +98,11 @@ export default function TesterUltraTesting() {
   }, [institutionQuery, institution]);
 
   const enrollmentList = useMemo(() => uniqueEnrollments(enrollmentText), [enrollmentText]);
+  useEffect(() => {
+    const parsed = enrollmentList.map(value => /^(BE|BT)(\\d{2})([FS])(\\d{2})F(\\d{3})$/.exec(value)).filter(Boolean) as RegExpExecArray[];
+    const onlyDse = parsed.length > 0 && parsed.length === enrollmentList.length && parsed.every(match => match[3] === "S");
+    if (onlyDse) setSelectedSemesters(current => current.filter(semester => semester >= 3));
+  }, [enrollmentList]);
   const supportedInstitution = Boolean(institution && /geca|aurangabad|chhatrapati sambhajinagar/i.test(institution.name));
   const duplicateCount = enrollmentText.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean).length - enrollmentList.length;
   const globalFindings = useMemo<GlobalFinding[]>(() => {
@@ -261,7 +266,6 @@ export default function TesterUltraTesting() {
     const yy = String(year).slice(-2);
     const generated = Array.from({length:count},(_,index)=>sampleProgramme+yy+sampleAdmissionMode+sampleBranch+"F"+String(serialStart+index).padStart(3,"0"));
     setGeneratedEnrollments(generated);
-    if (sampleAdmissionMode === "S") setSelectedSemesters(current=>current.filter(semester=>semester>=3));
     setNotice("Generated "+generated.length+" illustrative sample enrollment numbers. These are synthetic test IDs, not proof of real student enrollment.");
   }
 
@@ -365,7 +369,7 @@ export default function TesterUltraTesting() {
               </div>
               <div className="tester-ultra-generator-actions"><button type="button" onClick={generateSampleEnrollments}><WandSparkles size={14}/> Generate sample list</button><span>Max 100 per batch · serials 001–999</span></div>
               {generatorError&&<p className="tester-ultra-error" role="alert">{generatorError}</p>}
-              {generatedEnrollments.length>0&&<div className="tester-ultra-generator-preview"><div><strong>{generatedEnrollments.length} sample IDs ready</strong><button type="button" onClick={importGeneratedEnrollments} disabled={enrollmentList.length+generatedEnrollments.filter(item=>!enrollmentList.includes(item)).length>100}>Import into batch <span>→</span></button></div><textarea readOnly rows={Math.min(5,generatedEnrollments.length)} value={generatedEnrollments.join("\n")}/><small>These IDs follow the selected programme, year, admission mode and branch. They are synthetic and may not exist in GECA's official result archive.</small></div>}
+              {generatedEnrollments.length>0&&<div className="tester-ultra-generator-preview"><div><strong>{generatedEnrollments.length} sample IDs ready</strong><button type="button" onClick={importGeneratedEnrollments} >Import into batch <span>→</span></button></div><textarea readOnly rows={Math.min(5,generatedEnrollments.length)} value={generatedEnrollments.join("\n")}/><small>These IDs follow the selected programme, year, admission mode and branch. They are synthetic and may not exist in GECA's official result archive.</small></div>}
             </div><div className="tester-ultra-sort-summary"><span>Auto-sort follows enrollment identity rules</span>{Object.entries(enrollmentSchemeCounts).map(([label,count])=><b key={label}>{label} <i>{count}</i></b>)}</div><button className="tester-ultra-sort-button" type="button" onClick={()=>setEnrollmentText(sortedEnrollmentList.join("\n"))} disabled={!enrollmentList.length}>Sort enrollment list · New CBCS → NEP → Other</button></div>
         </div>
         {enrollmentList.length>100&&<p className="tester-ultra-error">This batch contains more than 100 unique enrollment numbers. Split it into smaller batches.</p>}
