@@ -9,7 +9,6 @@ const MAX_RESULT_PDFS = 100;
 const NON_RESULT_PDF_PATTERN = /\b(?:policy|directory|stipend)\b/i;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
-const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
 
 export type GecaResultSession = { id: string; title: string; url: string };
 export type GecaMatchedGrade = { courseCode: string; grade: string; courseName?: string };
@@ -588,13 +587,12 @@ export function extractSubjectResultGrades(
   }
 
   const enrollmentLines = lines
-    .map((line, index) => ({ line, index }))
-    .filter(({ line }) => lineContainsEnrollment(line, enrollment));
+    .filter(line => lineContainsEnrollment(line, enrollment));
   if (!enrollmentLines.length) return { grades: [], enrollmentFound: false };
   if (!headerRows.length) return { grades: [], enrollmentFound: true };
 
   const matches = new Map<string, string>();
-  for (const { line, index } of enrollmentLines) {
+  for (const line of enrollmentLines) {
     const rowY = line.items[0]?.y ?? 0;
     const header = [...headerRows].sort((a, b) =>
       Math.abs(rowY - a.y) - Math.abs(rowY - b.y),
@@ -1087,7 +1085,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   const expectedAcademicSections = academicSectionsForEnrollment(enrollment, session.title, selectedSemester);
   const pageHasAcademicSections = unique.some(item => item.academicSection !== null);
   const sectionSelection = selectGecaAcademicDocuments(unique, expectedAcademicSections, pageHasAcademicSections);
-  let eligibleDocuments = sectionSelection.documents.slice(0, MAX_RESULT_PDFS);
+  const eligibleDocuments = sectionSelection.documents.slice(0, MAX_RESULT_PDFS);
   let academicSectionFallbackUsed = sectionSelection.fallbackUsed;
   if (academicSectionFallbackUsed) {
     console.warn(
