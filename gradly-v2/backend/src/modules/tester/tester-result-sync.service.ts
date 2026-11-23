@@ -915,6 +915,90 @@ export function isRestrictedGecaResultFetch(session: Pick<GecaResultSession, "id
   return session.id === "3018" && selectedSemester === 2;
 }
 
+
+export async function discoverGecaEnrollmentCandidates(input: {
+  resultId: string; programme: string; admissionYear: number; admissionMode: "F" | "S";
+  branchCode: string; semester: number; limit?: number;
+}): Promise<{ session: GecaResultSession; enrollments: string[]; documentsScanned: number; scanIncomplete: boolean; failedDocuments: string[] }> {
+  const { resultId, programme, admissionYear, admissionMode, branchCode, semester } = input;
+  const limit = Math.max(1, Math.min(60, Number(input.limit) || 60));
+  if (!/^\d{1,10}$/.test(resultId)) throw new Error("Invalid GECA result session.");
+  if (!/^(BE|BT)$/.test(programme) || !Number.isInteger(admissionYear) || admissionYear < 2000 || admissionYear > 2099 ||
+      !/^[FS]$/.test(admissionMode) || !BRANCH_NAMES[branchCode] || !Number.isInteger(semester) || semester < 1 || semester > 8) {
+    throw new Error("Choose a supported undergraduate programme, admission year, admission type, branch and semester.");
+  }
+  const sessions = await listGecaResultSessions();
+  const session = sessions.find(item => item.id === resultId);
+  if (!session) throw new Error("The selected examination session is no longer available on the GECA portal.");
+  if (isRestrictedGecaResultFetch(session, semester)) {
+    throw new Error("Enrollment discovery is unavailable for Semester II of ESE April–May 2026. Choose another semester.");
+  }
+  const html = await fetchGecaText(session.url);
+  const docs: Array<{title:string;url:string;academicSection:GecaAcademicSection|null;sectionSemester:number|null}> = [];
+  for (const anchor of html.matchAll(/<a\b[^>]*href=["']([^"']+\.pdf(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const url = safeGecaUrl(anchor[1]);
+    if (!url) continue;
+    docs.push({ title: plainText(anchor[2]) || decodeURIComponent(url.split("/").pop() || "Result PDF"), url,
+      academicSection: academicSectionBeforeLink(html.slice(0, anchor.index)), sectionSemester: academicSemesterBeforeLink(html.slice(0, anchor.index)) });
+  }
+  const unique = Array.from(new Map(docs.map(item=>[item.url,item])).values())
+    .filter(item=>!NON_RESULT_PDF_PATTERN.test(item.title+" "+item.url));
+  const branchTerms = BRANCH_NAMES[branchCode] || [];
+  const prefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
+  const branchDocs = selectGecaBranchDocuments(unique, branchTerms, prefixes);
+  const semesterDocs = selectGecaSemesterDocuments(branchDocs, semester);
+  const sessionYear = Number(session.title.match(/\b(20\d{2})\b/)?.[1] || 0);
+  const academicYear = sessionYear - admissionYear + (admissionMode === "S" ? 1 : 0);
+  const expectedSection = (["", "FIRST_YEAR", "SECOND_YEAR", "THIRD_YEAR", "FINAL_YEAR"] as const)[academicYear] || null;
+  const selectedDocs = expectedSection
+    ? semesterDocs.filter(item=>item.academicSection===null || item.academicSection===expectedSection)
+    : semesterDocs;
+  if (!selectedDocs.length) throw new Error("No official result PDFs match the selected branch and semester.");
+  const pattern = new RegExp("\\b"+programme+String(admissionYear).slice(-2)+admissionMode+branchCode+"F\\d{3}\\b","g");
+  const found = new Set<string>();
+  const failedDocuments: string[] = [];
+  let cursor = 0;
+  const workers = Array.from({length:Math.min(2,selectedDocs.length)},async()=>{
+    while(cursor<selectedDocs.length && found.size<limit) {
+      const doc=selectedDocs[cursor++];
+      try {
+        const bytes=await fetchGecaResponse(doc.url,"application/pdf,application/octet-stream,*/*",30000,async response=>{
+          const declared=Number(response.headers.get("content-length")||0);
+          if(declared>MAX_PDF_BYTES) throw new Error("pdf-too-large");
+          const data=new Uint8Array(await response.arrayBuffer());
+          if(!data.length||data.length>MAX_PDF_BYTES) throw new Error("pdf-too-large-or-empty");
+          return data;
+        });
+        const pdf=await getDocument({data:bytes,useSystemFonts:true,disableFontFace:true,verbosity:0,stopAtErrors:false}).promise;
+        for(let pageNo=1;pageNo<=pdf.numPages && found.size<limit;pageNo++){
+          const page=await pdf.getPage(pageNo);
+          const content=await page.getTextContent();
+          const positioned=content.items.flatMap((raw:unknown)=>{
+            if(!raw||typeof raw!=="object"||!("str" in raw)||typeof raw.str!=="string"||!raw.str.trim()||!("transform" in raw)) return [];
+            const transform=(raw as {transform:number[]}).transform;
+            return [{text:(raw as {str:string}).str.trim(),x:Number(transform[4]||0),y:Number(transform[5]||0)}];
+          });
+          for(const line of groupPdfLines(positioned)){
+            const compact=line.text.toUpperCase().replace(/[^A-Z0-9]/g," ");
+            for(const match of compact.matchAll(pattern)){
+              const enrollment=match[0];
+              if(enrollment.length===11) found.add(enrollment);
+              if(found.size>=limit) break;
+            }
+          }
+        }
+        const cleanup=(pdf as unknown as {cleanup?:()=>Promise<void>}).cleanup;
+        if(typeof cleanup==="function") try{await cleanup.call(pdf);}catch{/* ignore cleanup */}
+      } catch(error) {
+        failedDocuments.push(doc.title);
+        console.warn("Unable to inspect GECA enrollment-list PDF:",doc.title,error);
+      }
+    }
+  });
+  await Promise.all(workers);
+  return {session,enrollments:[...found].sort(),documentsScanned:cursor,scanIncomplete:failedDocuments.length>0,failedDocuments};
+}
+
 export async function findGecaEnrollmentResults(resultId: string, enrollmentNumber: string, selectedSemester?: number, reExamTargetCourseCode?: string): Promise<{
   session: GecaResultSession;
   documentsScanned: number;
