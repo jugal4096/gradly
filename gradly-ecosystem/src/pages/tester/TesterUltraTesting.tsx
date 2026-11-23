@@ -99,7 +99,7 @@ export default function TesterUltraTesting() {
 
   const enrollmentList = useMemo(() => uniqueEnrollments(enrollmentText), [enrollmentText]);
   useEffect(() => {
-    const parsed = enrollmentList.map(value => /^(BE|BT)(\\d{2})([FS])(\\d{2})F(\\d{3})$/.exec(value)).filter(Boolean) as RegExpExecArray[];
+    const parsed = enrollmentList.map(value => /^(BE|BT)(\d{2})([FS])(\d{2})F(\d{3})$/.exec(value)).filter(Boolean) as RegExpExecArray[];
     const onlyDse = parsed.length > 0 && parsed.length === enrollmentList.length && parsed.every(match => match[3] === "S");
     if (onlyDse) setSelectedSemesters(current => current.filter(semester => semester >= 3));
   }, [enrollmentList]);
