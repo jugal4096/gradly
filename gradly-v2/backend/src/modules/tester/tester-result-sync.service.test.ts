@@ -165,30 +165,35 @@ test("branch filtering admits generic subject result PDFs for in-PDF validation"
   );
 });
 
-test("consolidated NEP parser extracts course codes embedded with multi-line subject titles", () => {
+test("consolidated NEP parser extracts the official GECA IV result row for BT24F01F001", () => {
+  // Course-code/title cells in GECA's ESE APRIL-MAY 2026 Civil NEP IV PDF
+  // may be emitted as one PDF.js text item with embedded line breaks.
   const enrollment = "BT24F01F001";
-  const lines = [
-    { text: "AMPCC2001 Solid Mechanics CEPCC2001 Surveying CECEP1001 Mini Project", items: [
-      { text: "AMPCC2001\nSolid Mechanics", x: 200, y: 500 },
-      { text: "CEPCC2001\nSurveying", x: 350, y: 500 },
-      { text: "CECEP1001\nMini Project", x: 500, y: 500 },
-    ] },
-    { text: "1 BT24F01F001 A+ B C+", items: [
-      { text: "1", x: 20, y: 480 },
-      { text: enrollment, x: 70, y: 480 },
-      { text: "A+", x: 200, y: 480 },
-      { text: "B", x: 350, y: 480 },
-      { text: "C+", x: 500, y: 480 },
-    ] },
+  const codes = [
+    "AMPCC2003", "AMPCC2004", "CEEEM1020", "CEPCC2005",
+    "CEPCC2006", "CEPCC2007", "CEPCC2008", "CEVSE2001",
+    "ETOEC1020", "INAEC1002", "INMDM2002", "INVEC1001",
   ];
-  assert.deepEqual(extractMatchingGrades(lines, enrollment), {
-    enrollmentFound: true,
-    grades: [
-      { courseCode: "AMPCC2001", grade: "A+" },
-      { courseCode: "CEPCC2001", grade: "B" },
-      { courseCode: "CECEP1001", grade: "C+" },
-    ],
-  });
+  const grades = ["A+", "A", "A+", "A", "A", "B", "A++", "A+", "C+", "A", "A+", "A+"];
+  const header = codes.map((code, index) => ({
+    text: code + "\\nSubject title " + (index + 1),
+    x: 200 + index * 70,
+    y: 500,
+  }));
+  const gradeItems = [
+    { text: "4", x: 20, y: 480 },
+    { text: enrollment, x: 70, y: 480 },
+    ...grades.map((grade, index) => ({ text: grade, x: 200 + index * 70, y: 480 })),
+  ];
+  const parsed = extractMatchingGrades([
+    { text: header.map(item => item.text).join(" "), items: header },
+    { text: "4 " + enrollment + " " + grades.join(" "), items: gradeItems },
+  ], enrollment);
+  assert.equal(parsed.enrollmentFound, true);
+  assert.deepEqual(parsed.grades, codes.map((courseCode, index) => ({
+    courseCode,
+    grade: grades[index],
+  })));
 });
 
 test("individual subject parser imports only the target enrollment row with the expected branch", () => {
