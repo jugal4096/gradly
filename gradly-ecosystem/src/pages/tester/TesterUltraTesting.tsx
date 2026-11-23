@@ -13,7 +13,7 @@ type ResultSession = { id: string; title: string; url: string };
 type CatalogueSubject = { code?: string; name?: string; credits?: number | string; semesterNumber?: number | string; courseType?: string };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number };
 type ResultDocument = { title: string; url: string; semester: number | null; grades: ResultGrade[] };
-type SubjectFinding = { code: string; name: string; grade: string; credits: number | null; kind: "NEW" | "NAME_MISMATCH" | "CREDIT_MISMATCH"; semester: number; document: string };
+type SubjectFinding = { code: string; name: string; grade: string; credits: number | null; kind: "NEW" | "NAME_MISMATCH" | "CREDIT_MISMATCH" | "CODE_MISMATCH"; semester: number; document: string };
 type SemesterAudit = { semester: number; sgpa: number | null; cgpa: number | null; credits: number; subjects: number; status: string; findings: SubjectFinding[]; error?: string };
 type StudentAudit = { enrollment: string; status: "queued" | "processing" | "completed" | "partial" | "failed"; branch: string; scheme: string; admissionMode: string; curriculumId: string; semesters: SemesterAudit[]; errors: string[]; findings: SubjectFinding[]; cgpa: number | null };
 type GlobalFinding = Omit<SubjectFinding, "semester"> & { semesters: number[]; occurrences: number; enrollments: string[]; branchNames: string[] };
@@ -138,7 +138,7 @@ export default function TesterUltraTesting() {
           const previewBody = await fetchJson(API + "/api/tester/enrollment/preview", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ institutionId: institution.id, enrollmentNumber: enrollment }), signal:controller.signal });
           const preview = previewBody.data as Preview;
           if (!preview?.recognized || preview.requiresConfirmation || !preview.curriculumId) throw new Error(preview?.message || "Enrollment could not be confidently resolved to a curriculum.");
-          const catalogue = await getCatalogue(preview.curriculumId);
+          const entrySemester = Math.max(1, Number(preview.entrySemester || 1));\n          const catalogue = await getCatalogue(preview.curriculumId, entrySemester);
           const semesterAudits: SemesterAudit[] = [];
           const allFindings: SubjectFinding[] = [];
           const allErrors: string[] = [];
@@ -199,7 +199,7 @@ export default function TesterUltraTesting() {
             allFindings.push(...findings);
             semesterAudits.push({ semester, sgpa, cgpa, credits, subjects:found.grades.length, status:sgpa===null?"INCOMPLETE":"VERIFIED", findings, error:sgpa===null?"At least one grade or credit could not be mapped confidently. SGPA is withheld rather than estimated.":undefined });
           }
-          const status: StudentAudit["status"] = semesterAudits.every(item=>item.status==="VERIFIED") ? "completed" : semesterAudits.some(item=>item.status==="VERIFIED") ? "partial" : "failed";
+          const status: StudentAudit["status"] = semesterAudits.length>0 && semesterAudits.every(item=>item.status==="VERIFIED") ? "completed" : semesterAudits.some(item=>item.status==="VERIFIED") ? "partial" : "failed";
           setRows(current => current.map((row,i)=>i===index?{...row,status,branch:preview.branch||"Unknown",scheme:preview.scheme||preview.curriculumName||"Unknown",admissionMode:preview.admissionMode||"Unknown",curriculumId:preview.curriculumId||"",semesters:semesterAudits,errors:allErrors,findings:allFindings,cgpa:cumulativeComplete&&cumulativeCredits>0?cumulativeWeighted/cumulativeCredits:null}:row));
         } catch (reason) {
           if (controller.signal.aborted) break;
