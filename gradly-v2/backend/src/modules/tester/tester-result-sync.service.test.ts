@@ -73,11 +73,19 @@ test("semester filtering recognizes GECA filenames ending in IV REGULAR", () => 
   assert.deepEqual(selectGecaSemesterDocuments(documents, 5), [documents[1]]);
 });
 
-test("semester filtering excludes a PDF when its filename and section identify another semester", () => {
+test("explicit PDF semester labels take precedence over stale inherited archive headings", () => {
   const documents = [
     { title: "Civil Engineering II SEM REGULAR", url: "https://geca.ac.in/sem2.pdf", sectionSemester: 4 },
     { title: "Civil Engineering IV SEM REGULAR", url: "https://geca.ac.in/sem4.pdf", sectionSemester: 2 },
     { title: "CEESC1005_RESULT", url: "https://geca.ac.in/unknown.pdf", sectionSemester: null },
+  ];
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[1]]);
+});
+
+test("an explicit semester in a PDF URL takes precedence over its inherited archive heading", () => {
+  const documents = [
+    { title: "IT_RESULT", url: "https://geca.ac.in/Information%20Technology%20IV%20REGULAR.pdf", sectionSemester: 2 },
+    { title: "IT_RESULT", url: "https://geca.ac.in/Information%20Technology%20V%20REGULAR.pdf", sectionSemester: 4 },
   ];
   assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0]]);
 });
