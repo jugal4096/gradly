@@ -1,4 +1,4 @@
 [build]
-  base = "gradly-v2"
+  base = "gradly-ecosystem"
   command = "npm run build"
   publish = "dist"
