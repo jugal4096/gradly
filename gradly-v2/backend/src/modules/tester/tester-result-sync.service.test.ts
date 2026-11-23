@@ -6,6 +6,7 @@ import {
   selectGecaBranchDocuments,
   selectGecaSemesterDocuments,
   extractSubjectResultGrades,
+  extractMatchingGrades,
   isRestrictedGecaResultFetch,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
@@ -162,6 +163,32 @@ test("branch filtering admits generic subject result PDFs for in-PDF validation"
     selectGecaBranchDocuments(documents, ["mechanical"], ["MEESC", "MEPCC", "MEIKS"]),
     documents.slice(0, 2),
   );
+});
+
+test("consolidated NEP parser extracts course codes embedded with multi-line subject titles", () => {
+  const enrollment = "BT24F01F001";
+  const lines = [
+    { text: "AMPCC2001 Solid Mechanics CEPCC2001 Surveying CECEP1001 Mini Project", items: [
+      { text: "AMPCC2001\\nSolid Mechanics", x: 200, y: 500 },
+      { text: "CEPCC2001\\nSurveying", x: 350, y: 500 },
+      { text: "CECEP1001\\nMini Project", x: 500, y: 500 },
+    ] },
+    { text: "1 BT24F01F001 A+ B C+", items: [
+      { text: "1", x: 20, y: 480 },
+      { text: enrollment, x: 70, y: 480 },
+      { text: "A+", x: 200, y: 480 },
+      { text: "B", x: 350, y: 480 },
+      { text: "C+", x: 500, y: 480 },
+    ] },
+  ];
+  assert.deepEqual(extractMatchingGrades(lines, enrollment), {
+    enrollmentFound: true,
+    grades: [
+      { courseCode: "AMPCC2001", grade: "A+" },
+      { courseCode: "CEPCC2001", grade: "B" },
+      { courseCode: "CECEP1001", grade: "C+" },
+    ],
+  });
 });
 
 test("individual subject parser imports only the target enrollment row with the expected branch", () => {
