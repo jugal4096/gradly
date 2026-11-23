@@ -6,7 +6,6 @@ import "./Tester.css";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
 const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0 };
-const BRANCHES = ["Civil", "Mechanical", "Electrical", "ENTC", "CSE", "IT"];
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = { recognized: boolean; requiresConfirmation?: boolean; message?: string; programme?: string; programId?: string; branch?: string; branchId?: string; curriculumId?: string; curriculumName?: string; scheme?: string; admissionYear?: number; admissionMode?: string; entrySemester?: number; totalSemesters?: number };
 type ResultSession = { id: string; title: string; url: string };
@@ -40,6 +39,8 @@ export default function TesterUltraTesting() {
   const [activeTab, setActiveTab] = useState<"students" | "subjects" | "branches">("students");
   const [analyticsSemester, setAnalyticsSemester] = useState(1);
   const [analyticsMetric, setAnalyticsMetric] = useState<"sgpa" | "cgpa">("sgpa");
+  const [analyticsScheme, setAnalyticsScheme] = useState("ALL");
+  const [analyticsAdmission, setAnalyticsAdmission] = useState("ALL");
   const [filter, setFilter] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -91,10 +92,10 @@ export default function TesterUltraTesting() {
   const globalFindings = useMemo<GlobalFinding[]>(() => {
     const grouped = new Map<string, GlobalFinding>();
     rows.forEach(student => student.findings.forEach(item => {
-      const key = [student.curriculumId, normalizeCode(item.code), item.kind, item.semester].join("|");
+      const key = [student.curriculumId, normalizeCode(item.code), item.kind].join("|");
       const existing = grouped.get(key);
-      if (existing) { existing.occurrences++; if (!existing.enrollments.includes(student.enrollment)) existing.enrollments.push(student.enrollment); if (student.branch && !existing.branchNames.includes(student.branch)) existing.branchNames.push(student.branch); }
-      else grouped.set(key, { ...item, occurrences: 1, enrollments: [student.enrollment], branchNames: student.branch ? [student.branch] : [] });
+      if (existing) { existing.occurrences++; if (!existing.semesters.includes(item.semester)) existing.semesters.push(item.semester); if (!existing.enrollments.includes(student.enrollment)) existing.enrollments.push(student.enrollment); if (student.branch && !existing.branchNames.includes(student.branch)) existing.branchNames.push(student.branch); }
+      else { const { semester, ...rest } = item; grouped.set(key, { ...rest, semesters: [semester], occurrences: 1, enrollments: [student.enrollment], branchNames: student.branch ? [student.branch] : [] }); }
     }));
     return [...grouped.values()].map(item=>({...item,semesters:item.semesters.sort((a,b)=>a-b)})).sort((a,b) => b.occurrences - a.occurrences || a.name.localeCompare(b.name));
   }, [rows]);
@@ -128,9 +129,10 @@ export default function TesterUltraTesting() {
     const initial: StudentAudit[] = enrollmentList.map(enrollment => ({ enrollment, status: "queued", branch: "", scheme: "", admissionMode: "", curriculumId: "", semesters: [], errors: [], findings: [], cgpa: null }));
     setRows(initial);
     const catalogueCache = new Map<string, Promise<CatalogueSubject[]>>();
-    const getCatalogue = (curriculumId: string) => {
-      if (!catalogueCache.has(curriculumId)) catalogueCache.set(curriculumId, fetchJson(API + "/api/academic/curricula/" + encodeURIComponent(curriculumId) + "/semesters/1/subjects?includeAllBranches=true&includeAllSemesters=true", { signal: controller.signal }).then(body => Array.isArray(body.data) ? body.data : []));
-      return catalogueCache.get(curriculumId)!;
+    const getCatalogue = (curriculumId: string, entrySemester: number) => {
+      const key = curriculumId + ":" + entrySemester;
+      if (!catalogueCache.has(key)) catalogueCache.set(key, fetchJson(API + "/api/academic/curricula/" + encodeURIComponent(curriculumId) + "/semesters/" + entrySemester + "/subjects?includeAllBranches=true&includeAllSemesters=true", { signal: controller.signal }).then(body => Array.isArray(body.data) ? body.data : []));
+      return catalogueCache.get(key)!;
     };
     let cursor = 0;
     const worker = async () => {
@@ -149,7 +151,12 @@ export default function TesterUltraTesting() {
           const allErrors: string[] = [];
           let cumulativeWeighted = 0;
           let cumulativeCredits = 0;
-          for (const semester of [...selectedSemesters].sort((a,b)=>a-b)) {
+          let cumulativeComplete = true;
+          const applicableSemesters = [...selectedSemesters].filter(value=>value>=entrySemester).sort((a,b)=>a-b);
+          let expectedSemester = entrySemester;
+          for (const semester of applicableSemesters) {
+            if (semester !== expectedSemester) cumulativeComplete = false;
+            expectedSemester = semester + 1;
             if (controller.signal.aborted) break;
             let found: ResultDocument | null = null;
             let matchedSession = "";
@@ -182,26 +189,34 @@ export default function TesterUltraTesting() {
               semesterAudits.push({ semester, sgpa:null, cgpa:null, credits:0, subjects:0, status:unavailable?"MANUAL ONLY":"NOT FOUND", findings:[], error:issue });
               continue;
             }
+            const resultCodes = [...new Set(found.grades.map(row=>normalizeCode(row.courseCode)).filter(Boolean))];
+            const registryBody = await fetchJson(API + "/api/tester/results/discovered-subjects?curriculumId=" + encodeURIComponent(preview.curriculumId) + "&codes=" + encodeURIComponent(resultCodes.join(",")), { signal:controller.signal });
+            const sharedRegistry = Array.isArray(registryBody.data) ? registryBody.data as CatalogueSubject[] : [];
             const findings: SubjectFinding[] = [];
             let weighted = 0, credits = 0, incomplete = false;
             for (const resultRow of found.grades) {
               const code = normalizeCode(resultRow.courseCode);
               if (!code) continue;
-              const catalogueRow = catalogue.find(item=>normalizeCode(item.code)===code);
+              const curriculumCodeRow = catalogue.find(item=>normalizeCode(item.code)===code);
+              const sharedCodeRow = sharedRegistry.find(item=>normalizeCode(item.code)===code);
+              const nameMatchedRow = !curriculumCodeRow && !sharedCodeRow && resultRow.courseName ? catalogue.find(item=>normalizeName(item.name)===normalizeName(resultRow.courseName)) : undefined;
+              const catalogueRow = curriculumCodeRow || sharedCodeRow || nameMatchedRow;
               const rowCredits = Number(resultRow.credits ?? catalogueRow?.credits ?? 0);
               const grade = String(resultRow.grade || "").trim().toUpperCase();
               if (!catalogueRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || resultRow.courseCode, grade, credits:rowCredits>0?rowCredits:null, kind:"NEW", semester, document:found.title });
               else {
-                if (resultRow.courseName && catalogueRow.name && normalizeName(resultRow.courseName)!==normalizeName(catalogueRow.name)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName, grade, credits:rowCredits>0?rowCredits:null, kind:"NAME_MISMATCH", semester, document:found.title });
+                if (nameMatchedRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || String(nameMatchedRow.name || resultRow.courseCode), grade, credits:rowCredits>0?rowCredits:null, kind:"CODE_MISMATCH", semester, document:found.title });
+                if ((curriculumCodeRow || sharedCodeRow) && resultRow.courseName && catalogueRow.name && normalizeName(resultRow.courseName)!==normalizeName(catalogueRow.name)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName, grade, credits:rowCredits>0?rowCredits:null, kind:"NAME_MISMATCH", semester, document:found.title });
                 if (Number.isFinite(Number(resultRow.credits)) && Number(resultRow.credits)>0 && Number(catalogueRow.credits)>0 && Number(resultRow.credits)!==Number(catalogueRow.credits)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || catalogueRow.name || resultRow.courseCode, grade, credits:rowCredits, kind:"CREDIT_MISMATCH", semester, document:found.title });
+                if (curriculumCodeRow && sharedCodeRow && Number(curriculumCodeRow.credits)>0 && Number(sharedCodeRow.credits)>0 && Number(curriculumCodeRow.credits)!==Number(sharedCodeRow.credits)) findings.push({ code:resultRow.courseCode, name:String(curriculumCodeRow.name || resultRow.courseName || resultRow.courseCode), grade, credits:Number(sharedCodeRow.credits), kind:"CREDIT_MISMATCH", semester, document:found.title });
               }
               const points = GRADE_POINTS[grade];
               if (!rowCredits || !Number.isFinite(rowCredits) || rowCredits<=0 || points===undefined) { incomplete=true; continue; }
               credits += rowCredits; weighted += rowCredits*points;
             }
             const sgpa = !incomplete && credits>0 ? weighted/credits : null;
-            if (sgpa!==null) { cumulativeWeighted+=weighted; cumulativeCredits+=credits; }
-            const cgpa = cumulativeCredits>0 ? cumulativeWeighted/cumulativeCredits : null;
+            if (sgpa!==null) { cumulativeWeighted+=weighted; cumulativeCredits+=credits; } else cumulativeComplete=false;
+            const cgpa = cumulativeComplete && cumulativeCredits>0 ? cumulativeWeighted/cumulativeCredits : null;
             allFindings.push(...findings);
             semesterAudits.push({ semester, sgpa, cgpa, credits, subjects:found.grades.length, status:sgpa===null?"INCOMPLETE":"VERIFIED", findings, error:sgpa===null?"At least one grade or credit could not be mapped confidently. SGPA is withheld rather than estimated.":undefined });
           }
@@ -240,9 +255,11 @@ export default function TesterUltraTesting() {
     const anchor = document.createElement("a"); anchor.href=url; anchor.download="gradly-ultra-audit.csv"; anchor.click(); URL.revokeObjectURL(url);
   }
 
+  const schemeOptions=[...new Set(rows.map(row=>row.scheme).filter(Boolean))].sort();
+  const analyticsRows=rows.filter(row=>(analyticsScheme==="ALL"||row.scheme===analyticsScheme)&&(analyticsAdmission==="ALL"||(analyticsAdmission==="DSE"?/direct|dse/i.test(row.admissionMode):!/direct|dse/i.test(row.admissionMode))));
   const branchStats = useMemo(() => {
     const groups = new Map<string, { count:number; sum:number; min:number; max:number }>();
-    rows.forEach(row=>{
+    analyticsRows.forEach(row=>{
       const sem=row.semesters.find(item=>item.semester===analyticsSemester);
       const value=analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;
       if(value===null||value===undefined||!Number.isFinite(value)) return;
@@ -251,8 +268,8 @@ export default function TesterUltraTesting() {
       groups.set(row.branch,current);
     });
     return [...groups.entries()].map(([branch,value])=>({branch,...value,average:value.sum/value.count})).sort((a,b)=>b.average-a.average);
-  },[rows,analyticsSemester,analyticsMetric]);
-  const selectedSemesterValues=rows.map(row=>{const sem=row.semesters.find(item=>item.semester===analyticsSemester);return analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;}).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
+  },[analyticsRows,analyticsSemester,analyticsMetric]);
+  const selectedSemesterValues=analyticsRows.map(row=>{const sem=row.semesters.find(item=>item.semester===analyticsSemester);return analyticsMetric==="sgpa"?sem?.sgpa:sem?.cgpa;}).filter((value):value is number=>value!==null&&value!==undefined&&Number.isFinite(value));
   const selectedSemesterStats=selectedSemesterValues.length?{average:selectedSemesterValues.reduce((sum,value)=>sum+value,0)/selectedSemesterValues.length,min:Math.min(...selectedSemesterValues),max:Math.max(...selectedSemesterValues),count:selectedSemesterValues.length}:null;
   const exportFindingsCsv=()=>{const lines=[["Subject","Course code","Finding","Semesters","Occurrences","Branches","Affected enrollments","Source document"]];globalFindings.forEach(item=>lines.push([item.name,item.code,item.kind,item.semesters.join("; "),String(item.occurrences),item.branchNames.join("; "),item.enrollments.join("; "),item.document]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-subject-findings.csv";anchor.click();URL.revokeObjectURL(url);};
   const issueCount = rows.reduce((sum,row)=>sum+row.errors.length+row.findings.length,0);
