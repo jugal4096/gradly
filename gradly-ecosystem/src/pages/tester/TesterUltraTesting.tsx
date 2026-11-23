@@ -30,21 +30,10 @@ export default function TesterUltraTesting() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [enrollmentText, setEnrollmentText] = useState("");
-  const [discoverySessionId, setDiscoverySessionId] = useState("");
-  const [discoveryProgramme, setDiscoveryProgramme] = useState("BT");
-  const [discoveryAdmissionYear, setDiscoveryAdmissionYear] = useState("2025");
-  const [discoveryAdmissionMode, setDiscoveryAdmissionMode] = useState("S");
-  const [discoveryBranchCode, setDiscoveryBranchCode] = useState("01");
-  const [discoverySemester, setDiscoverySemester] = useState("4");
-  const [discoveryLimit, setDiscoveryLimit] = useState("60");
-  const [candidateEnrollments, setCandidateEnrollments] = useState<string[]>([]);
-  const [candidateBusy, setCandidateBusy] = useState(false);
-  const [candidateMessage, setCandidateMessage] = useState("");
-  const [candidateError, setCandidateError] = useState("");
 
   const [sessions, setSessions] = useState<ResultSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
-  const [selectedSemesters, setSelectedSemesters] = useState<number[]>([1,2,3,4,5,6,7,8]);
+  const [selectedSemesters, setSelectedSemesters] = useState<number[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [searchingInstitutions, setSearchingInstitutions] = useState(false);
   const [running, setRunning] = useState(false);
@@ -125,47 +114,6 @@ export default function TesterUltraTesting() {
     return body;
   }
 
-
-  async function discoverEnrollments() {
-    if (!discoverySessionId || !token) {
-      setCandidateError("Wait for the tester session and select an examination session first.");
-      return;
-    }
-    setCandidateBusy(true); setCandidateError(""); setCandidateMessage(""); setCandidateEnrollments([]);
-    try {
-      const body = await fetchJson(API + "/api/tester/results/enrollment-candidates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resultId: discoverySessionId,
-          programme: discoveryProgramme,
-          admissionYear: Number(discoveryAdmissionYear),
-          admissionMode: discoveryAdmissionMode,
-          branchCode: discoveryBranchCode,
-          semester: Number(discoverySemester),
-          limit: Math.min(60, Math.max(1, Number(discoveryLimit) || 60)),
-        }),
-      });
-      const found = Array.isArray(body.enrollments) ? body.enrollments as string[] : [];
-      setCandidateEnrollments(found);
-      setCandidateMessage(found.length
-        ? "Found " + found.length + " matching enrollment number(s) in " + Number(body.documentsScanned || 0) + " official result PDF(s)." + (body.scanIncomplete ? " Some PDFs could not be inspected; this is a partial discovery." : "")
-        : "No matching enrollment numbers were found in the scanned official result PDFs.");
-    } catch (reason) {
-      setCandidateError(reason instanceof Error ? reason.message : "Enrollment discovery failed.");
-    } finally { setCandidateBusy(false); }
-  }
-  function addDiscoveredEnrollments() {
-    if (!candidateEnrollments.length) return;
-    const merged = uniqueEnrollments([enrollmentText, ...candidateEnrollments].join("\n"));
-    if (merged.length > 100) {
-      setCandidateError("Adding these records would exceed Ultra Testing's 100-enrollment batch limit. Increase the batch in smaller groups.");
-      return;
-    }
-    setEnrollmentText(merged.join("\n"));
-    setCandidateMessage(candidateEnrollments.length + " official enrollment number(s) added to the batch.");
-    setCandidateError("");
-  }
 
   async function runAudit() {
     if (!institution || !supportedInstitution || !token || !enrollmentList.length || enrollmentList.length > 100 || !selectedSessions.length || !selectedSemesters.length) {
@@ -369,22 +317,6 @@ export default function TesterUltraTesting() {
       <section className="tester-ultra-setup">
         <div className="tester-ultra-section-heading"><div><span>01 · CONFIGURE YOUR BATCH</span><h2>Start with your student list</h2></div><span className="tester-ultra-limit">MAX 100 UNIQUE ENROLLMENTS</span></div>
 
-        <div className="tester-ultra-discovery">
-          <div className="tester-ultra-discovery-heading"><div><span>ENROLLMENT DISCOVERY</span><h3>Find students from official result records</h3><p>Scans the selected GECA examination PDFs and extracts only enrollment numbers that actually appear in them. No serial numbers are fabricated.</p></div><span className="tester-ultra-discovery-cap">MAX 60 FOUND</span></div>
-          <div className="tester-ultra-discovery-fields">
-            <label>EXAM SESSION<select value={discoverySessionId} onChange={event=>setDiscoverySessionId(event.target.value)} disabled={loadingSessions||sessions.length===0}><option value="">{loadingSessions?"Loading examination sessions…":sessions.length?"Choose an exam session":"No sessions available"}</option>{sessions.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select><small>{loadingSessions?"Fetching the official GECA session list…":sessions.length?`${sessions.length} official sessions available`:"Use Refresh sessions to try loading the archive again."}</small></label>
-            <label>PROGRAMME<select value={discoveryProgramme} onChange={event=>setDiscoveryProgramme(event.target.value)}><option value="BT">B.Tech · NEP</option><option value="BE">B.E. · New CBCS (legacy eligibility)</option></select></label>
-            <label>ADMISSION YEAR<input type="number" min="2000" max="2099" value={discoveryAdmissionYear} onChange={event=>setDiscoveryAdmissionYear(event.target.value)}/></label>
-            <label>ADMISSION TYPE<select value={discoveryAdmissionMode} onChange={event=>setDiscoveryAdmissionMode(event.target.value)}><option value="F">Regular</option><option value="S">DSE</option></select></label>
-            <label>BRANCH<select value={discoveryBranchCode} onChange={event=>setDiscoveryBranchCode(event.target.value)}><option value="01">Civil Engineering · 01</option><option value="02">Mechanical Engineering · 02</option><option value="03">Electrical Engineering · 03</option><option value="04">Electronics & Telecommunication · 04</option><option value="05">Computer Science & Engineering · 05</option><option value="06">Information Technology · 06</option></select></label>
-            <label>SEMESTER<select value={discoverySemester} onChange={event=>setDiscoverySemester(event.target.value)}>{Array.from({length:8},(_,i)=>i+1).map(value=><option key={value} value={value}>Semester {value}</option>)}</select></label>
-            <label>MAXIMUM RESULTS<input type="number" min="1" max="60" step="1" value={discoveryLimit} onChange={event=>setDiscoveryLimit(event.target.value)} onBlur={()=>setDiscoveryLimit(value=>{if(value.trim()==="")return "60";const parsed=Number(value);return String(Math.min(60,Math.max(1,Number.isFinite(parsed)?Math.trunc(parsed):60)));})}/><small>Enter any number from 1 to 60. You can clear and replace the value while editing.</small></label>
-          </div>
-          <div className="tester-ultra-discovery-actions"><button type="button" onClick={()=>void discoverEnrollments()} disabled={candidateBusy||!token||!sessions.length||!discoverySessionId}><Search size={15}/>{candidateBusy?"Scanning official PDFs…":"Discover eligible enrollments"}</button>{candidateEnrollments.length>0&&<button type="button" onClick={addDiscoveredEnrollments}><Users size={15}/> Add {candidateEnrollments.length} to batch</button>}</div>
-          {candidateError&&<p className="tester-ultra-error" role="alert">{candidateError}</p>}
-          {candidateMessage&&<p className="tester-ultra-discovery-message" role="status">{candidateMessage}</p>}
-          {candidateEnrollments.length>0&&<div className="tester-ultra-discovery-results"><div><strong>{candidateEnrollments.length} verified enrollment tokens found</strong><span>Source: {sessions.find(item=>item.id===discoverySessionId)?.title || "Selected GECA session"}</span></div><textarea readOnly rows={Math.min(8,candidateEnrollments.length)} value={candidateEnrollments.join("\n")}/></div>}
-        </div>
         <div className="tester-ultra-setup-grid">
           <div className="tester-ultra-field"><label htmlFor="ultra-institution">INSTITUTION / UNIVERSITY</label><div className="tester-ultra-search"><Search size={16}/><input id="ultra-institution" value={institutionQuery} onChange={event=>{setInstitutionQuery(event.target.value);setInstitution(null);}} placeholder="Search institution…"/></div>{searchingInstitutions&&<small>Searching institutions…</small>}{!institution&&institutions.length>0&&<div className="tester-ultra-institution-results">{institutions.slice(0,8).map(item=><button type="button" key={item.id} onClick={()=>{setInstitution(item);setInstitutionQuery(item.name);setInstitutions([]);}}>{item.name}</button>)}</div>}{institution&&<div className="tester-ultra-selected-institution"><span>{institution.name}</span><button type="button" onClick={()=>{setInstitution(null);setInstitutionQuery("");}}>Change</button></div>}{institution&&!supportedInstitution&&<small className="tester-ultra-inline-warning">Official result-PDF auditing is currently connected to GECA only. Choose Government College of Engineering, Chhatrapati Sambhajinagar to run this batch.</small>}{institution&&supportedInstitution&&<small className="tester-ultra-muted">GECA official result archive connected · read-only scanning</small>}</div>
           <div className="tester-ultra-field"><label htmlFor="ultra-enrollments">ENROLLMENT NUMBERS · ONE PER LINE</label><textarea id="ultra-enrollments" value={enrollmentText} onChange={(event:ChangeEvent<HTMLTextAreaElement>)=>setEnrollmentText(event.target.value)} placeholder={"BT23F001001\nBT23F001002\nBT23F001003"} rows={6}/><div className="tester-ultra-input-footer"><span>{enrollmentList.length} / 100 unique enrollments</span><span>{duplicateCount>0?duplicateCount+" duplicates will be removed automatically":"Duplicates are automatically removed"}</span></div><div className="tester-ultra-sort-summary"><span>Auto-sort follows enrollment identity rules</span>{Object.entries(enrollmentSchemeCounts).map(([label,count])=><b key={label}>{label} <i>{count}</i></b>)}</div><button className="tester-ultra-sort-button" type="button" onClick={()=>setEnrollmentText(sortedEnrollmentList.join("\\n"))} disabled={!enrollmentList.length}>Sort enrollment list · New CBCS → NEP → Other</button></div>
