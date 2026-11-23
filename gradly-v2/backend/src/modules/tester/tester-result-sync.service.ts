@@ -876,7 +876,11 @@ export function academicSectionsForEnrollment(enrollment: string, sessionTitle: 
  * hard exclusion: a portal markup change must not hide an exact enrollment
  * match in a first-year result PDF.
  */
-export function selectGecaAcademicDocuments<T extends { academicSection: GecaAcademicSection | null }>(
+export function selectGecaAcademicDocuments<T extends {
+  academicSection: GecaAcademicSection | null;
+  title?: string;
+  url?: string;
+}>(
   documents: T[],
   expectedSections: GecaAcademicSection[],
   pageHasAcademicSections: boolean,
@@ -884,12 +888,17 @@ export function selectGecaAcademicDocuments<T extends { academicSection: GecaAca
   if (!pageHasAcademicSections || !expectedSections.length) {
     return { documents, fallbackUsed: false };
   }
-  // Keep unlabelled subject-level links in the candidate set. Their semester
-  // is checked independently below; dropping them here can hide valid backlog
-  // PDFs when GECA omits the academic-year label on individual links.
-  const matching = documents.filter(document =>
-    document.academicSection === null || expectedSections.includes(document.academicSection),
-  );
+  // Explicit semester labels on individual PDFs are stronger than a possibly
+  // stale enclosing academic-year heading. Keep those links for the independent
+  // semester filter below; unlabelled links still use the expected year section.
+  const matching = documents.filter(document => {
+    const explicitSemester = romanSemester(
+      String(document.title || "") + " " + String(document.url || "").replace(/%20/gi, " "),
+    );
+    return document.academicSection === null ||
+      expectedSections.includes(document.academicSection) ||
+      explicitSemester !== null;
+  });
   return matching.length
     ? { documents: matching, fallbackUsed: false }
     : { documents, fallbackUsed: true };
