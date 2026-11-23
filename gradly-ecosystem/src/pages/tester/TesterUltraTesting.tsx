@@ -4,7 +4,7 @@ import { ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play, RefreshCw
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
-const API = API_BASE_URL.replace(/\\/+$/, "");
+const API = API_BASE_URL.replace(/\/+$/, "");
 const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0 };
 const BRANCHES = ["Civil", "Mechanical", "Electrical", "ENTC", "CSE", "IT"];
 type Institution = { id: string; name: string; branches?: unknown[] };
@@ -19,7 +19,7 @@ type StudentAudit = { enrollment: string; status: "queued" | "processing" | "com
 type GlobalFinding = Omit<SubjectFinding, "semester"> & { semesters: number[]; occurrences: number; enrollments: string[]; branchNames: string[] };
 const normalizeCode = (value: unknown) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 const normalizeName = (value: unknown) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
+const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
 
 export default function TesterUltraTesting() {
@@ -87,7 +87,7 @@ export default function TesterUltraTesting() {
   }, [institutionQuery, institution]);
 
   const enrollmentList = useMemo(() => uniqueEnrollments(enrollmentText), [enrollmentText]);
-  const duplicateCount = enrollmentText.split(/[\\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean).length - enrollmentList.length;
+  const duplicateCount = enrollmentText.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean).length - enrollmentList.length;
   const globalFindings = useMemo<GlobalFinding[]>(() => {
     const grouped = new Map<string, GlobalFinding>();
     rows.forEach(student => student.findings.forEach(item => {
