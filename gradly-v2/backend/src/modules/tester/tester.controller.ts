@@ -4,7 +4,7 @@ import { pool, queryWithRetry } from "../../config/database";
 import { createTesterToken } from "../../config/jwt";
 import { previewEnrollment } from "../academic/enrollment-intelligence.service";
 import { TesterAuthenticatedRequest } from "./tester-auth.middleware";
-import { findGecaEnrollmentResults, listGecaResultSessions } from "./tester-result-sync.service";
+import { discoverGecaEnrollmentCandidates, findGecaEnrollmentResults, listGecaResultSessions } from "./tester-result-sync.service";
 
 export async function loginTester(req: Request, res: Response) {
   const { loginId, password } = req.body ?? {};
@@ -146,6 +146,28 @@ export async function listTesterGecaResultSessions(req: TesterAuthenticatedReque
   } catch (error) {
     console.error("Tester GECA result archive lookup failed:", error);
     return res.status(502).json({ success: false, message: error instanceof Error ? error.message : "Unable to load GECA examination sessions." });
+  }
+}
+
+
+/** Discover real enrollment numbers from selected GECA result PDFs; no serials are fabricated. */
+export async function discoverTesterEnrollmentCandidates(req: TesterAuthenticatedRequest, res: Response) {
+  try {
+    if (!(await requireActiveTester(req, res))) return;
+    const resultId=String(req.body?.resultId||"");
+    const programme=String(req.body?.programme||"").toUpperCase();
+    const admissionYear=Number(req.body?.admissionYear);
+    const admissionMode=String(req.body?.admissionMode||"").toUpperCase();
+    const branchCode=String(req.body?.branchCode||"");
+    const semester=Number(req.body?.semester);
+    const limit=Math.min(60,Math.max(1,Number(req.body?.limit)||60));
+    const result=await discoverGecaEnrollmentCandidates({resultId,programme,admissionYear,admissionMode:admissionMode as "F"|"S",branchCode,semester,limit});
+    return res.status(200).json({success:true,...result,readOnly:true,isolated:true,source:"GECA_OFFICIAL_RESULT_PDFS"});
+  } catch(error) {
+    const message=error instanceof Error?error.message:"Unable to discover eligible enrollment numbers.";
+    const status=/Invalid GECA result session|Choose a supported|selected examination session/i.test(message)?400:502;
+    console.error("Tester enrollment candidate discovery failed:",error);
+    return res.status(status).json({success:false,message});
   }
 }
 
