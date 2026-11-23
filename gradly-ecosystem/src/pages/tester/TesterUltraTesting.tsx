@@ -348,11 +348,10 @@ export default function TesterUltraTesting() {
   const studentScoreRows=selectedSemesterRows.map(({row,sem})=>({enrollment:row.enrollment,branch:row.branch,scheme:row.scheme,admissionMode:row.admissionMode,sgpa:sem?.sgpa??null,cgpa:sem?.cgpa??null,credits:sem?.credits??0,subjects:sem?.subjects??0,status:sem?.status??"NOT AUDITED",issue:sem?.error||row.errors.find(detail=>detail.includes("Semester "+analyticsSemester))||""})).sort((a,b)=>(b.sgpa??-1)-(a.sgpa??-1)||a.enrollment.localeCompare(b.enrollment));
   const exportAnalyticsCsv=()=>{const lines=[["Enrollment","Branch","Scheme","Admission type","Semester","SGPA","CGPA","Credits","Subjects","Status","Issue"]];studentScoreRows.forEach(item=>lines.push([item.enrollment,item.branch,item.scheme,item.admissionMode,String(analyticsSemester),item.sgpa===null?"":item.sgpa.toFixed(3),item.cgpa===null?"":item.cgpa.toFixed(3),String(item.credits),String(item.subjects),item.status,item.issue]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-student-analytics-semester-"+analyticsSemester+".csv";anchor.click();URL.revokeObjectURL(url);};
   const exportFindingsCsv=()=>{const lines=[["Subject","Course code","Finding","Semesters","Occurrences","Branches","Affected enrollments","Source document"]];globalFindings.forEach(item=>lines.push([item.name,item.code,item.kind,item.semesters.join("; "),String(item.occurrences),item.branchNames.join("; "),item.enrollments.join("; "),item.document]));const blob=new Blob([lines.map(line=>line.map(csvCell).join(",")).join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="gradly-ultra-subject-findings.csv";anchor.click();URL.revokeObjectURL(url);};
-  const issueCount = rows.reduce((sum,row)=>sum+row.errors.length+row.findings.length+row.semesters.filter(sem=>Boolean(sem.error)).length,0);
   const issueMap=new Map<string,{enrollment:string;branch:string;semester:string;severity:string;detail:string}>();
   rows.forEach(student=>{
     student.errors.forEach(raw=>{
-      const match=raw.match(/^Semester\s+(\\d+)\s*:\s*(.*)$/i);
+      const match=raw.match(/^Semester\s+(\d+)\s*:\s*(.*)$/i);
       const semester=match?.[1]||"—";
       const detail=match?.[2]||raw;
       const severity=/failed|incomplete|parse|could not/i.test(detail)?"HIGH":"MEDIUM";
@@ -366,6 +365,7 @@ export default function TesterUltraTesting() {
     });
   });
   const issueRows=[...issueMap.values()];
+  const issueCount = issueRows.length + rows.reduce((sum,row)=>sum+row.findings.length,0);
 
   return <main className="tester-ultra-page">
     <header className="tester-ultra-header"><button type="button" onClick={()=>navigate("/tester/mode")}><ArrowLeft size={17}/> Testing modes</button><div className="tester-ultra-brand"><span>G</span><div>GRADLY <small>ULTRA TESTING</small></div></div><div className="tester-ultra-user"><span><i/> {testerId}</span><button type="button" onClick={()=>{localStorage.removeItem("gradly_tester_access_token");sessionStorage.removeItem("gradly_tester_access_token");navigate("/tester/login");}}>Sign out</button></div></header>
