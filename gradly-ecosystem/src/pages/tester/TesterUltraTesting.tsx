@@ -9,7 +9,7 @@ const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = { recognized: boolean; requiresConfirmation?: boolean; message?: string; programme?: string; programId?: string; branch?: string; branchId?: string; curriculumId?: string; curriculumName?: string; scheme?: string; admissionYear?: number; admissionMode?: string; entrySemester?: number; totalSemesters?: number };
 type ResultSession = { id: string; title: string; url: string };
-type CatalogueSubject = { code?: string; name?: string; credits?: number | string; semesterNumber?: number | string; courseType?: string };
+type CatalogueSubject = { code?: string; name?: string; courseCode?: string; courseName?: string; credits?: number | string; semesterNumber?: number | string; courseType?: string };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number };
 type ResultDocument = { title: string; url: string; semester: number | null; grades: ResultGrade[] };
 type SubjectFinding = { code: string; name: string; grade: string; credits: number | null; kind: "NEW" | "NAME_MISMATCH" | "CREDIT_MISMATCH" | "CODE_MISMATCH"; semester: number; document: string };
@@ -164,8 +164,8 @@ export default function TesterUltraTesting() {
                 });
                 const docs = Array.isArray(matchBody.matches) ? matchBody.matches as ResultDocument[] : [];
                 const match = docs.find(document => Number(document.semester) === semester && Array.isArray(document.grades) && document.grades.length > 0);
-                if (match) { found = match; break; }
-                if (matchBody.scanIncomplete) semesterError = "Partial scan: " + Number(matchBody.downloadFailures || 0) + " PDF(s) could not be inspected.";
+                if (match) { found = match; if (semesterError) allErrors.push("Semester " + semester + ": " + semesterError); break; }
+                if (matchBody.scanIncomplete || Number(matchBody.parseFailures || 0) > 0) semesterError = "Result scan diagnostics: " + Number(matchBody.documentsScanned || 0) + " PDFs scanned, " + Number(matchBody.parseFailures || 0) + " parse failures, " + Number(matchBody.downloadFailures || 0) + " download failures.";
                 else if (Number(matchBody.enrollmentHits) > 0) semesterError = "Enrollment was found in a PDF, but its subject grades could not be parsed.";
               } catch (reason) {
                 const message = reason instanceof Error ? reason.message : "Result fetch failed.";
@@ -182,15 +182,21 @@ export default function TesterUltraTesting() {
               continue;
             }
             const resultCodes = [...new Set(found.grades.map(row=>normalizeCode(row.courseCode)).filter(Boolean))];
-            const registryBody = await fetchJson(API + "/api/tester/results/discovered-subjects?curriculumId=" + encodeURIComponent(preview.curriculumId) + "&codes=" + encodeURIComponent(resultCodes.join(",")), { signal:controller.signal });
-            const sharedRegistry = Array.isArray(registryBody.data) ? registryBody.data as CatalogueSubject[] : [];
+            let sharedRegistry: CatalogueSubject[] = [];
+            try {
+              const registryBody = await fetchJson(API + "/api/tester/results/discovered-subjects?curriculumId=" + encodeURIComponent(preview.curriculumId) + "&codes=" + encodeURIComponent(resultCodes.join(",")), { signal:controller.signal });
+              sharedRegistry = Array.isArray(registryBody.data) ? registryBody.data as CatalogueSubject[] : [];
+            } catch (reason) {
+              if (controller.signal.aborted) throw reason;
+              allErrors.push("Semester " + semester + ": central discovered-subject catalogue could not be checked; curriculum-only comparison was used.");
+            }
             const findings: SubjectFinding[] = [];
             let weighted = 0, credits = 0, incomplete = false;
             for (const resultRow of found.grades) {
               const code = normalizeCode(resultRow.courseCode);
               if (!code) continue;
               const curriculumCodeRow = catalogue.find(item=>normalizeCode(item.code)===code);
-              const sharedCodeRow = sharedRegistry.find(item=>normalizeCode(item.code)===code);
+              const sharedCodeRow = sharedRegistry.find(item=>normalizeCode(item.code ?? item.courseCode)===code);
               const nameMatchedRow = !curriculumCodeRow && !sharedCodeRow && resultRow.courseName ? catalogue.find(item=>normalizeName(item.name)===normalizeName(resultRow.courseName)) : undefined;
               const catalogueRow = curriculumCodeRow || sharedCodeRow || nameMatchedRow;
               const rowCredits = Number(resultRow.credits ?? catalogueRow?.credits ?? 0);
@@ -198,8 +204,8 @@ export default function TesterUltraTesting() {
               if (!catalogueRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || resultRow.courseCode, grade, credits:rowCredits>0?rowCredits:null, kind:"NEW", semester, document:found.title });
               else {
                 if (nameMatchedRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || String(nameMatchedRow.name || resultRow.courseCode), grade, credits:rowCredits>0?rowCredits:null, kind:"CODE_MISMATCH", semester, document:found.title });
-                if ((curriculumCodeRow || sharedCodeRow) && resultRow.courseName && catalogueRow.name && normalizeName(resultRow.courseName)!==normalizeName(catalogueRow.name)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName, grade, credits:rowCredits>0?rowCredits:null, kind:"NAME_MISMATCH", semester, document:found.title });
-                if (Number.isFinite(Number(resultRow.credits)) && Number(resultRow.credits)>0 && Number(catalogueRow.credits)>0 && Number(resultRow.credits)!==Number(catalogueRow.credits)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || catalogueRow.name || resultRow.courseCode, grade, credits:rowCredits, kind:"CREDIT_MISMATCH", semester, document:found.title });
+                if ((curriculumCodeRow || sharedCodeRow) && resultRow.courseName && (catalogueRow.name || catalogueRow.courseName) && normalizeName(resultRow.courseName)!==normalizeName(catalogueRow.name ?? catalogueRow.courseName)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName, grade, credits:rowCredits>0?rowCredits:null, kind:"NAME_MISMATCH", semester, document:found.title });
+                if (Number.isFinite(Number(resultRow.credits)) && Number(resultRow.credits)>0 && Number(catalogueRow.credits)>0 && Number(resultRow.credits)!==Number(catalogueRow.credits)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || catalogueRow.name || catalogueRow.courseName || resultRow.courseCode, grade, credits:rowCredits, kind:"CREDIT_MISMATCH", semester, document:found.title });
                 if (curriculumCodeRow && sharedCodeRow && Number(curriculumCodeRow.credits)>0 && Number(sharedCodeRow.credits)>0 && Number(curriculumCodeRow.credits)!==Number(sharedCodeRow.credits)) findings.push({ code:resultRow.courseCode, name:String(curriculumCodeRow.name || resultRow.courseName || resultRow.courseCode), grade, credits:Number(sharedCodeRow.credits), kind:"CREDIT_MISMATCH", semester, document:found.title });
               }
               const points = GRADE_POINTS[grade];
