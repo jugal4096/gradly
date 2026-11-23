@@ -273,7 +273,7 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
       // "AMPCC2001\\nSolid Mechanics". An anchored whole-item match loses
       // every course column in that layout. Extract complete codes embedded
       // anywhere in the item before trying the adjacent-fragment fallback.
-      const embeddedCodes = item.text.toUpperCase().match(/[A-Z]{2,6}\\d{4}/g) || [];
+      const embeddedCodes = item.text.toUpperCase().match(/[A-Z]{2,6}\d{4}/g) || [];
       if (embeddedCodes.length) {
         for (const code of embeddedCodes) {
           if (!ENROLLMENT_PATTERN.test(code)) columns.push({ courseCode: code, x: item.x });
@@ -284,7 +284,7 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
       // GECA course codes end in four digits. Requiring the complete suffix
       // prevents a split fragment such as "CEOE10" from being accepted as a
       // separate course code.
-      let token = /^[A-Z]{2,6}\\d{4}$/.test(single) ? single : "";
+      let token = /^[A-Z]{2,6}\d{4}$/.test(single) ? single : "";
       let consumed = 0;
       if (!token) {
         let combined = single;
@@ -1000,7 +1000,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
     ? semesterDocs.filter(item=>item.academicSection===null || expectedSections.has(item.academicSection!))
     : semesterDocs;
   if (!selectedDocs.length) throw new Error("No official result PDFs match the selected branch and semester.");
-  const pattern = new RegExp(programme+String(admissionYear).slice(-2)+admissionMode+branchCode+"F\\d{3}","g");
+  const pattern = new RegExp(programme+String(admissionYear).slice(-2)+admissionMode+branchCode+"F\d{3}","g");
   const found = new Set<string>();
   const failedDocuments: string[] = [];
   let cursor = 0;
