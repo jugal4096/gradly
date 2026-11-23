@@ -69,6 +69,9 @@ function App() {
 
         {/* TESTER AUTHENTICATION AND HANDOFF */}
         <Route path="/tester/login" element={<TesterLogin />} />
+        <Route path="/tester/mode" element={<TesterModeSelect />} />
+        <Route path="/tester/ultra" element={<TesterUltraTesting />} />
+        {/* Existing individual User Testing workspace remains unchanged. */}
         <Route path="/tester/workspace" element={<TesterWorkspace />} />
 
         {/* ADMIN PORTAL */}
