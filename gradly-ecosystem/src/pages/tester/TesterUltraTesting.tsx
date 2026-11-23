@@ -256,6 +256,9 @@ export default function TesterUltraTesting() {
 
   const schemeOptions=[...new Set(rows.map(row=>row.scheme).filter(Boolean))].sort();
   const analyticsRows=rows.filter(row=>(analyticsScheme==="ALL"||row.scheme===analyticsScheme)&&(analyticsAdmission==="ALL"||(analyticsAdmission==="DSE"?/direct|dse/i.test(row.admissionMode):!/direct|dse/i.test(row.admissionMode))));
+  const cgpaRows=rows.filter(row=>row.cgpa!==null&&Number.isFinite(row.cgpa));
+  const cgpaCohorts=new Set(cgpaRows.map(row=>row.scheme+"|"+(/direct|dse/i.test(row.admissionMode)?"DSE":"REGULAR")));
+  const averageCgpa=cgpaRows.length&&cgpaCohorts.size===1?cgpaRows.reduce((sum,row)=>sum+(row.cgpa||0),0)/cgpaRows.length:null;
   const branchStats = useMemo(() => {
     const groups = new Map<string, { count:number; sum:number; min:number; max:number }>();
     analyticsRows.forEach(row=>{
@@ -301,7 +304,7 @@ export default function TesterUltraTesting() {
           <div className="tester-ultra-metrics">
             <article><span>ENROLLMENTS</span><strong>{rows.length}</strong><small>In this batch</small></article>
             <article><span>COMPLETED</span><strong className="good">{successfulCount}</strong><small>All selected semesters verified</small></article>
-            <article><span>AVERAGE CGPA</span><strong>{averageCgpa===null?"—":averageCgpa.toFixed(2)}</strong><small>Available verified semester data</small></article>
+            <article><span>AVERAGE CGPA</span><strong>{averageCgpa===null?"—":averageCgpa.toFixed(2)}</strong><small>{averageCgpa===null?"Select a single scheme and admission cohort":"Verified students in one cohort"}</small></article>
             <article><span>NEW / MISMATCHED</span><strong>{globalFindings.length}</strong><small>Unique subject findings</small></article>
             <article><span>FAILED / PARTIAL</span><strong className="bad">{failedCount} / {rows.filter(row=>row.status==="partial").length}</strong><small>{issueCount} findings and errors</small></article>
           </div>
