@@ -107,7 +107,9 @@ export default function TesterUltraTesting() {
   const visibleRows = rows.filter(row => !filter || row.enrollment.toLowerCase().includes(filter.toLowerCase()) || row.branch.toLowerCase().includes(filter.toLowerCase()));
 
   async function fetchJson(url: string, init: RequestInit = {}) {
-    const headers = new Headers(init.headers);\n    headers.set("Authorization", "Bearer " + token);\n    const response = await fetch(url, { ...init, headers });
+    const headers = new Headers(init.headers);
+    headers.set("Authorization", "Bearer " + token);
+    const response = await fetch(url, { ...init, headers });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.message || "The audit request failed.");
     return body;
