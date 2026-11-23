@@ -38,7 +38,8 @@ export default function TesterUltraTesting() {
   const [running, setRunning] = useState(false);
   const [rows, setRows] = useState<StudentAudit[]>([]);
   const [activeTab, setActiveTab] = useState<"students" | "subjects" | "branches">("students");
-  const [analyticsSemester, setAnalyticsSemester] = useState(1);\n  const [analyticsMetric, setAnalyticsMetric] = useState<"sgpa" | "cgpa">("sgpa");
+  const [analyticsSemester, setAnalyticsSemester] = useState(1);
+  const [analyticsMetric, setAnalyticsMetric] = useState<"sgpa" | "cgpa">("sgpa");
   const [filter, setFilter] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
