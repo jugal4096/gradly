@@ -1026,7 +1026,7 @@ export default function StudentPlatform() {
     // occurrence. Course names are not unique identifiers.
     const seenOfficialCodes = new Set<string>();
     fetchedGrades = fetchedGrades.filter(row => {
-      const codeKey = normalizeResultCourseCode(row.courseCode);
+      const codeKey = canonicalHsCourseCode(row.courseCode);
       if (!codeKey || seenOfficialCodes.has(codeKey)) return false;
       seenOfficialCodes.add(codeKey);
       return true;
@@ -1034,9 +1034,9 @@ export default function StudentPlatform() {
     const existingByCode = new Map<string, Subject>(subjects.map(subject => [canonicalHsCourseCode(subject.courseCode), subject] as const));
     let updatedSubjects: Subject[];
     if (attemptNumber > 1) {
-      const reExamGrades = new Map(fetchedGrades.map(row => [normalizeResultCourseCode(row.courseCode), row.grade.trim().toUpperCase()]));
+      const reExamGrades = new Map(fetchedGrades.map(row => [canonicalHsCourseCode(row.courseCode), row.grade.trim().toUpperCase()]));
       updatedSubjects = subjects.map(subject => {
-        const code = normalizeResultCourseCode(subject.courseCode);
+        const code = canonicalHsCourseCode(subject.courseCode);
         const nextGrade = reExamGrades.get(code);
         return nextGrade && isActiveBacklogGrade(subject.grade) && POINTS[nextGrade] !== undefined ? { ...subject, grade: nextGrade } : subject;
       });
@@ -1045,7 +1045,7 @@ export default function StudentPlatform() {
       // PDF rows. Keeping stale curriculum rows would hide official code/name
       // corrections (e.g. electives, UHV, or other non-standard subjects).
       updatedSubjects = fetchedGrades.map((row, index) => {
-        const code = normalizeResultCourseCode(row.courseCode);
+        const code = canonicalHsCourseCode(row.courseCode);
         const grade = row.grade.trim().toUpperCase();
         const existing = existingByCode.get(code) || (code==="MEOE1040" ? subjects.find(subject => subject.electiveKind==="OE" && /entrepreneurship development/i.test(subject.name)) : undefined);
         const knownNames: Record<string,string> = {
@@ -1065,7 +1065,7 @@ export default function StudentPlatform() {
           name,
           credits,
           grade,
-          courseCode: String(row.courseCode || code).trim().toUpperCase(),
+          courseCode: code,
           courseType,
           courseCategory: row.courseCategory || existing?.courseCategory,
           curriculumSubjectId: existing?.curriculumSubjectId,
@@ -1087,9 +1087,9 @@ export default function StudentPlatform() {
     let matchedRow: (typeof fetchedGrades)[number] | undefined;
     let matchedSubject: Subject | undefined;
     if (attemptNumber > 1) {
-      const targetCode = normalizeResultCourseCode(reExamTargetCourseCode);
-      matchedRow = fetchedGrades.find(row => normalizeResultCourseCode(row.courseCode) === targetCode);
-      matchedSubject = subjects.find(subject => normalizeResultCourseCode(subject.courseCode) === targetCode && isActiveBacklogGrade(subject.grade));
+      const targetCode = canonicalHsCourseCode(reExamTargetCourseCode);
+      matchedRow = fetchedGrades.find(row => canonicalHsCourseCode(row.courseCode) === targetCode);
+      matchedSubject = subjects.find(subject => canonicalHsCourseCode(subject.courseCode) === targetCode && isActiveBacklogGrade(subject.grade));
       if (!matchedRow || !matchedSubject) {
         setReExamOutcome({success:false,title:"Result not found",message:"The selected re-examination result did not contain your selected backlog subject. Your grades were not changed."});
         setReExamTargetCourseCode("");
