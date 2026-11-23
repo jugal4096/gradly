@@ -205,7 +205,7 @@ export default function TesterUltraTesting() {
               sharedRegistry = Array.isArray(registryBody.data) ? registryBody.data as CatalogueSubject[] : [];
             } catch (reason) {
               if (controller.signal.aborted) throw reason;
-              allErrors.push("Semester " + semester + ": central discovered-subject catalogue could not be checked; curriculum-only comparison was used.");
+              allErrors.push("Semester " + semester + ": institution-wide subject catalogue could not be checked; curriculum-only comparison was used.");
             }
             const findings: SubjectFinding[] = [];
             let weighted = 0, credits = 0, incomplete = false;
