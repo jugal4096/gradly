@@ -190,3 +190,8 @@
 .tester-ultra-row-details p{margin:0;padding:6px 0;border-bottom:1px solid #f0f2f6;color:#63718a;font-size:9px;line-height:1.5;overflow-wrap:anywhere}
 .tester-ultra-row-details p:last-child{border-bottom:0}
 .tester-ultra-table td strong.good{color:#13865e}.tester-ultra-table td strong.bad{color:#b14d4d}
+
+.tester-ultra-severity{display:inline-block;padding:5px 7px;border-radius:6px;font-size:8px;font-weight:900;letter-spacing:.06em}
+.tester-ultra-severity.high{background:#fff0f0;color:#b13f3f}
+.tester-ultra-severity.medium{background:#fff5e5;color:#9a6a20}
+.tester-ultra-severity.info{background:#edf3ff;color:#315da9}
