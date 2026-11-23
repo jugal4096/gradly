@@ -777,7 +777,11 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   const programmeMatch = metadataText.match(/(?:Programme|Program)\s*:?\s*([A-Z][A-Z &-]{2,80})/i);
   // Subject-specific GECA links (for example CSESC1005_RESULT) omit the
   // semester from their filename. Inherit it from their enclosing page section.
-  const semester = romanSemester(title + " " + metadataText) ?? sectionSemester ?? null;
+  // An explicit semester in the linked PDF name/URL outranks inherited archive
+  // headings. PDF text is the next source, and the enclosing section is only a
+  // fallback for subject PDFs whose links carry no semester label.
+  const semester = romanSemester(title) ?? romanSemester(url.replace(/%20/gi, " ")) ??
+    romanSemester(metadataText) ?? sectionSemester ?? null;
   const document = parsed.grades.length ? {
     title,
     url: safeUrl,
@@ -904,13 +908,13 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
     return documents;
   }
   return documents.filter(document => {
-    const titleSemester = romanSemester(
-      document.title + " " + document.url.replace(/%20/gi, " "),
-    );
-    const semester = document.sectionSemester ?? titleSemester;
-    // Fail closed: an unlabeled PDF cannot be proven to belong to the
-    // selected semester. Subject-level links inherit sectionSemester when
-    // GECA provides a year/semester heading.
+    const titleSemester = romanSemester(document.title);
+    const urlSemester = romanSemester(document.url.replace(/%20/gi, " "));
+    // Explicit labels on an individual PDF link are more specific than a
+    // potentially stale/inherited archive heading. Only unlabeled subject
+    // links inherit sectionSemester; never admit a PDF labelled for another
+    // semester.
+    const semester = titleSemester ?? urlSemester ?? document.sectionSemester;
     return semester === selectedSemester;
   });
 }
