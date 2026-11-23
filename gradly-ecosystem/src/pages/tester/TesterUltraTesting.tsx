@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play, RefreshCw, Search, ShieldCheck, Square, Users } from "lucide-react";
+import { Activity, ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play, RefreshCw, Search, ShieldCheck, Square, Users, WandSparkles } from "lucide-react";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
@@ -30,6 +30,14 @@ export default function TesterUltraTesting() {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [enrollmentText, setEnrollmentText] = useState("");
+  const [sampleProgramme, setSampleProgramme] = useState<"BE"|"BT">("BE");
+  const [sampleAdmissionYear, setSampleAdmissionYear] = useState("2023");
+  const [sampleAdmissionMode, setSampleAdmissionMode] = useState<"F"|"S">("S");
+  const [sampleBranch, setSampleBranch] = useState("01");
+  const [sampleSerialStart, setSampleSerialStart] = useState("1");
+  const [sampleCount, setSampleCount] = useState("10");
+  const [generatedEnrollments, setGeneratedEnrollments] = useState<string[]>([]);
+  const [generatorError, setGeneratorError] = useState("");
 
   const [sessions, setSessions] = useState<ResultSession[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
@@ -241,6 +249,30 @@ export default function TesterUltraTesting() {
     }
   }
 
+  function generateSampleEnrollments() {
+    setGeneratorError("");
+    const year = Number(sampleAdmissionYear);
+    const serialStart = Number(sampleSerialStart);
+    const count = Number(sampleCount);
+    if (!/^\\d{4}$/.test(sampleAdmissionYear) || year < 2000 || year > 2099) { setGeneratorError("Enter a four-digit admission year between 2000 and 2099."); return; }
+    if (!Number.isInteger(serialStart) || serialStart < 1 || serialStart > 999) { setGeneratorError("Starting serial must be between 001 and 999."); return; }
+    if (!Number.isInteger(count) || count < 1 || count > 100 || serialStart + count - 1 > 999) { setGeneratorError("Choose 1–100 samples and keep the final serial at or below 999."); return; }
+    const yy = String(year).slice(-2);
+    const generated = Array.from({length:count},(_,index)=>sampleProgramme+yy+sampleAdmissionMode+sampleBranch+"F"+String(serialStart+index).padStart(3,"0"));
+    setGeneratedEnrollments(generated);
+    if (sampleAdmissionMode === "S") setSelectedSemesters(current=>current.filter(semester=>semester>=3));
+    setNotice("Generated "+generated.length+" illustrative sample enrollment numbers. These are synthetic test IDs, not proof of real student enrollment.");
+  }
+
+  function importGeneratedEnrollments() {
+    if (!generatedEnrollments.length) return;
+    const merged = uniqueEnrollments([enrollmentText.trim(),generatedEnrollments.join("\\n")].filter(Boolean).join("\\n"));
+    if (merged.length > 100) { setGeneratorError("Import would exceed the 100-enrollment batch limit. Reduce the sample count or clear some existing IDs."); return; }
+    setEnrollmentText(merged.join("\\n"));
+    setGeneratorError("");
+    setNotice("Imported "+generatedEnrollments.length+" generated sample IDs into the Ultra Testing batch.");
+  }
+
   function stopAudit() { abortRef.current?.abort(); }
   function toggleSemester(value:number) { setSelectedSemesters(current=>current.includes(value)?current.filter(item=>item!==value):[...current,value].sort((a,b)=>a-b)); }
   function toggleSession(id:string) { setSelectedSessions(current=>current.includes(id)?current.filter(item=>item!==id):[...current,id]); }
@@ -319,12 +351,26 @@ export default function TesterUltraTesting() {
 
         <div className="tester-ultra-setup-grid">
           <div className="tester-ultra-field"><label htmlFor="ultra-institution">INSTITUTION / UNIVERSITY</label><div className="tester-ultra-search"><Search size={16}/><input id="ultra-institution" value={institutionQuery} onChange={event=>{setInstitutionQuery(event.target.value);setInstitution(null);}} placeholder="Search institution…"/></div>{searchingInstitutions&&<small>Searching institutions…</small>}{!institution&&institutions.length>0&&<div className="tester-ultra-institution-results">{institutions.slice(0,8).map(item=><button type="button" key={item.id} onClick={()=>{setInstitution(item);setInstitutionQuery(item.name);setInstitutions([]);}}>{item.name}</button>)}</div>}{institution&&<div className="tester-ultra-selected-institution"><span>{institution.name}</span><button type="button" onClick={()=>{setInstitution(null);setInstitutionQuery("");}}>Change</button></div>}{institution&&!supportedInstitution&&<small className="tester-ultra-inline-warning">Official result-PDF auditing is currently connected to GECA only. Choose Government College of Engineering, Chhatrapati Sambhajinagar to run this batch.</small>}{institution&&supportedInstitution&&<small className="tester-ultra-muted">GECA official result archive connected · read-only scanning</small>}</div>
-          <div className="tester-ultra-field"><label htmlFor="ultra-enrollments">ENROLLMENT NUMBERS · ONE PER LINE</label><textarea id="ultra-enrollments" value={enrollmentText} onChange={(event:ChangeEvent<HTMLTextAreaElement>)=>setEnrollmentText(event.target.value)} placeholder={"BE23S01F001\nBE23S01F002\nBT25S01F001"} rows={6}/><div className="tester-ultra-input-footer"><span>{enrollmentList.length} / 100 unique enrollments</span><span>{duplicateCount>0?duplicateCount+" duplicates will be removed automatically":"Duplicates are automatically removed"}</span></div><small className="tester-ultra-muted">Manual entry only: create or collect the enrollment numbers yourself and paste them here. Ultra Testing will not scan result PDFs to discover enrollment numbers. Example formats are illustrative; use officially issued IDs.</small><div className="tester-ultra-sort-summary"><span>Auto-sort follows enrollment identity rules</span>{Object.entries(enrollmentSchemeCounts).map(([label,count])=><b key={label}>{label} <i>{count}</i></b>)}</div><button className="tester-ultra-sort-button" type="button" onClick={()=>setEnrollmentText(sortedEnrollmentList.join("\\n"))} disabled={!enrollmentList.length}>Sort enrollment list · New CBCS → NEP → Other</button></div>
+          <div className="tester-ultra-field"><label htmlFor="ultra-enrollments">ENROLLMENT NUMBERS · ONE PER LINE</label><textarea id="ultra-enrollments" value={enrollmentText} onChange={(event:ChangeEvent<HTMLTextAreaElement>)=>setEnrollmentText(event.target.value)} placeholder={"BE23S01F001\nBE23S01F002\nBT25S01F001"} rows={6}/><div className="tester-ultra-input-footer"><span>{enrollmentList.length} / 100 unique enrollments</span><span>{duplicateCount>0?duplicateCount+" duplicates will be removed automatically":"Duplicates are automatically removed"}</span></div><small className="tester-ultra-muted">Paste official IDs here, or generate synthetic sample IDs below for parser and workflow testing. Generated IDs are illustrative only and are not real student records.</small>
+            <div className="tester-ultra-generator">
+              <div className="tester-ultra-generator-heading"><div><span>SAMPLE DATA BUILDER</span><strong>Generate enrollment list</strong><small>Uses the enrollment identity format: programme + admission year + mode + branch + fixed F + serial</small></div><WandSparkles size={20}/></div>
+              <div className="tester-ultra-generator-fields">
+                <label>PROGRAMME<select value={sampleProgramme} onChange={event=>setSampleProgramme(event.target.value as "BE"|"BT")}><option value="BE">BE · New CBCS</option><option value="BT">B.Tech · NEP</option></select></label>
+                <label>ADMISSION YEAR<input type="number" min="2000" max="2099" value={sampleAdmissionYear} onChange={event=>setSampleAdmissionYear(event.target.value)}/></label>
+                <label>ADMISSION MODE<select value={sampleAdmissionMode} onChange={event=>setSampleAdmissionMode(event.target.value as "F"|"S")}><option value="F">Regular (F)</option><option value="S">Direct Second Year / DSE (S)</option></select></label>
+                <label>BRANCH<select value={sampleBranch} onChange={event=>setSampleBranch(event.target.value)}><option value="01">Civil Engineering · 01</option><option value="02">Mechanical Engineering · 02</option><option value="03">Electrical Engineering · 03</option><option value="04">Electronics & Telecommunication · 04</option><option value="05">Computer Science & Engineering · 05</option><option value="06">Information Technology · 06</option></select></label>
+                <label>STARTING SERIAL<input type="number" min="1" max="999" value={sampleSerialStart} onChange={event=>setSampleSerialStart(event.target.value)}/></label>
+                <label>NUMBER TO GENERATE<input type="number" min="1" max="100" value={sampleCount} onChange={event=>setSampleCount(event.target.value)}/></label>
+              </div>
+              <div className="tester-ultra-generator-actions"><button type="button" onClick={generateSampleEnrollments}><WandSparkles size={14}/> Generate sample list</button><span>Max 100 per batch · serials 001–999</span></div>
+              {generatorError&&<p className="tester-ultra-error" role="alert">{generatorError}</p>}
+              {generatedEnrollments.length>0&&<div className="tester-ultra-generator-preview"><div><strong>{generatedEnrollments.length} sample IDs ready</strong><button type="button" onClick={importGeneratedEnrollments} disabled={enrollmentList.length+generatedEnrollments.filter(item=>!enrollmentList.includes(item)).length>100}>Import into batch <span>→</span></button></div><textarea readOnly rows={Math.min(5,generatedEnrollments.length)} value={generatedEnrollments.join("\\n")}/><small>These IDs follow the selected programme, year, admission mode and branch. They are synthetic and may not exist in GECA's official result archive.</small></div>}
+            </div><div className="tester-ultra-sort-summary"><span>Auto-sort follows enrollment identity rules</span>{Object.entries(enrollmentSchemeCounts).map(([label,count])=><b key={label}>{label} <i>{count}</i></b>)}</div><button className="tester-ultra-sort-button" type="button" onClick={()=>setEnrollmentText(sortedEnrollmentList.join("\\n"))} disabled={!enrollmentList.length}>Sort enrollment list · New CBCS → NEP → Other</button></div>
         </div>
         {enrollmentList.length>100&&<p className="tester-ultra-error">This batch contains more than 100 unique enrollment numbers. Split it into smaller batches.</p>}
         <div className="tester-ultra-config-grid">
           <div className="tester-ultra-field"><label>EXAMINATION SESSIONS</label><div className="tester-ultra-session-actions"><button type="button" onClick={()=>setSelectedSessions([])} disabled={!selectedSessions.length}>Clear selection</button><span>{selectedSessions.length} selected · choose sessions individually</span></div><div className="tester-ultra-session-list">{loadingSessions?<span className="tester-ultra-muted">Loading official GECA sessions…</span>:sessions.length?sessions.map(session=><label key={session.id} className="tester-ultra-check"><input type="checkbox" checked={selectedSessions.includes(session.id)} onChange={()=>toggleSession(session.id)}/><span>{session.title}</span></label>):<span className="tester-ultra-muted">No examination sessions loaded.</span>}</div><button className="tester-ultra-text-button" type="button" onClick={()=>{setLoadingSessions(true);fetchJson(API+"/api/tester/results/sessions").then(body=>{const loaded=normalizeResultSessions(body.sessions);setSessions(loaded);}).catch(reason=>setError(reason instanceof Error?reason.message:"Unable to refresh sessions.")).finally(()=>setLoadingSessions(false));}}><RefreshCw size={13}/> Refresh sessions</button></div>
-          <div className="tester-ultra-field"><label>SEMESTERS TO AUDIT</label><div className="tester-ultra-semester-grid">{Array.from({length:8},(_,index)=>index+1).map(semester=><label key={semester} className={"tester-ultra-semester "+(selectedSemesters.includes(semester)?"selected":"")}><input type="checkbox" checked={selectedSemesters.includes(semester)} onChange={()=>toggleSemester(semester)}/><span>SEM {semester}</span></label>)}</div><small>No semesters are preselected. Choose only the semesters you want to audit for the pasted enrollment numbers. DSE entry-semester recognition is handled by the academic identity service.</small></div>
+          <div className="tester-ultra-field"><label>SEMESTERS TO AUDIT</label><div className="tester-ultra-semester-grid">{Array.from({length:8},(_,index)=>index+1).map(semester=>{const parsed=enrollmentList.map(value=>/^(BE|BT)(\\d{2})([FS])(\\d{2})F(\\d{3})$/.exec(value)).filter(Boolean) as RegExpExecArray[];const onlyDse=parsed.length>0&&parsed.length===enrollmentList.length&&parsed.every(match=>match[3]==="S");const unavailable=onlyDse&&semester<3;return <label key={semester} className={"tester-ultra-semester "+(selectedSemesters.includes(semester)?"selected":"")+(unavailable?" disabled":"")}><input type="checkbox" checked={selectedSemesters.includes(semester)} disabled={unavailable} onChange={()=>toggleSemester(semester)}/><span>SEM {semester}</span></label>;})}</div><small>No semesters are preselected. Semester 1–2 are disabled when every recognized BE/BT enrollment in the pasted list is DSE; mixed or unrecognized lists remain selectable and the audit applies each student’s actual entry semester.</small></div>
         </div>
         {error&&<p className="tester-ultra-error" role="alert">{error}</p>}
         <div className="tester-ultra-actions">{running?<button className="tester-ultra-stop" type="button" onClick={stopAudit}><Square size={15}/> Stop batch</button>:<button className="tester-ultra-run" type="button" onClick={()=>void runAudit()} disabled={!institution||!supportedInstitution||!enrollmentList.length||enrollmentList.length>100||!selectedSessions.length||!selectedSemesters.length||!token}><Play size={16}/> Run Ultra Audit <span>→</span></button>}<span><ShieldCheck size={14}/> Read-only · No student records or catalogue entries are changed</span></div>
