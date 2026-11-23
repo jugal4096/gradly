@@ -268,6 +268,18 @@ function findCourseColumns(lines: TextLine[], referenceY?: number): CourseColumn
     for (let itemIndex = 0; itemIndex < line.items.length; itemIndex++) {
       const item = line.items[itemIndex];
       const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      // Consolidated NEP result PDFs can place the course code and its
+      // multi-line subject title inside the SAME PDF.js text item, e.g.
+      // "AMPCC2001\\nSolid Mechanics". An anchored whole-item match loses
+      // every course column in that layout. Extract complete codes embedded
+      // anywhere in the item before trying the adjacent-fragment fallback.
+      const embeddedCodes = item.text.toUpperCase().match(/[A-Z]{2,6}\d{4}/g) || [];
+      if (embeddedCodes.length) {
+        for (const code of embeddedCodes) {
+          if (!ENROLLMENT_PATTERN.test(code)) columns.push({ courseCode: code, x: item.x });
+        }
+        continue;
+      }
       const single = clean(item.text);
       // GECA course codes end in four digits. Requiring the complete suffix
       // prevents a split fragment such as "CEOE10" from being accepted as a
@@ -510,7 +522,7 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   return [];
 }
 
-function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
+export function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
   const matches = new Map<string, string>();
   let enrollmentFound = false;
 

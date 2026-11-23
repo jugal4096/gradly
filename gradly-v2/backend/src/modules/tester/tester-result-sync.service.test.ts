@@ -6,6 +6,7 @@ import {
   selectGecaBranchDocuments,
   selectGecaSemesterDocuments,
   extractSubjectResultGrades,
+  extractMatchingGrades,
   isRestrictedGecaResultFetch,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
@@ -162,6 +163,37 @@ test("branch filtering admits generic subject result PDFs for in-PDF validation"
     selectGecaBranchDocuments(documents, ["mechanical"], ["MEESC", "MEPCC", "MEIKS"]),
     documents.slice(0, 2),
   );
+});
+
+test("consolidated NEP parser extracts the official GECA IV result row for BT24F01F001", () => {
+  // Course-code/title cells in GECA's ESE APRIL-MAY 2026 Civil NEP IV PDF
+  // may be emitted as one PDF.js text item with embedded line breaks.
+  const enrollment = "BT24F01F001";
+  const codes = [
+    "AMPCC2003", "AMPCC2004", "CEEEM1020", "CEPCC2005",
+    "CEPCC2006", "CEPCC2007", "CEPCC2008", "CEVSE2001",
+    "ETOEC1020", "INAEC1002", "INMDM2002", "INVEC1001",
+  ];
+  const grades = ["A+", "A", "A+", "A", "A", "B", "A++", "A+", "C+", "A", "A+", "A+"];
+  const header = codes.map((code, index) => ({
+    text: code + "\nSubject title " + (index + 1),
+    x: 200 + index * 70,
+    y: 500,
+  }));
+  const gradeItems = [
+    { text: "4", x: 20, y: 480 },
+    { text: enrollment, x: 70, y: 480 },
+    ...grades.map((grade, index) => ({ text: grade, x: 200 + index * 70, y: 480 })),
+  ];
+  const parsed = extractMatchingGrades([
+    { text: header.map(item => item.text).join(" "), items: header },
+    { text: "4 " + enrollment + " " + grades.join(" "), items: gradeItems },
+  ], enrollment);
+  assert.equal(parsed.enrollmentFound, true);
+  assert.deepEqual(parsed.grades, codes.map((courseCode, index) => ({
+    courseCode,
+    grade: grades[index],
+  })));
 });
 
 test("individual subject parser imports only the target enrollment row with the expected branch", () => {
