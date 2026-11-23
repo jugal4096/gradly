@@ -169,9 +169,9 @@ test("consolidated NEP parser extracts course codes embedded with multi-line sub
   const enrollment = "BT24F01F001";
   const lines = [
     { text: "AMPCC2001 Solid Mechanics CEPCC2001 Surveying CECEP1001 Mini Project", items: [
-      { text: "AMPCC2001\\nSolid Mechanics", x: 200, y: 500 },
-      { text: "CEPCC2001\\nSurveying", x: 350, y: 500 },
-      { text: "CECEP1001\\nMini Project", x: 500, y: 500 },
+      { text: "AMPCC2001\nSolid Mechanics", x: 200, y: 500 },
+      { text: "CEPCC2001\nSurveying", x: 350, y: 500 },
+      { text: "CECEP1001\nMini Project", x: 500, y: 500 },
     ] },
     { text: "1 BT24F01F001 A+ B C+", items: [
       { text: "1", x: 20, y: 480 },
