@@ -1,6 +1,12 @@
-import { getDocument, GlobalWorkerOptions } from "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
-
-GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.min.mjs";
+const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
+const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.min.mjs";
+const pdfjsPromise = import(/* @vite-ignore */ PDFJS_URL) as Promise<{
+  getDocument: (source: unknown) => { promise: Promise<any> };
+  GlobalWorkerOptions: { workerSrc: string };
+}>.then(module => {
+  module.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+  return module;
+});
 
 const RESULT_MASTER_URL = "https://geca.ac.in/result-master.aspx";
 const GECA_ORIGIN = "https://geca.ac.in";
@@ -802,6 +808,7 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
   // GECA's embedded TrueType fonts can contain unsupported optional
   // instructions (for example "TT: undefined function: 21"). PDF.js still
   // extracts the text layer; suppress only its non-fatal warnings.
+  const { getDocument } = await pdfjsPromise;
   const pdf = await getDocument({
     data: bytes.slice(),
     useSystemFonts: true,
@@ -1149,6 +1156,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
       const doc=selectedDocs[cursor++];
       try {
         const bytes=await downloadResultPdf(doc.url);
+        const { getDocument } = await pdfjsPromise;
         const pdf=await getDocument({data:bytes.slice(),useSystemFonts:true,disableFontFace:true,verbosity:0,stopAtErrors:false}).promise;
         for(let pageNo=1;pageNo<=pdf.numPages && found.size<limit;pageNo++){
           const page=await pdf.getPage(pageNo);
