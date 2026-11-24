@@ -820,7 +820,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     // page get attached to this student's row and import unrelated subjects.
     const genericSubjectPdf = /_RESULT(?:\.PDF)?$/i.test(title.trim()) || url.toLowerCase().split("?")[0].endsWith("_result.pdf");
     const pageParsed = genericSubjectPdf && !reExamTargetCourseCode
-      ? extractSubjectResultGrades(lines, enrollment, BRANCH_NAMES[enrollment.slice(5, 7)] || [])
+      ? extractSubjectResultGrades(lines, enrollment, branchTermsForEnrollment(enrollment.slice(0, 2), enrollment.slice(5, 7)))
       : reExamTargetCourseCode
         ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
         : extractMatchingGrades(lines, enrollment);
@@ -902,6 +902,27 @@ const BRANCH_SUBJECT_PREFIXES: Record<string, string[]> = {
   "06": ["ITPCC", "ITESC", "ITPE"],
 };
 
+// GECA postgraduate result archive labels and subject-code families.
+const MTECH_BRANCH_NAMES: Record<string, string[]> = {
+  "09": ["structural engineering"],
+  "08": ["water resources engineering"],
+  "16": ["geotechnical engineering"],
+  "15": ["electrical machines and drives"],
+  "12": ["electrical power systems"],
+  "13": ["electronics and telecommunication", "entc"],
+  "05": ["computer science", "cse"],
+};
+function branchTermsForEnrollment(programme: string, branchCode: string): string[] {
+  if (programme === "MC") return ["master of computer applications", "computer applications", "mca"];
+  if (programme === "MT") return MTECH_BRANCH_NAMES[branchCode] || [];
+  return BRANCH_NAMES[branchCode] || [];
+}
+function subjectPrefixesForEnrollment(programme: string, branchCode: string): string[] {
+  if (programme === "MC") return ["MC"];
+  if (programme === "MT") return ["MT"];
+  return BRANCH_SUBJECT_PREFIXES[branchCode] || [];
+}
+
 const ACADEMIC_SECTION_LABELS: Record<string, GecaAcademicSection> = {
   FIRST: "FIRST_YEAR", "1ST": "FIRST_YEAR",
   SECOND: "SECOND_YEAR", "2ND": "SECOND_YEAR",
@@ -941,7 +962,7 @@ function academicSemesterBeforeLink(markup: string): number | null {
 
 export function academicSectionsForEnrollment(enrollment: string, sessionTitle: string, selectedSemester?: number): GecaAcademicSection[] {
   const sections = new Set<GecaAcademicSection>();
-  const admissionYearMatch = enrollment.match(/^(?:BT|BE)(\d{2})/);
+  const admissionYearMatch = enrollment.match(/^(?:BT|BE|MC|MT)(\d{2})/);
   const examYearMatch = sessionTitle.match(/\b(20\d{2})\b/);
   if (admissionYearMatch && examYearMatch) {
     const admissionYear = 2000 + Number(admissionYearMatch[1]);
@@ -1054,9 +1075,11 @@ export async function discoverGecaEnrollmentCandidates(input: {
   const { resultId, programme, admissionYear, admissionMode, branchCode, semester } = input;
   const limit = Math.max(1, Math.min(60, Number(input.limit) || 60));
   if (!/^\d{1,10}$/.test(resultId)) throw new Error("Invalid GECA result session.");
-  if (!/^(BE|BT)$/.test(programme) || !Number.isInteger(admissionYear) || admissionYear < 2000 || admissionYear > 2099 ||
-      !/^[FS]$/.test(admissionMode) || !BRANCH_NAMES[branchCode] || !Number.isInteger(semester) || semester < 1 || semester > 8) {
-    throw new Error("Choose a supported undergraduate programme, admission year, admission type, branch and semester.");
+  const postgraduate = programme === "MC" || programme === "MT";
+  if (!/^(BE|BT|MC|MT)$/.test(programme) || !Number.isInteger(admissionYear) || admissionYear < 2000 || admissionYear > 2099 ||
+      !/^[FS]$/.test(admissionMode) || (postgraduate && admissionMode !== "F") ||
+      !branchTermsForEnrollment(programme, branchCode).length || !Number.isInteger(semester) || semester < 1 || semester > (postgraduate ? 4 : 8)) {
+    throw new Error("Choose a supported programme, admission year, valid admission type, branch/specialization and semester.");
   }
   const sessions = await listGecaResultSessions();
   const session = sessions.find(item => item.id === resultId);
@@ -1074,8 +1097,8 @@ export async function discoverGecaEnrollmentCandidates(input: {
   }
   const unique = Array.from(new Map(docs.map(item=>[item.url,item])).values())
     .filter(item=>!NON_RESULT_PDF_PATTERN.test(item.title+" "+item.url));
-  const branchTerms = BRANCH_NAMES[branchCode] || [];
-  const prefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
+  const branchTerms = branchTermsForEnrollment(programme, branchCode);
+  const prefixes = subjectPrefixesForEnrollment(programme, branchCode);
   const branchDocs = selectGecaBranchDocuments(unique, branchTerms, prefixes);
   const semesterDocs = selectGecaSemesterDocuments(branchDocs, semester);
   const sessionYear = Number(session.title.match(/\b(20\d{2})\b/)?.[1] || 0);
@@ -1183,8 +1206,9 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   // Apply the same branch + semester constraints to both the targeted scan
   // and any widening pass. Never widen to unrelated college/research PDFs.
   const branchCode = enrollment.slice(5, 7);
-  const branchTerms = BRANCH_NAMES[branchCode] || [];
-  const subjectPrefixes = BRANCH_SUBJECT_PREFIXES[branchCode] || [];
+  const programmePrefix = enrollment.slice(0, 2);
+  const branchTerms = branchTermsForEnrollment(programmePrefix, branchCode);
+  const subjectPrefixes = subjectPrefixesForEnrollment(programmePrefix, branchCode);
   const filterBranchAndSemester = <T extends { title: string; url: string; sectionSemester: number | null }>(items: T[]): T[] => {
     const branchMatches = selectGecaBranchDocuments(items, branchTerms, subjectPrefixes);
     return selectGecaSemesterDocuments(branchMatches, selectedSemester);
