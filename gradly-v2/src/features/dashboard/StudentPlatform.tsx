@@ -107,7 +107,7 @@ function dedupeSubjectsByCourseCode(rows: Subject[]): Subject[] {
     // Keep a single course row; prefer the one carrying a saved grade.
     if (!existing || (!existing.grade && Boolean(row.grade))) byCode.set(code, row);
   }
-  return [...byCode.values()].map((row, index) => ({...row, id:index+1}));
+  return [...byCode.values()].map((row, index) => ({...row, id:index+1, grade:normalizeGradeSymbol(row.grade)}));
 }
 const isDseAdmission = (admissionMode: string, enrollment: string) => /\bDSE\b|DIRECT\s+SECOND\s+YEAR|SECOND\s+YEAR\s+DIRECT/i.test(admissionMode||"") || String(enrollment||"").trim().toUpperCase().replace(/\s+/g,"")[4] === "S";
 type DegreeCreditCategory = "HS"|"BS"|"ES"|"PC"|"PE"|"OE"|"PROJECT"|"ABL";
@@ -391,7 +391,7 @@ export default function StudentPlatform() {
   const [nextSemester,setNextSemester] = useState("");
   const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isGuest) {
-      try { const saved=JSON.parse(localStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:({O:"A++",C:"C+",P:"C",F:"D"} as Record<string,string>)[subject.grade] || (POINTS[subject.grade]!==undefined?subject.grade:"A")})); } catch { /* use defaults */ }
+      try { const saved=JSON.parse(localStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:normalizeGradeSymbol(({O:"A++",C:"C+",P:"C",F:"D",AB:"D",D1:"D",D2:"D",D3:"D"} as Record<string,string>)[subject.grade] || subject.grade) && POINTS[normalizeGradeSymbol(({O:"A++",C:"C+",P:"C",F:"D",AB:"D",D1:"D",D2:"D",D3:"D"} as Record<string,string>)[subject.grade] || subject.grade)]!==undefined?normalizeGradeSymbol(({O:"A++",C:"C+",P:"C",F:"D",AB:"D",D1:"D",D2:"D",D3:"D"} as Record<string,string>)[subject.grade] || subject.grade):"A"})); } catch { /* use defaults */ }
       return Array.from({length:5},(_,i)=>({id:i+1,name:`Subject ${i+1}`,credits:3,grade:"A"}));
     }
     return [{id:1,name:"",credits:3,grade:"A"}];
@@ -498,7 +498,7 @@ export default function StudentPlatform() {
             savedSubjects[semesterNumber]=[...byCode.values()].map((course,index)=>{
               const code=course.course_code_snapshot||"";
               const courseType=code==="INHS1020"?"Universal Human Values (UHV)":(code==="INMC2001"||code==="INMC2010")?"Mandatory Course · Environmental Science":OE_OPTIONS.some(option=>option.code===code)?"Open Elective (OE)":HS_OPTIONS.some(option=>option.code===code)?"Humanities & Social Sciences (HS)":PE_OPTIONS.some(option=>option.code===code)?"Professional Elective (PE)":/^ITPE3/.test(code)?"Professional Elective (PE)":"Additional course";
-              return {id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:String(course.grade_symbol||""),courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined};
+              return {id:index+1,name:course.course_name_snapshot||"",credits:Number(course.credits||0),grade:normalizeGradeSymbol(course.grade_symbol||""),courseCode:code,courseType,curriculumSubjectId:course.curriculum_subject_id||undefined};
             });
           });
           setResults(saved); setSavedSubjectsBySemester(savedSubjects); localStorage.setItem("gradly_semester_results",JSON.stringify(saved));
@@ -617,7 +617,7 @@ export default function StudentPlatform() {
           const selectedCode=previous?.courseCode||courseCode;
           const option=kind==="OE"?OE_OPTIONS.find(x=>x.code===selectedCode):kind==="HS"?hsOptionsForSemester(selectedSemester).find(x=>x.code===selectedCode):kind==="PE5"?PE5_OPTIONS.find(x=>x.code===selectedCode):kind==="PE6C"?PE6_THIRD_OPTIONS.find(x=>x.code===selectedCode):undefined;
           const pe4=kind==="PE4"?PE4_OPTIONS.find(x=>x.code===selectedCode):kind==="PE4LAB"?PE4_OPTIONS.find(x=>x.labCode===selectedCode):undefined;
-          return {id:index+1,name:previous?.name||item.name||"",credits:previous?.credits??Number(item.credits||0),grade:previous?.grade||"",courseCode:selectedCode,courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4, ...((option||pe4)?{}:{})};
+          return {id:index+1,name:previous?.name||item.name||"",credits:previous?.credits??Number(item.credits||0),grade:normalizeGradeSymbol(previous?.grade||""),courseCode:selectedCode,courseType:String(item.courseType||""),curriculumSubjectId:subjectId,electiveKind:kind,electiveSlotCode:courseCode,pe4Option:pe4, ...((option||pe4)?{}:{})};
         });
         const droppedKey="gradly_dropped_electives_"+profile.curriculumId+"_"+selectedSemester;
         let dropped:Subject[]=[];
@@ -686,7 +686,7 @@ export default function StudentPlatform() {
       (section === "sgpa" && selectedSemester === currentSemester) ||
       (section === "sgpaPlanner" && plannerSemester === currentSemester)
     );
-    if (viewingCurrentSemester) setCurrentSemesterNoticeOpen(true);
+    if (viewingCurrentSemester) { setGradeReminderOpen(false); setCurrentSemesterNoticeOpen(true); }
   },[section,selectedSemester,plannerSemester,currentSemester,isGuest]);
 
   useEffect(() => {
