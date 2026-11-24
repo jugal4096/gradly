@@ -196,6 +196,34 @@ test("consolidated NEP parser extracts the official GECA IV result row for BT24F
   })));
 });
 
+test("consolidated NEP parser keeps subject headers when they are more than 80 text lines above a student", () => {
+  const enrollment = "BT24F02F001";
+  const codes = ["MEPCC2001", "MEPCC2002", "MEPCC2003"];
+  const grades = ["D", "A+", "C"];
+  const header = {
+    text: codes.join(" "),
+    items: codes.map((code, index) => ({ text: code, x: 200 + index * 120, y: 700 })),
+  };
+  const spacerLines = Array.from({ length: 110 }, (_, index) => ({
+    text: "Continuation of result table " + index,
+    items: [{ text: "Continuation of result table " + index, x: 20, y: 690 - index * 1.5 }],
+  }));
+  const studentRow = {
+    text: "4 " + enrollment + " " + grades.join(" "),
+    items: [
+      { text: "4", x: 20, y: 520 },
+      { text: enrollment, x: 70, y: 520 },
+      ...grades.map((grade, index) => ({ text: grade, x: 200 + index * 120, y: 520 })),
+    ],
+  };
+  const parsed = extractMatchingGrades([header, ...spacerLines, studentRow], enrollment);
+  assert.equal(parsed.enrollmentFound, true);
+  assert.deepEqual(parsed.grades, codes.map((courseCode, index) => ({
+    courseCode,
+    grade: grades[index],
+  })));
+});
+
 test("individual subject parser imports only the target enrollment row with the expected branch", () => {
   const lines = [
     { text: "REGNO STUDNAME CCODE COURSENAME BRANCH Grade", items: [

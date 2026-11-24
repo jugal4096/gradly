@@ -107,7 +107,7 @@
 .tester-ultra-search{height:44px;border:1px solid #dfe5ef;border-radius:9px;display:flex;align-items:center;gap:9px;padding:0 12px;color:#8793a8}
 .tester-ultra-search input{border:0;outline:0;min-width:0;flex:1;font:inherit;font-size:12px;color:#1b2940;background:transparent}
 .tester-ultra-field textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:120px;border:1px solid #dfe5ef;border-radius:9px;padding:12px;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;color:#24334c;outline-color:#8eace7}
-.tester-ultra-input-footer{display:flex;justify-content:space-between;gap:10px;color:#8792a5;font-size:9px}
+.tester-ultra-input-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#8792a5;font-size:9px}.tester-ultra-clear-enrollments{margin-left:auto;color:#b54747}.tester-ultra-clear-enrollments:disabled{opacity:.35;cursor:not-allowed}
 .tester-ultra-institution-results,.tester-ultra-session-list{border:1px solid #e4e9f1;border-radius:9px;max-height:190px;overflow:auto}
 .tester-ultra-institution-results button{width:100%;padding:10px 12px;text-align:left;background:#fff;border:0;border-bottom:1px solid #edf0f5;color:#293750;font:inherit;font-size:11px;cursor:pointer}
 .tester-ultra-institution-results button:hover{background:#f5f8ff}

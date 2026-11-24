@@ -534,7 +534,10 @@ export function extractMatchingGrades(lines: TextLine[], enrollment: string): { 
     // GECA PDFs can contain multiple independent result tables on the same page.
     // Resolve the course headers for THIS enrollment row only, rather than
     // combining headers from the first/second tables into one global list.
-    const tableStart = Math.max(0, rowIndex - 80);
+    // Keep the search page-local, but cover the full preceding table region.
+    // Some GECA NEP exports place a large multi-line subject header far above
+    // the student's row; an 80-line window silently loses every course column.
+    const tableStart = Math.max(0, rowIndex - 400);
     const rowWindow = lines.slice(tableStart, rowIndex + 1);
     const enrollmentY = line.items[0]?.y ?? 0;
     const columns = findCourseColumns(rowWindow, enrollmentY);
