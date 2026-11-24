@@ -138,10 +138,37 @@ export default function TesterUltraTesting() {
   async function fetchJson(url: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
     headers.set("Authorization", "Bearer " + token);
-    const response = await fetch(url, { ...init, headers });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.message || "The audit request failed.");
-    return body;
+
+    // GECA PDF matching can take time, but a stalled API must never leave an
+    // enrollment permanently marked as "processing" in the audit table.
+    const requestController = new AbortController();
+    const callerSignal = init.signal;
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      requestController.abort();
+    }, 120_000);
+    const abortFromCaller = () => requestController.abort();
+    if (callerSignal?.aborted) requestController.abort();
+    else callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+
+    try {
+      let response: Response;
+      try {
+        response = await fetch(url, { ...init, headers, signal: requestController.signal });
+      } catch (reason) {
+        if (timedOut && !callerSignal?.aborted) {
+          throw new Error("The backend did not respond within 120 seconds. This semester scan timed out; check Render logs and retry with fewer enrollments or examination sessions.");
+        }
+        throw reason;
+      }
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || "The audit request failed.");
+      return body;
+    } finally {
+      window.clearTimeout(timeoutId);
+      callerSignal?.removeEventListener("abort", abortFromCaller);
+    }
   }
 
 
