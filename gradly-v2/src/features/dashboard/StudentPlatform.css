@@ -3229,3 +3229,6 @@
 .sp-dark-theme .sp-tracker-impact-track{background:#35475a}
 .sp-dark-theme .sp-tracker-chart-foot{color:#a9bbcf}
 @media(max-width:640px){.sp-tracker-journey-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.sp-tracker-journey-step{padding:10px}.sp-tracker-journey-step>strong{font-size:18px}.sp-tracker-subject-row{grid-template-columns:minmax(0,1fr) 30px 74px;gap:6px}.sp-tracker-subject-impact{font-size:11px}}
+
+.gd-security-ack:disabled{opacity:.68;filter:saturate(.65);cursor:not-allowed;transform:none;box-shadow:none}
+.gd-security-ack:disabled:hover{transform:none;box-shadow:none}
