@@ -2853,3 +2853,114 @@
 .sp-dark-theme .sp-nep-dual-progress>div{background:#202a37;border-color:#3a4656}
 .sp-dark-theme .sp-nep-dual-progress strong{color:#e8eef5}
 @media(max-width:700px){.sp-nep-dual-progress{grid-template-columns:1fr}}
+
+
+/* Gradly home refresh: calm colour, clear hierarchy and lightweight interactions. */
+.sp-user-mode .sp-user-welcome{
+  position:relative;overflow:hidden;isolation:isolate;
+  min-height:260px;padding:34px 38px 58px;
+  border:1px solid rgba(111,126,205,.13);border-radius:26px;
+  background:
+    radial-gradient(ellipse at 88% 12%,rgba(255,255,255,.9),transparent 32%),
+    radial-gradient(ellipse at 72% 100%,rgba(118,207,190,.22),transparent 38%),
+    linear-gradient(118deg,#f0edff 0%,#edf4ff 52%,#eaf8f4 100%);
+  box-shadow:0 16px 38px rgba(66,79,135,.08);
+}
+.sp-user-mode .sp-user-welcome:after{
+  content:"";position:absolute;z-index:-1;width:310px;height:310px;right:7%;top:-175px;
+  border:1px solid rgba(116,123,203,.16);border-radius:50%;
+  box-shadow:0 0 0 28px rgba(255,255,255,.2),0 0 0 58px rgba(255,255,255,.12);
+}
+.sp-user-mode .sp-user-eyebrow{color:#6870a6;font-weight:850;letter-spacing:1.8px}
+.sp-user-mode .sp-user-welcome h1{max-width:620px;color:#252b49;font-size:clamp(34px,4vw,48px);line-height:1.08;letter-spacing:-1.8px}
+.sp-user-mode .sp-user-welcome h1 em{color:#6666bd;font-style:normal}
+.sp-user-mode .sp-user-welcome p{max-width:500px;color:#68718d;font-size:14px;line-height:1.7}
+.sp-user-mode .sp-user-welcome-actions{gap:12px;margin-top:22px}
+.sp-user-mode .sp-user-welcome-actions button:first-child{
+  min-height:46px;padding:0 19px;border:0;border-radius:14px;
+  color:#fff;background:linear-gradient(110deg,#6868c6,#548eaf);
+  box-shadow:0 8px 18px rgba(91,103,190,.2);font-weight:800;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.sp-user-mode .sp-user-welcome-actions button:first-child:hover{transform:translateY(-2px);box-shadow:0 11px 22px rgba(91,103,190,.24)}
+.sp-user-mode .sp-user-welcome-actions .sp-user-quiet-action{
+  min-height:44px;padding:0 14px;border:1px solid rgba(105,113,174,.2);
+  border-radius:13px;color:#555e88;background:rgba(255,255,255,.55);font-weight:750;
+}
+.sp-user-mode .sp-user-welcome-foot{color:#737b98}
+.sp-user-mode .sp-user-welcome-foot b{color:#505a7d}
+.sp-user-mode .sp-user-welcome-art{opacity:.82}
+.sp-user-mode .sp-user-stats{gap:14px;margin:18px 0 34px}
+.sp-user-mode .sp-user-stat{
+  position:relative;overflow:hidden;min-height:154px;padding:20px 19px;
+  border:1px solid rgba(91,104,150,.11);border-radius:20px;
+  box-shadow:0 9px 24px rgba(54,68,111,.055);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.sp-user-mode .sp-user-stat:hover{transform:translateY(-2px);box-shadow:0 13px 28px rgba(54,68,111,.09)}
+.sp-user-mode .sp-user-stat-lilac{background:linear-gradient(145deg,#f1edff,#fff 88%)}
+.sp-user-mode .sp-user-stat-mint{background:linear-gradient(145deg,#e8f8f1,#fff 88%)}
+.sp-user-mode .sp-user-stat-peach{background:linear-gradient(145deg,#fff0e6,#fff 88%)}
+.sp-user-mode .sp-user-stat-blue{background:linear-gradient(145deg,#eaf3ff,#fff 88%)}
+.sp-user-mode .sp-user-stat small{color:#7c829b;font-size:9px;font-weight:850;letter-spacing:1.15px}
+.sp-user-mode .sp-user-stat strong{display:block;margin:13px 0 5px;color:#29304e;font-size:clamp(23px,2.2vw,30px);font-weight:850;letter-spacing:-.8px;overflow-wrap:anywhere}
+.sp-user-mode .sp-user-stat p{max-width:90%;color:#788099;font-size:11px;line-height:1.5}
+.sp-user-mode .sp-user-stat-icon{width:37px;height:37px;border-radius:13px;background:rgba(255,255,255,.75);box-shadow:0 4px 12px rgba(65,77,123,.07);color:#686cba}
+.sp-user-mode .sp-user-tools-section{margin-top:8px}
+.sp-user-mode .sp-user-section-heading{margin-bottom:17px}
+.sp-user-mode .sp-user-section-heading>div>span{color:#7b80ae;font-size:9px;font-weight:900;letter-spacing:1.8px}
+.sp-user-mode .sp-user-section-heading h2{margin:6px 0;color:#29304e;font-size:clamp(22px,2.5vw,29px);letter-spacing:-.8px}
+.sp-user-mode .sp-user-section-heading p{color:#8188a0;font-size:12px}
+.sp-user-mode .sp-user-tools-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.sp-user-mode .sp-user-tool{
+  position:relative;min-height:190px;padding:19px 19px 17px;overflow:hidden;
+  border:1px solid rgba(85,99,145,.13);border-radius:20px;
+  box-shadow:0 8px 22px rgba(54,68,111,.045);
+  text-align:left;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+.sp-user-mode .sp-user-tool:after{content:"";position:absolute;width:120px;height:120px;right:-54px;top:-54px;border-radius:50%;background:rgba(255,255,255,.42);pointer-events:none}
+.sp-user-mode .sp-user-tool:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(54,68,111,.095);border-color:rgba(104,112,190,.24)}
+.sp-user-mode .sp-user-tool-violet{background:linear-gradient(145deg,#eeeaff,#faf9ff)}
+.sp-user-mode .sp-user-tool-blue{background:linear-gradient(145deg,#e8f1ff,#f8fbff)}
+.sp-user-mode .sp-user-tool-amber{background:linear-gradient(145deg,#fff3df,#fffbf4)}
+.sp-user-mode .sp-user-tool-mint{background:linear-gradient(145deg,#e6f7ef,#f8fffb)}
+.sp-user-mode .sp-user-tool-rose{background:linear-gradient(145deg,#ffedf1,#fff9fa)}
+.sp-user-mode .sp-user-tool-sky{background:linear-gradient(145deg,#e7f6fb,#f8fdff)}
+.sp-user-mode .sp-user-tool-icon{width:42px;height:42px;margin-bottom:15px;border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 4px 12px rgba(65,77,123,.07);font-size:20px}
+.sp-user-mode .sp-user-tool-tag{color:#777f9e;font-size:8px;font-weight:900;letter-spacing:1.4px}
+.sp-user-mode .sp-user-tool strong{display:block;margin:6px 0;color:#303653;font-size:16px;font-weight:850;letter-spacing:-.25px}
+.sp-user-mode .sp-user-tool p{max-width:260px;color:#747d97;font-size:11px;line-height:1.55}
+.sp-user-mode .sp-user-tool>i{display:inline-flex;gap:8px;align-items:center;margin-top:13px;color:#5966a9;font-size:10px;font-style:normal;font-weight:850}
+.sp-user-mode .sp-user-tool>i b{font-size:14px}
+.sp-user-mode .sp-user-bottom-grid{gap:16px;margin-top:28px}
+.sp-user-mode .sp-user-recent,.sp-user-mode .sp-user-profile-card{border:1px solid rgba(91,104,150,.12);border-radius:20px;box-shadow:0 8px 22px rgba(54,68,111,.045)}
+.sp-user-mode .sp-user-recent{background:linear-gradient(145deg,#fff,#f8faff)}
+.sp-user-mode .sp-user-profile-card{background:linear-gradient(145deg,#f0efff,#f5fbff)}
+.sp-user-mode .sp-user-bottom-heading h2{color:#303653}
+.sp-user-mode .sp-user-result-row{border-color:rgba(91,104,150,.1)}
+.sp-user-mode .sp-user-result-mark{border-radius:11px;background:#efedff;color:#6868bd}
+.sp-user-mode .sp-user-empty-results{border-radius:15px;background:#f4f6ff}
+.sp-user-mode .sp-user-profile-card button{border-radius:12px;background:#6669bd;color:#fff}
+.sp-user-mode .sp-user-tool:focus-visible,.sp-user-mode .sp-user-welcome-actions button:focus-visible{outline:3px solid rgba(101,111,202,.35);outline-offset:3px}
+.sp-dark-theme.sp-user-mode .sp-user-welcome{background:linear-gradient(118deg,#272847,#24354a 55%,#203c3a);border-color:rgba(177,185,255,.14)}
+.sp-dark-theme.sp-user-mode .sp-user-welcome h1,.sp-dark-theme.sp-user-mode .sp-user-section-heading h2{color:#f1f2ff}
+.sp-dark-theme.sp-user-mode .sp-user-welcome p,.sp-dark-theme.sp-user-mode .sp-user-section-heading p{color:#b1bad1}
+.sp-dark-theme.sp-user-mode .sp-user-stat,.sp-dark-theme.sp-user-mode .sp-user-tool,.sp-dark-theme.sp-user-mode .sp-user-recent,.sp-dark-theme.sp-user-mode .sp-user-profile-card{border-color:rgba(190,198,255,.12);box-shadow:none}
+.sp-dark-theme.sp-user-mode .sp-user-stat strong,.sp-dark-theme.sp-user-mode .sp-user-tool strong{color:#f2f3ff}
+.sp-dark-theme.sp-user-mode .sp-user-stat p,.sp-dark-theme.sp-user-mode .sp-user-tool p{color:#b5bfd6}
+@media(max-width:980px){.sp-user-mode .sp-user-tools-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+  .sp-user-mode .sp-user-welcome{padding:25px 20px 62px;border-radius:21px}
+  .sp-user-mode .sp-user-welcome h1{max-width:280px;font-size:34px}
+  .sp-user-mode .sp-user-welcome-actions{flex-direction:row;align-items:center;flex-wrap:wrap}
+  .sp-user-mode .sp-user-welcome-actions button:first-child{min-height:43px;padding:0 14px;font-size:11px}
+  .sp-user-mode .sp-user-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .sp-user-mode .sp-user-stat{min-height:132px;padding:13px;border-radius:16px}
+  .sp-user-mode .sp-user-stat strong{font-size:21px}
+  .sp-user-mode .sp-user-tools-grid{grid-template-columns:1fr;gap:10px}
+  .sp-user-mode .sp-user-tool{min-height:158px;padding:16px;border-radius:17px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sp-user-mode .sp-user-stat,.sp-user-mode .sp-user-tool,.sp-user-mode .sp-user-welcome-actions button:first-child{transition:none}
+  .sp-user-mode .sp-user-stat:hover,.sp-user-mode .sp-user-tool:hover,.sp-user-mode .sp-user-welcome-actions button:first-child:hover{transform:none}
+}
