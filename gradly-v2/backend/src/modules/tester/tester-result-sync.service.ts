@@ -752,8 +752,8 @@ function romanSemester(text: string): number | null {
   };
   const token = "(VIII|VII|VI|V|IV|III|II|I|[1-8]|FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH)";
   const patterns = [
-    new RegExp("\b" + token + "(?:ST|ND|RD|TH)?\\s*(?:SEM(?:ESTER)?\b|REG(?:ULAR)?\b|BACK(?:LOG)?\b|ATKT\b|RE-?EXAM\b)", "i"),
-    new RegExp("\bSEM(?:ESTER)?\\s*" + token + "(?:ST|ND|RD|TH)?\b", "i"),
+    new RegExp("\\b" + token + "(?:ST|ND|RD|TH)?\\s*(?:SEM(?:ESTER)?\\b|REG(?:ULAR)?\\b|BACK(?:LOG)?\\b|ATKT\\b|RE-?EXAM\\b)", "i"),
+    new RegExp("\\bSEM(?:ESTER)?\\s*" + token + "(?:ST|ND|RD|TH)?\\b", "i"),
   ];
   const matches = patterns.map(pattern => pattern.exec(text)).filter(Boolean) as RegExpExecArray[];
   if (!matches.length) return null;
