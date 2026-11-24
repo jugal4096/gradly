@@ -12,9 +12,9 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
     if (request.type === "sessions") result = await listGecaResultSessions();
     else if (request.type === "match") result = await findGecaEnrollmentResults(request.resultId, request.enrollment, request.semester);
     else result = await discoverGecaEnrollmentCandidates(request.input);
-    (self as DedicatedWorkerGlobalScope).postMessage({ id: request.id, success: true, result });
+    (self as unknown as { postMessage(message: unknown): void }).postMessage({ id: request.id, success: true, result });
   } catch (error) {
-    (self as DedicatedWorkerGlobalScope).postMessage({
+    (self as unknown as { postMessage(message: unknown): void }).postMessage({
       id: request.id,
       success: false,
       error: error instanceof Error ? error.message : "GECA document processing failed."
