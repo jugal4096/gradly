@@ -93,8 +93,8 @@ const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6,
 const gradeNames = ["A++","A+","A","B+","B","C+","C","D"];
 function normalizeGradeSymbol(value: unknown): string {
   const grade=String(value??"").trim().toUpperCase().replace(/\s+/g,"");
-  if (["D1","D2","D3","F","AB"].includes(grade)) return "D";
-  return grade;
+  const aliases:Record<string,string>={O:"A++",C:"C+",P:"C",D1:"D",D2:"D",D3:"D",F:"D",AB:"D"};
+  return aliases[grade] || grade;
 }
 function isActiveBacklogGrade(grade: unknown): boolean { return String(grade || "").trim().toUpperCase() === "D"; }
 function normalizeResultCourseCode(value: unknown): string { return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
@@ -391,7 +391,7 @@ export default function StudentPlatform() {
   const [nextSemester,setNextSemester] = useState("");
   const [subjects,setSubjects] = useState<Subject[]>(() => {
     if (isGuest) {
-      try { const saved=JSON.parse(localStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>({...subject,grade:normalizeGradeSymbol(({O:"A++",C:"C+",P:"C",F:"D",AB:"D",D1:"D",D2:"D",D3:"D"} as Record<string,string>)[subject.grade] || subject.grade) && POINTS[normalizeGradeSymbol(({O:"A++",C:"C+",P:"C",F:"D",AB:"D",D1:"D",D2:"D",D3:"D"} as Record<string,string>)[subject.grade] || subject.grade)]!==undefined?normalizeGradeSymbol(({O:"A++",C:"C+",P:"C",F:"D",AB:"D",D1:"D",D2:"D",D3:"D"} as Record<string,string>)[subject.grade] || subject.grade):"A"})); } catch { /* use defaults */ }
+      try { const saved=JSON.parse(localStorage.getItem("gradly_guest_subjects") || "null"); if(Array.isArray(saved)&&saved.length) return saved.map((subject:Subject)=>{const grade=normalizeGradeSymbol(subject.grade);return {...subject,grade:POINTS[grade]!==undefined?grade:"A"};}); } catch { /* use defaults */ }
       return Array.from({length:5},(_,i)=>({id:i+1,name:`Subject ${i+1}`,credits:3,grade:"A"}));
     }
     return [{id:1,name:"",credits:3,grade:"A"}];
