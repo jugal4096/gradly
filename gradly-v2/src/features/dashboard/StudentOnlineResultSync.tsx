@@ -21,6 +21,8 @@ type MatchResponse = {
   matches: ResultDocument[];
 };
 function normalizeCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function courseCodeAliases(value:unknown):string[] { return String(value||"").toUpperCase().split(/[\\/;,]+/).map(normalizeCourseCode).filter(Boolean); }
+function courseCodeMatches(candidate:unknown, code:string):boolean { return courseCodeAliases(candidate).includes(code); }
 function usableParsedCourseName(value:unknown):string { const name=String(value||"").replace(/\s+/g," ").trim(); if(!name || name.length>90 || /\bFOREIGN\b|\bCOURSE\s*CODE\b|\bRESULT\s*SUMMARY\b|\b(?:PYTHON|GERMAN|TECHNICAL|UNIVERSAL|BUSINESS|INTRODUCTION)\b.*\b(?:PYTHON|GERMAN|TECHNICAL|UNIVERSAL|BUSINESS|INTRODUCTION)\b/i.test(name)) return ""; return name; }
 function formatCourseCategory(value?:string):string { const labels:Record<string,string>={BSC:"Basic Science",ESC:"Engineering Science",PCC:"Professional Core Course",PEC:"Professional Elective",OE:"Open Elective",MDM:"Multidisciplinary Course",AEC:"Ability Enhancement Course",VEC:"Value Education Course",VSEC:"Value Skill Enhancement Course",INT:"Internship",PRJ:"Project",HSSM:"Humanities & Social Sciences",EEM:"Economics & Management",UNCLASSIFIED:"Needs classification"}; return labels[String(value||"").toUpperCase()] || String(value||"Other"); }
 // GECA ESE PDFs use CEOE1010 for the Semester 6 Disaster Management
@@ -227,8 +229,8 @@ export default function StudentOnlineResultSync({
     // already registered in the discovered-result database is still outside the
     // student's selected curriculum and must remain explicitly identified as such.
     const subjectCodes = subjects.filter(subject => !subject.isCustom || Boolean(subject.curriculumSubjectId))
-      .map(subject => normalizeCourseCode(subject.courseCode)).filter(Boolean);
-    const expectedCodes = new Set([...subjectCodes, ...catalogue.map(item => normalizeCourseCode(item.code)).filter(Boolean), "CEHS1030", "INHS1020", "INMC2001"]);
+      .flatMap(subject => courseCodeAliases(subject.courseCode));
+    const expectedCodes = new Set([...subjectCodes, ...catalogue.flatMap(item => courseCodeAliases(item.code)), "CEHS1030", "INHS1020", "INMC2001"]);
     const counts = new Map<string, number>();
     sourceRows.forEach(row => {
       const code = canonicalResultCourseCode(row.courseCode);
@@ -273,8 +275,8 @@ export default function StudentOnlineResultSync({
       const sourceCode = normalizeCourseCode(row.courseCode);
       const canonicalCode = canonicalResultCourseCode(sourceCode);
       const code = canonicalCode === "INMC2010" ? "INMC2001" : canonicalCode;
-      const existing = subjects.find(subject => normalizeCourseCode(subject.courseCode) === code);
-      const catalog = catalogue.find(item => normalizeCourseCode(item.code) === code);
+      const existing = subjects.find(subject => courseCodeMatches(subject.courseCode, code));
+      const catalog = catalogue.find(item => courseCodeMatches(item.code, code));
       const knownNames: Record<string,string> = {
         "CEHS1030":"Constitution of India and Professional Ethics",
         "ETHS0020":"Foreign Language - German",
