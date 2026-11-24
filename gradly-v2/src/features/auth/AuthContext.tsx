@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function syncUserWithBackend(firebaseUser: FirebaseUser) {
     const idToken = await firebaseUser.getIdToken();
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://gradly-backend-1q7s.onrender.com";
     const response = await fetch(`${apiBaseUrl}/api/auth/sync`, { method: "POST", headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" } });
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
