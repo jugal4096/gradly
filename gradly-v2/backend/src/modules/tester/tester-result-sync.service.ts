@@ -915,9 +915,8 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
       : reExamTargetCourseCode
         ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
         : extractMatchingGrades(lines, enrollment);
-    const pageParsed = /ESE\s+NOV[\s-]*DEC[\s-]*2024/i && !pageParsedBase.grades.length && !reExamTargetCourseCode
+    const pageParsed = /ESE\s+NOV[\s-]*DEC[\s-]*2024/i.test(sessionTitle) && !pageParsedBase.grades.length && !reExamTargetCourseCode
       ? (() => {
-          const prefixes = subjectPrefixesForEnrollment(enrollment.slice(0, 2), enrollment.slice(5, 7));
           const legacyRows = extractESE2024VerticalGrades(lines, enrollment);
           return { grades: legacyRows.grades, enrollmentFound: pageParsedBase.enrollmentFound || legacyRows.enrollmentFound };
         })()
