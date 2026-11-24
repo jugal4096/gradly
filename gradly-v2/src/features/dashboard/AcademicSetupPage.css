@@ -1171,3 +1171,29 @@
 .academic-setup-page.theme-dark input,.academic-setup-page.theme-dark select,.academic-setup-page.theme-dark textarea{
   background:#24334b!important;color:#f4f6fc!important;border-color:#53647f!important;
 }
+
+
+/* Institution selection should read like a selected option, not a mandatory search field. */
+.academic-setup-institution-choice{width:100%}
+.academic-setup-institution-selected{
+  display:flex;align-items:center;gap:14px;width:100%;min-height:76px;
+  padding:14px 16px;background:#f2f6ff;border:1.5px solid #9aafe6;
+  border-radius:15px;box-shadow:0 4px 14px rgba(39,69,139,.07);
+}
+.academic-setup-institution-mark{
+  display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:12px;
+  color:#fff;background:#3154c5;font-size:19px;font-weight:850;
+}
+.academic-setup-institution-selected-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.academic-setup-institution-selected-copy strong{color:#17243a;font-size:14px;font-weight:800;line-height:1.35}
+.academic-setup-institution-selected-copy small{color:#526580;font-size:11px;font-weight:650}
+.academic-setup-institution-check{color:#187b59;font-size:18px;font-weight:900}
+.academic-setup-institution-change{
+  padding:8px 13px;border:1px solid #b8c8e8;border-radius:9px;
+  color:#294bb5;background:#fff;font-size:12px;font-weight:800;cursor:pointer;
+}
+.academic-setup-institution-change:hover{background:#e9efff}
+.academic-setup-page.theme-dark .academic-setup-institution-selected{background:#243653;border-color:#526b9a}
+.academic-setup-page.theme-dark .academic-setup-institution-selected-copy strong{color:#f3f6ff}
+.academic-setup-page.theme-dark .academic-setup-institution-selected-copy small{color:#c3cee2}
+.academic-setup-page.theme-dark .academic-setup-institution-change{background:#1b2940;color:#dce6ff;border-color:#526b9a}
