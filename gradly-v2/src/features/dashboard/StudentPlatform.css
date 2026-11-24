@@ -3165,3 +3165,32 @@
 .sp-dark-theme .gd-security-eyebrow-detail{color:#ff9aa7}
 .sp-dark-theme .gd-security-warning{border-left-color:#ff6477}
 @media(max-width:560px){.gd-security-icon{flex-basis:52px;height:52px;font-size:29px}.gd-security-warning-word{font-size:32px}.gd-security-eyebrow-detail{font-size:8px}}
+
+/* Prominent curriculum loading state for the SGPA subject list. */
+.sp-curriculum-loading{
+  display:flex;align-items:center;gap:15px;margin:16px 0;padding:17px 19px;
+  border:1px solid #a9d8e8;border-left:5px solid #1687a7;border-radius:14px;
+  background:linear-gradient(110deg,#e9f8fc 0%,#f4fbff 58%,#eaf7f4 100%);
+  color:#173b54;box-shadow:0 7px 20px rgba(34,112,145,.09);
+}
+.sp-curriculum-loading-spinner{
+  display:block;flex:0 0 27px;width:27px;height:27px;border:3px solid #b9dce8;
+  border-top-color:#147f9f;border-right-color:#147f9f;border-radius:50%;
+  animation:sp-curriculum-spin .8s linear infinite;
+}
+.sp-curriculum-loading>div{display:grid;gap:4px;min-width:0}
+.sp-curriculum-loading strong{font-size:14px;font-weight:900;line-height:1.35;color:#12516b}
+.sp-curriculum-loading small{font-size:11px;line-height:1.5;color:#557286}
+.sp-curriculum-loading-dots{display:flex;gap:4px;margin-left:auto;align-items:center}
+.sp-curriculum-loading-dots i{width:6px;height:6px;border-radius:50%;background:#1687a7;animation:sp-curriculum-pulse 1s ease-in-out infinite}
+.sp-curriculum-loading-dots i:nth-child(2){animation-delay:.16s}
+.sp-curriculum-loading-dots i:nth-child(3){animation-delay:.32s}
+@keyframes sp-curriculum-spin{to{transform:rotate(360deg)}}
+@keyframes sp-curriculum-pulse{0%,80%,100%{opacity:.3;transform:scale(.75)}40%{opacity:1;transform:scale(1)}}
+.sp-dark-theme .sp-curriculum-loading{border-color:#376d82;border-left-color:#54c5dc;background:linear-gradient(110deg,#18394b,#1b3043 58%,#1b3b3b);color:#effaff;box-shadow:0 7px 20px rgba(0,0,0,.16)}
+.sp-dark-theme .sp-curriculum-loading-spinner{border-color:#355c70;border-top-color:#65d5e7;border-right-color:#65d5e7}
+.sp-dark-theme .sp-curriculum-loading strong{color:#b9f2ff}
+.sp-dark-theme .sp-curriculum-loading small{color:#b0c8d8}
+.sp-dark-theme .sp-curriculum-loading-dots i{background:#65d5e7}
+@media(max-width:560px){.sp-curriculum-loading{gap:11px;padding:14px}.sp-curriculum-loading strong{font-size:12px}.sp-curriculum-loading small{font-size:10px}.sp-curriculum-loading-dots{gap:3px}}
+@media(prefers-reduced-motion:reduce){.sp-curriculum-loading-spinner,.sp-curriculum-loading-dots i{animation:none}}
