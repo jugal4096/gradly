@@ -264,7 +264,8 @@ export default function StudentOnlineResultSync({
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || "The saved subject catalogue could not be checked.");
       if (!Array.isArray(body.data)) throw new Error("The saved subject catalogue returned an invalid response.");
-      discoveredRegistry = { ...discoveredRegistry, ...Object.fromEntries(body.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }])) };
+      const registryEntries = body.data.flatMap((item:any) => courseCodeAliases(item.courseCode).map(code => [code, { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
+      discoveredRegistry = { ...discoveredRegistry, ...Object.fromEntries(registryEntries) };
       try { localStorage.setItem(localRegistryKey, JSON.stringify(discoveredRegistry)); } catch { /* The backend registry remains the durable source. */ }
     } catch (error) {
       setError(error instanceof Error ? "Gradly could not verify previously identified subjects: " + error.message : "Gradly could not verify previously identified subjects. No result was applied.");
