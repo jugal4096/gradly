@@ -5,6 +5,7 @@ import {
   selectGecaAcademicDocuments,
   selectGecaBranchDocuments,
   selectGecaSemesterDocuments,
+  inferGecaSemesterFromCourseCodes,
   extractSubjectResultGrades,
   extractMatchingGrades,
   isRestrictedGecaResultFetch,
@@ -93,7 +94,7 @@ test("semester filtering excludes a PDF when its filename and section identify a
     { title: "Civil Engineering IV SEM REGULAR", url: "https://geca.ac.in/sem4.pdf", sectionSemester: 2 },
     { title: "CEESC1005_RESULT", url: "https://geca.ac.in/unknown.pdf", sectionSemester: null },
   ];
-  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0], documents[2]]);
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[1], documents[2]]);
 });
 
 
@@ -117,6 +118,32 @@ test("academic section prioritization retains unlabelled links for semester vali
   ];
   const selection = selectGecaAcademicDocuments(documents, ["FIRST_YEAR"], true);
   assert.deepEqual(selection.documents, [documents[0], documents[1]]);
+});
+
+test("unlabelled consolidated NEP backlog PDFs remain candidates despite stale page semester headings", () => {
+  const documents = [
+    { title: "COMPUTER SCIENCE AND ENGINEERING-2023-24 (NEP) BACK", url: "https://geca.ac.in/cse-back.pdf", sectionSemester: 3 },
+  ];
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), documents);
+});
+
+test("semester inference uses only branch-specific core course-code ranges and rejects mixed sets", () => {
+  assert.equal(inferGecaSemesterFromCourseCodes("05", [
+    { courseCode: "CSPCC2006", grade: "A" },
+    { courseCode: "CSPCC2009", grade: "B+" },
+  ]), 4);
+  assert.equal(inferGecaSemesterFromCourseCodes("05", [
+    { courseCode: "CSPCC3005", grade: "A" },
+    { courseCode: "CSPCC3008", grade: "B" },
+  ]), 6);
+  assert.equal(inferGecaSemesterFromCourseCodes("05", [
+    { courseCode: "CSPCC2001", grade: "A" },
+    { courseCode: "CSPCC2006", grade: "B" },
+  ]), null);
+  assert.equal(inferGecaSemesterFromCourseCodes("06", [
+    { courseCode: "ITPCC3010", grade: "A" },
+    { courseCode: "ITPCC3013", grade: "B+" },
+  ]), 6);
 });
 
 test("semester filtering leaves all documents untouched when no semester is selected", () => {
