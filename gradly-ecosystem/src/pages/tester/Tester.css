@@ -363,3 +363,9 @@
 .tester-ultra-inline-clear{margin-left:auto;min-height:30px;padding:0 11px;border:1px solid #efc7c7;border-radius:8px;background:#fff5f5;color:#a52d37;font:inherit;font-size:10px;font-weight:900;cursor:pointer}
 .tester-ultra-inline-clear:hover{background:#ffeaea;border-color:#e4aaaa}
 .tester-ultra-inline-clear:focus-visible{outline:3px solid rgba(165,45,55,.2);outline-offset:2px}
+
+
+.tester-ultra-audit-clear-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0 16px;padding:11px 13px;border:1px solid #eadede;border-radius:10px;background:#fffafa;color:#6b5555;font-size:12px}
+.tester-ultra-audit-clear-row button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 12px;border:1px solid #e7baba;border-radius:8px;background:#fff;color:#a52d37;font:inherit;font-weight:800;cursor:pointer}
+.tester-ultra-audit-clear-row button:hover{background:#fff0f0;border-color:#d99b9b}
+.tester-ultra-audit-clear-row button:focus-visible{outline:3px solid rgba(165,45,55,.2);outline-offset:2px}
