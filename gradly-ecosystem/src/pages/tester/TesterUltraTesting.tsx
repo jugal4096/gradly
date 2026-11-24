@@ -9,6 +9,8 @@ const API = API_BASE_URL.replace(/\/+$/, "");
 // GECA zero-point outcomes: D and its D1/D2/D3 variants, plus legacy F/AB tokens.
 const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0, D1: 0, D2: 0, D3: 0, F: 0, AB: 0 };
 const ZERO_CREDIT_MANDATORY_CODES = new Set(["INMC2001", "INMC2010"]);
+// GECA official CSE NEP Sem VI credit confirmations; used only if live catalogue lookup is unavailable.
+const GECA_VERIFIED_CREDIT_OVERRIDES: Record<string, number> = { CSHNC0020: 4, INMDM9006: 3 };
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = { recognized: boolean; requiresConfirmation?: boolean; message?: string; programme?: string; programId?: string; branch?: string; branchId?: string; curriculumId?: string; curriculumName?: string; scheme?: string; admissionYear?: number; admissionMode?: string; entrySemester?: number; totalSemesters?: number };
 type ResultSession = { id: string; title: string; url: string };
@@ -236,10 +238,12 @@ export default function TesterUltraTesting() {
               const zeroCreditMandatory = ZERO_CREDIT_MANDATORY_CODES.has(code);
               // Prefer a positive, authoritative credit mapping. A stale zero-credit
               // placeholder in one branch must not mask a valid shared-registry value.
-              const creditCandidates = [resultRow.credits, curriculumCodeRow?.credits, sharedCodeRow?.credits, nameMatchedRow?.credits]
+              const creditCandidates = [curriculumCodeRow?.credits, sharedCodeRow?.credits, nameMatchedRow?.credits, resultRow.credits]
                 .map(value => value == null || value === "" ? Number.NaN : Number(value));
               const mappedCredits = creditCandidates.find(value => Number.isFinite(value) && value > 0);
-              const rowCredits = zeroCreditMandatory ? 0 : mappedCredits ?? 0;
+              // The official GECA confirmations are a last-resort fallback, never overriding live curriculum data.
+              const verifiedFallbackCredits = GECA_VERIFIED_CREDIT_OVERRIDES[code];
+              const rowCredits = zeroCreditMandatory ? 0 : mappedCredits ?? verifiedFallbackCredits ?? 0;
               if (!catalogueRow && !zeroCreditMandatory) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || resultRow.courseCode, grade, credits:rowCredits>0?rowCredits:null, kind:"NEW", semester, document:found.title });
               else if (catalogueRow) {
                 if (nameMatchedRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || String(nameMatchedRow.name || resultRow.courseCode), grade, credits:rowCredits>0?rowCredits:null, kind:"CODE_MISMATCH", semester, document:found.title });
