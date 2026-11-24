@@ -6,7 +6,9 @@ import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
-const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0 };
+// GECA zero-point outcomes: D and its D1/D2/D3 variants, plus legacy F/AB tokens.
+const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0, D1: 0, D2: 0, D3: 0, F: 0, AB: 0 };
+const ZERO_CREDIT_MANDATORY_CODES = new Set(["INMC2001", "INMC2010"]);
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = { recognized: boolean; requiresConfirmation?: boolean; message?: string; programme?: string; programId?: string; branch?: string; branchId?: string; curriculumId?: string; curriculumName?: string; scheme?: string; admissionYear?: number; admissionMode?: string; entrySemester?: number; totalSemesters?: number };
 type ResultSession = { id: string; title: string; url: string };
@@ -229,17 +231,26 @@ export default function TesterUltraTesting() {
               const sharedCodeRow = sharedRegistry.find(item=>catalogueCodeMatches(item.code ?? item.courseCode,code));
               const nameMatchedRow = !curriculumCodeRow && !sharedCodeRow && resultRow.courseName ? catalogue.find(item=>normalizeName(item.name)===normalizeName(resultRow.courseName)) : undefined;
               const catalogueRow = curriculumCodeRow || sharedCodeRow || nameMatchedRow;
-              const rowCredits = Number(resultRow.credits ?? catalogueRow?.credits ?? 0);
               const grade = String(resultRow.grade || "").trim().toUpperCase();
-              if (!catalogueRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || resultRow.courseCode, grade, credits:rowCredits>0?rowCredits:null, kind:"NEW", semester, document:found.title });
-              else {
+              const zeroCreditMandatory = ZERO_CREDIT_MANDATORY_CODES.has(code);
+              // Prefer a positive, authoritative credit mapping. A stale zero-credit
+              // placeholder in one branch must not mask a valid shared-registry value.
+              const creditCandidates = [resultRow.credits, curriculumCodeRow?.credits, sharedCodeRow?.credits, nameMatchedRow?.credits]
+                .map(value => value == null || value === "" ? Number.NaN : Number(value));
+              const mappedCredits = creditCandidates.find(value => Number.isFinite(value) && value > 0);
+              const rowCredits = zeroCreditMandatory ? 0 : mappedCredits ?? 0;
+              if (!catalogueRow && !zeroCreditMandatory) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || resultRow.courseCode, grade, credits:rowCredits>0?rowCredits:null, kind:"NEW", semester, document:found.title });
+              else if (catalogueRow) {
                 if (nameMatchedRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || String(nameMatchedRow.name || resultRow.courseCode), grade, credits:rowCredits>0?rowCredits:null, kind:"CODE_MISMATCH", semester, document:found.title });
                 if ((curriculumCodeRow || sharedCodeRow) && resultRow.courseName && (catalogueRow.name || catalogueRow.courseName) && normalizeName(resultRow.courseName)!==normalizeName(catalogueRow.name ?? catalogueRow.courseName)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName, grade, credits:rowCredits>0?rowCredits:null, kind:"NAME_MISMATCH", semester, document:found.title });
                 if (Number.isFinite(Number(resultRow.credits)) && Number(resultRow.credits)>0 && Number(catalogueRow.credits)>0 && Number(resultRow.credits)!==Number(catalogueRow.credits)) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || catalogueRow.name || catalogueRow.courseName || resultRow.courseCode, grade, credits:rowCredits, kind:"CREDIT_MISMATCH", semester, document:found.title });
                 if (curriculumCodeRow && sharedCodeRow && Number(curriculumCodeRow.credits)>0 && Number(sharedCodeRow.credits)>0 && Number(curriculumCodeRow.credits)!==Number(sharedCodeRow.credits)) findings.push({ code:resultRow.courseCode, name:String(curriculumCodeRow.name || resultRow.courseName || resultRow.courseCode), grade, credits:Number(sharedCodeRow.credits), kind:"CREDIT_MISMATCH", semester, document:found.title });
               }
               const points = GRADE_POINTS[grade];
-              if (!rowCredits || !Number.isFinite(rowCredits) || rowCredits<=0 || points===undefined) { incomplete=true; continue; }
+              // Environmental Studies is a valid zero-credit mandatory course;
+              // it contributes neither numerator nor denominator and cannot block SGPA.
+              if (zeroCreditMandatory) continue;
+              if (!Number.isFinite(rowCredits) || rowCredits<=0 || points===undefined) { incomplete=true; continue; }
               credits += rowCredits; weighted += rowCredits*points;
             }
             const sgpa = !incomplete && credits>0 ? weighted/credits : null;
