@@ -1,5 +1,6 @@
 const ALLOWED_ORIGINS = new Set([
   "https://gradly-peach.netlify.app",
+  "https://deploy-preview-139--gradly-peach.netlify.app",
   "https://gradly-peach.vercel.app",
   "http://localhost:5173",
 ]);
