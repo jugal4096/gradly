@@ -356,3 +356,10 @@
 .tester-ultra-clear-bottom:hover{background:#ffecec;border-color:#e6aaaa}
 @media(max-width:620px){.tester-ultra-main{padding-bottom:145px}.tester-ultra-clear-bar{min-height:66px;padding-left:12px;padding-right:12px}.tester-ultra-clear-summary{gap:6px;font-size:9px}.tester-ultra-clear-summary strong{font-size:13px}.tester-ultra-clear-summary strong span{font-size:9px}.tester-ultra-clear-bottom{min-height:43px;padding:0 12px;font-size:10px}.tester-ultra-actions{bottom:70px}}
 @media(prefers-reduced-motion:reduce){.tester-ultra-search,.tester-ultra-field textarea,.tester-ultra-generator-fields input,.tester-ultra-generator-fields select{transition:none}}
+
+
+/* Always-visible batch clear fallback beside the enrollment input */
+.tester-ultra-input-footer{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.tester-ultra-inline-clear{margin-left:auto;min-height:30px;padding:0 11px;border:1px solid #efc7c7;border-radius:8px;background:#fff5f5;color:#a52d37;font:inherit;font-size:10px;font-weight:900;cursor:pointer}
+.tester-ultra-inline-clear:hover{background:#ffeaea;border-color:#e4aaaa}
+.tester-ultra-inline-clear:focus-visible{outline:3px solid rgba(165,45,55,.2);outline-offset:2px}
