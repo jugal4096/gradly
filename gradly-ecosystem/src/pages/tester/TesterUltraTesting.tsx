@@ -223,6 +223,7 @@ export default function TesterUltraTesting() {
               allErrors.push("Semester " + semester + ": institution-wide subject catalogue could not be checked; curriculum-only comparison was used.");
             }
             const findings: SubjectFinding[] = [];
+            const incompleteRows: string[] = [];
             let weighted = 0, credits = 0, incomplete = false;
             for (const resultRow of found.grades) {
               const code = normalizeCode(resultRow.courseCode);
@@ -250,6 +251,8 @@ export default function TesterUltraTesting() {
               // Environmental Studies is a valid zero-credit mandatory course;
               // it contributes neither numerator nor denominator and cannot block SGPA.
               if (zeroCreditMandatory) continue;
+              if (!Number.isFinite(rowCredits) || rowCredits<=0) incompleteRows.push(code + " (credit mapping)");
+              if (points===undefined) incompleteRows.push(code + " (grade " + (grade || "missing") + ")");
               if (!Number.isFinite(rowCredits) || rowCredits<=0 || points===undefined) { incomplete=true; continue; }
               credits += rowCredits; weighted += rowCredits*points;
             }
@@ -257,7 +260,7 @@ export default function TesterUltraTesting() {
             if (sgpa!==null) { cumulativeWeighted+=weighted; cumulativeCredits+=credits; } else cumulativeComplete=false;
             const cgpa = cumulativeComplete && cumulativeCredits>0 ? cumulativeWeighted/cumulativeCredits : null;
             allFindings.push(...findings);
-            semesterAudits.push({ semester, sgpa, cgpa, credits, subjects:found.grades.length, status:sgpa===null?"INCOMPLETE":"VERIFIED", findings, error:sgpa===null?"At least one grade or credit could not be mapped confidently. SGPA is withheld rather than estimated.":undefined });
+            semesterAudits.push({ semester, sgpa, cgpa, credits, subjects:found.grades.length, status:sgpa===null?"INCOMPLETE":"VERIFIED", findings, error:sgpa===null?"Could not map "+incompleteRows.join(", ")+". SGPA is withheld rather than estimated.":undefined });
           }
           const status: StudentAudit["status"] = semesterAudits.length>0 && semesterAudits.every(item=>item.status==="VERIFIED") && allErrors.length===0 ? "completed" : semesterAudits.some(item=>item.status==="VERIFIED") ? "partial" : "failed";
           setRows(current => current.map((row,i)=>i===index?{...row,status,branch:preview.branch||"Unknown",scheme:preview.scheme||preview.curriculumName||"Unknown",admissionMode:preview.admissionMode||"Unknown",curriculumId:preview.curriculumId||"",semesters:semesterAudits,errors:allErrors,findings:allFindings,cgpa:cumulativeComplete&&cumulativeCredits>0?cumulativeWeighted/cumulativeCredits:null}:row));
