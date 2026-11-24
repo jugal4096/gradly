@@ -163,6 +163,63 @@ async function fetchGecaText(url: string): Promise<string> {
   );
 }
 
+const RESULT_PDF_CACHE_TTL_MS = 10 * 60 * 1000;
+const RESULT_PDF_CACHE_MAX_BYTES = 48 * 1024 * 1024;
+const resultPdfCache = new Map<string, { bytes: Uint8Array; expiresAt: number }>();
+const resultPdfDownloads = new Map<string, Promise<Uint8Array>>();
+
+async function downloadResultPdf(url: string): Promise<Uint8Array> {
+  const cached = resultPdfCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) {
+    // Refresh insertion order for simple least-recently-used eviction.
+    resultPdfCache.delete(url);
+    resultPdfCache.set(url, cached);
+    return cached.bytes;
+  }
+  if (cached) resultPdfCache.delete(url);
+  const inFlight = resultPdfDownloads.get(url);
+  if (inFlight) return inFlight;
+
+  const download = fetchGecaResponse(
+    url,
+    "application/pdf,application/octet-stream,*/*",
+    30000,
+    async response => {
+      const declaredLength = Number(response.headers.get("content-length") || 0);
+      if (declaredLength > MAX_PDF_BYTES) throw new Error("pdf-too-large");
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (!bytes.length || bytes.length > MAX_PDF_BYTES) throw new Error("pdf-too-large-or-empty");
+      return bytes;
+    },
+  );
+  resultPdfDownloads.set(url, download);
+  try {
+    const bytes = await download;
+    // Keep a bounded cache: repeat students avoid downloading the same PDFs,
+    // while a busy archive cannot grow this process's memory without limit.
+    let cachedBytes = Array.from(resultPdfCache.values()).reduce((total, item) => total + item.bytes.byteLength, 0);
+    for (const [key, item] of resultPdfCache) {
+      if (item.expiresAt <= Date.now() || cachedBytes + bytes.byteLength > RESULT_PDF_CACHE_MAX_BYTES) {
+        resultPdfCache.delete(key);
+        cachedBytes -= item.bytes.byteLength;
+      }
+    }
+    if (bytes.byteLength <= RESULT_PDF_CACHE_MAX_BYTES) {
+      while (cachedBytes + bytes.byteLength > RESULT_PDF_CACHE_MAX_BYTES && resultPdfCache.size) {
+        const oldestKey = resultPdfCache.keys().next().value;
+        if (!oldestKey) break;
+        const oldest = resultPdfCache.get(oldestKey);
+        resultPdfCache.delete(oldestKey);
+        if (oldest) cachedBytes -= oldest.bytes.byteLength;
+      }
+      resultPdfCache.set(url, { bytes, expiresAt: Date.now() + RESULT_PDF_CACHE_TTL_MS });
+    }
+    return bytes;
+  } finally {
+    resultPdfDownloads.delete(url);
+  }
+}
+
 export async function listGecaResultSessions(): Promise<GecaResultSession[]> {
   if (sessionCache && sessionCache.expiresAt > Date.now()) return sessionCache.sessions;
   let html: string;
@@ -696,18 +753,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   // streaming bytes is retried just like a timeout while receiving headers.
   let bytes: Uint8Array;
   try {
-    bytes = await fetchGecaResponse(
-      safeUrl,
-      "application/pdf,application/octet-stream,*/*",
-      30000,
-      async response => {
-        const declaredLength = Number(response.headers.get("content-length") || 0);
-        if (declaredLength > MAX_PDF_BYTES) throw new Error("pdf-too-large");
-        const downloaded = new Uint8Array(await response.arrayBuffer());
-        if (!downloaded.length || downloaded.length > MAX_PDF_BYTES) throw new Error("pdf-too-large-or-empty");
-        return downloaded;
-      },
-    );
+    bytes = await downloadResultPdf(safeUrl);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("pdf-too-large")) return { document: null, enrollmentFound: false, error: message };
@@ -730,13 +776,20 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    const positioned = content.items.flatMap((raw: unknown) => {
-      if (!raw || typeof raw !== "object" || !("str" in raw) || typeof raw.str !== "string" || !raw.str.trim() || !("transform" in raw)) return [];
-      const transform = (raw as { transform: number[] }).transform;
-      return [{ text: (raw as { str: string }).str.trim(), x: Number(transform[4] || 0), y: Number(transform[5] || 0) }];
-    });
+    const rawItems = content.items.filter((raw: unknown): raw is { str: string; transform: number[] } =>
+      Boolean(raw && typeof raw === "object" && "str" in raw && typeof (raw as { str?: unknown }).str === "string" &&
+        (raw as { str: string }).str.trim() && "transform" in raw),
+    );
+    const rawPageText = rawItems.map(raw => raw.str).join(" ");
+    if (pageNumber === 1) metadataText = rawPageText;
+    // Most pages in a branch PDF belong to other students. Avoid expensive
+    // coordinate grouping and table parsing unless this page contains the exact
+    // enrollment token (whitespace/line breaks in PDF text are normalized away).
+    if (!compactPdfText(rawPageText).includes(compactPdfText(enrollment))) continue;
+    const positioned = rawItems.map(raw => ({
+      text: raw.str.trim(), x: Number(raw.transform[4] || 0), y: Number(raw.transform[5] || 0),
+    }));
     const lines = groupPdfLines(positioned);
-    if (pageNumber === 1) metadataText = lines.map(line => line.text).join(" ");
     allLines.push(...lines);
     // Parse each page independently. PDF coordinates restart on every page;
     // combining pages lets a header at the same Y-coordinate on a previous
@@ -1128,7 +1181,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
 
   const scanDocuments = async (batch: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null; sectionSemester: number | null }>) => {
     let cursor = 0;
-    const workers = Array.from({ length: Math.min(2, batch.length) }, async () => {
+    const workers = Array.from({ length: Math.min(4, batch.length) }, async () => {
       while (cursor < batch.length) {
         const document = batch[cursor++];
         if (scannedUrls.has(document.url)) continue;
