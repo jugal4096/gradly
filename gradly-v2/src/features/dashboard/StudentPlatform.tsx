@@ -804,7 +804,6 @@ export default function StudentPlatform() {
     ? subjects.filter(subject => [subject.name, subject.courseCode, subject.courseType, subject.electiveKind]
         .some(value => String(value ?? "").toLowerCase().includes(normalizedSubjectSearch)))
     : subjects;
-  const name = user?.displayName?.split(" ")[0] || "Guest";
   const title = nav.find(item=>item.id===section)?.label || "Overview";
 
   function updatePlannerCardSubject(cardId:number,subjectId:number,patch:Partial<Subject>) {
@@ -1428,7 +1427,7 @@ export default function StudentPlatform() {
           <section className="gd-home-lower">
             <div className="gd-home-history">
               <div className="gd-home-section-intro"><div><span className="gd-home-kicker">YOUR RECENT ACTIVITY</span><h2>Semester results</h2></div><button type="button" onClick={()=>navigate("tracker")}>View all <b>↗</b></button></div>
-              {results.length>0?<div className="gd-home-result-list">{[...results].slice(-4).reverse().map((result,index)=><div className="gd-home-result-row" key={result.id}><span className="gd-result-sem">S{String(result.semester).padStart(2,"0")}</span><div className="gd-result-info"><strong>Semester {result.semester}</strong><small>{result.credits||0} registered credits · Saved result</small></div><div className="gd-result-score"><strong>{Number(result.sgpa).toFixed(3)}</strong><small>SGPA</small></div><span className="gd-result-chevron">↗</span></div>)}</div>:<div className="gd-home-empty"><span>✦</span><div><strong>Your first milestone is waiting.</strong><p>Save a semester result and Gradly will start building your academic timeline here.</p></div><button type="button" onClick={()=>navigate("sgpa")}>Add first result ↗</button></div>}
+              {results.length>0?<div className="gd-home-result-list">{[...results].slice(-4).reverse().map((result,_index)=><div className="gd-home-result-row" key={result.id}><span className="gd-result-sem">S{String(result.semester).padStart(2,"0")}</span><div className="gd-result-info"><strong>Semester {result.semester}</strong><small>{result.credits||0} registered credits · Saved result</small></div><div className="gd-result-score"><strong>{Number(result.sgpa).toFixed(3)}</strong><small>SGPA</small></div><span className="gd-result-chevron">↗</span></div>)}</div>:<div className="gd-home-empty"><span>✦</span><div><strong>Your first milestone is waiting.</strong><p>Save a semester result and Gradly will start building your academic timeline here.</p></div><button type="button" onClick={()=>navigate("sgpa")}>Add first result ↗</button></div>}
             </div>
             <aside className="gd-home-profile">
               <span className="gd-profile-mark">◎</span><span className="gd-home-kicker">YOUR ACADEMIC IDENTITY</span><h3>Keep your profile in sync.</h3><p>Your institution, branch, scheme and semester help Gradly show the right curriculum and credit requirements.</p><div className="gd-profile-detail"><span>INSTITUTION</span><strong>{profile.institutionName||"Not set"}</strong></div><div className="gd-profile-detail"><span>PROGRAMME / BRANCH</span><strong>{profile.branchName||profile.programName||"Not set"}</strong></div><button type="button" onClick={()=>navigate("profile")}>Review profile <b>→</b></button>
