@@ -418,6 +418,7 @@ export default function TesterUltraTesting() {
       {(rows.length>0)&&<>
         <section className="tester-ultra-results">
           <div className="tester-ultra-section-heading"><div><span>02 · BATCH PERFORMANCE</span><h2>Audit overview</h2></div><div className="tester-ultra-result-actions"><span>{completedCount} / {rows.length} processed</span><button type="button" onClick={exportCsv} disabled={!rows.length}><Download size={15}/> Student CSV</button><button type="button" onClick={exportFindingsCsv} disabled={!globalFindings.length}><Download size={15}/> Findings CSV</button></div></div>
+          <div className="tester-ultra-audit-clear-row"><span>Clear the enrollment numbers and reports from this audit batch.</span><button type="button" onClick={()=>{abortRef.current?.abort();setRunning(false);setEnrollmentText("");setGeneratedEnrollments([]);setRows([]);setFilter("");setNotice("Audit enrollment numbers and results were cleared.");setError("");setGeneratorError("");}}><span aria-hidden="true">×</span> Clear audit enrollments</button></div>
           <div className="tester-ultra-progress"><i style={{width:(rows.length?completedCount/rows.length*100:0)+"%"}}/></div>
           <div className="tester-ultra-metrics">
             <article><span>ENROLLMENTS</span><strong>{rows.length}</strong><small>In this batch</small></article>
