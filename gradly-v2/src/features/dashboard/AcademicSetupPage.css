@@ -579,3 +579,165 @@
   .academic-setup-input-wrap.has-institution .academic-setup-institution-edit{right:90px}
 }
 @media(prefers-reduced-motion:reduce){.academic-setup-page *{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Full-page centred Academic Setup experience */
+.academic-setup-page{
+  --as-purple:#6854e8;--as-blue:#438eea;--as-pink:#ed75b5;--as-teal:#35b9ad;
+  padding:0 20px 56px!important;
+  background:#eaf0ff!important;
+}
+.academic-setup-page::before{
+  background:
+    linear-gradient(135deg,rgba(239,243,255,.91),rgba(248,239,255,.82) 48%,rgba(226,246,250,.78)),
+    url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2200&q=85") center/cover fixed!important;
+}
+.academic-setup-page::after{
+  width:700px;height:700px;right:-250px;top:150px;
+  background:radial-gradient(circle,rgba(237,117,181,.22),rgba(104,84,232,.09) 42%,transparent 70%)!important;
+}
+.academic-setup-wrap{max-width:1120px!important;margin:0 auto!important}
+.academic-setup-header{
+  max-width:1120px;margin:0 auto;height:76px!important;
+  border-bottom:1px solid rgba(255,255,255,.78)!important;
+}
+.academic-setup-content{
+  width:min(100%,850px)!important;max-width:850px!important;
+  margin:34px auto 0!important;text-align:center!important;
+}
+.academic-setup-flow{
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  width:100%!important;text-align:center!important;
+}
+.academic-setup-heading{
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:14px!important;
+  width:100%!important;min-height:310px!important;margin:0 auto 25px!important;
+  padding:42px 36px!important;border-radius:30px!important;
+  text-align:center!important;
+  background:linear-gradient(125deg,rgba(64,64,166,.96),rgba(104,84,232,.94) 48%,rgba(55,158,190,.91))!important;
+  box-shadow:0 24px 65px rgba(76,77,173,.24)!important;
+}
+.academic-setup-heading-copy{
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  width:100%;max-width:680px;text-align:center!important;
+}
+.academic-setup-eyebrow{justify-content:center!important;color:#d8eaff!important}
+.academic-setup-heading h1{
+  max-width:720px!important;margin:0 auto 5px!important;
+  font-size:clamp(36px,5.4vw,58px)!important;line-height:1.06!important;
+  letter-spacing:-2.4px!important;text-align:center!important;
+}
+.academic-setup-heading>p:last-child{
+  max-width:570px!important;margin:0 auto!important;text-align:center!important;
+  font-size:14px!important;line-height:1.75!important;
+}
+.academic-setup-trust-row{justify-content:center!important;gap:12px 22px!important}
+.academic-setup-hero-art{
+  display:none!important;
+}
+.academic-setup-form{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  width:100%!important;max-width:720px!important;margin:0 auto!important;
+  padding:34px!important;gap:24px!important;border-radius:26px!important;
+  text-align:center!important;background:rgba(255,255,255,.94)!important;
+  box-shadow:0 22px 60px rgba(62,75,140,.13)!important;
+}
+.academic-setup-form>*{width:100%!important;max-width:100%!important}
+.academic-setup-field-section{
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  width:100%!important;text-align:center!important;
+}
+.academic-setup-field-section>label,.academic-setup-confirm-fields label,
+.academic-setup-advanced-fields label,.academic-setup-current-semester label,
+.academic-setup-gap-period-fields label{
+  display:block!important;width:100%!important;text-align:center!important;
+  font-size:12px!important;font-weight:800!important;color:#35446c!important;
+}
+.academic-setup-input-wrap,.academic-setup-enrollment-control{
+  width:100%!important;max-width:560px!important;margin:9px auto 0!important;
+  text-align:center!important;
+}
+.academic-setup-input-wrap input,.academic-setup-enrollment-control input,
+.academic-setup-confirm-fields select,.academic-setup-advanced-fields select,
+.academic-setup-current-semester select,.academic-setup-gap-period-fields select{
+  width:100%!important;min-height:54px!important;height:54px!important;
+  border:1px solid #dce2fa!important;border-radius:15px!important;
+  background:#f8f9ff!important;text-align:center!important;
+  font-size:14px!important;box-shadow:inset 0 1px 2px rgba(40,52,100,.025)!important;
+}
+.academic-setup-input-wrap.has-institution input{
+  background:linear-gradient(90deg,#effbf8,#f0f7ff)!important;
+  border-color:#9ddcc9!important;color:#176b5a!important;
+}
+.academic-setup-input-wrap.has-institution::after{
+  right:14px!important;font-size:9px!important;padding:7px 10px!important;
+}
+.academic-setup-helper{
+  display:block!important;max-width:560px;margin:8px auto 0!important;
+  text-align:center!important;line-height:1.6!important;
+}
+.academic-setup-results{left:50%!important;transform:translateX(-50%)!important;width:min(100%,560px)!important;text-align:left!important}
+.academic-setup-support-actions{display:flex!important;justify-content:center!important;flex-wrap:wrap!important;gap:12px!important}
+.academic-setup-enrollment-control{
+  display:flex!important;flex-direction:column!important;align-items:center!important;gap:12px!important;
+}
+.academic-setup-enrollment-control button,.academic-setup-continue,
+.academic-setup-institution-request button,.academic-setup-dialog form button{
+  min-height:52px!important;padding:0 28px!important;border:0!important;border-radius:14px!important;
+  background:linear-gradient(100deg,#6954e8,#448fe9 55%,#36b8ad)!important;
+  color:#fff!important;font-size:13px!important;font-weight:800!important;
+  box-shadow:0 10px 22px rgba(93,94,214,.22)!important;
+}
+.academic-setup-predicted,.academic-setup-confirmation,.academic-setup-journey,
+.academic-setup-prediction-reference,.academic-setup-delay,.academic-setup-gap-period{
+  width:100%!important;max-width:720px!important;margin-left:auto!important;margin-right:auto!important;
+  border-radius:20px!important;text-align:center!important;
+}
+.academic-setup-predicted{
+  background:linear-gradient(130deg,#f0edff,#e9f5ff 55%,#e8fbf5)!important;
+  border:1px solid #dddafa!important;padding:25px!important;
+}
+.academic-setup-predicted-heading{justify-content:center!important;text-align:center!important}
+.academic-setup-predicted-grid{justify-content:center!important}
+.academic-setup-predicted-grid>div{background:rgba(255,255,255,.82)!important}
+.academic-setup-confirm-fields,.academic-setup-advanced-fields,.academic-setup-edit-fields,
+.academic-setup-current-semester,.academic-setup-gap-period-fields{
+  text-align:center!important;justify-items:center!important;
+}
+.academic-setup-confirm-fields>*,.academic-setup-advanced-fields>*,
+.academic-setup-edit-fields>*,.academic-setup-gap-period-fields>*{
+  margin-left:auto!important;margin-right:auto!important;
+}
+.academic-setup-first-step-note,.academic-setup-footnote,.academic-setup-footer{
+  max-width:720px!important;margin-left:auto!important;margin-right:auto!important;text-align:center!important;
+}
+.academic-setup-page.theme-dark::before{
+  background:linear-gradient(135deg,rgba(15,20,48,.91),rgba(36,28,75,.84),rgba(14,54,70,.82)),
+  url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2200&q=85") center/cover fixed!important;
+}
+.academic-setup-page.theme-dark .academic-setup-heading{
+  background:linear-gradient(125deg,rgba(35,39,105,.98),rgba(76,57,155,.97),rgba(24,103,119,.94))!important;
+}
+.academic-setup-page.theme-dark .academic-setup-form{
+  background:rgba(26,32,57,.96)!important;border-color:rgba(169,174,255,.2)!important;
+}
+.academic-setup-page.theme-dark .academic-setup-field-section>label,
+.academic-setup-page.theme-dark .academic-setup-confirm-fields label,
+.academic-setup-page.theme-dark .academic-setup-advanced-fields label,
+.academic-setup-page.theme-dark .academic-setup-current-semester label,
+.academic-setup-page.theme-dark .academic-setup-gap-period-fields label{color:#e4e8ff!important}
+.academic-setup-page.theme-dark .academic-setup-input-wrap input,
+.academic-setup-page.theme-dark .academic-setup-enrollment-control input,
+.academic-setup-page.theme-dark .academic-setup-confirm-fields select,
+.academic-setup-page.theme-dark .academic-setup-current-semester select{
+  background:#202943!important;border-color:#4a5680!important;color:#f4f5ff!important;
+}
+@media(max-width:700px){
+  .academic-setup-page{padding:0 13px 34px!important}
+  .academic-setup-content{margin-top:20px!important}
+  .academic-setup-heading{min-height:275px!important;padding:31px 19px!important;border-radius:23px!important}
+  .academic-setup-heading h1{font-size:clamp(34px,9vw,44px)!important;letter-spacing:-1.7px!important}
+  .academic-setup-form{padding:24px 16px!important;gap:20px!important}
+  .academic-setup-enrollment-control button,.academic-setup-continue{width:100%!important}
+}
