@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import "./HomeDashboard.css";
+import HomeDashboardBoost from "./HomeDashboardBoost";
 import CommunitiesPanel from "./CommunitiesPanel";
 import GuestOnboarding from "./GuestOnboarding";
 import StudentOnlineResultSync from "./StudentOnlineResultSync";
@@ -1398,6 +1399,8 @@ export default function StudentPlatform() {
               <div className="gd-home-hero-note"><span>YOUR JOURNEY</span><strong>{results.length?results.length+" semester"+(results.length===1?"":"s")+" recorded":"Ready for your first result"}</strong></div>
             </div>
           </section>
+
+          <HomeDashboardBoost resultsCount={results.length} latestSgpa={results.length ? results[results.length-1].sgpa : null} onProgress={() => navigate("tracker")} />
 
           <section className="gd-home-overview">
             <div className="gd-home-section-intro"><div><span className="gd-home-kicker">THE BIG PICTURE</span><h2>Your academic snapshot</h2></div><button type="button" onClick={()=>navigate("cgpa")}>Full academic record <b>↗</b></button></div>
