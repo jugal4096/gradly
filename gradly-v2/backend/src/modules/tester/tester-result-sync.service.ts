@@ -764,7 +764,23 @@ function romanSemester(text: string): number | null {
   return values[match[1].toUpperCase()] ?? (Number(match[1]) || null);
 }
 
-async function readResultPdf(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null): Promise<{
+// PDF.js documents retain worker/font caches until destroyed. Serialize parsing across
+// requests (not just within one request) because the Render free instance has 512 MiB.
+let pdfParserActive = false;
+const pdfParserQueue: Array<() => void> = [];
+async function withPdfParser<T>(operation: () => Promise<T>): Promise<T> {
+  if (pdfParserActive) await new Promise<void>(resolve => pdfParserQueue.push(resolve));
+  pdfParserActive = true;
+  try {
+    return await operation();
+  } finally {
+    const next = pdfParserQueue.shift();
+    if (next) next();
+    else pdfParserActive = false;
+  }
+}
+
+async function readResultPdfUnlocked(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null): Promise<{
   document: GecaMatchedDocument | null;
   enrollmentFound: boolean;
   error?: string;
@@ -833,12 +849,11 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
       try { page.cleanup(); } catch { /* release per-page text/font caches */ }
     }
   }
-  // Some installed PDF.js builds expose cleanup() but not destroy() on the
-  // resolved document proxy. Release resources only when the method exists;
-  // cleanup must never turn a successfully parsed PDF into a scan failure.
-  const cleanup = (pdf as unknown as { cleanup?: () => Promise<void> }).cleanup;
-  if (typeof cleanup === "function") {
-    try { await cleanup.call(pdf); } catch { /* parsing result remains valid */ }
+  // destroy() also terminates the PDF.js worker and releases document-level
+  // caches; cleanup() alone leaves the worker alive between scanned PDFs.
+  const destroy = (pdf as unknown as { destroy?: () => Promise<void> }).destroy;
+  if (typeof destroy === "function") {
+    try { await destroy.call(pdf); } catch { /* parsing result remains valid */ }
   }
   if (parsed.enrollmentFound && !parsed.grades.length) {
     const enrollmentIndices = allLines.map((line, index) => lineContainsEnrollment(line, enrollment) ? index : -1).filter(index => index >= 0);
@@ -886,6 +901,19 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     grades: parsed.grades.map(row => ({ ...row, courseName: row.courseName || undefined })),
   } : null;
   return { document, enrollmentFound: parsed.enrollmentFound };
+}
+
+async function readResultPdf(
+  url: string,
+  title: string,
+  enrollment: string,
+  reExamTargetCourseCode?: string,
+  academicSection?: GecaAcademicSection | null,
+  sectionSemester?: number | null,
+) {
+  return withPdfParser(() =>
+    readResultPdfUnlocked(url, title, enrollment, reExamTargetCourseCode, academicSection, sectionSemester)
+  );
 }
 
 const BRANCH_NAMES: Record<string, string[]> = {
