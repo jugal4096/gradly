@@ -4,7 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import "./AcademicSetupPage.css";
 import { availableSemesterOptions, calculateAcademicGapYears, resolveCurrentSemesterSelection } from "./academic-setup-state";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "https://gradly-backend-1q7s.onrender.com").replace(/\/+$/, "");
 type Branch = { id: string; name: string; code?: string | null; program_id: string; program_name: string; program_level?: string | null };
 type Institution = { id: string; name: string; branches: Branch[] };
 type Curriculum = { id: string; scheme_name: string; scheme_id?: string; scheme_code?: string | null; version?: string | number | null; total_semesters?: number | null; configured_semesters?: number | null };
