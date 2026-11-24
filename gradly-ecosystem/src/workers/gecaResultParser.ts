@@ -1,9 +1,12 @@
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs";
 const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.min.mjs";
-const pdfjsPromise = import(/* @vite-ignore */ PDFJS_URL) as Promise<{
+const pdfjsPromise = (import(/* @vite-ignore */ PDFJS_URL) as Promise<{
+  // PDF.js owns the detailed document/page interfaces; the parser validates
+  // extracted text and coordinates before using them.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getDocument: (source: unknown) => { promise: Promise<any> };
   GlobalWorkerOptions: { workerSrc: string };
-}>.then(module => {
+}>).then(module => {
   module.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
   return module;
 });
