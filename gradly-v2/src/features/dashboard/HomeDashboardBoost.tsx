@@ -49,6 +49,16 @@ export default function HomeDashboardBoost({ resultsCount, latestSgpa, onProgres
   // Play a short celebration only when a saved-result milestone changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Math.floor(resultsCount / 3), soundOn]);
+  useEffect(() => {
+    if (!soundOn) return;
+    const handleDashboardClick = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const action = event.target.closest(".gd-home-hero button, .gd-home-metric, .gd-focus-card, .gd-tool-card, .gd-boost-footer button");
+      if (action && !action.classList.contains("gd-boost-sound")) playTone("tap");
+    };
+    document.addEventListener("click", handleDashboardClick);
+    return () => document.removeEventListener("click", handleDashboardClick);
+  }, [soundOn]);
   const toggleSound = () => {
     const next = !soundOn;
     setSoundOn(next);
@@ -65,7 +75,7 @@ export default function HomeDashboardBoost({ resultsCount, latestSgpa, onProgres
     <div className="gd-boost-side">
       <div className="gd-boost-achievement-head"><span>ACHIEVEMENT SHELF</span><strong>{achievements.filter(item => item.unlocked).length}/{achievements.length} unlocked</strong></div>
       <div className="gd-boost-achievements">{achievements.map(item => <div className={"gd-boost-achievement" + (item.unlocked ? " unlocked" : "")} key={item.title}><span>{item.unlocked ? item.icon : "◇"}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div><b>{item.unlocked ? "✓" : "LOCKED"}</b></div>)}</div>
-      <div className="gd-boost-footer"><span>{latestSgpa === null ? "Your next win is waiting" : "Latest SGPA · " + latestSgpa.toFixed(3)}</span><button type="button" onClick={() => { if (soundOn) playTone("tap"); onProgress(); }}>View progress <b>↗</b></button></div>
+      <div className="gd-boost-footer"><span>{latestSgpa === null ? "Your next win is waiting" : "Latest SGPA · " + latestSgpa.toFixed(3)}</span><button type="button" onClick={onProgress}>View progress <b>↗</b></button></div>
     </div>
   </section>;
 }
