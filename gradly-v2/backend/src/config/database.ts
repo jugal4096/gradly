@@ -67,7 +67,7 @@ export async function queryWithRetry(text: string, values?: unknown[]) {
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      return await pool.query(text, values as any[] | undefined);
+      return await pool.query(text, values as never[] | undefined);
     } catch (error) {
       lastError = error;
       if (!isTransientDatabaseError(error) || attempt === 3) throw error;
