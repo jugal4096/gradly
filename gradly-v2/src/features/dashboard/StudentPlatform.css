@@ -3104,3 +3104,12 @@
 .sp-current-semester-modal .sp-modal-head p{color:#5d7187;line-height:1.7}
 .sp-dark-theme .sp-current-semester-modal .sp-modal-head h2{color:#f0f7ff}
 .sp-dark-theme .sp-current-semester-modal .sp-modal-head p{color:#b5c7d9}
+
+.sp-tracker-table td:first-child b,
+.sp-tracker-table td>strong{color:#203751}
+.sp-tracker-tag{color:#60768e}
+.sp-tracker-performance-pill{color:#36536f;border-color:#cbdbea;background:#f3f7fc}
+.sp-dark-theme .sp-tracker-table td:first-child b,
+.sp-dark-theme .sp-tracker-table td>strong{color:#f0f6ff}
+.sp-dark-theme .sp-tracker-tag{color:#a9bdd2}
+.sp-dark-theme .sp-tracker-performance-pill{color:#d7e5f3;border-color:#4a627c;background:#1c2c41}
