@@ -88,7 +88,7 @@ type CurriculumSubjectApi = { name?: string | null; credits?: number | string | 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 // GECA grade-point scale: D is zero; legacy F and AB result tokens also represent zero-point outcomes.
-const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0, "F":0, "AB":0 };
+const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0, "D1":0, "D2":0, "D3":0, "F":0, "AB":0 };
 const gradeNames = Object.keys(POINTS);
 function isActiveBacklogGrade(grade: unknown): boolean { return String(grade || "").trim().toUpperCase() === "D"; }
 function normalizeResultCourseCode(value: unknown): string { return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
