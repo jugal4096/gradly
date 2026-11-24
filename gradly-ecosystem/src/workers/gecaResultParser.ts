@@ -829,13 +829,13 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
       Boolean(raw && typeof raw === "object" && "str" in raw && typeof (raw as { str?: unknown }).str === "string" &&
         (raw as { str: string }).str.trim() && "transform" in raw),
     );
-    const rawPageText = rawItems.map(raw => raw.str).join(" ");
+    const rawPageText = rawItems.map((raw: { str: string; transform: number[] }) => raw.str).join(" ");
     if (pageNumber === 1) metadataText = rawPageText;
     // Most pages in a branch PDF belong to other students. Avoid expensive
     // coordinate grouping and table parsing unless this page contains the exact
     // enrollment token (whitespace/line breaks in PDF text are normalized away).
     if (!compactPdfText(rawPageText).includes(compactPdfText(enrollment))) continue;
-    const positioned = rawItems.map(raw => ({
+    const positioned = rawItems.map((raw: { str: string; transform: number[] }) => ({
       text: raw.str.trim(), x: Number(raw.transform[4] || 0), y: Number(raw.transform[5] || 0),
     }));
     const lines = groupPdfLines(positioned);
@@ -1195,6 +1195,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
   session: GecaResultSession;
   documentsScanned: number;
   expectedAcademicSections: GecaAcademicSection[];
+  academicSectionFallbackUsed: boolean;
   candidateDocuments: number;
   enrollmentHits: number;
   parseFailures: number;
