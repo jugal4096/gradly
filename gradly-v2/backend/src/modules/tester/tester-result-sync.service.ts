@@ -225,7 +225,7 @@ function groupPdfLines(items: PositionedItem[]): TextLine[] {
 }
 
 
-const GRADE_TOKEN_PATTERN = /^(?:A\+\+|A\+|B\+|C\+|AB|A|B|C|D|F|P|-)$/i;
+const GRADE_TOKEN_PATTERN = /^(?:A\+\+|A\+|B\+|C\+|D[123]?|AB|A|B|C|F|P|-)$/i;
 
 function compactPdfText(value: string): string {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
