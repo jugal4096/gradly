@@ -485,21 +485,6 @@ export default function AcademicSetupPage() {
 
       <section className={"academic-setup-content" + (previewBusy ? " is-identifying" : "") + (preview?.recognized ? " has-identification" : "")}>
         <div className="academic-setup-flow">
-        <div className="academic-setup-heading">
-          <div className="academic-setup-heading-copy">
-            <p className="academic-setup-eyebrow"><span>✦</span> WELCOME TO GRADLY</p>
-            <h1>Your college life,<br /><em>beautifully organised.</em></h1>
-            <p>One little setup. A whole lot more clarity, confidence and control over your academic journey.</p>
-            <div className="academic-setup-trust-row"><span>✦ Smart enrollment detection</span><span>✦ Built around your academics</span><span>✦ Your data stays yours</span></div>
-          </div>
-          <div className="academic-setup-hero-art" aria-hidden="true">
-            <div className="academic-setup-art-orbit academic-setup-art-orbit-one"></div>
-            <div className="academic-setup-art-orbit academic-setup-art-orbit-two"></div>
-            <div className="academic-setup-art-card"><span>YOUR ACADEMIC ERA</span><strong>Learn <i /> Track <i /> Grow</strong><small>Your journey, all in one place</small></div>
-            <div className="academic-setup-art-star">✦</div>
-          </div>
-        </div>
-
         {error && <div className="academic-setup-error" role="alert"><span>!</span>{error}</div>}
 
         <form className="academic-setup-form" onSubmit={saveProfile}>
