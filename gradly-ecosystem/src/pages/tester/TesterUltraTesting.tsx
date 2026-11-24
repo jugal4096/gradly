@@ -5,7 +5,7 @@ import { Activity, ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play,
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
-function runGecaWorker<T = any>(payload: Record<string, unknown>): Promise<T> {
+function runGecaWorker<T = unknown>(payload: Record<string, unknown>): Promise<T> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL("../../workers/gecaResult.worker.ts", import.meta.url), { type: "module" });
     const requestId = 1;
@@ -53,7 +53,24 @@ const catalogueCodeMatches = (candidate: unknown, code: string) => courseCodeAli
 const normalizeName = (value: unknown) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
-const normalizeResultSessions = (value: unknown): ResultSession[] => Array.isArray(value) ? value.filter((item: any) => item && item.id != null).map((item: any) => ({ id: String(item.id), title: String(item.title || item.name || "Untitled examination session"), url: String(item.url || "") })) : [];
+const normalizeResultSessions = (value: unknown): ResultSession[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && "id" in item && item.id != null))
+    .map(item => ({
+      id: String(item.id),
+      title: String(item.title || item.name || "Untitled examination session"),
+      url: String(item.url || ""),
+    }));
+};
+type GecaMatchResponse = {
+  matches?: ResultDocument[];
+  scanIncomplete?: boolean;
+  parseFailures?: number;
+  documentsScanned?: number;
+  downloadFailures?: number;
+  enrollmentHits?: number;
+};
 
 export default function TesterUltraTesting() {
   const navigate = useNavigate();
@@ -183,7 +200,7 @@ export default function TesterUltraTesting() {
         response = await fetch(url, { ...init, headers, signal: requestController.signal });
       } catch (reason) {
         if (timedOut && !callerSignal?.aborted) {
-          throw new Error("The backend did not respond within 120 seconds. This semester scan timed out; check Render logs and retry with fewer enrollments or examination sessions.");
+          throw new Error("The backend did not respond within 120 seconds. This semester scan timed out; retry with fewer enrollments or examination sessions.", { cause: reason });
         }
         throw reason;
       }
@@ -243,7 +260,7 @@ export default function TesterUltraTesting() {
               const session = sessions.find(item=>item.id===sessionId);
               if (!session) continue;
               try {
-                const matchBody = await runGecaWorker<any>({
+                const matchBody = await runGecaWorker<GecaMatchResponse>({
                   type: "match",
                   resultId: session.id,
                   enrollment,
