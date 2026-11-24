@@ -837,7 +837,29 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
     // page get attached to this student's row and import unrelated subjects.
     const genericSubjectPdf = /_RESULT(?:\.PDF)?$/i.test(title.trim()) || url.toLowerCase().split("?")[0].endsWith("_result.pdf");
     const pageParsed = genericSubjectPdf && !reExamTargetCourseCode
-      ? extractSubjectResultGrades(lines, enrollment, branchTermsForEnrollment(enrollment.slice(0, 2), enrollment.slice(5, 7)))
+      ? (() => {
+          const programme = enrollment.slice(0, 2);
+          const branchCode = enrollment.slice(5, 7);
+          const branchTerms = branchTermsForEnrollment(programme, branchCode);
+          const subjectPrefixes = subjectPrefixesForEnrollment(programme, branchCode);
+          const subjectTable = extractSubjectResultGrades(lines, enrollment, branchTerms);
+          if (subjectTable.grades.length) return subjectTable;
+
+          // SOEK and other GECA exam sessions sometimes publish a *_RESULT.pdf
+          // using the consolidated semester-sheet layout instead of the
+          // REGNO/CCODE/COURSENAME/BRANCH/GRADE layout. Retry that parser only
+          // after the subject-table parser fails, and retain only codes
+          // belonging to this enrollment's programme and branch.
+          const consolidated = extractMatchingGrades(lines, enrollment);
+          const branchGrades = consolidated.grades.filter(grade => {
+            const code = compactPdfText(grade.courseCode);
+            return subjectPrefixes.some(prefix => code.startsWith(prefix.toUpperCase()));
+          });
+          return {
+            grades: branchGrades,
+            enrollmentFound: subjectTable.enrollmentFound || consolidated.enrollmentFound,
+          };
+        })()
       : reExamTargetCourseCode
         ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
         : extractMatchingGrades(lines, enrollment);
