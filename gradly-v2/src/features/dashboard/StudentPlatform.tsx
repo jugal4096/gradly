@@ -1329,8 +1329,6 @@ export default function StudentPlatform() {
   }
   const nepCreditProgress=getNepCreditProgress(profile,savedSubjectsBySemester);
   const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
-  const homeCreditEarned=nepCreditProgress ? nepCreditProgress.degreeEarned : degreeCreditProgress ? degreeCreditProgress.earned : cgpaCredits;
-  const homeCreditTarget=nepCreditProgress ? nepCreditProgress.degreeMinimum : degreeCreditProgress ? degreeCreditProgress.required : null;
   const homeCreditCaption=nepCreditProgress ? "NEP degree credits earned" : degreeCreditProgress ? "New CBCS degree credits earned" : results.length ? "Credits across saved semesters" : "Save results to track credits";
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
