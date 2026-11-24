@@ -215,3 +215,74 @@
 .sp-dark-theme.sp-user-mode .gd-boost-footer{border-color:#403b50}
 .sp-dark-theme.sp-user-mode .gd-boost-sound{border-color:#504675;background:#302b46;color:#ded5ff}
 @media(max-width:680px){.sp-user-mode .gd-home-hero{border-radius:23px}.sp-user-mode .gd-home-hero-main{padding:24px 20px}.sp-user-mode .gd-home-hero h1{font-size:36px}.sp-user-mode .gd-boost-level-row{gap:10px}.sp-user-mode .gd-boost-level{width:54px;height:54px}.sp-user-mode .gd-boost-xp strong{font-size:20px}.sp-user-mode .gd-boost-progress-copy strong{font-size:9px}.sp-user-mode .gd-boost-progress-copy span{font-size:8px}.sp-user-mode .gd-boost-achievement{grid-template-columns:32px minmax(0,1fr) auto}}
+
+/* Academic snapshot sits directly below the hero: four distinct, readable metric colours. */
+.sp-user-mode .gd-home-metrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.sp-user-mode .gd-home-metric{
+  min-height:174px;padding:18px 17px 15px;border-radius:18px;
+  box-shadow:0 8px 22px rgba(49,75,105,.07);
+}
+.sp-user-mode .gd-home-metric.gd-metric-cgpa{
+  background:linear-gradient(145deg,#f0edff 0%,#fff 92%);border-color:#d8d0fb;
+}
+.sp-user-mode .gd-home-metric.gd-metric-sgpa{
+  background:linear-gradient(145deg,#eaf4ff 0%,#fff 92%);border-color:#cbdff7;
+}
+.sp-user-mode .gd-home-metric.gd-metric-credits{
+  background:linear-gradient(145deg,#e7f8f3 0%,#fff 92%);border-color:#c5e9dd;
+}
+.sp-user-mode .gd-home-metric.gd-metric-progress{
+  background:linear-gradient(145deg,#fff4e5 0%,#fff 92%);border-color:#f0ddbd;
+}
+.sp-user-mode .gd-metric-cgpa .gd-metric-label{color:#6955a7}
+.sp-user-mode .gd-metric-sgpa .gd-metric-label{color:#386caa}
+.sp-user-mode .gd-metric-credits .gd-metric-label{color:#287d69}
+.sp-user-mode .gd-metric-progress .gd-metric-label{color:#9a692a}
+.sp-user-mode .gd-metric-cgpa .gd-metric-label i{background:#e2dcff;color:#644bb0}
+.sp-user-mode .gd-metric-sgpa .gd-metric-label i{background:#d9eaff;color:#326ba9}
+.sp-user-mode .gd-metric-credits .gd-metric-label i{background:#d3f1e6;color:#237b65}
+.sp-user-mode .gd-metric-progress .gd-metric-label i{background:#ffe8c7;color:#a36c25}
+.sp-user-mode .gd-home-metric.gd-metric-cgpa>strong{color:#55428e}
+.sp-user-mode .gd-home-metric.gd-metric-sgpa>strong{color:#285f9c}
+.sp-user-mode .gd-home-metric.gd-metric-credits>strong{color:#21745f}
+.sp-user-mode .gd-home-metric.gd-metric-progress>strong{color:#936020}
+.sp-user-mode .gd-home-metric .gd-metric-foot{color:#68798c}
+.sp-user-mode .gd-home-metric .gd-metric-link{margin-top:auto}
+.sp-user-mode .gd-metric-cgpa .gd-metric-link{color:#6955a7}
+.sp-user-mode .gd-metric-sgpa .gd-metric-link{color:#386caa}
+.sp-user-mode .gd-metric-credits .gd-metric-link{color:#287d69}
+.sp-user-mode .gd-metric-progress .gd-metric-link{color:#9a692a}
+.sp-user-mode .gd-metric-progress>strong small{font-size:10px;letter-spacing:0}
+.sp-user-mode .gd-metric-progress-track{display:block;width:100%;height:6px;margin:11px 0 7px;border-radius:20px;background:#f4e5cd;overflow:hidden}
+.sp-user-mode .gd-metric-progress-track i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#e9a64b,#d78336);transition:width .35s ease}
+.sp-user-mode .gd-home-metric:hover{box-shadow:0 14px 28px rgba(49,75,105,.13)}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-cgpa{background:linear-gradient(145deg,#352e56,#292943);border-color:#554a80}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-sgpa{background:linear-gradient(145deg,#244363,#24354d);border-color:#3b638a}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-credits{background:linear-gradient(145deg,#214b45,#203c3c);border-color:#386d61}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-progress{background:linear-gradient(145deg,#59452b,#40394a);border-color:#80633c}
+.sp-dark-theme.sp-user-mode .gd-metric-cgpa .gd-metric-label,.sp-dark-theme.sp-user-mode .gd-metric-cgpa .gd-metric-link{color:#d0c3ff}
+.sp-dark-theme.sp-user-mode .gd-metric-sgpa .gd-metric-label,.sp-dark-theme.sp-user-mode .gd-metric-sgpa .gd-metric-link{color:#b7d8ff}
+.sp-dark-theme.sp-user-mode .gd-metric-credits .gd-metric-label,.sp-dark-theme.sp-user-mode .gd-metric-credits .gd-metric-link{color:#a9ead7}
+.sp-dark-theme.sp-user-mode .gd-metric-progress .gd-metric-label,.sp-dark-theme.sp-user-mode .gd-metric-progress .gd-metric-link{color:#ffdaa0}
+.sp-dark-theme.sp-user-mode .gd-metric-cgpa .gd-metric-label i{background:#514778;color:#e0d7ff}
+.sp-dark-theme.sp-user-mode .gd-metric-sgpa .gd-metric-label i{background:#315477;color:#d0e5ff}
+.sp-dark-theme.sp-user-mode .gd-metric-credits .gd-metric-label i{background:#2e6257;color:#c1f4e5}
+.sp-dark-theme.sp-user-mode .gd-metric-progress .gd-metric-label i{background:#765b36;color:#ffe6ba}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-cgpa>strong{color:#e5dcff}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-sgpa>strong{color:#d7eaff}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-credits>strong{color:#c5f4e5}
+.sp-dark-theme.sp-user-mode .gd-home-metric.gd-metric-progress>strong{color:#ffe5b8}
+.sp-dark-theme.sp-user-mode .gd-home-metric .gd-metric-foot{color:#d0d9e5}
+.sp-dark-theme.sp-user-mode .gd-metric-progress-track{background:#735a3c}
+.sp-dark-theme.sp-user-mode .gd-metric-progress-track i{background:linear-gradient(90deg,#ffd18a,#f2a85e)}
+@media(max-width:900px){.sp-user-mode .gd-home-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:460px){
+  .sp-user-mode .gd-home-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .sp-user-mode .gd-home-metric{min-height:157px;padding:13px 11px 12px;border-radius:15px}
+  .sp-user-mode .gd-metric-label{gap:6px;font-size:7px;letter-spacing:.7px}
+  .sp-user-mode .gd-metric-label i{width:22px;height:22px}
+  .sp-user-mode .gd-home-metric>strong{font-size:24px;letter-spacing:-.6px}
+  .sp-user-mode .gd-home-metric>strong small{font-size:9px}
+  .sp-user-mode .gd-home-metric .gd-metric-foot{font-size:8px}
+  .sp-user-mode .gd-home-metric .gd-metric-link{font-size:8px;padding-top:9px}
+}
