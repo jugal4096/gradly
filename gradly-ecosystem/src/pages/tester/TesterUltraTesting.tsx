@@ -14,7 +14,7 @@ const GECA_VERIFIED_CREDIT_OVERRIDES: Record<string, number> = { CSHNC0020: 4, I
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = { recognized: boolean; requiresConfirmation?: boolean; message?: string; programme?: string; programId?: string; branch?: string; branchId?: string; curriculumId?: string; curriculumName?: string; scheme?: string; admissionYear?: number; admissionMode?: string; entrySemester?: number; totalSemesters?: number };
 type ResultSession = { id: string; title: string; url: string };
-type CatalogueSubject = { code?: string; name?: string; courseCode?: string; courseName?: string; credits?: number | string; semesterNumber?: number | string; courseType?: string };
+type CatalogueSubject = { code?: string; name?: string; courseCode?: string; courseName?: string; credits?: number | string; semesterNumber?: number | string; courseType?: string; mandatory?: boolean };
 type ResultGrade = { courseCode: string; grade: string; courseName?: string; credits?: number };
 type ResultDocument = { title: string; url: string; semester: number | null; grades: ResultGrade[] };
 type SubjectFinding = { code: string; name: string; grade: string; credits: number | null; kind: "NEW" | "NAME_MISMATCH" | "CREDIT_MISMATCH" | "CODE_MISMATCH"; semester: number; document: string };
@@ -244,6 +244,9 @@ export default function TesterUltraTesting() {
               // The official GECA confirmations are a last-resort fallback, never overriding live curriculum data.
               const verifiedFallbackCredits = GECA_VERIFIED_CREDIT_OVERRIDES[code];
               const rowCredits = zeroCreditMandatory ? 0 : mappedCredits ?? verifiedFallbackCredits ?? 0;
+              // A dash in an optional curriculum subject means the student did not select that elective/minor.
+              // It is not a missing grade and must not withhold an otherwise valid SGPA.
+              if (grade === "-" && curriculumCodeRow?.mandatory === false) continue;
               if (!catalogueRow && !zeroCreditMandatory) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || resultRow.courseCode, grade, credits:rowCredits>0?rowCredits:null, kind:"NEW", semester, document:found.title });
               else if (catalogueRow) {
                 if (nameMatchedRow) findings.push({ code:resultRow.courseCode, name:resultRow.courseName || String(nameMatchedRow.name || resultRow.courseCode), grade, credits:rowCredits>0?rowCredits:null, kind:"CODE_MISMATCH", semester, document:found.title });
