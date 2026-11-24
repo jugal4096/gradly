@@ -88,10 +88,15 @@ type AcademicRecordApi = { id: string | number; semester_number: number | string
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; id?: string | number | null };
 
 const API = (import.meta.env.VITE_API_BASE_URL || "https://gradly-backend-1q7s.onrender.com").replace(/\/+$/, "");
-// GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
-// GECA grade-point scale: D is zero; legacy F and AB result tokens also represent zero-point outcomes.
-const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0, "D1":0, "D2":0, "D3":0, "F":0, "AB":0 };
-const gradeNames = Object.keys(POINTS);
+// Gradly grade scale: only these eight symbols are selectable; legacy zero-point
+// result symbols are normalised to D when importing official or previously saved results.
+const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
+const gradeNames = ["A++","A+","A","B+","B","C+","C","D"];
+function normalizeGradeSymbol(value: unknown): string {
+  const grade=String(value??"").trim().toUpperCase().replace(/\s+/g,"");
+  if (["D1","D2","D3","F","AB"].includes(grade)) return "D";
+  return grade;
+}
 function isActiveBacklogGrade(grade: unknown): boolean { return String(grade || "").trim().toUpperCase() === "D"; }
 function normalizeResultCourseCode(value: unknown): string { return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
 function dedupeSubjectsByCourseCode(rows: Subject[]): Subject[] {
@@ -372,6 +377,7 @@ export default function StudentPlatform() {
   const [guestCgpaResult,setGuestCgpaResult] = useState<number|null>(null);
   const [loginGate,setLoginGate] = useState(false);
   const [gradeReminderOpen,setGradeReminderOpen] = useState(false);
+  const [currentSemesterNoticeOpen,setCurrentSemesterNoticeOpen] = useState(false);
   const [notice,setNotice] = useState("");
   const [grievanceOpen,setGrievanceOpen] = useState(false);
   const [grievanceCategory,setGrievanceCategory] = useState("OTHER");
@@ -680,6 +686,14 @@ export default function StudentPlatform() {
   useEffect(() => {
     setPlannerSemester(currentSemester);
   },[currentSemester]);
+
+  useEffect(() => {
+    const viewingCurrentSemester = !isGuest && (
+      (section === "sgpa" && selectedSemester === currentSemester) ||
+      (section === "sgpaPlanner" && plannerSemester === currentSemester)
+    );
+    if (viewingCurrentSemester) setCurrentSemesterNoticeOpen(true);
+  },[section,selectedSemester,plannerSemester,currentSemester,isGuest]);
 
   useEffect(() => {
     if(section!=="sgpaPlanner") return;
@@ -1034,7 +1048,7 @@ export default function StudentPlatform() {
     const existingByCode = new Map<string, Subject>(subjects.map(subject => [normalizeResultCourseCode(subject.courseCode), subject] as const));
     let updatedSubjects: Subject[];
     if (attemptNumber > 1) {
-      const reExamGrades = new Map(fetchedGrades.map(row => [normalizeResultCourseCode(row.courseCode), row.grade.trim().toUpperCase()]));
+      const reExamGrades = new Map(fetchedGrades.map(row => [normalizeResultCourseCode(row.courseCode), normalizeGradeSymbol(row.grade)]));
       updatedSubjects = subjects.map(subject => {
         const code = normalizeResultCourseCode(subject.courseCode);
         const nextGrade = reExamGrades.get(code);
@@ -1046,7 +1060,7 @@ export default function StudentPlatform() {
       // corrections (e.g. electives, UHV, or other non-standard subjects).
       updatedSubjects = fetchedGrades.map((row, index) => {
         const code = normalizeResultCourseCode(row.courseCode);
-        const grade = row.grade.trim().toUpperCase();
+        const grade = normalizeGradeSymbol(row.grade);
         const existing = existingByCode.get(code) || (code==="MEOE1040" ? subjects.find(subject => subject.electiveKind==="OE" && /entrepreneurship development/i.test(subject.name)) : undefined);
         const knownNames: Record<string,string> = {
           "CEHS1030":"Constitution of India and Professional Ethics",
@@ -1095,7 +1109,7 @@ export default function StudentPlatform() {
         setReExamTargetCourseCode("");
         return false;
       }
-      if (matchedRow.grade.trim().toUpperCase() === "D") {
+      if (normalizeGradeSymbol(matchedRow.grade) === "D") {
         setReExamOutcome({success:false,title:"Backlog remains",message:"You still have a D grade in both exams. No grades were changed."});
         setReExamTargetCourseCode("");
         return false;
@@ -1107,7 +1121,7 @@ export default function StudentPlatform() {
       }
     }
     const reExamSuccess = attemptNumber > 1 && matchedRow && matchedSubject
-      ? { subjectName: matchedSubject.name, courseCode: matchedSubject.courseCode || "", grade: matchedRow.grade.trim().toUpperCase() }
+      ? { subjectName: matchedSubject.name, courseCode: matchedSubject.courseCode || "", grade: normalizeGradeSymbol(matchedRow.grade) }
       : null;
     const gradedSubjects = updatedSubjects.filter(subject => POINTS[subject.grade] !== undefined);
     const totalCredits = gradedSubjects.reduce((sum, subject) => sum + subject.credits, 0);
@@ -1542,11 +1556,11 @@ export default function StudentPlatform() {
             <div className="sp-credit-footnote"><span>ⓘ</span><p>Only passed, saved subjects count as earned credits. GECA NEP A3.1 defines a category-wise programme structure of {nepCreditProgress.structureTotal} credits ({nepCreditProgress.path}); A4.1.1 separately sets the institute-level degree minimum at {nepCreditProgress.degreeMinimum} credits. The additional 6 credits are not assigned to an A3.1 category. {nepCreditProgress.unmappedEarned>0?nepCreditProgress.unmappedEarned.toFixed(1)+" passed credits are not yet mapped to a listed category; they are included in the degree-minimum total but not in category distribution.":""}</p></div>
           </>:<Card><div className="sp-empty compact"><span>▤</span><h3>Your NEP progress is ready to begin</h3><p>Save passed semester results to see your degree percentage, credit distribution and category milestones here.</p></div></Card>}</div>}
         \n        {section==="credits"&&!isNepScheme(profile.scheme)&&<div className="sp-credit-experience" onClick={handlePlannerClick}><SectionTitle kicker="YOUR DEGREE · YOUR PROGRESS" title="Credit analyser" copy={degreeCreditProgress?"Every credit counts. Track your degree journey, category by category.":"The detailed credit analyser is available for the New CBCS scheme."}/>{degreeCreditProgress?<><div className="sp-credit-hero"><div className="sp-credit-hero-top"><div><span className="sp-credit-eyebrow">NEW CBCS · {degreeCreditProgress.path.toUpperCase()} TRACK</span><h2>Your degree, in progress.</h2><p>You’re building towards your graduation milestone. Keep the momentum going.</p></div><button type="button" className="sp-credit-sound" aria-pressed={plannerSoundEnabled} onClick={()=>setPlannerSoundEnabled(value=>!value)}>{plannerSoundEnabled?"♫ Sound on":"♪ Sound off"}</button></div><div className="sp-credit-progress-layout"><div className="sp-credit-ring" style={{background:"conic-gradient(#19b99a 0deg,#19b99a "+(degreeCreditProgress.percent*3.6)+"deg,#ffffff2c "+(degreeCreditProgress.percent*3.6)+"deg,#ffffff2c 360deg)"}}><div><strong>{degreeCreditProgress.percent.toFixed(1)}<small>%</small></strong><span>ACHIEVED</span></div></div><div className="sp-credit-hero-stats"><div className="sp-credit-stat sp-credit-stat-earned"><span>✦ CREDITS ACHIEVED</span><strong>{degreeCreditProgress.earned.toFixed(1)} <small>/ {degreeCreditProgress.required}</small></strong><p>{degreeCreditProgress.percent.toFixed(1)}% of your degree requirement completed</p></div><div className="sp-credit-stat sp-credit-stat-left"><span>◷ CREDITS LEFT</span><strong>{degreeCreditProgress.remaining.toFixed(1)}</strong><p>{(100-degreeCreditProgress.percent).toFixed(1)}% remaining to reach your target</p></div></div></div><div className="sp-credit-hero-footer"><span>{degreeCreditProgress.categories.filter(item=>item.status==="Met").length} / {degreeCreditProgress.categories.length} categories completed</span><span>{degreeCreditProgress.remaining.toFixed(1)} credits to graduation</span></div></div><div className="sp-credit-section-heading"><div><span>YOUR CREDIT BREAKDOWN</span><h2>Every category. Every milestone.</h2></div><span>{degreeCreditProgress.categories.length} CATEGORIES</span></div><div className="sp-credit-category-list">{degreeCreditProgress.categories.map((item,index)=><details className={"sp-credit-category sp-credit-category-"+item.category.toLowerCase()} key={item.category}><summary><div className="sp-credit-category-top"><div className="sp-credit-category-title"><span className="sp-credit-category-index">{String(index+1).padStart(2,"0")}</span><div><strong>{item.label}</strong><small>{item.status==="Met"?"Requirement achieved":item.earned>0?"Keep going — you're making progress":"Your next milestone"}</small></div></div><div className="sp-credit-category-numbers"><strong>{item.earned.toFixed(1)} <small>/ {item.required}</small></strong><span>{item.percent.toFixed(1)}% achieved</span></div></div><div className="sp-credit-category-track"><i style={{width:item.percent+"%"}}/></div><div className="sp-credit-category-footer"><span className="sp-credit-status">{item.status==="Met"?"✓ Requirement met":item.remaining.toFixed(1)+" credits left"}</span><span>{item.remaining.toFixed(1)} remaining</span></div></summary><div className="sp-credit-subjects">{item.subjects.length?item.subjects.map((subject,index)=><div className="sp-credit-subject" key={subject.courseCode||subject.id+"-"+index}><span><b>{subject.courseCode||"—"}</b> · {subject.name}</span><strong>{Number(subject.credits)} cr</strong></div>):<p className="sp-muted">No passed subjects have been recorded in this category yet.</p>}</div></details>)}</div><div className="sp-credit-footnote"><span>ⓘ</span><p>Only passed, saved subjects count towards degree completion. UHV credits remain included in SGPA/CGPA calculations but are excluded from this degree-credit total. Environmental Studies and Induction Training are non-credit mandatory requirements.</p></div></>:<Card><div className="sp-empty compact"><span>▤</span><h3>New CBCS credit breakdown</h3><p>Select a profile configured with the New CBCS scheme to view the Regular (160-credit) or DSE (121-credit) structure. Other schemes are left unchanged.</p></div></Card>}</div>}
-        {section==="community"&&<CommunitiesPanel/>}
+        {section==="community"&&<><SectionTitle kicker="COMMUNITY" title="Group chat" copy="A dedicated space to study, share ideas and connect with classmates."/><Card className="sp-coming-soon-card"><div className="sp-coming-soon-icon">☷</div><span className="sp-coming-soon-label">COMING SOON</span><h2>Group chat is on its way.</h2><p>We’re preparing community group chats for Gradly. You’ll be able to connect with classmates and build study groups here soon.</p><div className="sp-coming-soon-foot">COMMUNITY · STUDY TOGETHER</div></Card></>}
         {section==="events"&&<><SectionTitle kicker="COMMUNITY" title="Upcoming events & holidays" copy="A shared calendar for academic events, campus activities and holidays."/><Card><div className="sp-card-head"><div><span>EVENT CALENDAR</span><h2>What's coming up</h2></div><b>Campus feed</b></div><div className="sp-empty"><span>✦</span><h3>Campus calendar is ready for connection</h3><p>Upcoming events and official holiday lists will appear here once an institution calendar feed is connected. No dates are invented in this preview.</p></div></Card></>}
 
-{section==="assistant"&&<><SectionTitle kicker="YOUR ACADEMIC COMPANION" title="AI chatbot" copy="Ask questions about study planning, concepts and your academic journey."/><Card className="sp-ai-card"><div className="sp-ai-head"><span>✳</span><div><b>Gradly AI</b><small>Academic assistant · preview</small></div><i/></div><div className="sp-ai-thread">{aiMessages.map((m,i)=><div className={"sp-ai-bubble "+m.role} key={i}>{m.text}</div>)}</div><form className="sp-chat-compose" onSubmit={submitAi}><input value={aiInput} onChange={e=>setAiInput(e.target.value)} placeholder="Ask an academic question…"/><button className="sp-primary">Send →</button></form><p className="sp-muted">This interface is a frontend preview. Institution-specific answers require approved college documents, a retrieval system and a connected AI service. Do not rely on this preview for official rules.</p></Card></>}
-        {section==="aiStudyPlanner"&&<><SectionTitle kicker="AI ASSISTANT" title="AI study planner" copy="Create a study routine around your subjects, deadlines and available time."/><Card><div className="sp-card-head"><div><span>STUDY PLAN SETUP</span><h2>Build your weekly study plan</h2></div></div><div className="sp-inline-form"><label>Daily study time<input type="number" min="1" max="16" defaultValue="3"/></label><label>Priority subject<input placeholder="e.g. Engineering Mathematics"/></label><label>Target date<input type="date"/></label></div><div className="sp-empty compact"><span>✳</span><p>Connect the AI planner service to generate and adapt a personalised schedule. This screen is the setup interface; it will not pretend a plan was generated.</p></div></Card></>}
+{section==="assistant"&&<><SectionTitle kicker="YOUR ACADEMIC COMPANION" title="AI chatbot" copy="Your academic AI companion is being prepared."/><Card className="sp-coming-soon-card sp-coming-soon-ai"><div className="sp-coming-soon-icon">✳</div><span className="sp-coming-soon-label">COMING SOON</span><h2>Gradly AI is coming soon.</h2><p>The AI chatbot is under development. Soon, you’ll be able to ask academic questions and get help with concepts and your learning journey.</p><div className="sp-coming-soon-foot">AI ASSISTANT · LEARN SMARTER</div></Card></>}
+        {section==="aiStudyPlanner"&&<><SectionTitle kicker="AI ASSISTANT" title="AI study planner" copy="A smarter, personalised study planner is on its way."/><Card className="sp-coming-soon-card sp-coming-soon-planner"><div className="sp-coming-soon-icon">⌘</div><span className="sp-coming-soon-label">COMING SOON</span><h2>AI Study Planner is coming soon.</h2><p>We’re working on a planner that can help organise your subjects, study time and academic goals. It will be available here soon.</p><div className="sp-coming-soon-foot">AI ASSISTANT · PLAN WITH PURPOSE</div></Card></>}
 
 {section==="academicManagement"&&<><SectionTitle kicker="ACADEMICS" title="Academic management" copy="Manage the academic records connected to your student profile."/><Card><div className="sp-card-head"><div><span>ACADEMIC RECORD</span><h2>Institution and programme</h2></div></div><div className="sp-profile-grid"><div><span>Institution</span><b>{profile.institutionName||"Not selected"}</b></div><div><span>Programme</span><b>{profile.programName||"Not configured"}</b></div><div><span>Branch</span><b>{profile.branchName||"Not configured"}</b></div><div><span>Current semester</span><b>{profile.semester||"Not configured"}</b></div><div><span>Admission mode</span><b>{profile.admissionMode||"Not configured"}</b></div><div><span>Scheme</span><b>{profile.scheme||"Not configured"}</b></div></div><div className="sp-actions"><button className="sp-primary" onClick={()=>setOnboarding(true)}>Manage academic profile →</button></div></Card></>}
 
@@ -1559,6 +1573,7 @@ export default function StudentPlatform() {
     </main>
 
     {grievanceOpen&&<div className="sp-modal-backdrop top" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget&&!grievanceBusy)setGrievanceOpen(false);}}><section className="sp-modal sp-request-modal gd-grievance-modal" role="dialog" aria-modal="true" aria-labelledby="gd-grievance-title"><div className="sp-modal-head"><div><span className="sp-kicker">STUDENT SUPPORT · PRIVATE SUBMISSION</span><h2 id="gd-grievance-title">Submit a grievance</h2><p>Your message will be recorded in Gradly and sent to your institution’s Admin grievance inbox for review.</p></div><button type="button" aria-label="Close grievance form" disabled={grievanceBusy} onClick={()=>setGrievanceOpen(false)}>×</button></div><form onSubmit={submitDashboardGrievance} className="gd-grievance-form"><label>Grievance category<select value={grievanceCategory} onChange={event=>setGrievanceCategory(event.target.value)}><option value="INVALID_ENROLLMENT">Incorrect enrollment number</option><option value="ALREADY_REGISTERED">Enrollment already registered</option><option value="WRONG_PROGRAMME">Wrong programme</option><option value="WRONG_SCHEME">Wrong academic scheme</option><option value="WRONG_BRANCH">Wrong branch</option><option value="WRONG_ADMISSION_MODE">Wrong admission mode</option><option value="WRONG_SEMESTER">Wrong current semester</option><option value="OTHER">Other issue</option></select></label><label>Explain your grievance<textarea required minLength={10} maxLength={3000} rows={5} value={grievanceDescription} onChange={event=>setGrievanceDescription(event.target.value)} placeholder="Describe the issue clearly. Include relevant details so the Admin team can investigate."/><small>{grievanceDescription.length}/3000 characters</small></label><div className="gd-grievance-routing"><span>SUBMITTED TO</span><strong>Institution Admin · Student Grievance Inbox</strong><small>Enrollment: {profile.enrollment||"Not provided"} · Your signed-in account is attached automatically.</small></div>{grievanceError&&<p className="gd-grievance-error" role="alert">{grievanceError}</p>}<div className="sp-actions"><button className="sp-secondary" type="button" disabled={grievanceBusy} onClick={()=>setGrievanceOpen(false)}>Cancel</button><button className="sp-primary" type="submit" disabled={grievanceBusy||grievanceDescription.trim().length<10}>{grievanceBusy?"Submitting…":"Send grievance →"}</button></div></form></section></div>}
+    {currentSemesterNoticeOpen&&(section==="sgpa"||section==="sgpaPlanner")&&<div className="sp-modal-backdrop top" role="presentation"><section className="sp-modal sp-request-modal sp-current-semester-modal" role="dialog" aria-modal="true" aria-labelledby="sp-current-semester-title"><div className="sp-modal-head"><div><span className="sp-kicker">SEMESTER {currentSemester} · RESULT PENDING</span><h2 id="sp-current-semester-title">Your current semester result isn’t available yet.</h2><p>You can’t view an official result for the current semester because the university has not announced it yet. Once the result is published, you’ll be able to fetch or enter your official grades in Gradly.</p></div><button type="button" aria-label="Close current semester notice" onClick={()=>setCurrentSemesterNoticeOpen(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" type="button" onClick={()=>setCurrentSemesterNoticeOpen(false)}>Got it</button></div></section></div>}
     {gradeReminderOpen&&section==="sgpa"&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">A QUICK CHECK BEFORE YOU START</span><h2>Enter your grades carefully</h2><p>Even one incorrect grade or credit value can change your SGPA. Before continuing, verify each subject, its credits and the grade you select. Your result will recalculate automatically whenever you make a change.</p></div><button type="button" aria-label="Close grade reminder" onClick={()=>setGradeReminderOpen(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" type="button" onClick={()=>setGradeReminderOpen(false)}>I’ve checked — continue →</button></div></section></div>}
 
     
