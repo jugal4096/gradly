@@ -204,7 +204,7 @@ const studentStorage = {
   removeItem(key: string) { const prefix = sessionStorage.getItem("gradly_tester_storage_prefix"); if (prefix) sessionStorage.removeItem(prefix + ":" + key); else localStorage.removeItem(key); },
 };
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
-const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0 };
+const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0, "D1":0, "D2":0, "D3":0, "F":0, "AB":0 };
 const gradeNames = Object.keys(POINTS);
 function isActiveBacklogGrade(grade: unknown): boolean { return String(grade || "").trim().toUpperCase() === "D"; }
 function normalizeResultCourseCode(value:unknown):string { return String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
