@@ -95,14 +95,20 @@ export async function listTesterDiscoveredResultSubjects(req: TesterAuthenticate
          FROM public.curriculum_subjects cs
          JOIN public.curricula c ON c.id=cs.curriculum_id
          WHERE c.institution_id=$1
-           AND regexp_replace(upper(cs.course_code),'[^A-Z0-9]','','g')=ANY($2::text[])
+           AND EXISTS (
+             SELECT 1 FROM regexp_split_to_table(upper(cs.course_code), '[^A-Z0-9]+') AS parts(code_part)
+             WHERE regexp_replace(parts.code_part,'[^A-Z0-9]','','g')=ANY($2::text[])
+           )
          UNION ALL
          SELECT drs.course_code AS "courseCode", drs.course_name AS "courseName",
                 drs.credits, CASE WHEN drs.curriculum_id=$3::uuid THEN 3 ELSE 4 END AS priority, 'DISCOVERED'::text AS source
          FROM public.discovered_result_subjects drs
          JOIN public.curricula c ON c.id=drs.curriculum_id
          WHERE c.institution_id=$1
-           AND regexp_replace(upper(drs.course_code),'[^A-Z0-9]','','g')=ANY($2::text[])
+           AND EXISTS (
+             SELECT 1 FROM regexp_split_to_table(upper(drs.course_code), '[^A-Z0-9]+') AS parts(code_part)
+             WHERE regexp_replace(parts.code_part,'[^A-Z0-9]','','g')=ANY($2::text[])
+           )
          UNION ALL
          SELECT s.canonical_code AS "courseCode", s.canonical_name AS "courseName",
                 NULL::numeric AS credits, 5 AS priority, 'SUBJECT'::text AS source
