@@ -279,7 +279,7 @@ export default function TesterUltraTesting() {
       }
     };
     try {
-      await Promise.all(Array.from({length:Math.min(3,enrollmentList.length)},()=>worker()));
+      await worker(); // Serialize enrollment scans on the 512 MiB Render instance to avoid overlapping PDF.js memory spikes.
       if (controller.signal.aborted) { setRows(current=>current.map(row=>row.status==="processing"?{...row,status:"queued"}:row)); setNotice("Batch stopped. Completed student reports have been retained in this workspace; unprocessed enrollments remain queued."); }
       else setNotice("Batch audit finished. Review incomplete records and the consolidated discovery registry below.");
     } finally {
