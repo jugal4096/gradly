@@ -26,8 +26,38 @@ export async function listDiscoveredResultSubjects(req: AuthenticatedRequest, re
     if (!codes.length && !hasSemester) return res.json({ success: true, data: [] });
     const result = codes.length
       ? await pool.query(
-          `SELECT course_code AS "courseCode", course_name AS "courseName", course_category AS "courseCategory", credits, credit_status AS "creditStatus", semester_number AS "semesterNumber"
-           FROM public.discovered_result_subjects WHERE curriculum_id = $1 AND course_code = ANY($2::text[])`,
+          `WITH selected AS (
+             SELECT institution_id FROM public.curricula WHERE id=$1
+           ), candidates AS (
+             SELECT d.course_code AS "courseCode", d.course_name AS "courseName", d.course_category AS "courseCategory",
+                    d.credits, d.credit_status AS "creditStatus", d.semester_number AS "semesterNumber", 1 AS priority
+             FROM public.discovered_result_subjects d
+             JOIN public.curricula c ON c.id=d.curriculum_id
+             WHERE c.institution_id=(SELECT institution_id FROM selected)
+               AND EXISTS (
+                 SELECT 1 FROM regexp_split_to_table(upper(d.course_code), '[^A-Z0-9]+') AS parts(code_part)
+                 WHERE regexp_replace(parts.code_part,'[^A-Z0-9]','','g')=ANY($2::text[])
+               )
+             UNION ALL
+             SELECT cs.course_code, cs.course_name, cs.course_type, cs.credits, 'CURRICULUM', sem.semester_number, 2
+             FROM public.curriculum_subjects cs
+             JOIN public.curricula c ON c.id=cs.curriculum_id
+             LEFT JOIN public.semesters sem ON sem.id=cs.semester_id
+             WHERE c.institution_id=(SELECT institution_id FROM selected)
+               AND EXISTS (
+                 SELECT 1 FROM regexp_split_to_table(upper(cs.course_code), '[^A-Z0-9]+') AS parts(code_part)
+                 WHERE regexp_replace(parts.code_part,'[^A-Z0-9]','','g')=ANY($2::text[])
+               )
+             UNION ALL
+             SELECT s.canonical_code, s.canonical_name, 'UNCLASSIFIED', NULL::numeric, 'CANONICAL', NULL::integer, 3
+             FROM public.subjects s
+             WHERE s.institution_id=(SELECT institution_id FROM selected)
+               AND regexp_replace(upper(s.canonical_code),'[^A-Z0-9]','','g')=ANY($2::text[])
+           )
+           SELECT DISTINCT ON (regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'))
+                  "courseCode","courseName","courseCategory",credits,"creditStatus","semesterNumber"
+           FROM candidates
+           ORDER BY regexp_replace(upper("courseCode"),'[^A-Z0-9]','','g'), priority`,
           [curriculumId, codes],
         )
       : await pool.query(
