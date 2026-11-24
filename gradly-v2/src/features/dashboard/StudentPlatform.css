@@ -2964,3 +2964,143 @@
   .sp-user-mode .sp-user-stat,.sp-user-mode .sp-user-tool,.sp-user-mode .sp-user-welcome-actions button:first-child{transition:none}
   .sp-user-mode .sp-user-stat:hover,.sp-user-mode .sp-user-tool:hover,.sp-user-mode .sp-user-welcome-actions button:first-child:hover{transform:none}
 }
+
+
+/* Accessible, high-contrast academic planning surfaces. */
+.sp-sgpa-planner-shell .sp-card,
+.sp-sgpa-planner-shell .sp-sgpa-planner-report{
+  color:#17243a;
+  border-color:#d9e3f0;
+  background:linear-gradient(155deg,#ffffff 0%,#f5f8ff 58%,#f2fbf8 100%);
+  box-shadow:0 10px 28px rgba(36,61,94,.07);
+}
+.sp-sgpa-planner-shell .sp-card-head h2,
+.sp-sgpa-planner-shell .sp-sgpa-planner-report h3{color:#17243a}
+.sp-sgpa-planner-shell .sp-muted{color:#5d6c82}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-score{color:#172d4b}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row{border-color:#dce5ef}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row>span{color:#33465f}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row>span b,
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row>span small{color:#66788e}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row select{
+  min-width:72px;padding:8px 9px;border:1px solid #b9c9dc;border-radius:8px;
+  background:#fff;color:#1e3654;font-weight:800;outline:none;
+}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row select:focus-visible{
+  outline:3px solid rgba(37,125,161,.25);border-color:#267d9c;
+}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-foot{border-color:#dce5ef;color:#60738a}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report-foot strong{color:#1c3858}
+.sp-sgpa-planner-shell .sp-sgpa-planner-target-status{background:#d9f4e9;color:#155b49}
+.sp-sgpa-planner-shell .sp-sgpa-planner-live{background:#e6f5f1;color:#176b5a;border-color:#bfe5d9}
+.sp-sgpa-planner-shell .sp-sgpa-planner-elective-tools{background:#edf4fb;border-color:#d7e3f0}
+.sp-sgpa-planner-shell .sp-sgpa-planner-elective-tools label{color:#52677f}
+.sp-sgpa-planner-shell .sp-sgpa-planner-elective-tools select{background:#fff;color:#1d3552;border-color:#c4d2e1}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report .sp-secondary{background:#e9f1fb;border-color:#bfd0e4;color:#23486c}
+.sp-sgpa-planner-shell .sp-sgpa-planner-report .sp-secondary:hover{background:#dceafb}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-card,
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report{
+  color:#edf5ff;border-color:#354a63;
+  background:linear-gradient(155deg,#1c2b40 0%,#1b3041 55%,#202c43 100%);
+}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-card-head h2,
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report h3,
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-score{color:#f4f8ff}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-muted{color:#b4c3d5}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row{border-color:#3a4d63}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row>span{color:#d8e4f2}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row>span b,
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row>span small{color:#9fb2c8}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-rows .sp-history-row select{background:#142236;color:#f1f7ff;border-color:#526a85}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-foot{border-color:#3a4d63;color:#b4c3d5}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report-foot strong{color:#f1f7ff}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-target-status{background:#174d43;color:#baf4df}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-live{background:#1c443f;color:#b7f0df;border-color:#316b60}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-elective-tools{background:#17283b;border-color:#354a63}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-elective-tools label{color:#b6c7da}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-elective-tools select{background:#142236;color:#f1f7ff;border-color:#526a85}
+.sp-dark-theme .sp-sgpa-planner-shell .sp-sgpa-planner-report .sp-secondary{background:#243b54;border-color:#49617d;color:#dcecff}
+
+/* SGPA progress tracker: clear contrast, distinct metric hierarchy and chart labels. */
+.sp-tracker-overview .sp-tracker-score{
+  background:radial-gradient(ellipse at 90% 0%,rgba(69,214,190,.2),transparent 55%),linear-gradient(145deg,#173b55,#162a43);
+  border-color:#315b78;color:#f5fbff;
+}
+.sp-tracker-overview .sp-tracker-stat{
+  background:linear-gradient(145deg,#ffffff,#edf4fb);
+  border-color:#d4e1ee;color:#203751;
+}
+.sp-tracker-overview .sp-tracker-stat>span{color:#627a93}
+.sp-tracker-overview .sp-tracker-stat strong{color:#183956}
+.sp-tracker-overview .sp-tracker-stat>small{color:#65788d}
+.sp-tracker-overview .sp-tracker-stat>b{color:#71859a}
+.sp-tracker-overview .sp-tracker-stat strong.is-positive{color:#14805f}
+.sp-tracker-overview .sp-tracker-stat strong.is-negative{color:#c24e61}
+.sp-tracker-analysis-grid .sp-card{
+  background:linear-gradient(155deg,#fff,#f3f7fc);
+  border-color:#d8e3ef;color:#203751;
+}
+.sp-tracker-analysis-grid .sp-card h2{color:#1d3652}
+.sp-tracker-analysis-grid .sp-tracker-section-label{color:#617a94}
+.sp-tracker-analysis-grid .sp-tracker-insight{border-color:#dce6f0}
+.sp-tracker-analysis-grid .sp-tracker-insight b{color:#29435f}
+.sp-tracker-analysis-grid .sp-tracker-insight p{color:#60758d}
+.sp-tracker-chart-head>div>span{color:#627b95}
+.sp-tracker-chart-head h2{color:#1d3652}
+.sp-tracker-chart-head p{color:#61758b}
+.sp-tracker-record-count{color:#36536f;border-color:#cddbea;background:#f3f7fc}
+.sp-tracker-chart-switch button{background:#edf3fa;border-color:#cfdae7;color:#3d5874}
+.sp-tracker-chart-switch button.active{background:#1e5473;border-color:#1e5473;color:#fff}
+.sp-tracker-chart-caption{color:#536d86}
+.sp-tracker-chart-caption b{color:#203d5a}
+.sp-tracker-chart-caption .sp-tracker-legend{color:#536d86}
+.sp-tracker-table-wrap{border-color:#d8e3ef}
+.sp-tracker-table th{color:#60768e}
+.sp-tracker-table td{color:#2b4560;border-color:#e0e8f0}
+.sp-dark-theme .sp-tracker-overview .sp-tracker-stat{
+  background:linear-gradient(145deg,#1d3045,#18283b);border-color:#354d67;color:#eaf3ff;
+}
+.sp-dark-theme .sp-tracker-overview .sp-tracker-stat>span,
+.sp-dark-theme .sp-tracker-overview .sp-tracker-stat>small{color:#a9bdd2}
+.sp-dark-theme .sp-tracker-overview .sp-tracker-stat strong{color:#f1f7ff}
+.sp-dark-theme .sp-tracker-overview .sp-tracker-stat>b{color:#9aafc5}
+.sp-dark-theme .sp-tracker-analysis-grid .sp-card{background:linear-gradient(155deg,#1c2b40,#18263a);border-color:#354a63;color:#edf5ff}
+.sp-dark-theme .sp-tracker-analysis-grid .sp-card h2,
+.sp-dark-theme .sp-tracker-analysis-grid .sp-tracker-insight b{color:#edf5ff}
+.sp-dark-theme .sp-tracker-analysis-grid .sp-tracker-section-label,
+.sp-dark-theme .sp-tracker-analysis-grid .sp-tracker-insight p{color:#aebfd2}
+.sp-dark-theme .sp-tracker-analysis-grid .sp-tracker-insight{border-color:#354a63}
+.sp-dark-theme .sp-tracker-chart-head>div>span,
+.sp-dark-theme .sp-tracker-chart-head p{color:#a9bbcf}
+.sp-dark-theme .sp-tracker-chart-head h2{color:#eff6ff}
+.sp-dark-theme .sp-tracker-record-count{color:#c8d8e9;border-color:#435a74;background:#1b2b40}
+.sp-dark-theme .sp-tracker-chart-switch button{background:#1a2a40;border-color:#435a74;color:#c6d6e7}
+.sp-dark-theme .sp-tracker-chart-switch button.active{background:#d8f4ee;border-color:#d8f4ee;color:#16483f}
+.sp-dark-theme .sp-tracker-chart-caption,
+.sp-dark-theme .sp-tracker-chart-caption .sp-tracker-legend{color:#b5c7da}
+.sp-dark-theme .sp-tracker-chart-caption b{color:#f0f6ff}
+.sp-dark-theme .sp-tracker-table th{color:#afc1d5}
+.sp-dark-theme .sp-tracker-table td{color:#d9e5f2;border-color:#34485f}
+
+/* Honest feature previews: consistent across light and dark themes. */
+.sp-coming-soon-card{
+  position:relative;overflow:hidden;min-height:270px;padding:clamp(25px,4vw,42px);
+  border:1px solid #cbdced;border-radius:18px;
+  background:radial-gradient(ellipse at 88% 8%,rgba(61,190,177,.2),transparent 35%),linear-gradient(125deg,#f1f7ff,#fff 58%,#eaf8f4);
+  color:#1c3652;text-align:left;
+}
+.sp-coming-soon-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:#d9eee9;color:#176c62;font-size:25px}
+.sp-coming-soon-label{display:inline-block;margin-top:21px;color:#147d70;font-size:9px;font-weight:900;letter-spacing:.17em}
+.sp-coming-soon-card h2{margin:8px 0;color:#1d3854;font:800 clamp(22px,3vw,30px) Manrope;letter-spacing:-.04em}
+.sp-coming-soon-card p{max-width:550px;color:#5d7187;font-size:12px;line-height:1.75}
+.sp-coming-soon-foot{margin-top:25px;padding-top:13px;border-top:1px solid #d7e4ee;color:#7a8fa4;font-size:8px;font-weight:850;letter-spacing:.15em}
+.sp-dark-theme .sp-coming-soon-card{border-color:#38516b;background:radial-gradient(ellipse at 88% 8%,rgba(61,190,177,.13),transparent 35%),linear-gradient(125deg,#1b3046,#1a2a3d 58%,#1c373c);color:#eef7ff}
+.sp-dark-theme .sp-coming-soon-icon{background:#214c4a;color:#b9f2e5}
+.sp-dark-theme .sp-coming-soon-label{color:#9be5d3}
+.sp-dark-theme .sp-coming-soon-card h2{color:#f0f7ff}
+.sp-dark-theme .sp-coming-soon-card p{color:#b5c7d9}
+.sp-dark-theme .sp-coming-soon-foot{border-color:#3b5369;color:#9eb4c9}
+.sp-current-semester-modal .sp-modal-head h2{color:#1c3652;line-height:1.25}
+.sp-current-semester-modal .sp-modal-head p{color:#5d7187;line-height:1.7}
+.sp-dark-theme .sp-current-semester-modal .sp-modal-head h2{color:#f0f7ff}
+.sp-dark-theme .sp-current-semester-modal .sp-modal-head p{color:#b5c7d9}
