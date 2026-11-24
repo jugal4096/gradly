@@ -1004,8 +1004,8 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
     // independently validate the requested semester before grades are used.
     const semester = titleSemester ?? document.sectionSemester;
     const consolidatedUnlabelled = titleSemester === null &&
-      /\\b(?:NEP|CBCS)\\b/i.test(document.title) &&
-      /\\b(?:REG(?:ULAR)?|BACK(?:LOG)?|ATKT|RE-?EXAM)\\b/i.test(document.title);
+      /\b(?:NEP|CBCS)\\b/i.test(document.title) &&
+      /\b(?:REG(?:ULAR)?|BACK(?:LOG)?|ATKT|RE-?EXAM)\\b/i.test(document.title);
     return semester === null || semester === selectedSemester || consolidatedUnlabelled;
   });
 }
