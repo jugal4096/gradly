@@ -1245,7 +1245,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
             // Never import a document whose extracted semester differs from
             // the semester the student selected.
             const inferredSemester = parsed.document.semester === null
-              ? inferGecaSemesterFromCourseCodes(branchCode, parsed.document.grades)
+              ? inferGecaSemesterFromCourseCodes(branchCode, parsed.document.grades) ?? document.sectionSemester
               : parsed.document.semester;
             const semesterMatches = selectedSemester == null
               ? parsed.document.semester == null
