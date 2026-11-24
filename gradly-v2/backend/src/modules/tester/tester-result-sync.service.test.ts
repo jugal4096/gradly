@@ -62,7 +62,8 @@ test("semester filtering uses the enclosing GECA section for subject PDFs withou
   ];
   assert.deepEqual(
     selectGecaSemesterDocuments(documents, 2),
-    [documents[0], documents[1]],
+    // The unknown consolidated PDF is kept for in-PDF semester validation.
+    [documents[0], documents[1], documents[3]],
   );
 });
 
@@ -92,7 +93,7 @@ test("semester filtering excludes a PDF when its filename and section identify a
     { title: "Civil Engineering IV SEM REGULAR", url: "https://geca.ac.in/sem4.pdf", sectionSemester: 2 },
     { title: "CEESC1005_RESULT", url: "https://geca.ac.in/unknown.pdf", sectionSemester: null },
   ];
-  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0]]);
+  assert.deepEqual(selectGecaSemesterDocuments(documents, 4), [documents[0], documents[2]]);
 });
 
 
