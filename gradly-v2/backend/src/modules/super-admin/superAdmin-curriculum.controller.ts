@@ -4,6 +4,10 @@ import type { SuperAdminAuthenticatedRequest } from "../../middleware/super-admi
 
 type RawRecord = Record<string, unknown>;
 
+function asRecord(value: unknown): RawRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as RawRecord : {};
+}
+
 function pick(records: RawRecord[], keys: string[]): unknown {
   for (const record of records) {
     const normalized = new Map(Object.entries(record || {}).map(([key, value]) => [key.toLowerCase(), value]));
@@ -23,22 +27,22 @@ function normalizeRecord(row: Record<string, RawRecord>) {
   ];
   const active = pick([row.courseSubject || {}], ["active"]);
   const mandatory = pick([row.courseSubject || {}], ["mandatory"]);
-  const status = pick([row.curriculum || {}], ["status"]);
+  const status = pick([asRecord(row.curriculum)], ["status"]);
   return {
     id: pick([row.courseSubject || {}], ["id"]),
     isStructureOnly: !pick([row.courseSubject || {}], ["id"]),
     code: pick([row.courseSubject || {}], ["course_code", "code", "subject_code"]),
     courseId: pick([row.courseSubject || {}], ["course_id"]),
     name: pick([row.courseSubject || {}], ["course_name", "name", "subject_name"]) ?? pick([row.subject || {}], ["name", "subject_name", "title"]) ?? (pick([row.semester || {}], ["name", "semester_number"]) ? `Curriculum structure — ${String(pick([row.semester || {}], ["name", "semester_number"]))}` : null),
-    branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
-    specialization: pick([row.specialization || {}], ["name", "code", "specialization_name"]),
-    branchCode: pick([row.branch || {}], ["code"]),
+    branch: pick([asRecord(row.branch)], ["name", "branch_name", "department_name"]),
+    specialization: pick([asRecord(row.specialization)], ["name", "code", "specialization_name"]),
+    branchCode: pick([asRecord(row.branch)], ["code"]),
     semester: pick([row.semester || {}], ["semester_number", "name", "semester_no"]),
     semesterName: pick([row.semester || {}], ["name"]),
     credits: pick([row.courseSubject || {}], ["credits", "credit"]),
-    scheme: pick([row.scheme || {}], ["name", "code", "regulations"]),
-    academicYear: pick([row.academicYear || {}], ["name", "label", "year", "academic_year", "code", "title"]),
-    program: pick([row.program || {}], ["name", "short_name", "level"]),
+    scheme: pick([asRecord(row.scheme)], ["name", "code", "regulations"]),
+    academicYear: pick([asRecord(row.academicYear)], ["name", "label", "year", "academic_year", "code", "title"]),
+    program: pick([asRecord(row.program)], ["name", "short_name", "level"]),
     admissionMode: null,
     courseType: pick([row.courseSubject || {}], ["course_type"]),
     mandatory,
@@ -46,11 +50,11 @@ function normalizeRecord(row: Record<string, RawRecord>) {
     gradingRule: pick([row.gradingSystem || {}], ["name", "code", "label", "grading_system", "system_name"]),
     status,
     active,
-    institution: pick([row.institution || {}], ["name", "short_name"]),
-    curriculumVersion: pick([row.curriculum || {}], ["version"]),
-    curriculumId: pick([row.curriculum || {}], ["id"]),
-    totalSemesters: pick([row.curriculum || {}], ["total_semesters"]),
-    curriculumCredits: pick([row.curriculum || {}], ["total_credits"]),
+    institution: pick([asRecord(row.institution)], ["name", "short_name"]),
+    curriculumVersion: pick([asRecord(row.curriculum)], ["version"]),
+    curriculumId: pick([asRecord(row.curriculum)], ["id"]),
+    totalSemesters: pick([asRecord(row.curriculum)], ["total_semesters"]),
+    curriculumCredits: pick([asRecord(row.curriculum)], ["total_credits"]),
     expectedSemesterCredits: pick([row.semester || {}], ["expected_credits"]),
     rawFieldsAvailable: records.reduce((count, record) => count + Object.keys(record).length, 0),
   };
@@ -117,21 +121,21 @@ export async function listCurriculum(
        ORDER BY i.name, p.name, b.name, sc.name, d.semester_number, d.course_code
        LIMIT 5000`
     );
-    const discovered = discoveredResult.rows.map((row: Record<string, any>) => ({
+    const discovered = discoveredResult.rows.map((row: Record<string, unknown>) => ({
       id: row.id,
       code: row.course_code,
       name: row.course_name,
       credits: row.credits,
       courseType: row.course_category,
       semester: row.semester_number,
-      branch: pick([row.branch || {}], ["name", "branch_name", "department_name"]),
-      specialization: pick([row.specialization || {}], ["name", "code", "specialization_name"]),
-      scheme: pick([row.scheme || {}], ["name", "code", "regulations"]),
-      academicYear: pick([row.academicYear || {}], ["name", "label", "year", "academic_year", "code", "title"]),
-      program: pick([row.program || {}], ["name", "short_name", "level"]),
-      institution: pick([row.institution || {}], ["name", "short_name"]),
+      branch: pick([asRecord(row.branch)], ["name", "branch_name", "department_name"]),
+      specialization: pick([asRecord(row.specialization)], ["name", "code", "specialization_name"]),
+      scheme: pick([asRecord(row.scheme)], ["name", "code", "regulations"]),
+      academicYear: pick([asRecord(row.academicYear)], ["name", "label", "year", "academic_year", "code", "title"]),
+      program: pick([asRecord(row.program)], ["name", "short_name", "level"]),
+      institution: pick([asRecord(row.institution)], ["name", "short_name"]),
       curriculumId: row.curriculum_id,
-      curriculumVersion: pick([row.curriculum || {}], ["version"]),
+      curriculumVersion: pick([asRecord(row.curriculum)], ["version"]),
       status: row.publication_status === "PUBLISHED" ? "Published" : "Discovered catalogue",
       publicationStatus: row.publication_status || "DISCOVERED",
       source: row.source,
