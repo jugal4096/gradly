@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Activity, ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play, RefreshCw, Search, ShieldCheck, Square, Users, WandSparkles } from "lucide-react";
 import { API_BASE_URL } from "../../lib/superAdminSession";
@@ -28,13 +29,13 @@ export default function TesterUltraTesting() {
   const navigate = useNavigate();
   const [token, setToken] = useState("");
   const [testerId, setTesterId] = useState("Tester");
-  const [institutionQuery, setInstitutionQuery] = useState("");
+  const [institutionQuery, setInstitutionQuery] = useState("Government College of Engineering");
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [enrollmentText, setEnrollmentText] = useState("");
   const [sampleProgramme, setSampleProgramme] = useState<"BE"|"BT">("BE");
   const [sampleAdmissionYear, setSampleAdmissionYear] = useState("2023");
-  const [sampleAdmissionMode, setSampleAdmissionMode] = useState<"F"|"S">("S");
+  const [sampleAdmissionMode, setSampleAdmissionMode] = useState<"F"|"S">("F");
   const [sampleBranch, setSampleBranch] = useState("01");
   const [sampleSerialStart, setSampleSerialStart] = useState("1");
   const [sampleCount, setSampleCount] = useState("10");
@@ -92,7 +93,17 @@ export default function TesterUltraTesting() {
         const response = await fetch(API + "/api/academic/institutions/search?q=" + encodeURIComponent(query), { signal: controller.signal });
         const body = await response.json();
         if (!response.ok) throw new Error(body.message || "Institution search failed.");
-        setInstitutions(Array.isArray(body.data) ? body.data : []);
+        const matches = Array.isArray(body.data) ? body.data as Institution[] : [];
+        const defaultGeca = matches.find(item => /government college of engineering/i.test(item.name) && /aurangabad|chhatrapati sambhajinagar|geca/i.test(item.name))
+          || matches.find(item => /government college of engineering/i.test(item.name))
+          || matches.find(item => /geca|chhatrapati sambhajinagar/i.test(item.name));
+        if (!institution && defaultGeca) {
+          setInstitution(defaultGeca);
+          setInstitutionQuery(defaultGeca.name);
+          setInstitutions([]);
+        } else {
+          setInstitutions(matches);
+        }
       } catch (reason) { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Institution search failed."); }
       finally { if (!controller.signal.aborted) setSearchingInstitutions(false); }
     }, 250);
@@ -423,7 +434,7 @@ export default function TesterUltraTesting() {
         </section>
       </>}
       {notice&&<p className="tester-ultra-notice" role="status">{notice}</p>}
-      <div className="tester-ultra-clear-bar"><span>{enrollmentList.length} enrollments · {rows.length} audit results</span><button type="button" className="tester-ultra-clear-bottom" disabled={!enrollmentText.trim()&&!rows.length&&!generatedEnrollments.length} onClick={()=>{abortRef.current?.abort();setRunning(false);setEnrollmentText("");setGeneratedEnrollments([]);setRows([]);setNotice("All enrollment numbers and previous audit results were cleared.");setError("");setGeneratorError("");}}>Clear all numbers</button></div>
+      {createPortal(<div className="tester-ultra-clear-bar" role="region" aria-label="Batch actions"><div className="tester-ultra-clear-summary"><strong>{enrollmentList.length} <span>enrollments</span></strong><i/> <span>{rows.length} audit results</span></div><button type="button" className="tester-ultra-clear-bottom" onClick={()=>{abortRef.current?.abort();setRunning(false);setEnrollmentText("");setGeneratedEnrollments([]);setRows([]);setNotice("All enrollment numbers and previous audit results were cleared.");setError("");setGeneratorError("");}}><span aria-hidden="true">×</span> Clear all numbers</button></div>, document.body)}
       <footer className="tester-ultra-footer">Gradly Ultra Testing · Official result PDFs are inspected read-only · Student accounts and production academic records remain untouched.</footer>
     </section>
   </main>;
