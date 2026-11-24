@@ -1000,7 +1000,11 @@ async function readResultPdf(
 
 const BRANCH_NAMES: Record<string, string[]> = {
   "01": ["civil"], "02": ["mechanical"], "03": ["electrical"],
-  "04": ["electronics", "entc"], "05": ["computer", "cse"],
+  // GECA PDFs use several equivalent labels for Electronics & Telecommunication.
+  // Include the common E&TC abbreviation so branch filtering does not discard
+  // valid ENTC result PDFs before the exact enrollment/row checks run.
+  "04": ["electronics", "entc", "e&tc", "e and tc", "electronics and telecommunication", "electronics & telecommunication"],
+  "05": ["computer", "cse"],
   "06": ["information technology", "information tech"],
 };
 const BRANCH_SUBJECT_PREFIXES: Record<string, string[]> = {
