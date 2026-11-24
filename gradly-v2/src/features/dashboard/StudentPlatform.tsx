@@ -93,7 +93,7 @@ const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6,
 const gradeNames = ["A++","A+","A","B+","B","C+","C","D"];
 function normalizeGradeSymbol(value: unknown): string {
   const grade=String(value??"").trim().toUpperCase().replace(/\s+/g,"");
-  const aliases:Record<string,string>={O:"A++",C:"C+",P:"C",D1:"D",D2:"D",D3:"D",F:"D",AB:"D"};
+  const aliases:Record<string,string>={O:"A++",P:"C",D1:"D",D2:"D",D3:"D",F:"D",AB:"D"};
   return aliases[grade] || grade;
 }
 function isActiveBacklogGrade(grade: unknown): boolean { return String(grade || "").trim().toUpperCase() === "D"; }
