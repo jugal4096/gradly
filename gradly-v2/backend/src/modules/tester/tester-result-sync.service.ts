@@ -250,7 +250,7 @@ function lineContainsEnrollment(line: TextLine, enrollment: string): boolean {
 
 function gradeTokensFromItem(item: PositionedItem): string[] {
   return item.text.toUpperCase().trim().split(/\s+/).flatMap(token => {
-    const cleaned = token.replace(/^[^A-Z+-]+|[^A-Z+-]+$/g, "");
+    const cleaned = token.replace(/^[^A-Z0-9+-]+|[^A-Z0-9+-]+$/g, "");
     return GRADE_TOKEN_PATTERN.test(cleaned) ? [cleaned] : [];
   });
 }
