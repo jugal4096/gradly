@@ -1,5 +1,3 @@
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-
 const RESULT_MASTER_URL = "https://geca.ac.in/result-master.aspx";
 const GECA_ORIGIN = "https://geca.ac.in";
 const SESSION_CACHE_MS = 30 * 60 * 1000;
@@ -802,6 +800,9 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
   // GECA's embedded TrueType fonts can contain unsupported optional
   // instructions (for example "TT: undefined function: 21"). PDF.js still
   // extracts the text layer; suppress only its non-fatal warnings.
+  // Load PDF.js only when a legacy server-side result scan is explicitly requested.
+  // Keeping this heavyweight Node PDF runtime out of normal API startup reduces idle memory.
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const pdf = await getDocument({
     data: bytes.slice(),
     useSystemFonts: true,
