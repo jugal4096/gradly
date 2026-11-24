@@ -371,6 +371,11 @@ export default function StudentPlatform() {
   const [loginGate,setLoginGate] = useState(false);
   const [gradeReminderOpen,setGradeReminderOpen] = useState(false);
   const [notice,setNotice] = useState("");
+  const [grievanceOpen,setGrievanceOpen] = useState(false);
+  const [grievanceCategory,setGrievanceCategory] = useState("OTHER");
+  const [grievanceDescription,setGrievanceDescription] = useState("");
+  const [grievanceBusy,setGrievanceBusy] = useState(false);
+  const [grievanceError,setGrievanceError] = useState("");
   const [reExamTargetCourseCode,setReExamTargetCourseCode] = useState("");
   
   const [reExamOutcome,setReExamOutcome] = useState<{success:boolean;title:string;message:string}|null>(null);
@@ -1194,6 +1199,24 @@ export default function StudentPlatform() {
     setNotice("");
     setSavedConfirmationSemester(semesterNumber);
   }
+  async function submitDashboardGrievance(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user || isGuest) { setLoginGate(true); return; }
+    if (!profile.institutionId) { setGrievanceError("Complete your academic profile before submitting a grievance."); return; }
+    const description=grievanceDescription.trim();
+    if (description.length<10 || description.length>3000) { setGrievanceError("Please enter between 10 and 3,000 characters."); return; }
+    setGrievanceBusy(true); setGrievanceError("");
+    try {
+      const token=await user.getIdToken();
+      const response=await fetch(API+"/api/student/enrollment-grievances",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({institutionId:profile.institutionId,enrollmentNumber:profile.enrollment,category:grievanceCategory,description})});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok || data.success===false) throw new Error(data.message||"Unable to submit your grievance. Please try again.");
+      setGrievanceOpen(false);setGrievanceDescription("");setGrievanceCategory("OTHER");
+      setNotice("Your grievance has been submitted successfully. It is now available in the Admin student grievance inbox.");
+    } catch(error) { setGrievanceError(error instanceof Error?error.message:"Unable to submit your grievance."); }
+    finally { setGrievanceBusy(false); }
+  }
+
   function navigate(next:Section) {
     if (isGuest && !["home","sgpa","cgpa"].includes(next)) { setLoginGate(true); setMobileOpen(false); setProfileMenuOpen(false); return; }
     if(next==="sgpa") setGradeReminderOpen(true);
@@ -1366,6 +1389,7 @@ export default function StudentPlatform() {
               <div className="gd-home-hero-actions">
                 <button type="button" onClick={()=>navigate("sgpa")}> <span>＋</span> Build semester SGPA <b>↗</b></button>
                 <button type="button" className="gd-home-text-action" onClick={()=>navigate("tracker")}>Explore my progress <b>→</b></button>
+                <button type="button" className="gd-home-text-action gd-home-grievance-trigger" onClick={()=>{setGrievanceError("");setGrievanceOpen(true);}}>Submit a grievance <b>↗</b></button>
               </div>
               <div className="gd-home-context"><span>{profile.institutionName||"Your institution"}</span><i/> <span>{profile.branchName||"Academic workspace"}</span>{profile.semester&&<><i/><span>Semester {profile.semester}</span></>}</div>
             </div>
@@ -1531,6 +1555,7 @@ export default function StudentPlatform() {
       <footer className="sp-footer"><span>© {new Date().getFullYear()} Gradly</span><span>CALCULATE · UNDERSTAND · PLAN</span><span>Built for your next chapter ✦</span></footer>
     </main>
 
+    {grievanceOpen&&<div className="sp-modal-backdrop top" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget&&!grievanceBusy)setGrievanceOpen(false);}}><section className="sp-modal sp-request-modal gd-grievance-modal" role="dialog" aria-modal="true" aria-labelledby="gd-grievance-title"><div className="sp-modal-head"><div><span className="sp-kicker">STUDENT SUPPORT · PRIVATE SUBMISSION</span><h2 id="gd-grievance-title">Submit a grievance</h2><p>Your message will be recorded in Gradly and sent to your institution’s Admin grievance inbox for review.</p></div><button type="button" aria-label="Close grievance form" disabled={grievanceBusy} onClick={()=>setGrievanceOpen(false)}>×</button></div><form onSubmit={submitDashboardGrievance} className="gd-grievance-form"><label>Grievance category<select value={grievanceCategory} onChange={event=>setGrievanceCategory(event.target.value)}><option value="INVALID_ENROLLMENT">Incorrect enrollment number</option><option value="ALREADY_REGISTERED">Enrollment already registered</option><option value="WRONG_PROGRAMME">Wrong programme</option><option value="WRONG_SCHEME">Wrong academic scheme</option><option value="WRONG_BRANCH">Wrong branch</option><option value="WRONG_ADMISSION_MODE">Wrong admission mode</option><option value="WRONG_SEMESTER">Wrong current semester</option><option value="OTHER">Other issue</option></select></label><label>Explain your grievance<textarea required minLength={10} maxLength={3000} rows={5} value={grievanceDescription} onChange={event=>setGrievanceDescription(event.target.value)} placeholder="Describe the issue clearly. Include relevant details so the Admin team can investigate."/><small>{grievanceDescription.length}/3000 characters</small></label><div className="gd-grievance-routing"><span>SUBMITTED TO</span><strong>Institution Admin · Student Grievance Inbox</strong><small>Enrollment: {profile.enrollment||"Not provided"} · Your signed-in account is attached automatically.</small></div>{grievanceError&&<p className="gd-grievance-error" role="alert">{grievanceError}</p>}<div className="sp-actions"><button className="sp-secondary" type="button" disabled={grievanceBusy} onClick={()=>setGrievanceOpen(false)}>Cancel</button><button className="sp-primary" type="submit" disabled={grievanceBusy||grievanceDescription.trim().length<10}>{grievanceBusy?"Submitting…":"Send grievance →"}</button></div></form></section></div>}
     {gradeReminderOpen&&section==="sgpa"&&<div className="sp-modal-backdrop top"><section className="sp-modal sp-request-modal"><div className="sp-modal-head"><div><span className="sp-kicker">A QUICK CHECK BEFORE YOU START</span><h2>Enter your grades carefully</h2><p>Even one incorrect grade or credit value can change your SGPA. Before continuing, verify each subject, its credits and the grade you select. Your result will recalculate automatically whenever you make a change.</p></div><button type="button" aria-label="Close grade reminder" onClick={()=>setGradeReminderOpen(false)}>×</button></div><div className="sp-actions"><button className="sp-primary" type="button" onClick={()=>setGradeReminderOpen(false)}>I’ve checked — continue →</button></div></section></div>}
 
     
