@@ -456,3 +456,126 @@
 .theme-dark .exam-choice-skip:hover { background: #303030; }
 .theme-dark .exam-choice-icon { border-color: #444; background: linear-gradient(145deg, #303030, #1c1c1c); color: #fff; }
 .theme-dark .exam-choice-icon i { border-color: #171717; background: #fff; color: #111; }
+
+
+/* Gradly Academic Setup — vibrant campus-inspired refresh */
+.academic-setup-page{
+  --as-ink:#17243d;--as-muted:#687995;--as-line:rgba(218,226,242,.86);--as-soft:#f4f7ff;
+  --as-accent:#6256df;--as-accent-hover:#5144c7;
+  position:relative;isolation:isolate;overflow:hidden;min-height:100vh;padding:0 28px 42px;
+  color:var(--as-ink);
+  background:#edf2ff;
+}
+.academic-setup-page::before{
+  content:"";display:block;position:fixed;z-index:-2;inset:0;
+  background:linear-gradient(112deg,rgba(235,242,255,.95) 0%,rgba(239,242,255,.86) 44%,rgba(226,235,255,.68) 100%),url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2200&q=85") center/cover no-repeat!important;
+}
+.academic-setup-page::after{
+  content:"";display:block;position:fixed;z-index:-1;width:560px;height:560px;right:-190px;top:90px;border-radius:50%;
+  background:radial-gradient(circle,rgba(133,112,255,.19),rgba(133,112,255,0) 68%)!important;pointer-events:none;
+}
+.academic-setup-wrap{max-width:1040px}
+.academic-setup-header{height:78px;border-bottom:1px solid rgba(255,255,255,.65)}
+.academic-setup-brand{font-size:22px;letter-spacing:-1px}
+.academic-setup-logo{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#6b5de8,#438bdc);box-shadow:0 8px 20px rgba(90,91,210,.25)}
+.academic-setup-step{border-color:rgba(255,255,255,.75);border-radius:30px;background:rgba(255,255,255,.55);color:#62718b;padding:9px 13px}
+.academic-setup-theme-toggle{width:39px;height:39px;border-radius:12px;border-color:rgba(255,255,255,.8);background:rgba(255,255,255,.65);font-size:18px}
+.academic-setup-progress{height:5px;margin-top:0;background:rgba(255,255,255,.65)}
+.academic-setup-progress span{background:linear-gradient(90deg,#6958e7,#40b6c8);box-shadow:0 0 14px rgba(97,116,230,.25)}
+.academic-setup-content{max-width:900px;margin:34px auto 0}
+.academic-setup-flow{width:100%}
+.academic-setup-heading{
+  position:relative;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(220px,.75fr);align-items:center;gap:22px;
+  min-height:250px;margin:0 0 22px;padding:34px 42px;overflow:hidden;border:1px solid rgba(255,255,255,.75);border-radius:27px;
+  background:linear-gradient(112deg,rgba(24,39,77,.96),rgba(47,62,127,.91) 58%,rgba(83,93,178,.83));
+  box-shadow:0 22px 55px rgba(42,57,111,.19);
+}
+.academic-setup-heading-copy{position:relative;z-index:2}
+.academic-setup-eyebrow{display:flex;align-items:center;gap:9px;margin:0 0 15px;color:#a9d8ff;font-size:9px;letter-spacing:2px}
+.academic-setup-eyebrow span{display:grid;place-items:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.13);color:#ffd58a;font-size:13px}
+.academic-setup-heading h1{max-width:570px;margin:0 0 12px;color:#fff;font-size:clamp(34px,4.6vw,52px);font-weight:850;line-height:1.04;letter-spacing:-2.3px;background:none;-webkit-text-fill-color:#fff}
+.academic-setup-heading h1 em{color:#9fe5dd;font-style:normal}
+.academic-setup-heading>p:last-child{max-width:480px;margin:0;color:#d0d8f0;font-size:13px;line-height:1.7}
+.academic-setup-trust-row{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;color:#c4d5f4;font-size:9px;font-weight:650}
+.academic-setup-trust-row span{display:flex;align-items:center;gap:6px}
+.academic-setup-trust-row span::first-letter{color:#9fe5c8}
+.academic-setup-hero-art{position:relative;display:grid;place-items:center;min-height:170px}
+.academic-setup-art-orbit{position:absolute;border:1px solid rgba(183,207,255,.25);border-radius:50%;transform:rotate(-22deg)}
+.academic-setup-art-orbit-one{width:220px;height:120px}
+.academic-setup-art-orbit-two{width:185px;height:160px;transform:rotate(35deg);border-style:dashed}
+.academic-setup-art-card{position:relative;z-index:1;display:grid;gap:12px;width:205px;padding:19px;border:1px solid rgba(255,255,255,.28);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.09));box-shadow:0 15px 35px rgba(5,12,42,.2);backdrop-filter:blur(12px);transform:rotate(4deg)}
+.academic-setup-art-card>span{color:#b9c9ee;font-size:8px;font-weight:850;letter-spacing:1.8px}
+.academic-setup-art-card strong{display:flex;align-items:center;gap:9px;color:#fff;font-size:29px;letter-spacing:-1px}
+.academic-setup-art-card strong i{width:22px;height:2px;background:#83e0d2}
+.academic-setup-art-card small{color:#d0d9f1;font-size:9px}
+.academic-setup-art-star{position:absolute;top:7px;right:17px;color:#ffd58a;font-size:28px;text-shadow:0 0 22px rgba(255,213,138,.4)}
+.academic-setup-form{
+  grid-template-columns:1fr 1fr;gap:23px;padding:30px;border:1px solid rgba(255,255,255,.88);border-radius:24px;
+  background:rgba(255,255,255,.87);box-shadow:0 18px 50px rgba(46,63,112,.10);backdrop-filter:blur(18px)
+}
+.academic-setup-field-section>label,.academic-setup-confirm-fields label,.academic-setup-advanced-fields label,.academic-setup-institution-request label,.academic-setup-edit-fields label,.academic-setup-current-semester label,.academic-setup-gap-period-fields label{color:#344563;font-size:11px;font-weight:800}
+.academic-setup-input-wrap input,.academic-setup-enrollment-control input,.academic-setup-confirm-fields select,.academic-setup-advanced-fields select,.academic-setup-institution-request input,.academic-setup-edit-fields input,.academic-setup-edit-fields select,.academic-setup-current-semester select,.academic-setup-gap-period-fields select,.academic-setup-dialog form input,.academic-setup-dialog form select,.academic-setup-dialog textarea{
+  height:48px;padding:0 15px;border:1px solid #dce4f2;border-radius:12px;background:#fbfcff;color:#1e2e4b;font-size:12px;transition:border-color .16s,box-shadow .16s,background .16s
+}
+.academic-setup-page input:focus,.academic-setup-page select:focus,.academic-setup-page textarea:focus{border-color:#7a71ec;outline:3px solid rgba(106,96,224,.13)}
+.academic-setup-input-wrap input{padding-right:48px}
+.academic-setup-input-wrap.has-institution input{border-color:#9ed9c4;background:#f2fbf7;color:#1c624e;font-weight:750}
+.academic-setup-input-wrap.has-institution::after{content:"✓ GECA selected";position:absolute;right:12px;top:50%;transform:translateY(-50%);padding:6px 9px;border-radius:20px;background:#dcf7e9;color:#21805e;font-size:8px;font-weight:850;pointer-events:none}
+.academic-setup-institution-edit{position:absolute;right:12px;z-index:2;margin:0;padding:5px 7px;border:0;border-radius:7px;background:transparent;color:#477a70;cursor:pointer}
+.academic-setup-input-wrap.has-institution .academic-setup-institution-edit{right:106px}
+.academic-setup-helper{color:#8190a9;font-size:10px}
+.academic-setup-results{border-color:#dce4f2;border-radius:13px;box-shadow:0 15px 35px rgba(32,49,91,.14)}
+.academic-setup-results button{padding:13px 15px;font-size:11px}
+.academic-setup-results button:hover{background:#f1f4ff}
+.academic-setup-support-actions{margin-top:12px}
+.academic-setup-support-link{color:#6559d9;font-size:10px}
+.academic-setup-support-icon{background:#eeedff;color:#6256df}
+.enrollment-section{margin-top:0;padding-top:23px;border-top:1px solid #e8edf6}
+.academic-setup-enrollment-control button,.academic-setup-continue,.academic-setup-institution-request button,.academic-setup-dialog form button,.academic-setup-grievance form button{border-radius:11px;background:linear-gradient(105deg,#6256df,#438bdc);box-shadow:0 8px 18px rgba(91,91,211,.19)}
+.academic-setup-enrollment-control button{min-height:45px;padding:0 19px}
+.academic-setup-enrollment-control button:hover:not(:disabled),.academic-setup-continue:hover:not(:disabled),.academic-setup-institution-request button:hover,.academic-setup-dialog form button:hover,.academic-setup-grievance form button:hover{background:linear-gradient(105deg,#5144c7,#327bc9)}
+.academic-setup-predicted{padding:20px;border-color:#dcdfff;border-radius:16px;background:linear-gradient(135deg,#f4f3ff,#effaff)}
+.academic-setup-predicted-sparkle{background:#e7e5ff;color:#6558dc}
+.academic-setup-predicted-heading h2{color:#283c67}
+.academic-setup-auto-tag{border-color:#d9d7ff;background:#fff;color:#6559d9}
+.academic-setup-predicted-grid>div{border-color:#e3e8f5;border-radius:10px}
+.academic-setup-confirmation.academic-setup-journey{padding-top:22px}
+.academic-setup-prediction-reference,.academic-setup-delay,.academic-setup-gap-period{border-color:#dce5f5;border-radius:12px;background:#f5f8ff}
+.academic-setup-prediction-reference strong,.academic-setup-delay-metrics strong,.academic-setup-gap-period-heading strong{color:#6256df}
+.academic-setup-choice{border-radius:10px}
+.academic-setup-choice.primary-choice{border-color:#6256df;background:linear-gradient(105deg,#6256df,#438bdc)}
+.academic-setup-continue{min-height:52px;border-radius:13px;font-size:12px;letter-spacing:.1px}
+.academic-setup-footnote{color:#8190a9}
+.academic-setup-first-step-note{padding:12px 18px;border:1px solid rgba(255,255,255,.72);border-radius:12px;background:rgba(255,255,255,.5);color:#60718d}
+.academic-setup-footer{max-width:900px;color:#7887a0}
+.academic-setup-dialog{border:1px solid #e0e6f3;border-radius:20px;box-shadow:0 25px 80px rgba(26,39,81,.25)}
+.academic-setup-page.theme-dark{--as-ink:#f3f5ff;--as-muted:#aab5cf;--as-line:#3c4662;--as-soft:#202a42;background:#11182b;color:#f3f5ff}
+.academic-setup-page.theme-dark::before{background:linear-gradient(112deg,rgba(11,18,36,.94),rgba(18,27,55,.88)),url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2200&q=85") center/cover no-repeat!important}
+.academic-setup-page.theme-dark .academic-setup-heading{background:linear-gradient(112deg,rgba(11,17,36,.98),rgba(32,42,88,.95),rgba(50,57,116,.9))}
+.academic-setup-page.theme-dark .academic-setup-form{border-color:rgba(116,133,180,.25);background:rgba(27,36,59,.92)}
+.academic-setup-page.theme-dark .academic-setup-field-section>label,.academic-setup-page.theme-dark .academic-setup-current-semester label,.academic-setup-page.theme-dark .academic-setup-gap-period-fields label{color:#d7e0f5}
+.academic-setup-page.theme-dark .academic-setup-input-wrap input,.academic-setup-page.theme-dark .academic-setup-enrollment-control input,.academic-setup-page.theme-dark .academic-setup-current-semester select,.academic-setup-page.theme-dark .academic-setup-edit-fields select{border-color:#455274;background:#17213a;color:#f2f5ff}
+.academic-setup-page.theme-dark .academic-setup-input-wrap.has-institution input{border-color:#3e806d;background:#183a36;color:#baf3dd}
+.academic-setup-page.theme-dark .academic-setup-predicted{border-color:#424b79;background:linear-gradient(135deg,#25284b,#1b3547)}
+.academic-setup-page.theme-dark .academic-setup-predicted-heading h2,.academic-setup-page.theme-dark .academic-setup-predicted-grid dd{color:#edf1ff}
+.academic-setup-page.theme-dark .academic-setup-predicted-grid>div{border-color:#414b68;background:#202b45}
+.academic-setup-page.theme-dark .academic-setup-prediction-reference,.academic-setup-page.theme-dark .academic-setup-delay,.academic-setup-page.theme-dark .academic-setup-gap-period{border-color:#3d4b6c;background:#202b45}
+.academic-setup-page.theme-dark .academic-setup-theme-toggle,.academic-setup-page.theme-dark .academic-setup-step{border-color:#465170;background:#202b45;color:#f2f5ff}
+.academic-setup-page.theme-dark .academic-setup-first-step-note{border-color:#3d4967;background:rgba(30,42,68,.7);color:#c1cde5}
+@media(max-width:760px){
+  .academic-setup-page{padding:0 16px 28px}
+  .academic-setup-content{margin-top:22px}
+  .academic-setup-heading{grid-template-columns:1fr;min-height:0;padding:27px 23px;border-radius:21px}
+  .academic-setup-hero-art{display:none}
+  .academic-setup-heading h1{font-size:clamp(33px,8vw,43px);letter-spacing:-1.6px}
+  .academic-setup-trust-row{gap:9px 13px}
+  .academic-setup-form{padding:21px 17px;border-radius:19px}
+}
+@media(max-width:480px){
+  .academic-setup-heading{padding:25px 20px}
+  .academic-setup-heading h1{font-size:34px}
+  .academic-setup-header{height:66px}
+  .academic-setup-input-wrap.has-institution::after{font-size:7px;padding:5px 7px}
+  .academic-setup-input-wrap.has-institution .academic-setup-institution-edit{right:90px}
+}
+@media(prefers-reduced-motion:reduce){.academic-setup-page *{scroll-behavior:auto!important;transition:none!important}}
