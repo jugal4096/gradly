@@ -103,6 +103,31 @@ export default function AcademicSetupPage() {
     .map(year => ({ value: String(year), label: year + "-" + String(year + 1).slice(-2) }));
 
   useEffect(() => { window.localStorage.setItem("gradly-academic-theme", theme); }, [theme]);
+  // GECA is the primary institute for the current Gradly launch. Resolve it from
+  // the live institution directory so the selected record always carries its real branches.
+  useEffect(() => {
+    if (selected || query) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(API + "/api/academic/institutions/search?q=" + encodeURIComponent("GECA"));
+        const payload = await response.json();
+        if (!response.ok || cancelled) return;
+        const matches = Array.isArray(payload.data) ? payload.data as Institution[] : [];
+        const geca = matches.find(item => item.id === "0072cf6d-55a1-54e1-9a8c-767d8058f60a")
+          || matches.find(item => /government college of engineering.*(chhatrapati sambhajinagar|aurangabad)/i.test(item.name));
+        if (geca && !cancelled) {
+          setSelected(geca);
+          setQuery(geca.name);
+          setInstitutions([]);
+        }
+      } catch {
+        // Keep the institution picker usable if the directory is temporarily unavailable.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selected, query]);
+
 
   useEffect(() => {
     if (!supportModal) return;
@@ -461,9 +486,18 @@ export default function AcademicSetupPage() {
       <section className={"academic-setup-content" + (previewBusy ? " is-identifying" : "") + (preview?.recognized ? " has-identification" : "")}>
         <div className="academic-setup-flow">
         <div className="academic-setup-heading">
-          <p className="academic-setup-eyebrow">ACADEMIC PROFILE</p>
-          <h1>Let's set up your academic profile.</h1>
-          <p>Confirm a few details to make Gradly yours.</p>
+          <div className="academic-setup-heading-copy">
+            <p className="academic-setup-eyebrow"><span>✦</span> YOUR NEXT CHAPTER STARTS HERE</p>
+            <h1>Make your academic journey <em>count.</em></h1>
+            <p>A few details are all it takes to unlock a smarter, more personal Gradly experience.</p>
+            <div className="academic-setup-trust-row"><span>✓ Smart enrollment detection</span><span>✓ Your data stays yours</span></div>
+          </div>
+          <div className="academic-setup-hero-art" aria-hidden="true">
+            <div className="academic-setup-art-orbit academic-setup-art-orbit-one"></div>
+            <div className="academic-setup-art-orbit academic-setup-art-orbit-two"></div>
+            <div className="academic-setup-art-card"><span>YOUR JOURNEY</span><strong>01 <i /> 02 <i /> 03</strong><small>Set up · Discover · Grow</small></div>
+            <div className="academic-setup-art-star">✦</div>
+          </div>
         </div>
 
         {error && <div className="academic-setup-error" role="alert"><span>!</span>{error}</div>}
