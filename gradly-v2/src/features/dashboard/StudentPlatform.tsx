@@ -1404,16 +1404,17 @@ export default function StudentPlatform() {
             </div>
           </section>
 
-          <HomeDashboardBoost resultsCount={results.length} latestSgpa={results.length ? results[results.length-1].sgpa : null} onProgress={() => navigate("tracker")} />
-
           <section className="gd-home-overview">
             <div className="gd-home-section-intro"><div><span className="gd-home-kicker">THE BIG PICTURE</span><h2>Your academic snapshot</h2></div><button type="button" onClick={()=>navigate("cgpa")}>Full academic record <b>↗</b></button></div>
             <div className="gd-home-metrics">
-              <button type="button" className="gd-home-metric gd-metric-primary" onClick={()=>navigate("cgpa")}><span className="gd-metric-label"><i>◈</i> CUMULATIVE PERFORMANCE</span><strong>{results.length?cgpaValue.toFixed(3):"—"}<small>/ 10</small></strong><span className="gd-metric-foot">{results.length?cgpaStanding:"Your CGPA appears after your first saved result"}</span><span className="gd-metric-link">View CGPA <b>↗</b></span></button>
-              <button type="button" className="gd-home-metric" onClick={()=>navigate("sgpa")}><span className="gd-metric-label"><i>∑</i> LATEST SEMESTER</span><strong>{results.length?results[results.length-1].sgpa.toFixed(3):"—"}<small>/ 10</small></strong><span className="gd-metric-foot">{results.length?"Semester "+results[results.length-1].semester+" · "+(results[results.length-1].credits||0)+" credits":"Calculate your first SGPA"}</span><span className="gd-metric-link">Open SGPA <b>↗</b></span></button>
-              <button type="button" className="gd-home-metric" onClick={()=>navigate("credits")}><span className="gd-metric-label"><i>▤</i> CREDIT JOURNEY</span><strong>{homeCreditValue}<small>{homeCreditTarget!==null?"/ "+homeCreditTarget:""}</small></strong><span className="gd-metric-foot">{homeCreditCaption}</span><span className="gd-metric-link">Explore credits <b>↗</b></span></button>
+              <button type="button" className="gd-home-metric gd-metric-cgpa" onClick={()=>navigate("cgpa")}><span className="gd-metric-label"><i>◈</i> CURRENT CGPA</span><strong>{results.length?cgpaValue.toFixed(3):"—"}<small>/ 10</small></strong><span className="gd-metric-foot">{results.length?cgpaStanding:"Your CGPA appears after your first saved result"}</span><span className="gd-metric-link">View CGPA <b>↗</b></span></button>
+              <button type="button" className="gd-home-metric gd-metric-sgpa" onClick={()=>navigate("sgpa")}><span className="gd-metric-label"><i>∑</i> LATEST SGPA</span><strong>{results.length?results[results.length-1].sgpa.toFixed(3):"—"}<small>/ 10</small></strong><span className="gd-metric-foot">{results.length?"Semester "+results[results.length-1].semester+" · "+(results[results.length-1].credits||0)+" credits":"Calculate your first SGPA"}</span><span className="gd-metric-link">Open SGPA <b>↗</b></span></button>
+              <button type="button" className="gd-home-metric gd-metric-credits" onClick={()=>navigate("credits")}><span className="gd-metric-label"><i>▤</i> TOTAL CREDITS</span><strong>{cgpaCredits}<small> earned</small></strong><span className="gd-metric-foot">{homeCreditCaption}</span><span className="gd-metric-link">Explore credits <b>↗</b></span></button>
+              <button type="button" className="gd-home-metric gd-metric-progress" onClick={()=>navigate("tracker")}><span className="gd-metric-label"><i>↗</i> ACADEMIC PROGRESS</span><strong>{results.length}<small> / {totalProgrammeSemesters} semesters</small></strong><span className="gd-metric-progress-track"><i style={{width:Math.min(100,(results.length/totalProgrammeSemesters)*100)+"%"}}/></span><span className="gd-metric-foot">{results.length?Math.round(Math.min(100,(results.length/totalProgrammeSemesters)*100))+"% of semester milestones recorded":"Your progress starts with the first result"}</span><span className="gd-metric-link">View progress <b>↗</b></span></button>
             </div>
           </section>
+
+          <HomeDashboardBoost resultsCount={results.length} latestSgpa={results.length ? results[results.length-1].sgpa : null} onProgress={() => navigate("tracker")} />
 
           <section className="gd-home-focus">
             <div className="gd-home-section-intro"><div><span className="gd-home-kicker">PICK UP WHERE YOU LEFT OFF</span><h2>Make your next move</h2><p>Useful shortcuts for the work that matters right now.</p></div></div>
