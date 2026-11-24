@@ -9,14 +9,22 @@ function runGecaWorker<T = any>(payload: Record<string, unknown>): Promise<T> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL("../../workers/gecaResult.worker.ts", import.meta.url), { type: "module" });
     const requestId = 1;
+    const timeoutId = window.setTimeout(() => {
+      worker.terminate();
+      reject(new Error("GECA browser PDF processing exceeded 180 seconds. The audit stopped safely; retry with fewer enrollments or sessions."));
+    }, 180_000);
+    const finish = () => {
+      window.clearTimeout(timeoutId);
+      worker.terminate();
+    };
     worker.onmessage = (event: MessageEvent<{ id: number; success: boolean; result?: T; error?: string }>) => {
       if (event.data.id !== requestId) return;
-      worker.terminate();
+      finish();
       if (event.data.success) resolve(event.data.result as T);
       else reject(new Error(event.data.error || "GECA PDF processing failed."));
     };
     worker.onerror = (event) => {
-      worker.terminate();
+      finish();
       reject(new Error(event.message || "GECA PDF worker crashed."));
     };
     worker.postMessage({ ...payload, id: requestId });
