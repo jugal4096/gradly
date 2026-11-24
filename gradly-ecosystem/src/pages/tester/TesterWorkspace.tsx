@@ -5,6 +5,7 @@ import "./Tester.css";
 import TesterStudentPlatform from "./TesterStudentPlatform";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
+const DEFAULT_INSTITUTION_NAME = "Government College of Engineering, Chhatrapati Sambhajinagar";
 
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = {
@@ -81,6 +82,26 @@ export default function TesterWorkspace() {
     return () => { active = false; };
   }, [navigate]);
 
+  // Preselect GECA for the regular User Tester flow. The tester can still change it.
+  useEffect(() => {
+    let active = true;
+    fetch(API + "/api/academic/institutions/search?q=" + encodeURIComponent(DEFAULT_INSTITUTION_NAME))
+      .then(async response => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.message || "Institution lookup failed.");
+        const rows: Institution[] = Array.isArray(body.data) ? body.data : [];
+        const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        const exact = rows.find(item => normalize(item.name) === normalize(DEFAULT_INSTITUTION_NAME));
+        if (active && exact) {
+          setInstitution(exact);
+          setQuery(exact.name);
+        }
+      })
+      .catch(() => {
+        // Keep manual institution search available if the default lookup is unavailable.
+      });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const search = query.trim();
