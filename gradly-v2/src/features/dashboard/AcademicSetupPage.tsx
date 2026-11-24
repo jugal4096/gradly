@@ -506,7 +506,7 @@ export default function AcademicSetupPage() {
           <section className="academic-setup-field-section">
             <label htmlFor="institution-search">Your institution</label>
             <div className={"academic-setup-input-wrap" + (selected ? " has-institution" : "")}>
-              <input id="institution-search" value={query} readOnly={!!selected} onChange={e => {
+              <input id="institution-search" value={query} readOnly={false} onChange={e => {
                 const value = e.target.value;
                 previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
                 window.clearTimeout(searchTimer.current);
@@ -517,6 +517,7 @@ export default function AcademicSetupPage() {
               }}>✎</button>}
               {searching && <span className="academic-setup-search-spinner" />}
             </div>
+            {selected && <small className="academic-setup-helper">{selected.id === "0072cf6d-55a1-54e1-9a8c-767d8058f60a" ? "GECA is selected by default. Type here to choose another institution." : "Institution selected. Type here to choose another institution."}</small>}
             {searching && <small className="academic-setup-helper">Searching institutions…</small>}
             {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution here.</small>}
             {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
