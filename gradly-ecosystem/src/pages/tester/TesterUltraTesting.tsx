@@ -5,6 +5,24 @@ import { Activity, ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play,
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 
+function runGecaWorker<T = any>(payload: Record<string, unknown>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("../../workers/gecaResult.worker.ts", import.meta.url), { type: "module" });
+    const requestId = 1;
+    worker.onmessage = (event: MessageEvent<{ id: number; success: boolean; result?: T; error?: string }>) => {
+      if (event.data.id !== requestId) return;
+      worker.terminate();
+      if (event.data.success) resolve(event.data.result as T);
+      else reject(new Error(event.data.error || "GECA PDF processing failed."));
+    };
+    worker.onerror = (event) => {
+      worker.terminate();
+      reject(new Error(event.message || "GECA PDF worker crashed."));
+    };
+    worker.postMessage({ ...payload, id: requestId });
+  });
+}
+
 const API = API_BASE_URL.replace(/\/+$/, "");
 // GECA zero-point outcomes: D and its D1/D2/D3 variants, plus legacy F/AB tokens.
 const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0, D1: 0, D2: 0, D3: 0, F: 0, AB: 0 };
@@ -77,14 +95,13 @@ export default function TesterUltraTesting() {
 
   useEffect(() => {
     if (!token) return;
-    const controller = new AbortController();
+    let cancelled = false;
     setLoadingSessions(true);
-    fetch(API + "/api/tester/results/sessions", { headers: { Authorization: "Bearer " + token }, signal: controller.signal })
-      .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.message || "Unable to load GECA examination sessions."); return body; })
-      .then(body => { const loaded = normalizeResultSessions(body.sessions); setSessions(loaded);  })
-      .catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Unable to load examination sessions."); })
-      .finally(() => { if (!controller.signal.aborted) setLoadingSessions(false); });
-    return () => controller.abort();
+    runGecaWorker<ResultSession[]>({ type: "sessions" })
+      .then(loaded => { if (!cancelled) setSessions(normalizeResultSessions(loaded)); })
+      .catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : "Unable to load GECA examination sessions."); })
+      .finally(() => { if (!cancelled) setLoadingSessions(false); });
+    return () => { cancelled = true; };
   }, [token]);
 
   useEffect(() => {
@@ -218,10 +235,11 @@ export default function TesterUltraTesting() {
               const session = sessions.find(item=>item.id===sessionId);
               if (!session) continue;
               try {
-                const matchBody = await fetchJson(API + "/api/tester/results/sessions/" + encodeURIComponent(session.id) + "/match", {
-                  method:"POST", headers:{"Content-Type":"application/json"},
-                  body:JSON.stringify({ enrollmentNumber: enrollment, selectedSemester: semester }),
-                  signal:controller.signal,
+                const matchBody = await runGecaWorker<any>({
+                  type: "match",
+                  resultId: session.id,
+                  enrollment,
+                  semester,
                 });
                 const docs = Array.isArray(matchBody.matches) ? matchBody.matches as ResultDocument[] : [];
                 const match = docs.find(document => Number(document.semester) === semester && Array.isArray(document.grades) && document.grades.length > 0);
