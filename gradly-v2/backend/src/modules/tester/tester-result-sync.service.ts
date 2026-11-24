@@ -8,6 +8,8 @@ const MAX_RESULT_PDFS = 100;
 // examination result sheets and should never consume download/parse time.
 const NON_RESULT_PDF_PATTERN = /\b(?:policy|directory|stipend)\b/i;
 const MAX_PDF_BYTES = 20 * 1024 * 1024;
+// Render's 512 MiB instance was OOM-killed during parallel PDF.js parsing.
+// Keep one active PDF parser per process; downloads remain deduplicated and cached.
 const ENROLLMENT_PATTERN = /\b(?:BT|BE|MC|MT)\d{2}[A-Z0-9]{7,9}\b/i;
 const COURSE_CODE_PATTERN = /^[A-Z]{2,}[A-Z0-9]{2,}$/i;
 
@@ -164,7 +166,7 @@ async function fetchGecaText(url: string): Promise<string> {
 }
 
 const RESULT_PDF_CACHE_TTL_MS = 10 * 60 * 1000;
-const RESULT_PDF_CACHE_MAX_BYTES = 48 * 1024 * 1024;
+const RESULT_PDF_CACHE_MAX_BYTES = 24 * 1024 * 1024;
 const resultPdfCache = new Map<string, { bytes: Uint8Array; expiresAt: number }>();
 const resultPdfDownloads = new Map<string, Promise<Uint8Array>>();
 
@@ -796,6 +798,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   let parsed = { grades: [] as GecaMatchedGrade[], enrollmentFound: false };
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber);
+    try {
     const content = await page.getTextContent();
     const rawItems = content.items.filter((raw: unknown): raw is { str: string; transform: number[] } =>
       Boolean(raw && typeof raw === "object" && "str" in raw && typeof (raw as { str?: unknown }).str === "string" &&
@@ -825,6 +828,9 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
     if (pageParsed.grades.length) {
       parsed = { grades: pageParsed.grades, enrollmentFound: true };
       break;
+    }
+    } finally {
+      try { page.cleanup(); } catch { /* release per-page text/font caches */ }
     }
   }
   // Some installed PDF.js builds expose cleanup() but not destroy() on the
@@ -1087,7 +1093,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
   const found = new Set<string>();
   const failedDocuments: string[] = [];
   let cursor = 0;
-  const workers = Array.from({length:Math.min(4,selectedDocs.length)},async()=>{
+  const workers = Array.from({length:Math.min(1,selectedDocs.length)},async()=>{
     while(cursor<selectedDocs.length && found.size<limit) {
       const doc=selectedDocs[cursor++];
       try {
@@ -1199,7 +1205,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
 
   const scanDocuments = async (batch: Array<{ title: string; url: string; academicSection: GecaAcademicSection | null; sectionSemester: number | null }>) => {
     let cursor = 0;
-    const workers = Array.from({ length: Math.min(4, batch.length) }, async () => {
+    const workers = Array.from({ length: Math.min(1, batch.length) }, async () => {
       while (cursor < batch.length) {
         const document = batch[cursor++];
         if (scannedUrls.has(document.url)) continue;
