@@ -269,3 +269,57 @@
 .tester-ultra-generator-preview>small{display:block;margin-top:7px;color:#8793a8;font-size:9px;line-height:1.5}
 .tester-ultra-semester.disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:620px){.tester-ultra-generator-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.tester-ultra-generator-preview>div{align-items:flex-start;flex-direction:column}}
+
+/* Refined regular User Tester workspace */
+.tester-virtual-shell{background:radial-gradient(ellipse at 82% 5%,#e9efff 0,transparent 34%),linear-gradient(180deg,#f8faff 0%,#f4f6fb 55%,#f8f9fc 100%)}
+.tester-virtual-header{height:72px;border-bottom-color:#e6eaf2;box-shadow:0 4px 18px #17243b08}
+.tester-virtual-mark{border:0;border-radius:12px;background:#17243c;color:#fff;box-shadow:0 5px 14px #17243c22}
+.tester-virtual-main{width:min(980px,calc(100% - 40px));padding:58px 0 42px}
+.tester-virtual-heading{max-width:760px;margin-bottom:27px}
+.tester-virtual-eyebrow{display:inline-flex;align-items:center;gap:9px;color:#536b9c}
+.tester-virtual-live-dot{width:7px;height:7px;border-radius:50%;background:#1ba77a;box-shadow:0 0 0 4px #1ba77a18}
+.tester-virtual-heading h1{max-width:680px;font-size:clamp(34px,5vw,50px);letter-spacing:-.06em;line-height:1.03;margin:15px 0 13px;color:#17243c}
+.tester-virtual-heading p{max-width:680px;color:#69768d;font-size:14px;line-height:1.75}
+.tester-virtual-trust{display:flex;flex-wrap:wrap;gap:9px;margin-top:19px}
+.tester-virtual-trust span{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid #e0e6f1;border-radius:9px;background:#ffffffa8;color:#62718a;font-size:10px;font-weight:700}
+.tester-virtual-form,.tester-virtual-profile{max-width:720px;border:1px solid #e2e8f2;border-radius:18px;padding:30px;background:#fff;box-shadow:0 16px 48px #20365b0b}
+.tester-virtual-form{gap:11px}
+.tester-virtual-form-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:6px}
+.tester-virtual-step{font-size:9px;letter-spacing:.15em;font-weight:900;color:#8290a8}
+.tester-virtual-form-heading h2{margin:5px 0 4px;font-size:20px;letter-spacing:-.04em;color:#1b2940}
+.tester-virtual-form-heading p{margin:0;color:#8490a4;font-size:11px;line-height:1.6}
+.tester-virtual-geca-mark,.tester-virtual-number-mark{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:14px;background:#edf3ff;color:#315fae;font-size:12px;font-weight:900;letter-spacing:.04em}
+.tester-virtual-number-mark{background:#f1f3f7;color:#66748b}
+.tester-virtual-form label{margin-top:9px;color:#65728a;font-size:9px;letter-spacing:.13em}
+.tester-virtual-form input{height:50px;border:1px solid #dce3ef;border-radius:10px;padding:0 14px;background:#fbfcff;color:#1b2940;font-size:13px;transition:border-color .15s,box-shadow .15s}
+.tester-virtual-form input:focus{outline:0;border-color:#7897d0;box-shadow:0 0 0 4px #7394d51a;background:#fff}
+.tester-virtual-form input::placeholder{color:#a3adbd}
+.tester-virtual-selected{border:1px solid #cfe5db;background:#f3faf6;border-radius:10px;padding:13px 14px}
+.tester-virtual-selected strong{color:#244b3d;font-size:12px}
+.tester-virtual-selected small{display:flex;align-items:center;gap:6px;color:#5b8a76}
+.tester-virtual-selected small i{width:6px;height:6px;border-radius:50%;background:#21a477}
+.tester-virtual-selected button{color:#456e60;font-weight:800}
+.tester-virtual-lookup-notice{padding:10px 12px;border-radius:8px;background:#fff8e9;color:#956c26;font-size:11px;line-height:1.5}
+.tester-virtual-field-divider{height:1px;background:#edf0f5;margin:13px 0 9px}
+.tester-virtual-enrollment-heading{margin-bottom:2px}
+.tester-virtual-submit{height:50px;margin-top:13px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-radius:10px;padding:0 17px 0 19px;background:#1c2d4b;box-shadow:0 8px 18px #1c2d4b20;color:#fff;font-size:12px;font-weight:800;letter-spacing:.01em;transition:transform .15s,background .15s,box-shadow .15s}
+.tester-virtual-submit span{font-size:19px;font-weight:400}
+.tester-virtual-submit:not(:disabled):hover{transform:translateY(-1px);background:#294775;box-shadow:0 11px 22px #1c2d4b28}
+.tester-virtual-submit:disabled{opacity:.45;box-shadow:none}
+.tester-virtual-profile{margin-top:20px}
+.tester-virtual-footer{padding:27px 0 0;color:#9aa4b4;font-size:10px}
+@media(max-width:600px){
+ .tester-virtual-header{height:64px;padding:0 14px}
+ .tester-virtual-brand{font-size:13px}
+ .tester-virtual-brand small{font-size:7px}
+ .tester-virtual-account{font-size:8px;letter-spacing:.04em}
+ .tester-virtual-main{width:calc(100% - 28px);padding-top:36px}
+ .tester-virtual-heading h1{font-size:35px}
+ .tester-virtual-heading p{font-size:12px}
+ .tester-virtual-trust{gap:6px}
+ .tester-virtual-trust span{font-size:9px;padding:7px 8px}
+ .tester-virtual-form,.tester-virtual-profile{padding:20px;border-radius:15px}
+ .tester-virtual-form-heading h2{font-size:18px}
+ .tester-virtual-geca-mark,.tester-virtual-number-mark{width:42px;height:42px;flex-basis:42px}
+ .tester-virtual-form input{height:48px}
+}

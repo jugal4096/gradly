@@ -6,6 +6,7 @@ import TesterStudentPlatform from "./TesterStudentPlatform";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
 const DEFAULT_INSTITUTION_NAME = "Government College of Engineering, Chhatrapati Sambhajinagar";
+const normalizeInstitutionName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 type Institution = { id: string; name: string; branches?: unknown[] };
 type Preview = {
@@ -41,6 +42,8 @@ export default function TesterWorkspace() {
   const [semester, setSemester] = useState(1);
   const [busy, setBusy] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [defaultInstitutionLoading, setDefaultInstitutionLoading] = useState(true);
+  const [defaultInstitutionNotice, setDefaultInstitutionNotice] = useState("");
   const [error, setError] = useState("");
   const [workspaceOpen, setWorkspaceOpen] = useState(() => {
     const prefix = sessionStorage.getItem("gradly_tester_storage_prefix");
@@ -82,25 +85,40 @@ export default function TesterWorkspace() {
     return () => { active = false; };
   }, [navigate]);
 
-  // Preselect GECA for the regular User Tester flow. The tester can still change it.
+  // Resolve GECA by its stable institution identity, accepting both its current
+  // Sambhajinagar name and the legacy Aurangabad name stored in older datasets.
   useEffect(() => {
     let active = true;
-    fetch(API + "/api/academic/institutions/search?q=" + encodeURIComponent(DEFAULT_INSTITUTION_NAME))
+    const controller = new AbortController();
+    const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    fetch(API + "/api/academic/institutions/search?q=" + encodeURIComponent("Government College of Engineering"), { signal: controller.signal })
       .then(async response => {
         const body = await response.json();
         if (!response.ok) throw new Error(body.message || "Institution lookup failed.");
         const rows: Institution[] = Array.isArray(body.data) ? body.data : [];
-        const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-        const exact = rows.find(item => normalize(item.name) === normalize(DEFAULT_INSTITUTION_NAME));
-        if (active && exact) {
-          setInstitution(exact);
-          setQuery(exact.name);
+        const candidates = rows.filter(item => {
+          const name = normalize(item.name);
+          return name.includes("government college of engineering") &&
+            (name.includes("chhatrapati sambhajinagar") || name.includes("sambhajinagar") || name.includes("aurangabad"));
+        });
+        const selected = candidates.find(item => normalize(item.name) === normalize(DEFAULT_INSTITUTION_NAME))
+          || candidates.find(item => normalize(item.name).includes("chhatrapati sambhajinagar"))
+          || candidates.find(item => normalize(item.name).includes("sambhajinagar"))
+          || candidates.find(item => normalize(item.name).includes("aurangabad"));
+        if (!active) return;
+        if (selected) {
+          setInstitution(selected);
+          setQuery(selected.name);
+          setDefaultInstitutionNotice("");
+        } else {
+          setDefaultInstitutionNotice("GECA could not be auto-selected. Search for Government College of Engineering below.");
         }
       })
       .catch(() => {
-        // Keep manual institution search available if the default lookup is unavailable.
-      });
-    return () => { active = false; };
+        if (active) setDefaultInstitutionNotice("GECA lookup is unavailable right now. You can still search and select it manually.");
+      })
+      .finally(() => { if (active) setDefaultInstitutionLoading(false); });
+    return () => { active = false; controller.abort(); };
   }, []);
 
   useEffect(() => {
@@ -211,17 +229,22 @@ export default function TesterWorkspace() {
       <div className="tester-virtual-account"><span>TESTER · {testerId}</span><button type="button" onClick={signOutTester}>Sign out</button></div>
     </header>
     <section className="tester-virtual-main">
-      <div className="tester-virtual-heading"><span className="tester-virtual-eyebrow">ISOLATED TEST WORKSPACE</span><h1>Enter a student enrollment number.</h1><p>Choose the institution and enter an enrollment number to preview the academic profile. This virtual environment does not require a student login and does not create or modify a student account.</p></div>
+      <div className="tester-virtual-heading"><span className="tester-virtual-eyebrow"><span className="tester-virtual-live-dot"/> ISOLATED TEST WORKSPACE</span><h1>Explore the student experience, safely.</h1><p>Start with a GECA enrollment number and open a complete virtual student profile. Testing stays isolated—no student account or production academic record is created or changed.</p><div className="tester-virtual-trust"><span>◈ Read-only identity preview</span><span>◇ Temporary test data</span><span>✓ Student records protected</span></div></div>
       <form className="tester-virtual-form" onSubmit={identify}>
+        <div className="tester-virtual-form-heading"><div><span className="tester-virtual-step">STEP 01</span><h2>Choose your institution</h2><p>Your default institution is GECA. You can change it any time.</p></div><span className="tester-virtual-geca-mark">GECA</span></div>
         <label htmlFor="virtual-institution">INSTITUTION / UNIVERSITY</label>
-        <input id="virtual-institution" value={query} onChange={event => { setQuery(event.target.value); setInstitution(null); setPreview(null); }} placeholder="Search institution" autoComplete="off" />
+        <input id="virtual-institution" value={query} onChange={event => { setQuery(event.target.value); setInstitution(null); setPreview(null); }} placeholder={defaultInstitutionLoading ? "Loading GECA…" : "Search institution"} autoComplete="off" />
+        {defaultInstitutionLoading && <small className="tester-virtual-muted">Finding Government College of Engineering…</small>}
+        {defaultInstitutionNotice && <small className="tester-virtual-lookup-notice">{defaultInstitutionNotice}</small>}
         {searching && <small className="tester-virtual-muted">Searching institutions…</small>}
         {!institution && institutions.length > 0 && <div className="tester-virtual-results">{institutions.slice(0, 8).map(item => <button type="button" key={item.id} onClick={() => { setInstitution(item); setQuery(item.name); setPreview(null); }}><strong>{item.name}</strong><small>{Array.isArray(item.branches) ? item.branches.length + " configured branches" : "Institution"}</small></button>)}</div>}
-        {institution && <div className="tester-virtual-selected"><span><strong>{institution.name}</strong><small>Selected institution</small></span><button type="button" onClick={() => { setInstitution(null); setQuery(""); setPreview(null); }}>Change</button></div>}
+        {institution && <div className="tester-virtual-selected"><span><strong>{institution.name}</strong><small><i/> {normalizeInstitutionName(institution.name).includes("government college of engineering") ? "GECA · Default institution selected" : "Institution selected"}</small></span><button type="button" onClick={() => { setInstitution(null); setQuery(""); setPreview(null); }}>Change</button></div>}
+        <div className="tester-virtual-field-divider"/>
+        <div className="tester-virtual-form-heading tester-virtual-enrollment-heading"><div><span className="tester-virtual-step">STEP 02</span><h2>Identify a student</h2><p>Enter the enrollment number to load the academic profile preview.</p></div><span className="tester-virtual-number-mark">02</span></div>
         <label htmlFor="virtual-enrollment">ENROLLMENT NUMBER</label>
         <input id="virtual-enrollment" value={enrollment} onChange={event => { setEnrollment(event.target.value.toUpperCase()); setPreview(null); }} placeholder="Enter enrollment number" autoComplete="off" spellCheck={false} />
         {error && <p className="tester-virtual-error" role="alert">{error}</p>}
-        <button className="tester-virtual-submit" type="submit" disabled={busy || !institution || !token}>{busy ? "IDENTIFYING PROFILE…" : "IDENTIFY STUDENT PROFILE"}</button>
+        <button className="tester-virtual-submit" type="submit" disabled={busy || !institution || !token}>{busy ? "IDENTIFYING PROFILE…" : "Identify student profile"}<span aria-hidden="true">→</span></button>
       </form>
       {preview?.recognized && !preview.requiresConfirmation && <section className="tester-virtual-profile">
         <div className="tester-virtual-profile-head"><div><span className="tester-virtual-eyebrow">ACADEMIC IDENTIFICATION COMPLETE</span><h2>Student profile preview</h2></div><span className="tester-virtual-readonly">READ ONLY</span></div>
