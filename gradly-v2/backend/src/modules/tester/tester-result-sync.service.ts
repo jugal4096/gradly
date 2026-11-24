@@ -1063,17 +1063,11 @@ export async function discoverGecaEnrollmentCandidates(input: {
   const found = new Set<string>();
   const failedDocuments: string[] = [];
   let cursor = 0;
-  const workers = Array.from({length:Math.min(2,selectedDocs.length)},async()=>{
+  const workers = Array.from({length:Math.min(4,selectedDocs.length)},async()=>{
     while(cursor<selectedDocs.length && found.size<limit) {
       const doc=selectedDocs[cursor++];
       try {
-        const bytes=await fetchGecaResponse(doc.url,"application/pdf,application/octet-stream,*/*",30000,async response=>{
-          const declared=Number(response.headers.get("content-length")||0);
-          if(declared>MAX_PDF_BYTES) throw new Error("pdf-too-large");
-          const data=new Uint8Array(await response.arrayBuffer());
-          if(!data.length||data.length>MAX_PDF_BYTES) throw new Error("pdf-too-large-or-empty");
-          return data;
-        });
+        const bytes=await downloadResultPdf(doc.url);
         const pdf=await getDocument({data:bytes,useSystemFonts:true,disableFontFace:true,verbosity:0,stopAtErrors:false}).promise;
         for(let pageNo=1;pageNo<=pdf.numPages && found.size<limit;pageNo++){
           const page=await pdf.getPage(pageNo);
