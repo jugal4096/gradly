@@ -1101,6 +1101,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
         const pdf=await getDocument({data:bytes.slice(),useSystemFonts:true,disableFontFace:true,verbosity:0,stopAtErrors:false}).promise;
         for(let pageNo=1;pageNo<=pdf.numPages && found.size<limit;pageNo++){
           const page=await pdf.getPage(pageNo);
+          try {
           const content=await page.getTextContent();
           const positioned=content.items.flatMap((raw:unknown)=>{
             if(!raw||typeof raw!=="object"||!("str" in raw)||typeof raw.str!=="string"||!raw.str.trim()||!("transform" in raw)) return [];
@@ -1115,6 +1116,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
               if(found.size>=limit) break;
             }
           }
+          } finally { try { page.cleanup(); } catch { /* release per-page text/font caches */ } }
         }
         const cleanup=(pdf as unknown as {cleanup?:()=>Promise<void>}).cleanup;
         if(typeof cleanup==="function") try{await cleanup.call(pdf);}catch{/* ignore cleanup */}
