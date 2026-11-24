@@ -923,10 +923,13 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
       document.title + " " + document.url.replace(/%20/gi, " "),
     );
     const semester = document.sectionSemester ?? titleSemester;
-    // Fail closed: an unlabeled PDF cannot be proven to belong to the
-    // selected semester. Subject-level links inherit sectionSemester when
-    // GECA provides a year/semester heading.
-    return semester === selectedSemester;
+    // Keep unlabelled links as candidates and verify their own PDF header
+    // before accepting any grades. GECA sometimes publishes a consolidated
+    // branch PDF whose filename says only "REG.pdf", while the PDF itself
+    // clearly identifies "FIRST YEAR ... I Semester". Filtering those links
+    // here silently drops valid results before we can inspect that metadata.
+    // Explicitly labelled documents for another semester remain excluded.
+    return semester === null || semester === selectedSemester;
   });
 }
 
@@ -1133,8 +1136,22 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
         try {
           const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode, document.academicSection, document.sectionSemester);
           if (parsed.enrollmentFound) enrollmentHits++;
-          if (parsed.document) matches.push(parsed.document);
-          else if (parsed.enrollmentFound) parseFailures++;
+          if (parsed.document) {
+            // The link/page label is only a discovery hint. The PDF's own
+            // first-page header is authoritative for unlabelled archive links.
+            // Never import a document whose extracted semester differs from
+            // the semester the student selected.
+            if (parsed.document.semester === selectedSemester) {
+              matches.push(parsed.document);
+            } else {
+              parseFailures++;
+              console.warn("GECA enrollment matched a PDF, but its internal semester did not match the requested semester:", {
+                title: document.title,
+                requestedSemester: selectedSemester,
+                detectedSemester: parsed.document.semester,
+              });
+            }
+          } else if (parsed.enrollmentFound) parseFailures++;
           if (parsed.error) {
             downloadFailures++;
             failedDocuments.push(document.title);
