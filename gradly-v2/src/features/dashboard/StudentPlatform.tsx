@@ -346,7 +346,7 @@ function escapeReportHtml(value: unknown): string {
 
 export default function StudentPlatform() {
   const { user, isGuest, signOut, loginWithGoogle } = useAuth();
-  const firstName = user?.displayName?.trim().split(/\\s+/)[0] || user?.email?.split("@")[0] || "there";
+  const firstName = user?.displayName?.trim().split(/\s+/)[0] || user?.email?.split("@")[0] || "there";
   const routeNavigate = useNavigate();
   const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(localStorage.getItem("gradly_guest_session_token")));
   const sectionStorageKey = "gradly_user_last_section_" + (user?.uid || ("guest_" + (localStorage.getItem("gradly_guest_id") || "session")));
