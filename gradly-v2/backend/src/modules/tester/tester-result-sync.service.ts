@@ -764,7 +764,7 @@ async function readResultPdf(url: string, title: string, enrollment: string, reE
   // instructions (for example "TT: undefined function: 21"). PDF.js still
   // extracts the text layer; suppress only its non-fatal warnings.
   const pdf = await getDocument({
-    data: bytes,
+    data: bytes.slice(),
     useSystemFonts: true,
     disableFontFace: true,
     verbosity: 0,
@@ -1068,7 +1068,7 @@ export async function discoverGecaEnrollmentCandidates(input: {
       const doc=selectedDocs[cursor++];
       try {
         const bytes=await downloadResultPdf(doc.url);
-        const pdf=await getDocument({data:bytes,useSystemFonts:true,disableFontFace:true,verbosity:0,stopAtErrors:false}).promise;
+        const pdf=await getDocument({data:bytes.slice(),useSystemFonts:true,disableFontFace:true,verbosity:0,stopAtErrors:false}).promise;
         for(let pageNo=1;pageNo<=pdf.numPages && found.size<limit;pageNo++){
           const page=await pdf.getPage(pageNo);
           const content=await page.getTextContent();
