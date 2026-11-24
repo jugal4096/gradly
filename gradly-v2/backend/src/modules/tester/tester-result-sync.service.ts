@@ -578,6 +578,55 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
   return [];
 }
 
+
+/**
+ * ESE NOV-DEC 2024 includes legacy CBCS PDFs laid out as repeated
+ * subject-result rows (enrollment | course code/title | grade), not one
+ * horizontal semester table. Parse only rows belonging to the exact student.
+ */
+export function extractESE2024VerticalGrades(
+  lines: TextLine[],
+  enrollment: string,
+  subjectPrefixes: string[],
+): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
+  const enrollmentLines = lines.filter(line => lineContainsEnrollment(line, enrollment));
+  if (!enrollmentLines.length) return { grades: [], enrollmentFound: false };
+  const grades = new Map<string, string>();
+  const normalizedPrefixes = subjectPrefixes.map(prefix => prefix.toUpperCase());
+  for (const enrollmentLine of enrollmentLines) {
+    const rowY = enrollmentLine.items[0]?.y ?? 0;
+    const rowLines = lines.filter(candidate =>
+      Math.abs((candidate.items[0]?.y ?? rowY) - rowY) <= 8,
+    );
+    const items = rowLines.flatMap(candidate => candidate.items.map(item => ({
+      ...item, y: candidate.items[0]?.y ?? rowY,
+    }))).sort((a, b) => a.x - b.x || Math.abs(a.y - rowY) - Math.abs(b.y - rowY));
+    const enrollmentItem = items.findIndex(item =>
+      compactPdfText(item.text).includes(compactPdfText(enrollment)),
+    );
+    if (enrollmentItem < 0) continue;
+    const afterEnrollment = items.slice(enrollmentItem + 1);
+    for (let index = 0; index < afterEnrollment.length; index++) {
+      const item = afterEnrollment[index];
+      const codeMatch = item.text.toUpperCase().match(/[A-Z]{2,6}\\d{4}/);
+      if (!codeMatch) continue;
+      const courseCode = codeMatch[0];
+      if (normalizedPrefixes.length && !normalizedPrefixes.some(prefix => courseCode.startsWith(prefix))) continue;
+      const tail = item.text.slice((codeMatch.index ?? 0) + codeMatch[0].length);
+      const sameItemGrades = gradeTokensFromItem({ ...item, text: tail });
+      const followingGrades = afterEnrollment.slice(index + 1)
+        .filter(next => next.x > item.x && Math.abs(next.y - rowY) <= 8)
+        .flatMap(next => gradeTokensFromItem(next));
+      const grade = [...sameItemGrades, ...followingGrades][0];
+      if (grade) grades.set(courseCode, grade === "-" ? "" : grade);
+    }
+  }
+  return {
+    grades: Array.from(grades, ([courseCode, grade]) => ({ courseCode, grade })),
+    enrollmentFound: true,
+  };
+}
+
 export function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
   const matches = new Map<string, string>();
   let enrollmentFound = false;
@@ -777,7 +826,7 @@ async function withPdfParser<T>(operation: () => Promise<T>): Promise<T> {
   }
 }
 
-async function readResultPdfUnlocked(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null): Promise<{
+async function readResultPdfUnlocked(url: string, title: string, enrollment: string, reExamTargetCourseCode?: string, academicSection?: GecaAcademicSection | null, sectionSemester?: number | null, sessionTitle = ""): Promise<{
   document: GecaMatchedDocument | null;
   enrollmentFound: boolean;
   error?: string;
@@ -835,7 +884,7 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
     // combining pages lets a header at the same Y-coordinate on a previous
     // page get attached to this student's row and import unrelated subjects.
     const genericSubjectPdf = /_RESULT(?:\.PDF)?$/i.test(title.trim()) || url.toLowerCase().split("?")[0].endsWith("_result.pdf");
-    const pageParsed = genericSubjectPdf && !reExamTargetCourseCode
+    const pageParsedBase = genericSubjectPdf && !reExamTargetCourseCode
       ? (() => {
           const programme = enrollment.slice(0, 2);
           const branchCode = enrollment.slice(5, 7);
@@ -862,6 +911,13 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
       : reExamTargetCourseCode
         ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
         : extractMatchingGrades(lines, enrollment);
+    const pageParsed = /ESE\\s+NOV[\\s-]*DEC[\\s-]*2024/i.test(sessionTitle) && !pageParsedBase.grades.length && !reExamTargetCourseCode
+      ? (() => {
+          const prefixes = subjectPrefixesForEnrollment(enrollment.slice(0, 2), enrollment.slice(5, 7));
+          const legacyRows = extractESE2024VerticalGrades(lines, enrollment, prefixes);
+          return { grades: legacyRows.grades, enrollmentFound: pageParsedBase.enrollmentFound || legacyRows.enrollmentFound };
+        })()
+      : pageParsedBase;
     if (pageParsed.enrollmentFound) parsed.enrollmentFound = true;
     if (pageParsed.grades.length) {
       parsed = { grades: pageParsed.grades, enrollmentFound: true };
@@ -932,9 +988,10 @@ async function readResultPdf(
   reExamTargetCourseCode?: string,
   academicSection?: GecaAcademicSection | null,
   sectionSemester?: number | null,
+  sessionTitle = "",
 ) {
   return withPdfParser(() =>
-    readResultPdfUnlocked(url, title, enrollment, reExamTargetCourseCode, academicSection, sectionSemester)
+    readResultPdfUnlocked(url, title, enrollment, reExamTargetCourseCode, academicSection, sectionSemester, sessionTitle)
   );
 }
 
@@ -1287,7 +1344,7 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
         if (scannedUrls.has(document.url)) continue;
         scannedUrls.add(document.url);
         try {
-          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode, document.academicSection, document.sectionSemester);
+          const parsed = await readResultPdf(document.url, document.title, enrollment, reExamTargetCourseCode, document.academicSection, document.sectionSemester, session.title);
           if (parsed.enrollmentFound) enrollmentHits++;
           if (parsed.document) {
             // The link/page label is only a discovery hint. The PDF's own
