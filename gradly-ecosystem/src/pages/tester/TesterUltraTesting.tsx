@@ -17,6 +17,8 @@ type SemesterAudit = { semester: number; sgpa: number | null; cgpa: number | nul
 type StudentAudit = { enrollment: string; status: "queued" | "processing" | "completed" | "partial" | "failed"; branch: string; scheme: string; admissionMode: string; curriculumId: string; semesters: SemesterAudit[]; errors: string[]; findings: SubjectFinding[]; cgpa: number | null };
 type GlobalFinding = Omit<SubjectFinding, "semester"> & { semesters: number[]; occurrences: number; enrollments: string[]; branchNames: string[] };
 const normalizeCode = (value: unknown) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const courseCodeAliases = (value: unknown) => String(value || "").toUpperCase().split(/[\\/;,]+/).map(normalizeCode).filter(Boolean);
+const catalogueCodeMatches = (candidate: unknown, code: string) => courseCodeAliases(candidate).includes(code);
 const normalizeName = (value: unknown) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
@@ -212,8 +214,8 @@ export default function TesterUltraTesting() {
             for (const resultRow of found.grades) {
               const code = normalizeCode(resultRow.courseCode);
               if (!code) continue;
-              const curriculumCodeRow = catalogue.find(item=>normalizeCode(item.code)===code);
-              const sharedCodeRow = sharedRegistry.find(item=>normalizeCode(item.code ?? item.courseCode)===code);
+              const curriculumCodeRow = catalogue.find(item=>catalogueCodeMatches(item.code,code));
+              const sharedCodeRow = sharedRegistry.find(item=>catalogueCodeMatches(item.code ?? item.courseCode,code));
               const nameMatchedRow = !curriculumCodeRow && !sharedCodeRow && resultRow.courseName ? catalogue.find(item=>normalizeName(item.name)===normalizeName(resultRow.courseName)) : undefined;
               const catalogueRow = curriculumCodeRow || sharedCodeRow || nameMatchedRow;
               const rowCredits = Number(resultRow.credits ?? catalogueRow?.credits ?? 0);
