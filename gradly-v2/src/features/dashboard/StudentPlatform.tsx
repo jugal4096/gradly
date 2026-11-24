@@ -1277,6 +1277,10 @@ export default function StudentPlatform() {
   }
   const nepCreditProgress=getNepCreditProgress(profile,savedSubjectsBySemester);
   const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
+  const homeCreditEarned=nepCreditProgress ? nepCreditProgress.degreeEarned : degreeCreditProgress ? degreeCreditProgress.earned : cgpaCredits;
+  const homeCreditTarget=nepCreditProgress ? nepCreditProgress.degreeMinimum : degreeCreditProgress ? degreeCreditProgress.required : null;
+  const homeCreditValue=homeCreditTarget!==null ? homeCreditEarned.toFixed(1)+" / "+homeCreditTarget : results.length ? homeCreditEarned.toFixed(1) : "—";
+  const homeCreditCaption=nepCreditProgress ? "NEP degree credits earned" : degreeCreditProgress ? "New CBCS degree credits earned" : results.length ? "Credits across saved semesters" : "Save results to track credits";
   const programmeName=profile.programName.toLowerCase();
   const totalProgrammeSemesters=programmeName.includes("mca")||programmeName.includes("m.tech")||programmeName.includes("mtech")?4:8;
 
@@ -1356,8 +1360,8 @@ export default function StudentPlatform() {
           <section className="sp-user-welcome">
             <div className="sp-user-welcome-copy">
               <span className="sp-user-eyebrow"><i/> YOUR GRADLY SPACE</span>
-              <h1>Good to see you,<br/><em>{name}.</em></h1>
-              <p>Your academic journey, organised in one place. Keep learning, keep growing.</p>
+              <h1>Hey {name},<br/><em>let’s build your SGPA.</em></h1>
+              <p>Small steps, stronger semesters. Your academic journey starts with one smart move.</p>
               <div className="sp-user-welcome-actions">
                 <button type="button" onClick={()=>navigate("sgpa")}>Open SGPA calculator <span>↗</span></button>
                 <button type="button" className="sp-user-quiet-action" onClick={()=>navigate("profile")}>View academic profile</button>
@@ -1374,7 +1378,7 @@ export default function StudentPlatform() {
           <section className="sp-user-stats" aria-label="Academic summary">
             <article className="sp-user-stat sp-user-stat-lilac"><span className="sp-user-stat-icon">◈</span><small>YOUR CGPA</small><strong>{results.length?cgpaValue.toFixed(3):"—"}</strong><p>{results.length?"Across "+results.length+" saved semesters":"Save your first semester result"}</p>{results.length>0&&<small className="sp-cgpa-standing">{cgpaStanding}</small>}</article>
             <article className="sp-user-stat sp-user-stat-mint"><span className="sp-user-stat-icon">∑</span><small>LATEST SGPA</small><strong>{results.length?results[results.length-1].sgpa.toFixed(3):"—"}</strong><p>{results.length?"Your latest saved performance":"Ready when you are"}</p></article>
-            <article className="sp-user-stat sp-user-stat-peach"><span className="sp-user-stat-icon">▤</span><small>CREDITS EARNED</small><strong>{degreeCreditProgress?.earned??"—"}</strong><p>New CBCS degree credits earned</p></article>
+            <article className="sp-user-stat sp-user-stat-peach"><span className="sp-user-stat-icon">▤</span><small>{homeCreditTarget!==null?"CREDITS EARNED":"CREDITS TRACKED"}</small><strong>{homeCreditValue}</strong><p>{homeCreditCaption}</p></article>
             <article className="sp-user-stat sp-user-stat-blue"><span className="sp-user-stat-icon">✦</span><small>PROFILE STATUS</small><strong>{profile.institutionName?"Ready":"Setup"}</strong><p>{profile.institutionName?"Your academic profile is active":"Complete your academic profile"}</p></article>
           </section>
 
