@@ -85,7 +85,7 @@ type AcademicCourseApi = { curriculum_subject_id?: string | null; course_code_sn
 type AcademicRecordApi = { id: string | number; semester_number: number | string; attempt_number?: number | string; sgpa?: number | string | null; credits_registered?: number | string | null; created_at?: string | null; courses?: AcademicCourseApi[] };
 type CurriculumSubjectApi = { name?: string | null; credits?: number | string | null; code?: string | null; courseType?: string | null; id?: string | number | null };
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "https://gradly-backend-1q7s.onrender.com").replace(/\/+$/, "");
 // GECA grade-point reference used by the earlier Gradly academic engine: A++=10 through D=0.
 // GECA grade-point scale: D is zero; legacy F and AB result tokens also represent zero-point outcomes.
 const POINTS: Record<string, number> = { "A++":10, "A+":9, "A":8, "B+":7, "B":6, "C+":5, "C":4, "D":0, "D1":0, "D2":0, "D3":0, "F":0, "AB":0 };
