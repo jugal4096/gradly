@@ -489,24 +489,31 @@ export default function AcademicSetupPage() {
 
         <form className="academic-setup-form" onSubmit={saveProfile}>
           <section className="academic-setup-field-section">
-            <label htmlFor="institution-search">Your institution</label>
-            <div className={"academic-setup-input-wrap" + (selected ? " has-institution" : "")}>
-              <input id="institution-search" value={query} readOnly={false} onChange={e => {
-                const value = e.target.value;
-                previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
-                window.clearTimeout(searchTimer.current);
-                searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
-              }} placeholder="Search your college or university" autoComplete="organization" />
-              {selected && <button type="button" className="academic-setup-institution-edit" aria-label="Change institution" title="Change institution" onClick={() => {
-                previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
-              }}>✎</button>}
-              {searching && <span className="academic-setup-search-spinner" />}
-            </div>
-            {selected && <small className="academic-setup-helper">{selected.id === "0072cf6d-55a1-54e1-9a8c-767d8058f60a" ? "GECA is selected by default. Type here to choose another institution." : "Institution selected. Type here to choose another institution."}</small>}
-            {searching && <small className="academic-setup-helper">Searching institutions…</small>}
-            {!searching && query.trim().length >= 2 && !selected && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution here.</small>}
-            {institutions.length > 0 && !selected && <div className="academic-setup-results">{institutions.map(item => <button type="button" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
-            {!selected && <div className="academic-setup-support-actions"><button type="button" className="academic-setup-support-link" onClick={() => { setRequestSent(false); setSupportModal("institution"); }}><span className="academic-setup-support-icon">＋</span><span>Can't find your institution?</span><span className="academic-setup-support-arrow">↗</span></button></div>}
+            <label>Your institution</label>
+            {selected ? <div className="academic-setup-institution-choice">
+              <div className="academic-setup-institution-selected">
+                <span className="academic-setup-institution-mark">G</span>
+                <span className="academic-setup-institution-selected-copy"><strong>{selected.name}</strong><small>{selected.id === "0072cf6d-55a1-54e1-9a8c-767d8058f60a" ? "Default institution · GECA" : "Selected institution"}</small></span>
+                <span className="academic-setup-institution-check">✓</span>
+                <button type="button" className="academic-setup-institution-change" onClick={() => {
+                  previewSequence.current += 1; setPreviewBusy(false); setSelected(null); setQuery(""); setInstitutions([]); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
+                }}>Change</button>
+              </div>
+            </div> : <>
+              <div className="academic-setup-input-wrap">
+                <input id="institution-search" value={query} onChange={e => {
+                  const value = e.target.value;
+                  previewSequence.current += 1; setPreviewBusy(false); setQuery(value); setSelected(null); setProgramId(""); setBranchId(""); setCurricula([]); setCurriculumId(""); setSelectedCurrentSemester(""); selectedCurrentSemesterRef.current = ""; setExpectedSemester(null); hasManuallySelectedSemester.current = false; setPreview(null); setPredictionConfirmed(null); setEditingPrediction(false);
+                  window.clearTimeout(searchTimer.current);
+                  searchTimer.current = window.setTimeout(() => void searchInstitutions(value), 250);
+                }} placeholder="Choose another institution from the list" autoComplete="organization" />
+                {searching && <span className="academic-setup-search-spinner" />}
+              </div>
+              {searching && <small className="academic-setup-helper">Loading institutions…</small>}
+              {!searching && query.trim().length >= 2 && institutions.length === 0 && <small className="academic-setup-helper">No match found. You can request your institution here.</small>}
+              {institutions.length > 0 && <div className="academic-setup-results" role="listbox" aria-label="Institution options">{institutions.map(item => <button type="button" role="option" aria-selected="false" key={item.id} onClick={() => chooseInstitution(item)}><span>{item.name}</span><small>{item.branches.length} academic options</small></button>)}</div>}
+              <div className="academic-setup-support-actions"><button type="button" className="academic-setup-support-link" onClick={() => { setRequestSent(false); setSupportModal("institution"); }}><span className="academic-setup-support-icon">＋</span><span>Can't find your institution?</span><span className="academic-setup-support-arrow">↗</span></button></div>
+            </>}
           </section>
 
           {selected && <section className="academic-setup-field-section enrollment-section">
