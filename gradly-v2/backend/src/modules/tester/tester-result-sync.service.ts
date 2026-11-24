@@ -723,6 +723,27 @@ export function extractSubjectResultGrades(
   };
 }
 
+/**
+ * Some GECA consolidated NEP PDFs omit the semester in their text header.
+ * In that case, infer the semester only from branch-specific core course-code
+ * ranges that are fixed in the published GECA NEP curriculum. Mixed-semester
+ * code sets deliberately return null (fail closed).
+ */
+export function inferGecaSemesterFromCourseCodes(branchCode: string, grades: GecaMatchedGrade[]): number | null {
+  const semesters = new Set<number>();
+  for (const grade of grades) {
+    const code = grade.courseCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (branchCode === "05" && /^CSPCC200[1-5]$/.test(code)) semesters.add(3);
+    else if (branchCode === "05" && /^CSPCC20(?:0[6-9]|10)$/.test(code)) semesters.add(4);
+    else if (branchCode === "05" && /^CSPCC300[1-4]$/.test(code)) semesters.add(5);
+    else if (branchCode === "05" && /^CSPCC300[5-8]$/.test(code)) semesters.add(6);
+    else if (branchCode === "06" && /^ITPCC200[1-7]$/.test(code)) semesters.add(3);
+    else if (branchCode === "06" && /^ITPCC201[0-4]$/.test(code)) semesters.add(4);
+    else if (branchCode === "06" && /^ITPCC301[013]$/.test(code)) semesters.add(6);
+  }
+  return semesters.size === 1 ? [...semesters][0] : null;
+}
+
 function romanSemester(text: string): number | null {
   const values: Record<string, number> = {
     I:1, FIRST:1, II:2, SECOND:2, III:3, THIRD:3, IV:4, FOURTH:4,
@@ -975,14 +996,17 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
     const titleSemester = romanSemester(
       document.title + " " + document.url.replace(/%20/gi, " "),
     );
-    const semester = document.sectionSemester ?? titleSemester;
-    // Keep unlabelled links as candidates and verify their own PDF header
-    // before accepting any grades. GECA sometimes publishes a consolidated
-    // branch PDF whose filename says only "REG.pdf", while the PDF itself
-    // clearly identifies "FIRST YEAR ... I Semester". Filtering those links
-    // here silently drops valid results before we can inspect that metadata.
-    // Explicitly labelled documents for another semester remain excluded.
-    return semester === null || semester === selectedSemester;
+    // A semester printed in the PDF link title is stronger evidence than
+    // the nearest preceding HTML heading, which can drift when GECA changes
+    // its nested table markup. For consolidated NEP/CBCS REG/BACK branch PDFs
+    // with no semester in the title, keep the PDF as a candidate even when the
+    // page heading is stale; the PDF header or extracted course-code set must
+    // independently validate the requested semester before grades are used.
+    const semester = titleSemester ?? document.sectionSemester;
+    const consolidatedUnlabelled = titleSemester === null &&
+      /\\b(?:NEP|CBCS)\\b/i.test(document.title) &&
+      /\\b(?:REG(?:ULAR)?|BACK(?:LOG)?|ATKT|RE-?EXAM)\\b/i.test(document.title);
+    return semester === null || semester === selectedSemester || consolidatedUnlabelled;
   });
 }
 
@@ -1188,14 +1212,22 @@ export async function findGecaEnrollmentResults(resultId: string, enrollmentNumb
             // first-page header is authoritative for unlabelled archive links.
             // Never import a document whose extracted semester differs from
             // the semester the student selected.
-            if (parsed.document.semester === selectedSemester) {
-              matches.push(parsed.document);
+            const inferredSemester = parsed.document.semester === null
+              ? inferGecaSemesterFromCourseCodes(branchCode, parsed.document.grades)
+              : parsed.document.semester;
+            const semesterMatches = selectedSemester == null
+              ? parsed.document.semester == null
+              : inferredSemester === selectedSemester;
+            if (semesterMatches) {
+              matches.push({ ...parsed.document, semester: inferredSemester });
             } else {
               parseFailures++;
-              console.warn("GECA enrollment matched a PDF, but its internal semester did not match the requested semester:", {
+              console.warn("GECA enrollment matched a PDF, but its semester could not be validated for the requested semester:", {
                 title: document.title,
                 requestedSemester: selectedSemester,
                 detectedSemester: parsed.document.semester,
+                inferredSemester,
+                courseCodes: parsed.document.grades.map(row => row.courseCode),
               });
             }
           } else if (parsed.enrollmentFound) parseFailures++;
