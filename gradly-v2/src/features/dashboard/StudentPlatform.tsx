@@ -5,7 +5,6 @@ import { useAuth } from "../auth/AuthContext";
 import "./StudentPlatform.css";
 import "./HomeDashboard.css";
 import HomeDashboardBoost from "./HomeDashboardBoost";
-import CommunitiesPanel from "./CommunitiesPanel";
 import GuestOnboarding from "./GuestOnboarding";
 import StudentOnlineResultSync from "./StudentOnlineResultSync";
 
@@ -433,11 +432,6 @@ export default function StudentPlatform() {
   const handlePlannerClick=()=>{if(!plannerSoundEnabled)return;try{const AudioContextClass=window.AudioContext||(window as Window & {webkitAudioContext?:typeof AudioContext}).webkitAudioContext;if(!AudioContextClass)return;const context=new AudioContextClass();const oscillator=context.createOscillator();const gain=context.createGain();oscillator.type="sine";oscillator.frequency.setValueAtTime(620,context.currentTime);oscillator.frequency.exponentialRampToValueAtTime(880,context.currentTime+0.065);gain.gain.setValueAtTime(0.0001,context.currentTime);gain.gain.exponentialRampToValueAtTime(0.055,context.currentTime+0.012);gain.gain.exponentialRampToValueAtTime(0.0001,context.currentTime+0.11);oscillator.connect(gain);gain.connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+0.12);oscillator.onended=()=>{void context.close();};}catch{/* Audio is optional; planner actions must always work. */}};
   const [plannerLoading,setPlannerLoading] = useState(false);
   const [plannerNotice,setPlannerNotice] = useState("");
-
-  const [aiInput,setAiInput] = useState("");
-  const [aiMessages,setAiMessages] = useState<{role:"assistant"|"user";text:string}[]>([
-    {role:"assistant",text:"Hi! I’m Gradly AI. I can help explain academic concepts and organise your study questions. Institution-specific answers will become available when your college rules are connected."},
-  ]);
 
   useEffect(() => {
     if (isGuest) localStorage.setItem("gradly_guest_subjects", JSON.stringify(subjects));
@@ -1309,10 +1303,6 @@ export default function StudentPlatform() {
       setNotice(error instanceof Error ? error.message : "Unable to delete your account.");
       setDeletingAccount(false);
     }
-  }
-  function submitAi(event:FormEvent) {
-    event.preventDefault(); if(!aiInput.trim()) return;
-    const prompt=aiInput.trim();setAiMessages(current=>[...current,{role:"user",text:prompt},{role:"assistant",text:"I’ve received your question. The live institution-aware AI service is not connected yet, so I can’t verify your college’s specific rules. For now, I can help with general academic concepts once the AI backend is enabled."}]);setAiInput("");
   }
   const nepCreditProgress=getNepCreditProgress(profile,savedSubjectsBySemester);
   const degreeCreditProgress=getDegreeCreditProgress(profile,savedSubjectsBySemester);
