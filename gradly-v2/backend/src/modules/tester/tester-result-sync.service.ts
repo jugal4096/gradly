@@ -584,47 +584,51 @@ function extractReExamSubject(lines: TextLine[], enrollment: string, targetCours
  * subject-result rows (enrollment | course code/title | grade), not one
  * horizontal semester table. Parse only rows belonging to the exact student.
  */
+/**
+ * GECA ESE NOV-DEC 2024 consolidated semester sheets repeat a course-code
+ * header above each student's row. The student's row contains only the
+ * enrollment followed by grade cells, so map the row's ordered grades to the
+ * nearest preceding course-code header. Accept only a complete 1:1 row.
+ */
 export function extractESE2024VerticalGrades(
   lines: TextLine[],
   enrollment: string,
-  subjectPrefixes: string[],
 ): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
-  const enrollmentLines = lines.filter(line => lineContainsEnrollment(line, enrollment));
-  if (!enrollmentLines.length) return { grades: [], enrollmentFound: false };
-  const grades = new Map<string, string>();
-  const normalizedPrefixes = subjectPrefixes.map(prefix => prefix.toUpperCase());
-  for (const enrollmentLine of enrollmentLines) {
-    const rowY = enrollmentLine.items[0]?.y ?? 0;
-    const rowLines = lines.filter(candidate =>
-      Math.abs((candidate.items[0]?.y ?? rowY) - rowY) <= 8,
-    );
-    const items = rowLines.flatMap(candidate => candidate.items.map(item => ({
-      ...item, y: candidate.items[0]?.y ?? rowY,
-    }))).sort((a, b) => a.x - b.x || Math.abs(a.y - rowY) - Math.abs(b.y - rowY));
-    const enrollmentItem = items.findIndex(item =>
+  const enrollmentRows = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => lineContainsEnrollment(line, enrollment));
+  if (!enrollmentRows.length) return { grades: [], enrollmentFound: false };
+
+  for (const { line, index } of enrollmentRows) {
+    const enrollmentItemIndex = line.items.findIndex(item =>
       compactPdfText(item.text).includes(compactPdfText(enrollment)),
     );
-    if (enrollmentItem < 0) continue;
-    const afterEnrollment = items.slice(enrollmentItem + 1);
-    for (let index = 0; index < afterEnrollment.length; index++) {
-      const item = afterEnrollment[index];
-      const codeMatch = item.text.toUpperCase().match(/[A-Z]{2,6}\\d{4}/);
-      if (!codeMatch) continue;
-      const courseCode = codeMatch[0];
-      if (normalizedPrefixes.length && !normalizedPrefixes.some(prefix => courseCode.startsWith(prefix))) continue;
-      const tail = item.text.slice((codeMatch.index ?? 0) + codeMatch[0].length);
-      const sameItemGrades = gradeTokensFromItem({ ...item, text: tail });
-      const followingGrades = afterEnrollment.slice(index + 1)
-        .filter(next => next.x > item.x && Math.abs(next.y - rowY) <= 8)
-        .flatMap(next => gradeTokensFromItem(next));
-      const grade = [...sameItemGrades, ...followingGrades][0];
-      if (grade) grades.set(courseCode, grade === "-" ? "" : grade);
-    }
+    if (enrollmentItemIndex < 0) continue;
+
+    const rowY = line.items[0]?.y ?? 0;
+    const headerWindow = lines.slice(Math.max(0, index - 400), index);
+    const columns = findCourseColumns(headerWindow, rowY).sort((a, b) => a.x - b.x);
+    if (!columns.length) continue;
+
+    const enrollmentX = line.items[enrollmentItemIndex].x;
+    const gradeCells = line.items
+      .slice(enrollmentItemIndex + 1)
+      .filter(item => item.x > enrollmentX)
+      .flatMap(item => gradeTokensFromItem(item).map(grade => ({ grade, x: item.x })))
+      .sort((a, b) => a.x - b.x);
+
+    // Never guess when the PDF row is partial or contains extra grade-like
+    // tokens. A complete positional match is required before applying grades.
+    if (gradeCells.length !== columns.length) continue;
+
+    const grades = columns.map((column, cellIndex) => ({
+      courseCode: column.courseCode,
+      grade: gradeCells[cellIndex].grade === "-" ? "" : gradeCells[cellIndex].grade,
+    }));
+    return { grades, enrollmentFound: true };
   }
-  return {
-    grades: Array.from(grades, ([courseCode, grade]) => ({ courseCode, grade })),
-    enrollmentFound: true,
-  };
+
+  return { grades: [], enrollmentFound: true };
 }
 
 export function extractMatchingGrades(lines: TextLine[], enrollment: string): { grades: GecaMatchedGrade[]; enrollmentFound: boolean } {
@@ -911,10 +915,10 @@ async function readResultPdfUnlocked(url: string, title: string, enrollment: str
       : reExamTargetCourseCode
         ? { grades: extractReExamSubject(lines, enrollment, reExamTargetCourseCode), enrollmentFound: lines.some(line => lineContainsEnrollment(line, enrollment)) }
         : extractMatchingGrades(lines, enrollment);
-    const pageParsed = /ESE\\s+NOV[\\s-]*DEC[\\s-]*2024/i.test(sessionTitle) && !pageParsedBase.grades.length && !reExamTargetCourseCode
+    const pageParsed = /ESE\s+NOV[\s-]*DEC[\s-]*2024/i && !pageParsedBase.grades.length && !reExamTargetCourseCode
       ? (() => {
           const prefixes = subjectPrefixesForEnrollment(enrollment.slice(0, 2), enrollment.slice(5, 7));
-          const legacyRows = extractESE2024VerticalGrades(lines, enrollment, prefixes);
+          const legacyRows = extractESE2024VerticalGrades(lines, enrollment);
           return { grades: legacyRows.grades, enrollmentFound: pageParsedBase.enrollmentFound || legacyRows.enrollmentFound };
         })()
       : pageParsedBase;
