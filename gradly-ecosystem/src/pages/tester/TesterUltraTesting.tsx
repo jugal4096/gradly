@@ -298,7 +298,7 @@ export default function TesterUltraTesting() {
     if (sampleProgramme === "BE" && year !== 2023) { setGeneratorError("GECA New CBCS BE enrollment generation is limited to the 2023 admission cohort under the current identity rules. Choose B.Tech (NEP) for other cohorts."); return; }
     if (sampleProgramme === "MT" && year < 2023) { setGeneratorError("GECA M.Tech NEP enrollment numbers begin with the 2023 admission cohort."); return; }
     if ((sampleProgramme === "MC" || sampleProgramme === "MT") && sampleAdmissionMode !== "F") { setGeneratorError("M.Tech and MCA use Regular admission (F) only."); return; }
-    if (!/^\\d{2}$/.test(sampleBranch)) { setGeneratorError("Enter the two-digit branch/specialization code from the official enrollment number."); return; }
+    if (!/^\d{2}$/.test(sampleBranch)) { setGeneratorError("Enter a valid two-digit branch/specialization code (00–99)."); return; }
     if (!Number.isInteger(count) || count < 1 || count > 100 || serialStart + count - 1 > 999) { setGeneratorError("Choose 1–100 samples and keep the final serial at or below 999."); return; }
     const yy = String(year).slice(-2);
     const generated = Array.from({length:count},(_,index)=>sampleProgramme+yy+sampleAdmissionMode+sampleBranch+"F"+String(serialStart+index).padStart(3,"0"));
