@@ -8,9 +8,39 @@ import {
   inferGecaSemesterFromCourseCodes,
   extractSubjectResultGrades,
   extractMatchingGrades,
+  extractESE2024VerticalGrades,
   isRestrictedGecaResultFetch,
   type GecaAcademicSection,
 } from "./tester-result-sync.service";
+
+
+test("ESE Nov-Dec 2024 consolidated rows map ordered grades to the nearest course headers", () => {
+  const lines = [
+    { text: "MEPCC2001 MEPCC2002 MEPCC2003", items: [
+      { text: "MEPCC2001", x: 200, y: 700 },
+      { text: "MEPCC2002", x: 300, y: 700 },
+      { text: "MEPCC2003", x: 400, y: 700 },
+    ] },
+    { text: "59 BT24S02F005 A B+ A++", items: [
+      { text: "59", x: 20, y: 680 },
+      { text: "BT24S02F005", x: 100, y: 680 },
+      { text: "A", x: 200, y: 680 },
+      { text: "B+", x: 300, y: 680 },
+      { text: "A++", x: 400, y: 680 },
+    ] },
+  ];
+  assert.deepEqual(
+    extractESE2024VerticalGrades(lines, "BT24S02F005"),
+    {
+      enrollmentFound: true,
+      grades: [
+        { courseCode: "MEPCC2001", grade: "A" },
+        { courseCode: "MEPCC2002", grade: "B+" },
+        { courseCode: "MEPCC2003", grade: "A++" },
+      ],
+    },
+  );
+});
 
 test("only Semester II of GECA ESE April-May 2026 is restricted", () => {
   assert.equal(isRestrictedGecaResultFetch({ id: "3018" }, 2), true);
