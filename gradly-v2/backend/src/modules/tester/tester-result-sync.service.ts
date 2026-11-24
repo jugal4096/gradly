@@ -739,7 +739,7 @@ export function inferGecaSemesterFromCourseCodes(branchCode: string, grades: Gec
     else if (branchCode === "05" && /^CSPCC300[5-8]$/.test(code)) semesters.add(6);
     else if (branchCode === "06" && /^ITPCC200[1-7]$/.test(code)) semesters.add(3);
     else if (branchCode === "06" && /^ITPCC201[0-4]$/.test(code)) semesters.add(4);
-    else if (branchCode === "06" && /^ITPCC301[013]$/.test(code)) semesters.add(6);
+    else if (branchCode === "06" && /^ITPCC301[0-3]$/.test(code)) semesters.add(6);
   }
   return semesters.size === 1 ? [...semesters][0] : null;
 }
@@ -752,8 +752,8 @@ function romanSemester(text: string): number | null {
   };
   const token = "(VIII|VII|VI|V|IV|III|II|I|[1-8]|FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH)";
   const patterns = [
-    new RegExp("\\b" + token + "(?:ST|ND|RD|TH)?\\s*(?:SEM(?:ESTER)?\\b|REG(?:ULAR)?\\b|BACK(?:LOG)?\\b|ATKT\\b|RE-?EXAM\\b)", "i"),
-    new RegExp("\\bSEM(?:ESTER)?\\s*" + token + "(?:ST|ND|RD|TH)?\\b", "i"),
+    new RegExp("\b" + token + "(?:ST|ND|RD|TH)?\\s*(?:SEM(?:ESTER)?\b|REG(?:ULAR)?\b|BACK(?:LOG)?\b|ATKT\b|RE-?EXAM\b)", "i"),
+    new RegExp("\bSEM(?:ESTER)?\\s*" + token + "(?:ST|ND|RD|TH)?\b", "i"),
   ];
   const matches = patterns.map(pattern => pattern.exec(text)).filter(Boolean) as RegExpExecArray[];
   if (!matches.length) return null;
@@ -1004,8 +1004,8 @@ export function selectGecaSemesterDocuments<T extends { title: string; url: stri
     // independently validate the requested semester before grades are used.
     const semester = titleSemester ?? document.sectionSemester;
     const consolidatedUnlabelled = titleSemester === null &&
-      /\b(?:NEP|CBCS)\\b/i.test(document.title) &&
-      /\b(?:REG(?:ULAR)?|BACK(?:LOG)?|ATKT|RE-?EXAM)\\b/i.test(document.title);
+      /\b(?:NEP|CBCS)\b/i.test(document.title) &&
+      /\b(?:REG(?:ULAR)?|BACK(?:LOG)?|ATKT|RE-?EXAM)\b/i.test(document.title);
     return semester === null || semester === selectedSemester || consolidatedUnlabelled;
   });
 }
