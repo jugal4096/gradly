@@ -1111,3 +1111,63 @@
   .academic-setup-page{background-attachment:scroll!important}
   .academic-setup-form{box-shadow:0 12px 32px rgba(32,52,86,.09)!important}
 }
+
+
+/* Final high-contrast pass for the actual form-only Academic Setup screen. */
+.academic-setup-page{
+  background:#edf1f7!important;
+  background-image:none!important;
+  color:#18263d!important;
+  font-family:Inter,"Segoe UI",Arial,sans-serif!important;
+}
+.academic-setup-page::before,.academic-setup-page::after{
+  content:none!important;display:none!important;background:none!important;
+}
+.academic-setup-wrap{background:transparent!important}
+.academic-setup-header{background:transparent!important;border-color:#d5deea!important}
+.academic-setup-brand{color:#17243a!important}
+.academic-setup-step,.academic-setup-theme-toggle{
+  background:#fff!important;color:#263650!important;border:1px solid #cbd5e2!important;
+}
+.academic-setup-progress{background:#d3dce9!important}
+.academic-setup-progress span{background:#3154c5!important}
+.academic-setup-form{
+  background:#fff!important;opacity:1!important;backdrop-filter:none!important;
+  border:1px solid #d4deeb!important;border-radius:20px!important;
+  box-shadow:0 14px 38px rgba(27,43,69,.10)!important;
+}
+.academic-setup-page label,.academic-setup-page .academic-setup-field-section>label{
+  color:#1c2b43!important;font-size:14px!important;font-weight:750!important;
+}
+.academic-setup-page p,.academic-setup-page .academic-setup-helper{
+  color:#465771!important;opacity:1!important;
+}
+.academic-setup-page input,.academic-setup-page select,.academic-setup-page textarea{
+  background:#fff!important;color:#17243a!important;border:1px solid #b9c7d9!important;
+  opacity:1!important;font-size:15px!important;
+}
+.academic-setup-page input::placeholder,.academic-setup-page textarea::placeholder{
+  color:#687991!important;opacity:1!important;
+}
+.academic-setup-page input:focus,.academic-setup-page select:focus,.academic-setup-page textarea:focus{
+  border-color:#3154c5!important;outline:3px solid rgba(49,84,197,.14)!important;
+}
+.academic-setup-page .academic-setup-support-link{color:#2449b2!important}
+.academic-setup-page .academic-setup-continue,
+.academic-setup-page .academic-setup-enrollment-control button{
+  color:#fff!important;background:#3154c5!important;border:1px solid #3154c5!important;
+}
+.academic-setup-page .academic-setup-first-step-note,
+.academic-setup-page .academic-setup-footnote,
+.academic-setup-page .academic-setup-footer{display:none!important}
+.academic-setup-page.theme-dark{
+  background:#111b2c!important;background-image:none!important;color:#f2f5fc!important;
+}
+.academic-setup-page.theme-dark .academic-setup-header{border-color:#35445c!important}
+.academic-setup-page.theme-dark .academic-setup-brand{color:#f2f5fc!important}
+.academic-setup-page.theme-dark .academic-setup-form{background:#1b2940!important;border-color:#40516c!important}
+.academic-setup-page.theme-dark label{color:#f1f5ff!important}
+.academic-setup-page.theme-dark p,.academic-setup-page.theme-dark .academic-setup-helper{color:#c2cde0!important}
+.academic-setup-page.theme-dark input,.academic-setup-page.theme-dark select,.academic-setup-page.theme-dark textarea{
+  background:#24334b!important;color:#f4f6fc!important;border-color:#53647f!important;
+}
