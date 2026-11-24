@@ -917,3 +917,67 @@
 @media(prefers-reduced-motion:reduce){
   .academic-setup-enrollment-control button,.academic-setup-continue{transition:none!important}
 }
+
+
+/* Background correction: the original base stylesheet disables page pseudo-elements,
+   so render the photographic campus backdrop directly on the page itself. */
+.academic-setup-page{
+  background-color:#26345c!important;
+  background-image:
+    linear-gradient(115deg,rgba(20,28,65,.66),rgba(59,43,119,.48) 48%,rgba(12,91,103,.52)),
+    url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2400&q=90")!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-attachment:fixed!important;
+}
+.academic-setup-page::before{
+  content:none!important;
+  display:none!important;
+}
+.academic-setup-page::after{
+  content:""!important;
+  display:block!important;
+  position:fixed!important;
+  z-index:-1!important;
+  inset:0!important;
+  width:auto!important;height:auto!important;
+  background:
+    radial-gradient(ellipse at 8% 12%,rgba(245,113,183,.24),transparent 34%),
+    radial-gradient(ellipse at 92% 82%,rgba(53,211,194,.25),transparent 38%)!important;
+  pointer-events:none!important;
+}
+.academic-setup-wrap{max-width:1040px!important}
+.academic-setup-header{
+  border-bottom-color:rgba(255,255,255,.22)!important;
+}
+.academic-setup-brand{color:#fff!important;text-shadow:0 2px 14px rgba(0,0,0,.2)}
+.academic-setup-step,.academic-setup-theme-toggle{
+  color:#fff!important;background:rgba(255,255,255,.16)!important;
+  border-color:rgba(255,255,255,.3)!important;backdrop-filter:blur(16px)!important;
+}
+.academic-setup-content{max-width:900px!important;margin-top:34px!important}
+.academic-setup-heading{
+  background:
+    linear-gradient(115deg,rgba(48,35,135,.78),rgba(79,53,177,.67) 48%,rgba(15,130,143,.67)),
+    url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1800&q=85") center 48%/cover!important;
+  box-shadow:0 28px 80px rgba(12,20,58,.32),inset 0 1px 0 rgba(255,255,255,.35)!important;
+  border-color:rgba(255,255,255,.38)!important;
+}
+.academic-setup-form{
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:0 28px 85px rgba(10,18,54,.26),inset 0 1px 0 #fff!important;
+  border-color:rgba(255,255,255,.75)!important;
+}
+.academic-setup-page.theme-dark{
+  background-image:
+    linear-gradient(115deg,rgba(8,13,36,.82),rgba(35,24,78,.72) 48%,rgba(4,55,65,.76)),
+    url("https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=2400&q=90")!important;
+}
+@media(max-width:700px){
+  .academic-setup-page{background-attachment:scroll!important}
+  .academic-setup-heading{
+    background-position:center!important;
+    min-height:330px!important;
+  }
+}
