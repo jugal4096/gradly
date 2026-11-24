@@ -346,6 +346,7 @@ function escapeReportHtml(value: unknown): string {
 
 export default function StudentPlatform() {
   const { user, isGuest, signOut, loginWithGoogle } = useAuth();
+  const firstName = user?.displayName?.trim().split(/\\s+/)[0] || user?.email?.split("@")[0] || "there";
   const routeNavigate = useNavigate();
   const [guestSessionReady,setGuestSessionReady] = useState(() => Boolean(localStorage.getItem("gradly_guest_session_token")));
   const sectionStorageKey = "gradly_user_last_section_" + (user?.uid || ("guest_" + (localStorage.getItem("gradly_guest_id") || "session")));
@@ -1384,7 +1385,7 @@ export default function StudentPlatform() {
           <section className="gd-home-hero">
             <div className="gd-home-hero-main">
               <div className="gd-home-overline"><span className="gd-live-dot"/> YOUR ACADEMIC WORKSPACE <span className="gd-overline-rule"/></div>
-              <h1>Hey {name},<br/><em>your next milestone starts here.</em></h1>
+              <h1>Hey {firstName},<br/><em>your next milestone starts here.</em></h1>
               <p>One semester at a time. Keep your grades in focus, plan your next move and make every credit count.</p>
               <div className="gd-home-hero-actions">
                 <button type="button" onClick={()=>navigate("sgpa")}> <span>＋</span> Build semester SGPA <b>↗</b></button>
