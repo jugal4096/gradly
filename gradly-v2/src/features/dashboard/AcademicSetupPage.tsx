@@ -592,11 +592,9 @@ export default function AcademicSetupPage() {
             <button className="academic-setup-continue" type="submit" disabled={saving || previewBusy || predictionConfirmed !== true || !selectedCurrentSemester || !curriculumId}>
               {saving ? <><span className="academic-setup-button-spinner" /> Saving your profile…</> : <>Confirm &amp; Continue <span>→</span></>}
             </button>
-            <p className="academic-setup-footnote">Your information is saved to your authenticated Gradly student profile.</p>
           </>}
         </form>
 
-        {!selected && <p className="academic-setup-first-step-note">Start by selecting your college or university. Your enrollment number comes next.</p>}
 
 
         </div>
@@ -640,7 +638,6 @@ export default function AcademicSetupPage() {
           {error && <p className="academic-setup-dialog-error" role="alert">{error}</p>}
         </section>
       </div>}
-      <footer className="academic-setup-footer"><span>© Gradly</span><span>ACADEMIC SETUP</span></footer>
     </div>
   </main>;
 }
