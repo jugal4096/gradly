@@ -95,3 +95,17 @@
   .tester-ultra-results .tester-ultra-metrics article{transition:transform .18s ease,box-shadow .18s ease}
   .tester-ultra-results .tester-ultra-metrics article:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(34,61,102,.09)}
 }
+
+/* Failed-result remark: make the semester SGPA unmistakably visible in red. */
+.tester-ultra-semester-pills span.failed-remark{
+  color:#b42332;
+  border:1px solid #f0aab1;
+  background:linear-gradient(145deg,#fff0f1,#ffe2e5);
+  box-shadow:inset 0 1px #fff,0 2px 7px rgba(180,35,50,.09);
+}
+.tester-ultra-semester-pills span.failed-remark::after{
+  content:"";
+}
+.tester-ultra-row-details p:has(b){
+  line-height:1.65;
+}
