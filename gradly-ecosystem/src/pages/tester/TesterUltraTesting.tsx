@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Activity, ArrowLeft, BarChart3, BookOpen, Download, FlaskConical, Play, RefreshCw, Search, ShieldCheck, Square, Users, WandSparkles } from "lucide-react";
 import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
+import "./TesterUltraEnhancements.css";
 
 const API = API_BASE_URL.replace(/\/+$/, "");
 // GECA zero-point outcomes: D and its D1/D2/D3 variants, plus legacy F/AB tokens.
