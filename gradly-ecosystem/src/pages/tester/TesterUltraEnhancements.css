@@ -1,0 +1,111 @@
+/* Ultra Tester results UI enhancement — isolated to TesterUltraTesting */
+.tester-ultra-results{
+  background:linear-gradient(180deg,#fff 0%,#fbfcff 100%);
+  border:1px solid #dce5f3;
+  border-radius:22px;
+  box-shadow:0 16px 42px rgba(24,45,82,.08);
+  padding:clamp(18px,2.4vw,30px);
+}
+.tester-ultra-results .tester-ultra-section-heading h2{font-size:clamp(23px,2.4vw,30px);color:#172943}
+.tester-ultra-results .tester-ultra-metrics{gap:13px;margin:20px 0 8px}
+.tester-ultra-results .tester-ultra-metrics article{
+  position:relative;overflow:hidden;min-height:112px;padding:17px 16px;
+  border:1px solid #e0e8f5;border-radius:15px;
+  background:linear-gradient(145deg,#fff,#f6f9ff);
+  box-shadow:0 5px 15px rgba(34,61,102,.045);
+}
+.tester-ultra-results .tester-ultra-metrics article:first-child{background:linear-gradient(145deg,#eef5ff,#e3edff);border-color:#c9daf8}
+.tester-ultra-results .tester-ultra-metrics article:nth-child(3){background:linear-gradient(145deg,#effaf6,#e3f6ee);border-color:#c9eadd}
+.tester-ultra-results .tester-ultra-metrics article span{font-size:9px;letter-spacing:.12em;color:#64748b}
+.tester-ultra-results .tester-ultra-metrics article strong{font-size:clamp(26px,3vw,34px);line-height:1.05;color:#1d3558;font-variant-numeric:tabular-nums}
+.tester-ultra-results .tester-ultra-metrics article small{font-size:10px;color:#71819a}
+.tester-ultra-tabs{gap:8px;margin-top:25px;border-bottom:1px solid #dfe7f2}
+.tester-ultra-tabs button{padding:13px 15px;font-size:11px;border-radius:10px 10px 0 0}
+.tester-ultra-tabs button.active{background:#edf4ff;color:#214f9a;border-bottom-color:#2f65bd}
+.tester-ultra-table-wrap{
+  margin-top:10px;border:1px solid #dce5f1;border-radius:15px;
+  background:#fff;box-shadow:0 8px 22px rgba(24,45,82,.045);
+  scrollbar-width:thin;scrollbar-color:#aabbd5 #f2f5fa;
+}
+.tester-ultra-table-toolbar{padding:17px 17px 14px;font-size:13px}
+.tester-ultra-table-toolbar>strong{font-size:13px;color:#213653}
+.tester-ultra-table-toolbar>span{font-size:10px;color:#71819a}
+.tester-ultra-table-toolbar>div{background:#f8faff;border-color:#d8e2f0}
+.tester-ultra-table-toolbar input{width:min(260px,42vw);font-size:11px}
+.tester-ultra-table{min-width:940px;border-collapse:separate;border-spacing:0}
+.tester-ultra-table th{
+  position:sticky;top:0;z-index:1;padding:14px 13px;
+  background:#eaf0fa;color:#435979;font-size:9px;font-weight:900;
+  letter-spacing:.105em;border-top:1px solid #dce5f1;border-bottom:1px solid #d5e0ef;
+}
+.tester-ultra-table td{
+  padding:15px 13px;vertical-align:middle;color:#34445d;
+  font-size:11px;line-height:1.55;border-bottom:1px solid #edf1f7;
+}
+.tester-ultra-table tbody tr:nth-child(even){background:#f9fbfe}
+.tester-ultra-table tbody tr:hover{background:#eff5ff}
+.tester-ultra-table td strong{color:#1e3454;font-size:12px;font-variant-numeric:tabular-nums}
+.tester-ultra-table td small{display:block;margin-top:4px;color:#78879d;font-size:10px;line-height:1.5}
+.tester-ultra-semester-pills{display:flex;flex-wrap:wrap;gap:7px;min-width:230px}
+.tester-ultra-semester-pills span{
+  display:inline-flex;align-items:center;justify-content:center;min-width:76px;
+  padding:8px 10px;border:1px solid #b9d0f4;border-radius:9px;
+  background:linear-gradient(145deg,#edf4ff,#e2edff);
+  color:#174b9b;font-size:12px;font-weight:900;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;box-shadow:inset 0 1px #ffffff;
+}
+.tester-ultra-semester-pills span[title*="NOT FOUND"],
+.tester-ultra-semester-pills span[title*="MANUAL ONLY"]{background:#fff6e9;border-color:#f1d6a8;color:#98611b}
+.tester-ultra-row-details summary{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:34px;padding:0 11px;border:1px solid #cbd9ed;border-radius:8px;
+  background:#f4f8ff;color:#28589f;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;
+}
+.tester-ultra-row-details[open] summary{background:#e8f1ff}
+.tester-ultra-row-details>div{
+  position:relative;z-index:2;min-width:250px;max-width:440px;
+  padding:12px;margin-top:8px;border:1px solid #dce5f1;border-radius:10px;
+  background:#fff;box-shadow:0 12px 28px rgba(24,45,82,.12);white-space:normal;
+}
+.tester-ultra-row-details p{margin:7px 0;color:#52627a;font-size:10px;line-height:1.6}
+.tester-ultra-status{display:inline-flex;align-items:center;padding:6px 9px;border-radius:7px;font-size:9px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
+.tester-ultra-empty{padding:30px 18px;text-align:center;color:#77869c;font-size:12px}
+.tester-ultra-analytics-summary>div{
+  border:1px solid #dce6f3;border-radius:13px;background:linear-gradient(145deg,#fff,#f5f8fe);
+  padding:17px;box-shadow:0 5px 15px rgba(34,61,102,.04)
+}
+.tester-ultra-analytics-summary>div strong{font-size:28px;color:#1d3d6b;font-variant-numeric:tabular-nums}
+.tester-ultra-branch-row{padding:13px 14px;border:1px solid #e5ebf4;border-radius:11px;background:#fff;margin:8px 0}
+.tester-ultra-branch-track{height:10px;border-radius:20px;background:#edf2f9;overflow:hidden}
+.tester-ultra-branch-track i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#386dc1,#48a7b9)}
+.tester-ultra-branch-note{padding:13px 15px;border-radius:10px;background:#f1f5fb;color:#65758d;font-size:10px;line-height:1.7}
+.tester-ultra-result-actions button:hover,.tester-ultra-row-details summary:hover{border-color:#9db6df;background:#edf4ff}
+.tester-ultra-results button:focus-visible,.tester-ultra-results input:focus-visible{outline:3px solid #9bbcf0;outline-offset:2px}
+@media(max-width:760px){
+  .tester-ultra-results{padding:15px;border-radius:16px}
+  .tester-ultra-results .tester-ultra-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tester-ultra-results .tester-ultra-metrics article:last-child{grid-column:span 2}
+  .tester-ultra-section-heading{align-items:flex-start;flex-direction:column}
+  .tester-ultra-result-actions{width:100%;flex-wrap:wrap}
+  .tester-ultra-table-toolbar{align-items:flex-start;flex-direction:column}
+  .tester-ultra-table-toolbar>div{width:100%;box-sizing:border-box}
+  .tester-ultra-table-toolbar input{width:100%}
+}
+@media(prefers-reduced-motion:no-preference){
+  .tester-ultra-results .tester-ultra-metrics article{transition:transform .18s ease,box-shadow .18s ease}
+  .tester-ultra-results .tester-ultra-metrics article:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(34,61,102,.09)}
+}
+
+/* Failed-result remark: make the semester SGPA unmistakably visible in red. */
+.tester-ultra-semester-pills span.failed-remark{
+  color:#b42332;
+  border:1px solid #f0aab1;
+  background:linear-gradient(145deg,#fff0f1,#ffe2e5);
+  box-shadow:inset 0 1px #fff,0 2px 7px rgba(180,35,50,.09);
+}
+.tester-ultra-semester-pills span.failed-remark::after{
+  content:"";
+}
+.tester-ultra-row-details p:has(b){
+  line-height:1.65;
+}
