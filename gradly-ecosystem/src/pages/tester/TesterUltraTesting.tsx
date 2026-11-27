@@ -6,6 +6,32 @@ import { API_BASE_URL } from "../../lib/superAdminSession";
 import "./Tester.css";
 import "./TesterUltraEnhancements.css";
 
+function runGecaWorker<T = unknown>(payload: Record<string, unknown>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("../../workers/gecaResult.worker.ts", import.meta.url), { type: "module" });
+    const requestId = 1;
+    const timeoutId = window.setTimeout(() => {
+      worker.terminate();
+      reject(new Error("GECA browser PDF processing exceeded 180 seconds. The audit stopped safely; retry with fewer enrollments or sessions."));
+    }, 180_000);
+    const finish = () => {
+      window.clearTimeout(timeoutId);
+      worker.terminate();
+    };
+    worker.onmessage = (event: MessageEvent<{ id: number; success: boolean; result?: T; error?: string }>) => {
+      if (event.data.id !== requestId) return;
+      finish();
+      if (event.data.success) resolve(event.data.result as T);
+      else reject(new Error(event.data.error || "GECA PDF processing failed."));
+    };
+    worker.onerror = (event) => {
+      finish();
+      reject(new Error(event.message || "GECA PDF worker crashed."));
+    };
+    worker.postMessage({ ...payload, id: requestId });
+  });
+}
+
 const API = API_BASE_URL.replace(/\/+$/, "");
 // GECA zero-point outcomes: D and its D1/D2/D3 variants, plus legacy F/AB tokens.
 const GRADE_POINTS: Record<string, number> = { "A++": 10, "A+": 9, A: 8, "B+": 7, B: 6, "C+": 5, C: 4, D: 0, D1: 0, D2: 0, D3: 0, F: 0, AB: 0 };
@@ -28,7 +54,24 @@ const catalogueCodeMatches = (candidate: unknown, code: string) => courseCodeAli
 const normalizeName = (value: unknown) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const uniqueEnrollments = (value: string) => [...new Set(value.split(/[\s,;]+/).map(item => item.trim().toUpperCase()).filter(Boolean))];
 const csvCell = (value: unknown) => '"' + String(value ?? "").replace(/"/g, '""') + '"';
-const normalizeResultSessions = (value: unknown): ResultSession[] => Array.isArray(value) ? value.filter((item: any) => item && item.id != null).map((item: any) => ({ id: String(item.id), title: String(item.title || item.name || "Untitled examination session"), url: String(item.url || "") })) : [];
+const normalizeResultSessions = (value: unknown): ResultSession[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && "id" in item && item.id != null))
+    .map(item => ({
+      id: String(item.id),
+      title: String(item.title || item.name || "Untitled examination session"),
+      url: String(item.url || ""),
+    }));
+};
+type GecaMatchResponse = {
+  matches?: ResultDocument[];
+  scanIncomplete?: boolean;
+  parseFailures?: number;
+  documentsScanned?: number;
+  downloadFailures?: number;
+  enrollmentHits?: number;
+};
 
 export default function TesterUltraTesting() {
   const navigate = useNavigate();
@@ -78,14 +121,13 @@ export default function TesterUltraTesting() {
 
   useEffect(() => {
     if (!token) return;
-    const controller = new AbortController();
+    let cancelled = false;
     setLoadingSessions(true);
-    fetch(API + "/api/tester/results/sessions", { headers: { Authorization: "Bearer " + token }, signal: controller.signal })
-      .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body.message || "Unable to load GECA examination sessions."); return body; })
-      .then(body => { const loaded = normalizeResultSessions(body.sessions); setSessions(loaded);  })
-      .catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Unable to load examination sessions."); })
-      .finally(() => { if (!controller.signal.aborted) setLoadingSessions(false); });
-    return () => controller.abort();
+    runGecaWorker<ResultSession[]>({ type: "sessions" })
+      .then(loaded => { if (!cancelled) setSessions(normalizeResultSessions(loaded)); })
+      .catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : "Unable to load GECA examination sessions."); })
+      .finally(() => { if (!cancelled) setLoadingSessions(false); });
+    return () => { cancelled = true; };
   }, [token]);
 
   useEffect(() => {
@@ -159,7 +201,7 @@ export default function TesterUltraTesting() {
         response = await fetch(url, { ...init, headers, signal: requestController.signal });
       } catch (reason) {
         if (timedOut && !callerSignal?.aborted) {
-          throw new Error("The backend did not respond within 120 seconds. This semester scan timed out; check Render logs and retry with fewer enrollments or examination sessions.");
+          throw new Error("The backend did not respond within 120 seconds. This semester scan timed out; retry with fewer enrollments or examination sessions.", { cause: reason });
         }
         throw reason;
       }
@@ -219,10 +261,11 @@ export default function TesterUltraTesting() {
               const session = sessions.find(item=>item.id===sessionId);
               if (!session) continue;
               try {
-                const matchBody = await fetchJson(API + "/api/tester/results/sessions/" + encodeURIComponent(session.id) + "/match", {
-                  method:"POST", headers:{"Content-Type":"application/json"},
-                  body:JSON.stringify({ enrollmentNumber: enrollment, selectedSemester: semester }),
-                  signal:controller.signal,
+                const matchBody = await runGecaWorker<GecaMatchResponse>({
+                  type: "match",
+                  resultId: session.id,
+                  enrollment,
+                  semester,
                 });
                 const docs = Array.isArray(matchBody.matches) ? matchBody.matches as ResultDocument[] : [];
                 const match = docs.find(document => Number(document.semester) === semester && Array.isArray(document.grades) && document.grades.length > 0);

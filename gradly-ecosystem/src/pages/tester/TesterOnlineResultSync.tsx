@@ -253,7 +253,7 @@ export default function TesterOnlineResultSync({
     const registryResponse = await fetch(apiBase + "/api/tester/results/discovered-subjects?curriculumId=" + encodeURIComponent(curriculumId) + "&codes=" + encodeURIComponent(codes), { headers: { Authorization: "Bearer " + testerToken } });
     const registryBody = await registryResponse.json();
     if (!registryResponse.ok || !Array.isArray(registryBody.data)) throw new Error(registryBody.message || "The shared subject catalogue could not be checked.");
-    const databaseRegistry = Object.fromEntries(registryBody.data.map((item:any) => [normalizeCourseCode(item.courseCode), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
+    const databaseRegistry = Object.fromEntries(registryBody.data.map((item: { courseCode?: unknown; courseName?: unknown; credits?: unknown; courseCategory?: unknown }) => [normalizeCourseCode(String(item.courseCode || "")), { courseName:String(item.courseName||""), credits:Number(item.credits), courseCategory:String(item.courseCategory||"") }]));
     const discoveredRegistry = { ...persistedTesterRegistry, ...testerDiscoveredRegistry, ...databaseRegistry };
     setTesterDiscoveredRegistry(discoveredRegistry);
     try { testerStorageSet(testerRegistryKey, JSON.stringify(discoveredRegistry)); } catch { /* Database remains canonical. */ }
